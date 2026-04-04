@@ -15,6 +15,40 @@ This plugin includes a full **RAG chatbot foundation** and extends it with **vis
 - Privacy workflows for export and delete of chat history
 - Operational readiness via `php artisan filament-agentic-chatbot:doctor`
 
+## Product tour
+
+### Bot list
+
+Manage multiple assistants from a Filament-native control plane.
+
+![Bot list](./images/agentic-chatbot/01-bot-list.png)
+
+### Bot editing
+
+Configure prompt, model, retrieval, access, and widget presentation per bot.
+
+![Bot edit](./images/agentic-chatbot/02-bot-edit.png)
+
+### Source ingestion
+
+Track source status and ingestion progress directly in the panel.
+
+![Source ingestion](./images/agentic-chatbot/03-source-ingestion-table.png)
+
+### Conversation review
+
+Inspect conversation history without leaving Filament.
+
+![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
+
+### Widget desktop and mobile
+
+The embeddable widget is polished out of the box across device sizes.
+
+![Widget desktop](./images/agentic-chatbot/05-widget-desktop.png)
+
+![Widget mobile](./images/agentic-chatbot/06-widget-mobile.png)
+
 ## Why this is different from the earlier RAG plugin
 
 The earlier Filament RAG plugin is focused on grounded Q&A over a knowledge base.

@@ -35,6 +35,42 @@ That means it can work as:
 - a support triage assistant
 - an internal ops assistant with workflow logic
 
+## Product Tour
+
+These are real screenshots from the current product surface.
+
+### Bot management
+
+Manage multiple bots from inside Filament.
+
+![Bot list](./images/agentic-chatbot/01-bot-list.png)
+
+### Bot configuration
+
+Configure prompt, provider, retrieval, access, and widget settings per bot.
+
+![Bot edit](./images/agentic-chatbot/02-bot-edit.png)
+
+### Source ingestion visibility
+
+Track ingestion status, chunk counts, and source health directly in the panel.
+
+![Source ingestion table](./images/agentic-chatbot/03-source-ingestion-table.png)
+
+### Conversation review
+
+Inspect transcripts and assistant answers from inside Filament.
+
+![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
+
+### Widget experience
+
+Preview the embeddable widget on desktop and mobile.
+
+![Widget desktop](./images/agentic-chatbot/05-widget-desktop.png)
+
+![Widget mobile](./images/agentic-chatbot/06-widget-mobile.png)
+
 ## Documentation Map
 
 ### Evaluate The Plugin
