@@ -142,10 +142,10 @@ Example:
 
 ```html
 <script
-    src="https://your-app.com/filament-agentic-chatbot/widget.js"
-    data-bot="YOUR_BOT_PUBLIC_ID"
-    data-token="SIGNED_WIDGET_TOKEN"
-    defer
+  src="https://your-app.com/filament-agentic-chatbot/widget.js"
+  data-bot="YOUR_BOT_PUBLIC_ID"
+  data-token="SIGNED_WIDGET_TOKEN"
+  defer
 ></script>
 ```
 

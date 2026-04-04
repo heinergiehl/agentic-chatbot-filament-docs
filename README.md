@@ -63,6 +63,34 @@ Inspect transcripts and assistant answers from inside Filament.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
+### Workflow library
+
+See which workflows are active, which bot they belong to, and which drafts are ready to ship.
+
+![Workflow list](./images/agentic-chatbot/07-workflow-list.png)
+
+### Visual workflow editor
+
+Design retrieval-aware, branching, agentic flows directly inside Filament.
+
+![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+
+### Workflow generation, runs, and releases
+
+Draft workflows from prompts, inspect execution traces, and publish changes with release notes.
+
+![Workflow generate tab](./images/agentic-chatbot/09-workflow-generate-tab.png)
+
+![Workflow runs tab](./images/agentic-chatbot/10-workflow-runs-tab.png)
+
+![Workflow releases tab](./images/agentic-chatbot/11-workflow-releases-tab.png)
+
+### API connectors
+
+Manage reusable external API profiles for workflow nodes.
+
+![API connectors list](./images/agentic-chatbot/12-api-connectors-list.png)
+
 ### Widget experience
 
 Preview the embeddable widget on desktop and mobile.
@@ -108,6 +136,7 @@ Preview the embeddable widget on desktop and mobile.
 - How is it different from the older RAG plugin? → `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
 - Can I use it as a simple RAG chatbot first? → `QUICKSTART.md`
 - How do workflows fit in? → `AGENTIC_WORKFLOWS.md`
+- How do workflow releases, traces, and connectors look in practice? → `AGENTIC_WORKFLOWS.md`
 - How do I generate workflow JSON? → `WORKFLOW_JSON_SCHEMA.md`
 - How do I embed the widget? → `CHAT_WIDGET.md`
 

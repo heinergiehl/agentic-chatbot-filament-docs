@@ -30,20 +30,20 @@ But it also adds:
 
 ## Comparison Table
 
-| Area | Filament RAG | Filament Agentic Chatbot |
-|---|---|---|
-| Grounded Q&A | Yes | Yes |
-| Source ingestion | Yes | Yes |
-| Citations | Yes | Yes |
-| Embeddable widget | Yes | Yes |
-| Multi-bot management | Yes | Yes |
-| Visual workflow builder | No | Yes |
-| Conditional routing | No | Yes |
-| Input collection steps | No | Yes |
-| Action nodes | No | Yes |
-| HTTP request nodes | No | Yes |
-| Prompt-to-workflow generation | No | Yes |
-| Guided onboarding / triage | Limited | Yes |
+| Area                          | Filament RAG | Filament Agentic Chatbot |
+| ----------------------------- | ------------ | ------------------------ |
+| Grounded Q&A                  | Yes          | Yes                      |
+| Source ingestion              | Yes          | Yes                      |
+| Citations                     | Yes          | Yes                      |
+| Embeddable widget             | Yes          | Yes                      |
+| Multi-bot management          | Yes          | Yes                      |
+| Visual workflow builder       | No           | Yes                      |
+| Conditional routing           | No           | Yes                      |
+| Input collection steps        | No           | Yes                      |
+| Action nodes                  | No           | Yes                      |
+| HTTP request nodes            | No           | Yes                      |
+| Prompt-to-workflow generation | No           | Yes                      |
+| Guided onboarding / triage    | Limited      | Yes                      |
 
 ## When The Older RAG Plugin Is Enough
 

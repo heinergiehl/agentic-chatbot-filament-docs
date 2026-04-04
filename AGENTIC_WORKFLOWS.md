@@ -35,6 +35,44 @@ They are useful when the assistant must:
 - escalate when the knowledge base is weak
 - guide a user through an onboarding or troubleshooting flow
 
+## Workflow Product Tour
+
+### Workflow library
+
+See active and draft workflows, linked bots, and release-ready configurations from the Filament panel.
+
+![Workflow list](./images/agentic-chatbot/07-workflow-list.png)
+
+### Visual editor
+
+Build multi-step assistants with retrieval, branching, AI nodes, actions, and external connectors in one canvas.
+
+![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+
+### AI-assisted drafting
+
+Describe the flow you want in natural language, generate a first draft, then review and refine it before publishing.
+
+![Workflow generate tab](./images/agentic-chatbot/09-workflow-generate-tab.png)
+
+### Run inspection and debugging
+
+Inspect execution history, current node, variables, and traces when validating or debugging a workflow.
+
+![Workflow runs tab](./images/agentic-chatbot/10-workflow-runs-tab.png)
+
+### Release history
+
+Keep draft changes separate from the live workflow, add publish notes, and roll back to earlier versions when needed.
+
+![Workflow releases tab](./images/agentic-chatbot/11-workflow-releases-tab.png)
+
+### API connector reuse
+
+Save external API profiles once and reference them from multiple workflows instead of repeating auth and timeout settings everywhere.
+
+![API connectors list](./images/agentic-chatbot/12-api-connectors-list.png)
+
 ## Common Workflow Building Blocks
 
 ### Trigger
@@ -81,6 +119,10 @@ Typical examples include:
 ### HTTP Request Node
 
 Calls external APIs from the workflow when you need to integrate with another system.
+
+### API Connector Node
+
+Calls a saved connector profile so you can reuse base URLs, auth, headers, and timeout settings across workflows.
 
 ## Recommended Adoption Path
 

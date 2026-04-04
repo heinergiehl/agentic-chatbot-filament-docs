@@ -41,6 +41,28 @@ Inspect conversation history without leaving Filament.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
+### Workflow builder
+
+Design agentic flows that mix retrieval, intent routing, AI nodes, actions, and connectors.
+
+![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+
+### Workflow operations
+
+Generate drafts from prompts, inspect workflow runs, and publish with release notes.
+
+![Workflow generate tab](./images/agentic-chatbot/09-workflow-generate-tab.png)
+
+![Workflow runs tab](./images/agentic-chatbot/10-workflow-runs-tab.png)
+
+![Workflow releases tab](./images/agentic-chatbot/11-workflow-releases-tab.png)
+
+### API connectors
+
+Reuse external API connection profiles across workflows.
+
+![API connectors list](./images/agentic-chatbot/12-api-connectors-list.png)
+
 ### Widget desktop and mobile
 
 The embeddable widget is polished out of the box across device sizes.
