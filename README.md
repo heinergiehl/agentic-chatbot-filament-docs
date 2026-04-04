@@ -1,19 +1,31 @@
-# Filament Agentic Chatbot Docs
+# Filament Agentic Chatbot — Documentation
 
-Public documentation for the `heiner/filament-agentic-chatbot` plugin.
+Public documentation for the [heiner/filament-agentic-chatbot](https://github.com/heinergiehl/filament-agentic-chatbot) plugin.
 
 This repository is organized so buyers, evaluators, implementers, and support users can jump directly to the page they need instead of digging through one long README.
 
-> For Filament marketplace `docs_url`, use `FILAMENT_PLUGIN_PAGE.md`, not this README. Filament renders a single raw Markdown file and does not resolve repository-relative links like GitHub does.
+> For Filament marketplace `docs_url`, use [FILAMENT_PLUGIN_PAGE.md](FILAMENT_PLUGIN_PAGE.md), not this README. Filament renders a single raw Markdown file and does not resolve repository-relative links like GitHub does.
+
+---
+
+## 🚀 Live Demo
+
+Try the plugin before you buy:
+
+**[filament-agentic-chatbot.heinerdevelops.tech](https://filament-agentic-chatbot.heinerdevelops.tech/)**
+
+Log in with the demo credentials on the login page. The demo includes pre-configured bots, ingested documentation sources, sample workflows, and a live chat widget.
+
+---
 
 ## Start Here
 
 If you are evaluating the plugin, read these in order:
 
-1. `PRODUCT_OVERVIEW.md`
-2. `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-3. `CORE_CONCEPTS.md`
-4. `QUICKSTART.md`
+1. [Product Overview](PRODUCT_OVERVIEW.md)
+2. [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+3. [Core Concepts](CORE_CONCEPTS.md)
+4. [Quickstart](QUICKSTART.md)
 
 ## What This Plugin Is
 
@@ -25,6 +37,7 @@ It keeps the grounded RAG chatbot capabilities of the earlier Filament RAG plugi
 - branching logic
 - AI agent nodes
 - action and HTTP nodes
+- API connectors for external services
 - guided intake, routing, and escalation flows
 
 That means it can work as:
@@ -103,42 +116,44 @@ Preview the embeddable widget on desktop and mobile.
 
 ### Evaluate The Plugin
 
-- `PRODUCT_OVERVIEW.md`
-- `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-- `CORE_CONCEPTS.md`
-- `REFERENCE_LINKS.md`
+- [Product Overview](PRODUCT_OVERVIEW.md)
+- [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- [Core Concepts](CORE_CONCEPTS.md)
+- [Reference Links](REFERENCE_LINKS.md)
 
 ### Install And Launch
 
-- `QUICKSTART.md`
-- `OPERATIONS.md`
-- `SECURITY_AND_PRIVACY.md`
+- [Quickstart](QUICKSTART.md)
+- [Operations](OPERATIONS.md)
+- [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
 ### Learn The Product Model
 
-- `BOTS.md`
-- `RAG_SOURCES.md`
-- `INGESTION_AND_RETRIEVAL.md`
-- `AGENTIC_WORKFLOWS.md`
-- `WORKFLOW_PROMPT_TEMPLATES.md`
-- `WORKFLOW_JSON_SCHEMA.md`
-- `CHAT_WIDGET.md`
+- [Bots](BOTS.md)
+- [RAG Sources](RAG_SOURCES.md)
+- [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
+- [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- [API Connectors](API_CONNECTORS.md)
+- [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
+- [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
+- [Chat Widget](CHAT_WIDGET.md)
 
 ### Policies And Support
 
-- `SUPPORT_POLICY.md`
-- `REFUND_AND_LICENSE.md`
-- `SECURITY_AND_PRIVACY.md`
+- [Support Policy](SUPPORT_POLICY.md)
+- [Refund And License](REFUND_AND_LICENSE.md)
+- [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
 ## Common Questions
 
-- What does the plugin add? → `PRODUCT_OVERVIEW.md`
-- How is it different from the older RAG plugin? → `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-- Can I use it as a simple RAG chatbot first? → `QUICKSTART.md`
-- How do workflows fit in? → `AGENTIC_WORKFLOWS.md`
-- How do workflow releases, traces, and connectors look in practice? → `AGENTIC_WORKFLOWS.md`
-- How do I generate workflow JSON? → `WORKFLOW_JSON_SCHEMA.md`
-- How do I embed the widget? → `CHAT_WIDGET.md`
+- What does the plugin add? → [Product Overview](PRODUCT_OVERVIEW.md)
+- How is it different from the older RAG plugin? → [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- Can I use it as a simple RAG chatbot first? → [Quickstart](QUICKSTART.md)
+- How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
+- How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
+- How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
 
 ## Versioning
 
@@ -146,6 +161,6 @@ Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matchi
 
 ## Related Repositories
 
-- Plugin code: `https://github.com/heinergiehl/filament-agentic-chatbot`
-- Public docs: `https://github.com/heinergiehl/agentic-chatbot-filament-docs`
-- Older RAG-only docs: `https://github.com/heinergiehl/rag-filament-docs`
+- Plugin code: [heinergiehl/filament-agentic-chatbot](https://github.com/heinergiehl/filament-agentic-chatbot)
+- Public docs: [heinergiehl/agentic-chatbot-filament-docs](https://github.com/heinergiehl/agentic-chatbot-filament-docs)
+- Older RAG-only docs: [heinergiehl/rag-filament-docs](https://github.com/heinergiehl/rag-filament-docs)

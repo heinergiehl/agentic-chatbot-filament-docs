@@ -154,11 +154,19 @@ GEMINI_API_KEY=your-key-here
 5. Embed the widget
 6. Add workflows only when you need guided multi-step behavior
 
+## 🚀 Live demo
+
+Try the plugin before you buy: **[filament-agentic-chatbot.heinerdevelops.tech](https://filament-agentic-chatbot.heinerdevelops.tech/)**
+
+Log in with the demo credentials on the login page. The demo includes pre-configured bots, ingested documentation sources, sample workflows, and a live chat widget.
+
 ## Best next docs
 
-- Product overview: `PRODUCT_OVERVIEW.md`
-- How it differs from Filament RAG: `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-- Quickstart: `QUICKSTART.md`
-- Agentic workflows: `AGENTIC_WORKFLOWS.md`
-- Support policy: `SUPPORT_POLICY.md`
-- Refund and license: `REFUND_AND_LICENSE.md`
+- Product overview: [PRODUCT_OVERVIEW.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
+- How it differs from Filament RAG: [HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- Quickstart: [QUICKSTART.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
+- Agentic workflows: [AGENTIC_WORKFLOWS.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
+- API connectors: [API_CONNECTORS.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
+- Chat widget: [CHAT_WIDGET.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
+- Support policy: [SUPPORT_POLICY.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
+- Refund and license: [REFUND_AND_LICENSE.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md)

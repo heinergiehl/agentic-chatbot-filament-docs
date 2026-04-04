@@ -25,20 +25,21 @@ Or it can become more advanced:
 
 ## Concept Map
 
-| Concept      | What It Means                                                                                                               | Learn More                   |
-| ------------ | --------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
-| Bot          | A configured assistant with its own prompt, model, retrieval settings, access rules, widget branding, and workflow behavior | `BOTS.md`                    |
-| RAG Source   | A piece of knowledge the bot can use, such as text, a file, or a URL                                                        | `RAG_SOURCES.md`             |
-| Document     | The normalized stored version of a source after extraction                                                                  | `INGESTION_AND_RETRIEVAL.md` |
-| Chunk        | A smaller searchable section of a document used for retrieval and citations                                                 | `INGESTION_AND_RETRIEVAL.md` |
-| Ingestion    | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                                           | `INGESTION_AND_RETRIEVAL.md` |
-| Retrieval    | The step where relevant chunks are selected for a user question or workflow step                                            | `INGESTION_AND_RETRIEVAL.md` |
-| Workflow     | A multi-step conversation graph that can ask questions, branch, retrieve context, and take actions                          | `AGENTIC_WORKFLOWS.md`       |
-| Node         | One workflow building block such as `collectInput`, `condition`, `aiAgent`, or `knowledgeBase`                              | `WORKFLOW_JSON_SCHEMA.md`    |
-| Action       | A backend capability invoked from a workflow, such as creating a ticket or sending data onward                              | `AGENTIC_WORKFLOWS.md`       |
-| Widget       | The embeddable chat UI for websites or product frontends                                                                    | `CHAT_WIDGET.md`             |
-| Context Area | The access scope for a bot, such as public, member, or admin                                                                | `BOTS.md`                    |
-| Conversation | A stored chat session for one bot and one session identifier                                                                | `PRODUCT_OVERVIEW.md`        |
+| Concept       | What It Means                                                                                                               | Learn More                                            |
+| ------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| Bot           | A configured assistant with its own prompt, model, retrieval settings, access rules, widget branding, and workflow behavior | [Bots](BOTS.md)                                       |
+| RAG Source    | A piece of knowledge the bot can use, such as text, a file, or a URL                                                        | [RAG Sources](RAG_SOURCES.md)                         |
+| Document      | The normalized stored version of a source after extraction                                                                  | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
+| Chunk         | A smaller searchable section of a document used for retrieval and citations                                                 | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
+| Ingestion     | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                                           | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
+| Retrieval     | The step where relevant chunks are selected for a user question or workflow step                                            | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
+| Workflow      | A multi-step conversation graph that can ask questions, branch, retrieve context, and take actions                          | [Agentic Workflows](AGENTIC_WORKFLOWS.md)             |
+| Node          | One workflow building block such as `collectInput`, `condition`, `aiAgent`, or `knowledgeBase`                              | [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)       |
+| Action        | A backend capability invoked from a workflow, such as creating a ticket or sending data onward                              | [Agentic Workflows](AGENTIC_WORKFLOWS.md)             |
+| API Connector | A saved external API profile (base URL, auth, headers, timeout) reusable across workflows                                   | [API Connectors](API_CONNECTORS.md)                   |
+| Widget        | The embeddable chat UI for websites or product frontends                                                                    | [Chat Widget](CHAT_WIDGET.md)                         |
+| Context Area  | The access scope for a bot, such as public, member, or admin                                                                | [Bots](BOTS.md)                                       |
+| Conversation  | A stored chat session for one bot and one session identifier                                                                | [Product Overview](PRODUCT_OVERVIEW.md)               |
 
 ## How The Pieces Fit Together
 
@@ -88,8 +89,9 @@ The widget is the interface layer. The bot, sources, workflows, retrieval, and c
 
 ## Read These Next
 
-- `PRODUCT_OVERVIEW.md`
-- `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-- `AGENTIC_WORKFLOWS.md`
-- `WORKFLOW_PROMPT_TEMPLATES.md`
-- `QUICKSTART.md`
+- [Product Overview](PRODUCT_OVERVIEW.md)
+- [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- [API Connectors](API_CONNECTORS.md)
+- [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
+- [Quickstart](QUICKSTART.md)

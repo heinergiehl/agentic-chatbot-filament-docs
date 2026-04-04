@@ -155,8 +155,9 @@ A cleaner path is:
 
 ## Related Docs
 
-- `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
-- `WORKFLOW_PROMPT_TEMPLATES.md`
-- `WORKFLOW_JSON_SCHEMA.md`
-- `BOTS.md`
-- `OPERATIONS.md`
+- [API Connectors](API_CONNECTORS.md) — reusable external API profiles
+- [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
+- [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
+- [Bots](BOTS.md)
+- [Operations](OPERATIONS.md)

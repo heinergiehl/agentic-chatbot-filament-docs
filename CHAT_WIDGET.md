@@ -1,74 +1,218 @@
 # Chat Widget
 
-The chat widget is the embeddable UI layer for a bot.
+The chat widget is the embeddable UI layer that connects end users to your configured bot. It is the front-end for the bot, sources, retrieval, workflows, and conversation storage already set up in Filament.
 
 ## What The Widget Does
 
-It gives end users a chat interface that connects to your configured bot through your Laravel app.
+- Renders a floating chat bubble on any website or product page
+- Opens into a full chat panel with message history, streaming responses, and source citations
+- Connects to your Laravel backend via the plugin's API routes
+- Supports signed tokens for access control
+- Adapts to desktop and mobile screen sizes
 
-The widget does not contain the knowledge base by itself. It is the frontend for the bot, sources, retrieval, and conversation storage already configured in Filament.
+## Customization Options
 
-## What You Can Customize
+Per bot, you can customize all of these from the Filament panel:
 
-Per bot, you can customize:
+| Setting | Description | Example |
+|---------|-------------|---------|
+| **Title** | Header text in the chat panel | "Support Assistant" |
+| **Subtitle** | Smaller text below the title | "Always here to help" |
+| **Welcome message** | First message shown when the chat opens | "Hi! How can I help you today?" |
+| **Quick prompts** | Suggested starter questions shown as buttons | "How do I reset my password?" |
+| **Accent color** | Primary color for the header and send button | `#f97316` (orange) |
+| **Template** | Visual style preset (see below) | `aurora` |
+| **Font preset** | Typography style | `modern-sans` |
+| **Compact mode** | Smaller widget footprint for tight layouts | `true` / `false` |
+| **Show sources** | Whether to display cited source references | `true` / `false` |
+| **Input placeholder** | Placeholder text in the message input | "Type a message..." |
+| **Response format** | `markdown` or `plain` | `markdown` |
+| **Language** | Widget UI language code | `en`, `de`, `fr`, `es` |
 
-- title
-- subtitle
-- welcome message
-- quick prompts
-- accent color
-- template
-- compact mode
-- response format
+## Style Templates
 
-## How To Embed It
+The widget ships with seven visual themes:
 
-### Script Tag
+| Template | Description |
+|----------|-------------|
+| `clean` | Neutral and professional (default) |
+| `glass` | Frosted-glass translucent panels |
+| `bold` | High-contrast, saturated colors |
+| `neo-brutal` | Thick borders, raw geometric look |
+| `noir` | Dark background, minimal chrome |
+| `aurora` | Soft gradients and warm tones |
+| `minimal` | Maximum whitespace, understated UI |
+
+## Font Presets
+
+| Preset | Stack |
+|--------|-------|
+| `modern-sans` | System UI sans-serif (default) |
+| `humanist-sans` | Segoe UI, Helvetica Neue, Arial |
+| `friendly-rounded` | Trebuchet MS, Avenir Next, Verdana |
+| `editorial-serif` | Charter, Palatino, Georgia |
+| `technical-mono` | System monospace |
+
+## Embedding The Widget
+
+### Option 1: Script Tag (simplest)
+
+Add a single `<script>` tag to any HTML page:
 
 ```html
 <script
   src="https://your-app.com/filament-agentic-chatbot/widget.js"
   data-bot="YOUR_BOT_PUBLIC_ID"
   data-token="SIGNED_TOKEN"
+  data-area="public"
+  data-template="aurora"
+  data-accent="#f97316"
+  data-title="Support Assistant"
+  data-subtitle="Always here to help"
+  data-compact="false"
+  data-show-sources="true"
+  data-lang="en"
   defer
 ></script>
 ```
 
-### NPM Loader
+**Required attributes:**
 
-Use the NPM package when you want tighter control in React, Vue, or another SPA frontend.
+| Attribute | Description |
+|-----------|-------------|
+| `data-bot` | The bot's public ID (found in the bot edit page in Filament) |
+| `data-token` | A signed embed token (required when `RAG_WIDGET_SIGNING_ENABLED=true`) |
+
+All other `data-*` attributes are optional and override the bot's default settings.
+
+### Option 2: NPM Package (for SPAs)
+
+Install the helper package:
+
+```bash
+npm install @heiner/filament-agentic-chatbot-widget
+```
+
+Then mount it in your JavaScript:
+
+```js
+import { mountFilamentAgenticChatbotWidget } from '@heiner/filament-agentic-chatbot-widget';
+
+mountFilamentAgenticChatbotWidget({
+  botId: 'YOUR_BOT_PUBLIC_ID',
+  scriptUrl: 'https://your-app.com/filament-agentic-chatbot/widget.js',
+  apiBase: 'https://your-app.com',
+  token: 'SIGNED_TOKEN',
+  area: 'public',
+  position: 'right',
+  template: 'aurora',
+  accent: '#f97316',
+  title: 'Support Assistant',
+  subtitle: 'Always here to help',
+  welcome: 'Hi! How can I help?',
+  inputPlaceholder: 'Type a message...',
+  compactMode: false,
+  fontPreset: 'modern-sans',
+  showSources: true,
+  lang: 'en',
+});
+```
+
+The NPM loader creates and appends the `<script>` element with the right `data-*` attributes. It is a thin wrapper — no bundled UI framework.
+
+### Available NPM Options
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `botId` | string | **Required.** Bot public ID |
+| `scriptUrl` | string | URL to widget.js |
+| `apiBase` | string | Your Laravel app's base URL |
+| `token` | string | Signed embed token |
+| `area` | string | Context area (`public`, `member`, `admin`) |
+| `position` | `'left'` \| `'right'` | Widget position on screen |
+| `template` | string | Style template name |
+| `accent` | string | Hex color for accent |
+| `title` | string | Chat panel header title |
+| `subtitle` | string | Chat panel header subtitle |
+| `welcome` | string | Welcome message |
+| `inputPlaceholder` | string | Input field placeholder |
+| `compactMode` | boolean | Enable compact layout |
+| `fontPreset` | string | Typography preset name |
+| `showSources` | boolean | Show source citations |
+| `lang` | string | UI language code |
 
 ## Widget Security
 
-The widget supports:
+### Signed Tokens
 
-- signed tokens
-- per-bot domain allowlists
-- area-based access rules
-- rate limiting
+When `RAG_WIDGET_SIGNING_ENABLED=true` (recommended for production), every widget request must include a valid signed token. Tokens are HMAC-SHA256 signed and include:
 
-That means you can expose a public bot on a website while still keeping internal bots restricted.
+- the bot's public ID
+- an expiration timestamp
+- an optional host restriction
+
+Generate a token from your backend:
+
+```php
+use Heiner\FilamentAgenticChatbot\Support\WidgetEmbedToken;
+
+$token = WidgetEmbedToken::make(
+    botPublicId: $bot->public_id,
+    host: 'your-website.com'  // optional: restrict to this domain
+);
+```
+
+**Token configuration:**
+
+| Env Variable | Description | Default |
+|-------------|-------------|---------|
+| `RAG_WIDGET_SIGNING_ENABLED` | Require signed tokens | `true` |
+| `RAG_WIDGET_SIGNING_KEY` | HMAC signing secret | falls back to `APP_KEY` |
+| Token TTL | Configured in the config file | 30 days |
+
+### Domain Allowlists
+
+Each bot can define a list of allowed domains. If set, the widget's CORS middleware only responds to requests from those domains. Wildcard subdomains are supported (e.g., `*.example.com`).
+
+### Context Areas And Access Rules
+
+| Area | Behavior |
+|------|----------|
+| `public` | No authentication required |
+| `member` | Requires an authenticated user (checked via configured auth guards) |
+| `admin` | Requires an authenticated user with admin ability |
+
+### Rate Limiting
+
+| Env Variable | Default |
+|-------------|---------|
+| `RAG_MAX_REQUESTS_PER_MINUTE` | 40 |
+| `RAG_MAX_REQUESTS_PER_MINUTE_PER_IP` | 120 |
+
+## CORS Configuration
+
+The plugin includes a `HandleWidgetCors` middleware that automatically sets CORS headers based on the bot's allowed domain list. No additional Laravel CORS configuration is needed for the widget endpoints.
 
 ## Public vs Internal Widgets
 
 ### Public Widget
 
-Best for:
+Best for marketing site chat, public documentation assistant, product onboarding help.
 
-- marketing site questions
-- public docs
-- onboarding help
+Configuration: `area="public"`, no auth required, domain allowlist recommended.
 
 ### Internal Widget
 
-Best for:
+Best for admin support dashboard, back-office workflow assistance, authenticated internal knowledge.
 
-- admin support
-- back-office workflows
-- authenticated internal knowledge
+Configuration: `area="member"` or `area="admin"`, requires auth guard, signing enabled.
+
+## Testing The Widget
+
+The plugin provides a built-in **widget preview page** in Filament where you can test the widget for any bot without embedding it on an external site.
 
 ## Related Docs
 
-- [Bots](/docs/bots)
-- [Context Areas](/docs/context-areas)
-- [Security and Privacy](/docs/security-and-privacy)
+- [Bots](BOTS.md)
+- [Context Areas](CONTEXT_AREAS.md)
+- [Security And Privacy](SECURITY_AND_PRIVACY.md)
