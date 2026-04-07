@@ -8,6 +8,7 @@ Use this page when someone asks where to evaluate the plugin, where the code liv
 - Documentation home: https://filament-agentic-chatbot.heinerdevelops.tech/docs
 - Plugin repository: https://github.com/heinergiehl/filament-agentic-chatbot
 - Public docs repository: https://github.com/heinergiehl/agentic-chatbot-filament-docs
+- Workflow examples repository: https://github.com/heinergiehl/agentic-chatbot-workflow-examples
 - Demo application repository: https://github.com/heinergiehl/filament-agentic-chatbot-demo
 - Issue tracker: https://github.com/heinergiehl/filament-agentic-chatbot/issues
 
