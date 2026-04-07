@@ -154,7 +154,25 @@ GEMINI_API_KEY=your-key-here
 5. Embed the widget
 6. Add workflows only when you need guided multi-step behavior
 
-## 🚀 Live demo
+## � Workflow examples
+
+Get started fast with **7 ready-to-import workflows** covering real-world scenarios:
+
+| Workflow | What it shows |
+|----------|---------------|
+| SaaS Onboarding | Progressive intake + enterprise lead routing |
+| Support Ticket Router | AI intent classification → 4-department switch |
+| E-Commerce Order Status | External API lookup + status-based card messages |
+| Lead Qualification | Multi-step collection + CRM action |
+| Webhook Inventory Alert | Headless webhook → email + Slack alerts |
+| FAQ with Confidence Check | Two-stage AI confidence evaluation |
+| Content Research Assistant | KB research → outline → full draft |
+
+👉 **[Browse & download workflow examples](https://github.com/heinergiehl/agentic-chatbot-workflow-examples)**
+
+Import any JSON file through the workflow editor's **📥 Import** button — it takes seconds.
+
+## �🚀 Live demo
 
 Try the plugin before you buy: **[filament-agentic-chatbot.heinerdevelops.tech](https://filament-agentic-chatbot.heinerdevelops.tech/)**
 

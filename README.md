@@ -18,6 +18,14 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 ---
 
+## 📦 Workflow Examples
+
+7 ready-to-import workflow JSON files demonstrating real-world scenarios — onboarding, support routing, order tracking, lead qualification, webhook alerting, FAQ bots, and content research:
+
+**[agentic-chatbot-workflow-examples](https://github.com/heinergiehl/agentic-chatbot-workflow-examples)**
+
+---
+
 ## Start Here
 
 If you are evaluating the plugin, read these in order:
