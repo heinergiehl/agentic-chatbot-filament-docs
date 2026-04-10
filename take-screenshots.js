@@ -7,15 +7,75 @@ const { chromium } = require('playwright');
 const path = require('path');
 const fs = require('fs');
 
-const BASE_URL = 'https://filament-agentic-chatbot.heinerdevelops.tech';
+const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://filament-agentic-chatbot.localhost:8000';
 const OUT_DIR = path.join(__dirname, 'images', 'agentic-chatbot');
 
-const VIEWPORT = { width: 1440, height: 900 };
+const VIEWPORT = { width: 1600, height: 1040 };
+const WORKFLOW_EDITOR_URL = `${BASE_URL}/admin/agent-workflows/8/edit`;
+const WORKFLOW_RUNS_URL = `${BASE_URL}/admin/agent-workflows/9/edit`;
 
-async function screenshot(page, name, description) {
+async function screenshot(target, name, description, options = {}) {
   const dest = path.join(OUT_DIR, name);
-  await page.screenshot({ path: dest, fullPage: false });
+  await target.screenshot({ path: dest, animations: 'disabled', ...options });
   console.log(`  ✓ ${name}  – ${description}`);
+}
+
+async function waitForUi(page, delay = 1200) {
+  await page.waitForLoadState('networkidle');
+  await page.waitForTimeout(delay);
+}
+
+async function goto(page, url, delay = 1200) {
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await waitForUi(page, delay);
+}
+
+async function waitForWorkflow(page) {
+  await page.waitForLoadState('networkidle');
+  await page.waitForSelector('.fi-wf-node');
+  await page.waitForTimeout(2800);
+}
+
+async function scrollWorkflowIntoView(page, y = 220) {
+  await page.evaluate((offset) => window.scrollTo(0, offset), y);
+  await page.waitForTimeout(500);
+}
+
+async function clickIfPresent(locator) {
+  if ((await locator.count()) > 0) {
+    await locator.first().click();
+    return true;
+  }
+
+  return false;
+}
+
+async function fitWorkflowIntoView(page) {
+  await clickIfPresent(page.locator('button[title="Dismiss run overlay"]'));
+  await clickIfPresent(page.locator('button[title="Fit all nodes in view"]'));
+  await page.waitForTimeout(700);
+}
+
+async function zoomWorkflow(page, count = 1) {
+  const zoomInButton = page.locator('button[title="Zoom in"]');
+
+  for (let index = 0; index < count; index += 1) {
+    if (!(await clickIfPresent(zoomInButton))) {
+      break;
+    }
+
+    await page.waitForTimeout(250);
+  }
+}
+
+async function waitForRunDetails(page) {
+  const loadingState = page.getByText('Loading run detail...').first();
+
+  if ((await loadingState.count()) > 0) {
+    await loadingState.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
+  }
+
+  await page.waitForTimeout(700);
 }
 
 async function main() {
@@ -27,24 +87,21 @@ async function main() {
 
   // -- Login ----------------------------------------------------------------
   console.log('Logging in...');
-  await page.goto(`${BASE_URL}/admin/login`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(800);
-  await page.click('button:has-text("Enter Demo")');
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1500);
+  await goto(page, `${BASE_URL}/admin/login`, 800);
+  await waitForUi(page, 800);
+  await Promise.all([
+    page.waitForURL(/\/admin(?:\/)?$/),
+    page.getByRole('button', { name: 'Enter Demo' }).click(),
+  ]);
+  await waitForUi(page, 1500);
   console.log('Logged in. Starting screenshots...\n');
 
   // -- 01: Bot list ---------------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/rag-bots`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1200);
-  await screenshot(page, '01-bot-list.png', 'Bot list with sidebar');
+  await goto(page, `${BASE_URL}/admin/rag-bots`);
+  await screenshot(page, '01-bot-list.png', 'Bot list with sidebar', { fullPage: false });
 
   // -- 02: Bot edit ---------------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/rag-bots`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(800);
+  await goto(page, `${BASE_URL}/admin/rag-bots`, 800);
   const firstBotLink = page.locator('table tbody tr:first-child td:first-child a, .fi-resource-table tbody tr:first-child a').first();
   if (await firstBotLink.count() === 0) {
     // try clicking the first row
@@ -52,152 +109,116 @@ async function main() {
   } else {
     await firstBotLink.click();
   }
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1500);
+  await waitForUi(page, 1500);
   // Scroll to show configuration sections
   await page.evaluate(() => window.scrollTo(0, 0));
-  await screenshot(page, '02-bot-edit.png', 'Bot edit page with analytics');
+  await screenshot(page, '02-bot-edit.png', 'Bot edit page with analytics', { fullPage: false });
 
   // -- 03: Source ingestion -------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/rag-sources`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1200);
-  await screenshot(page, '03-source-ingestion-table.png', 'Knowledge sources table');
+  await goto(page, `${BASE_URL}/admin/rag-sources`);
+  await screenshot(page, '03-source-ingestion-table.png', 'Knowledge sources table', { fullPage: false });
 
   // -- 04: Conversations ----------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/rag-conversations`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1200);
+  await goto(page, `${BASE_URL}/admin/rag-conversations`);
   // Try to open first conversation
   const firstConvo = page.locator('table tbody tr:first-child td:first-child a, tr:has(td) td:first-child').first();
   if (await firstConvo.count() > 0) {
     await firstConvo.click();
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
+    await waitForUi(page, 1500);
   }
   await page.evaluate(() => window.scrollTo(0, 0));
-  await screenshot(page, '04-conversation-transcript.png', 'Conversation transcript');
+  await screenshot(page, '04-conversation-transcript.png', 'Conversation transcript', { fullPage: false });
+
+  // -- 05: Widget desktop ---------------------------------------------------
+  await goto(page, `${BASE_URL}/?demo=feature-showcase#widget-demo`, 1800);
+  const widgetSection = page.locator('#widget-demo').first();
+  await widgetSection.waitFor();
+  await widgetSection.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(1800);
+  await screenshot(
+    widgetSection,
+    '05-widget-desktop.png',
+    'Landing-page widget demo with light and dark themes'
+  );
 
   // -- 07: Workflow list ----------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/agent-workflows`);
-  await page.waitForLoadState('networkidle');
+  await goto(page, `${BASE_URL}/admin/agent-workflows`);
+  await screenshot(page, '07-workflow-list.png', 'Workflow list', { fullPage: false });
+
+  // -- 08: Workflow editor — cleaner branching workflow ---------------------
+  await goto(page, WORKFLOW_EDITOR_URL, 1500);
+  await waitForWorkflow(page);
+  await page.getByRole('tab', { name: 'Nodes' }).click();
   await page.waitForTimeout(1200);
-  await screenshot(page, '07-workflow-list.png', 'Workflow list');
+  await fitWorkflowIntoView(page);
+  await zoomWorkflow(page, 2);
+  await page.evaluate(() => window.scrollTo(0, 40));
+  await page.waitForTimeout(400);
+  await screenshot(
+    page,
+    '08-workflow-editor-canvas.png',
+    'Workflow editor canvas with retrieval, AI, branching, and actions',
+    {
+      clip: {
+        x: 250,
+        y: 90,
+        width: 1310,
+        height: 520,
+      },
+    }
+  );
 
-  // -- 08: Workflow editor — canvas + node config panel --------------------
-  // Use Plugin Feedback Collector (ID 10) which has a 24-node, multi-branch canvas
-  await page.goto(`${BASE_URL}/admin/agent-workflows/10/edit`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(3500); // Vue canvas needs time to render
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await screenshot(page, '08-workflow-editor-canvas.png', 'Workflow editor Nodes canvas');
-
-  // Click an AI Agent node to reveal its CONFIG panel (Provider / Model / System prompt)
-  const aiAgentNode = page.locator('.fi-wf-node').filter({ hasText: 'AI Agent' }).first();
+  // Click an AI Agent node to reveal its config panel.
+  const aiAgentNode = page.locator('.fi-wf-node').filter({ hasText: 'Generate Answer' }).first();
   if (await aiAgentNode.count() > 0) {
     await aiAgentNode.scrollIntoViewIfNeeded();
     await aiAgentNode.click();
-    await page.waitForTimeout(2500); // wait for CONFIG panel to settle
-    // Dismiss any "Publish" modal that may appear
-    const publishModal = page.locator('[role="dialog"]').filter({ hasText: 'Publish' }).first();
-    if (await publishModal.isVisible().catch(() => false)) {
-      await page.keyboard.press('Escape');
-      await page.waitForTimeout(800);
-      await aiAgentNode.click();
-      await page.waitForTimeout(2500);
-    }
-    await screenshot(page, '08b-workflow-node-config.png', 'Workflow node config panel open');
+    await page.waitForTimeout(1800);
+    await screenshot(page, '08b-workflow-node-config.png', 'Workflow node config panel open', { fullPage: false });
   }
 
-  // Navigate to AI Draft tab — close any open modal first
+  // Navigate to AI Draft tab.
   await page.keyboard.press('Escape');
   await page.waitForTimeout(600);
-  const generateTab = page.locator('.fi-wf-sidebar-tab:has-text("AI Draft")').first();
-  if (await generateTab.count() > 0) {
-    await generateTab.click();
-    await page.waitForTimeout(1500);
-    await screenshot(page, '09-workflow-generate-tab.png', 'Workflow AI Draft generate tab');
-  }
-
-  // -- 10: Workflow runs with real trace data (Buyer Concierge — ID 2) ------
-  // This workflow has HALTED + COMPLETED runs with full step traces
-  await page.goto(`${BASE_URL}/admin/agent-workflows/2/edit`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(3000);
-  await page.click('.fi-wf-sidebar-tab:has-text("Runs")');
+  await page.getByRole('tab', { name: 'AI Draft' }).click();
   await page.waitForTimeout(1500);
-  await screenshot(page, '10-workflow-runs-tab.png', 'Workflow runs list with run status badges');
+  await page.evaluate(() => window.scrollTo(0, 120));
+  await screenshot(page, '09-workflow-generate-tab.png', 'Workflow AI Draft generate tab', { fullPage: false });
 
-  // Click on Run #3 (HALTED — has full variable trace) to expand it
-  const run3 = page.locator('text=Run #3').first();
-  if (await run3.count() > 0) {
-    await run3.click();
-    await page.waitForTimeout(1200);
-    await screenshot(page, '10b-workflow-run-trace.png', 'Workflow run trace with step details and variables');
+  // -- 10: Workflow runs with completed path highlighting -------------------
+  await goto(page, WORKFLOW_RUNS_URL, 1500);
+  await waitForWorkflow(page);
+  await page.getByRole('tab', { name: 'Runs' }).click();
+  await page.waitForTimeout(1200);
+  const completedRun = page.getByRole('button', { name: /Test Completed #20/i }).first();
+  if (await completedRun.count() > 0) {
+    await completedRun.click();
+    await page.waitForTimeout(900);
   }
+  await waitForRunDetails(page);
+  await fitWorkflowIntoView(page);
+  await zoomWorkflow(page, 1);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await screenshot(page, '10-workflow-runs-tab.png', 'Workflow runs list with completed execution state', { fullPage: false });
 
-  // Navigate to Releases tab (still on workflow 2)
-  const releasesTab = page.locator('.fi-wf-sidebar-tab:has-text("Releases")').first();
-  if (await releasesTab.count() > 0) {
-    await releasesTab.click();
-    await page.waitForTimeout(1000);
-    await screenshot(page, '11-workflow-releases-tab.png', 'Workflow releases tab');
-  }
+  await scrollWorkflowIntoView(page, 240);
+  await waitForRunDetails(page);
+  await screenshot(page, '10b-workflow-run-trace.png', 'Workflow run trace with executed path highlighted on the canvas', { fullPage: false });
 
-  // Back to workflow 10 for the generate tab (it has a richer AI Draft panel)
-  await page.goto(`${BASE_URL}/admin/agent-workflows/10/edit`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(3000);
-  const generateTab2 = page.locator('.fi-wf-sidebar-tab:has-text("AI Draft")').first();
-  if (await generateTab2.count() > 0) {
-    await generateTab2.click();
-    await page.waitForTimeout(1500);
-    await screenshot(page, '09-workflow-generate-tab.png', 'Workflow AI Draft generate tab with system prompt');
-  }
+  // Navigate to Versions tab (still on workflow 9)
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(400);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.getByRole('tab', { name: 'Versions' }).click();
+  await page.waitForTimeout(1000);
+  await fitWorkflowIntoView(page);
+  await zoomWorkflow(page, 1);
+  await scrollWorkflowIntoView(page, 160);
+  await screenshot(page, '11-workflow-releases-tab.png', 'Workflow versions tab', { fullPage: false });
 
   // -- 12: API Connectors ---------------------------------------------------
-  await page.goto(`${BASE_URL}/admin/api-connectors`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(1200);
-  await screenshot(page, '12-api-connectors-list.png', 'API connectors list');
-
-  // -- 05: Widget desktop ---------------------------------------------------
-  // Use the bot test page for a live widget screenshot
-  await page.goto(`${BASE_URL}/admin/rag-bots`);
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(800);
-  // Click the first bot's "Embed Snippet" or test page
-  const firstBotTestLink = page.locator('table tbody tr:first-child td:first-child a').first();
-  if (await firstBotTestLink.count() > 0) {
-    await firstBotTestLink.click();
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1500);
-    // Click Embed Snippet or go to test page with widget
-    const testWidgetBtn = page.locator('button:has-text("Test Widget"), a:has-text("Test Widget")').first();
-    if (await testWidgetBtn.count() > 0) {
-      await testWidgetBtn.click();
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(2000);
-    }
-  }
-  // Open the chat launcher if visible
-  const launcher = page.locator('[data-testid="chat-launcher"], .fi-chat-launcher, button[aria-label*="chat"]').first();
-  if (await launcher.count() > 0) {
-    await launcher.click();
-    await page.waitForTimeout(1500);
-  }
-  await screenshot(page, '05-widget-desktop.png', 'Widget desktop view');
-
-  // -- 06: Widget mobile ----------------------------------------------------
-  await page.setViewportSize({ width: 390, height: 844 });
-  await page.waitForTimeout(800);
-  const launcher2 = page.locator('[data-testid="chat-launcher"], .fi-chat-launcher, button[aria-label*="chat"]').first();
-  if (await launcher2.count() > 0) {
-    await launcher2.click();
-    await page.waitForTimeout(1500);
-  }
-  await screenshot(page, '06-widget-mobile.png', 'Widget mobile view');
-  await page.setViewportSize(VIEWPORT); // Reset
+  await goto(page, `${BASE_URL}/admin/api-connectors`);
+  await screenshot(page, '12-api-connectors-list.png', 'API connectors list', { fullPage: false });
 
   await browser.close();
   console.log('\nAll screenshots saved to:', OUT_DIR);

@@ -34,15 +34,13 @@ Inspect conversation transcripts without leaving Filament. Review what users ask
 
 ### Chat widget
 
-The embeddable widget ships polished across device sizes.
+The embeddable widget ships as a polished landing-page experience with parallel light and dark themes.
 
 ![Widget — desktop](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
 
-![Widget — mobile](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/06-widget-mobile.png)
-
 ### Visual workflow builder
 
-Design agentic flows visually — multi-branch canvases with Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Switch/Router, Join, Condition, Action, and HTTP Request nodes.
+Design agentic flows visually without turning the canvas into noise. The editor keeps branching, AI, retrieval, and actions readable in one view.
 
 ![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
 
@@ -50,7 +48,7 @@ Design agentic flows visually — multi-branch canvases with Trigger, Send Messa
 
 ### Node configuration
 
-Click any canvas node to configure it inline — AI Agent nodes expose Provider, Model, and System Prompt fields.
+Click any canvas node to configure it inline — AI Agent nodes expose Provider, Model, and System Prompt fields directly beside the flow.
 
 ![Workflow node config panel — AI Agent open](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08b-workflow-node-config.png)
 
@@ -62,15 +60,15 @@ Describe the flow you need in natural language, generate a draft workflow, then 
 
 ### Run history and live tracing
 
-Inspect every execution — current node, path taken, variables, halt reason, and timestamps.
+Inspect every execution with completed-path highlighting, step traces, variables, halt reasons, and timestamps.
 
-![Workflow runs tab — HALTED and COMPLETED badges](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-runs-tab.png)
+![Workflow runs tab — completed run selected](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-runs-tab.png)
 
-![Workflow run trace — step path, current node highlighted on canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10b-workflow-run-trace.png)
+![Workflow run trace — executed branch highlighted on canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10b-workflow-run-trace.png)
 
-### Releases
+### Versions and releases
 
-Publish versioned releases with release notes. Roll back to any prior version in seconds.
+Publish versioned releases with notes and roll back to any prior version in seconds.
 
 ![Workflow releases tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/11-workflow-releases-tab.png)
 
@@ -276,27 +274,27 @@ npm install @heiner/filament-agentic-chatbot-widget
 ```
 
 ```jsx
-import { ChatWidget } from '@heiner/filament-agentic-chatbot-widget';
+import { ChatWidget } from "@heiner/filament-agentic-chatbot-widget";
 
-<ChatWidget botId="YOUR_BOT_ID" token="YOUR_SIGNED_TOKEN" />
+<ChatWidget botId="YOUR_BOT_ID" token="YOUR_SIGNED_TOKEN" />;
 ```
 
 ---
 
 ## Workflow Node Types
 
-| Node | Purpose |
-|------|---------|
-| **Trigger** | Entry point — fires when a new user message starts the conversation |
-| **Send Message** | Send a text or formatted card message to the user |
-| **Collect Input** | Prompt the user for a value; store the reply in a named variable |
-| **AI Agent** | Generate a response using a configurable LLM and system prompt |
-| **Knowledge Base** | Run a vector search; inject top-N results into the AI context |
-| **Switch / Router** | Route to N branches + default based on variable value or AI classification |
-| **Join** | Merge multiple parallel branches back into a single path |
-| **Condition** | Boolean if/else branch based on variable or expression |
-| **Action (Database)** | Persist collected variables to your database |
-| **HTTP Request** | Call an external API; reference an API Connector for credentials |
+| Node                  | Purpose                                                                    |
+| --------------------- | -------------------------------------------------------------------------- |
+| **Trigger**           | Entry point — fires when a new user message starts the conversation        |
+| **Send Message**      | Send a text or formatted card message to the user                          |
+| **Collect Input**     | Prompt the user for a value; store the reply in a named variable           |
+| **AI Agent**          | Generate a response using a configurable LLM and system prompt             |
+| **Knowledge Base**    | Run a vector search; inject top-N results into the AI context              |
+| **Switch / Router**   | Route to N branches + default based on variable value or AI classification |
+| **Join**              | Merge multiple parallel branches back into a single path                   |
+| **Condition**         | Boolean if/else branch based on variable or expression                     |
+| **Action (Database)** | Persist collected variables to your database                               |
+| **HTTP Request**      | Call an external API; reference an API Connector for credentials           |
 
 ---
 
@@ -304,15 +302,15 @@ import { ChatWidget } from '@heiner/filament-agentic-chatbot-widget';
 
 Seven ready-to-import examples covering common agentic patterns:
 
-| Workflow | What it demonstrates |
-|----------|---------------------|
-| SaaS Onboarding | Progressive intake + enterprise lead routing |
-| Support Ticket Router | AI intent classification → 4-branch switch |
-| E-Commerce Order Status | External API lookup + status-based responses |
-| Lead Qualification | Multi-step data collection + CRM write action |
-| Webhook Inventory Alert | Headless webhook trigger → multi-channel notifications |
-| FAQ with Confidence Check | Two-stage AI confidence evaluation before answering |
-| Content Research Assistant | KB search → outline → full draft generation |
+| Workflow                   | What it demonstrates                                   |
+| -------------------------- | ------------------------------------------------------ |
+| SaaS Onboarding            | Progressive intake + enterprise lead routing           |
+| Support Ticket Router      | AI intent classification → 4-branch switch             |
+| E-Commerce Order Status    | External API lookup + status-based responses           |
+| Lead Qualification         | Multi-step data collection + CRM write action          |
+| Webhook Inventory Alert    | Headless webhook trigger → multi-channel notifications |
+| FAQ with Confidence Check  | Two-stage AI confidence evaluation before answering    |
+| Content Research Assistant | KB search → outline → full draft generation            |
 
 **[Browse and download on GitHub](https://github.com/heinergiehl/agentic-chatbot-workflow-examples)**
 

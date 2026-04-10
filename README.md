@@ -92,13 +92,13 @@ See which workflows are active, which bot they belong to, and which drafts are r
 
 ### Visual workflow editor
 
-Design retrieval-aware, branching, agentic flows directly inside Filament.
+Design retrieval-aware, branching, agentic flows directly inside Filament without losing readability on the canvas.
 
 ![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
-### Workflow generation, runs, and releases
+### Workflow drafting, completed runs, and versions
 
-Draft workflows from prompts, inspect execution traces, and publish changes with release notes.
+Draft workflows from prompts, inspect completed execution paths, and publish changes with version notes.
 
 ![Workflow generate tab](./images/agentic-chatbot/09-workflow-generate-tab.png)
 
@@ -114,11 +114,9 @@ Manage reusable external API profiles for workflow nodes.
 
 ### Widget experience
 
-Preview the embeddable widget on desktop and mobile.
+Preview the embeddable widget in a polished landing-page demo with parallel light and dark themes.
 
 ![Widget desktop](./images/agentic-chatbot/05-widget-desktop.png)
-
-![Widget mobile](./images/agentic-chatbot/06-widget-mobile.png)
 
 ## Documentation Map
 
