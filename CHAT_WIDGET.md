@@ -8,6 +8,7 @@ The chat widget is the embeddable UI layer that connects end users to your confi
 - Opens into a full chat panel with message history, streaming responses, and source citations
 - Connects to your Laravel backend via the plugin's API routes
 - Supports signed tokens for access control
+- Supports assistant-message feedback buttons for quick helpful / not-helpful signals
 - Adapts to desktop and mobile screen sizes
 
 ## Customization Options
@@ -26,12 +27,12 @@ Per bot, you can customize all of these from the Filament panel:
 | **Compact mode** | Smaller widget footprint for tight layouts | `true` / `false` |
 | **Show sources** | Whether to display cited source references | `true` / `false` |
 | **Input placeholder** | Placeholder text in the message input | "Type a message..." |
-| **Response format** | `markdown` or `plain` | `markdown` |
+| **Response format** | `markdown` or `plain_text` | `markdown` |
 | **Language** | Widget UI language code | `en`, `de`, `fr`, `es` |
 
 ## Style Templates
 
-The widget ships with seven visual themes:
+The widget ships with eleven visual themes:
 
 | Template | Description |
 |----------|-------------|
@@ -42,6 +43,10 @@ The widget ships with seven visual themes:
 | `noir` | Dark background, minimal chrome |
 | `aurora` | Soft gradients and warm tones |
 | `minimal` | Maximum whitespace, understated UI |
+| `x-dark` | Bold dark surface inspired by X |
+| `imessage` | Bubble-forward chat styling |
+| `openai` | Clean assistant UI inspired by ChatGPT |
+| `solar` | Warm, high-contrast light palette |
 
 ## Font Presets
 
@@ -54,6 +59,17 @@ The widget ships with seven visual themes:
 | `technical-mono` | System monospace |
 
 ## Embedding The Widget
+
+### Same Laravel App / Same Origin
+
+The simplest and recommended setup is to embed the widget from the same Laravel app that serves Filament Agentic Chatbot.
+
+- The widget script is served by the same app.
+- The chat API calls stay on the same origin by default.
+- You do not need a separate frontend just to use the widget.
+- In the common same-origin case, you can usually omit `data-api-base` and let the script infer the app origin from its own `src` URL.
+
+If you render the widget from Blade, Livewire, or an Inertia page inside the same monolith, that is the easiest path operationally and from a security perspective.
 
 ### Option 1: Script Tag (simplest)
 
@@ -118,7 +134,7 @@ mountFilamentAgenticChatbotWidget({
 });
 ```
 
-The NPM loader creates and appends the `<script>` element with the right `data-*` attributes. It is a thin wrapper — no bundled UI framework.
+The NPM loader creates and appends the `<script>` element with the right `data-*` attributes. It is a thin wrapper — no bundled UI framework and no iframe wrapper.
 
 ### Available NPM Options
 
@@ -193,6 +209,18 @@ Each bot can define a list of allowed domains. If set, the widget's CORS middlew
 
 The plugin includes a `HandleWidgetCors` middleware that automatically sets CORS headers based on the bot's allowed domain list. No additional Laravel CORS configuration is needed for the widget endpoints.
 
+If you embed the widget on pages served by the same Laravel monolith, CORS is usually a non-issue because the widget script and chat API calls stay on the same origin.
+
+## Content Security Policy
+
+Same-origin embedding avoids cross-origin complexity, but it does not automatically bypass CSP.
+
+- The widget is loaded through a script tag.
+- The widget calls the chat API with `fetch()`.
+- The current widget runtime injects its own `<style>` tag for the UI.
+
+That means a very strict CSP can still block the widget even on the same app. In practice, pages that host the widget should allow the same-origin script and API calls, and should not block the widget's injected styles.
+
 ## Public vs Internal Widgets
 
 ### Public Widget
@@ -207,9 +235,16 @@ Best for admin support dashboard, back-office workflow assistance, authenticated
 
 Configuration: `area="member"` or `area="admin"`, requires auth guard, signing enabled.
 
+## Feedback And Session Controls
+
+- Assistant messages expose helpful / not-helpful feedback buttons with optional note capture.
+- Session history can be loaded back into the widget for returning users.
+- Privacy workflows can export or delete a session through the chat API endpoints.
+- Review feedback, citation coverage, and knowledge gaps from the bot's Analytics page inside Filament.
+
 ## Testing The Widget
 
-The plugin provides a built-in **widget preview page** in Filament where you can test the widget for any bot without embedding it on an external site.
+The bot edit page provides a built-in **Live Preview** section in Filament where you can test the widget for the current bot without embedding it on an external site.
 
 ## Related Docs
 
