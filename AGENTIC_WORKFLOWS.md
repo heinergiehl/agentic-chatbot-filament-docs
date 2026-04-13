@@ -45,9 +45,9 @@ See active and draft workflows, linked bots, and release-ready configurations fr
 
 ### Visual editor
 
-Build multi-step assistants with retrieval, branching, AI nodes, actions, and external connectors in one canvas.
+Open the workflow sidebar to browse available node types before wiring them into a multi-step assistant.
 
-![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+![Workflow nodes sidebar](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### AI-assisted drafting
 

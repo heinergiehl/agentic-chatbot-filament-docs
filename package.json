@@ -1,0 +1,15 @@
+{
+  "name": "agentic-chatbot-filament-docs",
+  "version": "1.0.0",
+  "description": "Public documentation for the [heiner/filament-agentic-chatbot](https://github.com/heinergiehl/filament-agentic-chatbot) plugin.",
+  "main": "take-screenshots.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "playwright": "^1.59.1"
+  }
+}

@@ -10,9 +10,10 @@ const fs = require('fs');
 const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://filament-agentic-chatbot.localhost:8000';
 const OUT_DIR = path.join(__dirname, 'images', 'agentic-chatbot');
 
-const VIEWPORT = { width: 1600, height: 1040 };
+const VIEWPORT = { width: 1600, height: 1200 };
+const BOT_EDIT_URL = `${BASE_URL}/admin/rag-bots/3/edit`;
 const WORKFLOW_EDITOR_URL = `${BASE_URL}/admin/agent-workflows/8/edit`;
-const WORKFLOW_RUNS_URL = `${BASE_URL}/admin/agent-workflows/9/edit`;
+const WORKFLOW_RUNS_URL = `${BASE_URL}/admin/agent-workflows/2/edit`;
 
 async function screenshot(target, name, description, options = {}) {
   const dest = path.join(OUT_DIR, name);
@@ -30,6 +31,19 @@ async function goto(page, url, delay = 1200) {
   await waitForUi(page, delay);
 }
 
+async function scrollPage(page, y = 0, delay = 600) {
+  await page.evaluate((offset) => window.scrollTo(0, offset), y);
+  await page.waitForTimeout(delay);
+}
+
+async function waitForBotEdit(page) {
+  await page.getByRole('tab', { name: 'Setup' }).waitFor({ state: 'attached' });
+  await page.getByRole('heading', { name: 'Identity & Model' }).waitFor({ state: 'attached' });
+  await page.getByRole('textbox', { name: 'Name*' }).waitFor({ state: 'visible' });
+  await page.getByRole('textbox', { name: 'System Prompt' }).waitFor({ state: 'visible' });
+  await page.waitForTimeout(1800);
+}
+
 async function waitForWorkflow(page) {
   await page.waitForLoadState('networkidle');
   await page.waitForSelector('.fi-wf-node');
@@ -39,6 +53,74 @@ async function waitForWorkflow(page) {
 async function scrollWorkflowIntoView(page, y = 220) {
   await page.evaluate((offset) => window.scrollTo(0, offset), y);
   await page.waitForTimeout(500);
+}
+
+async function openConversationWithMessages(page) {
+  await goto(page, `${BASE_URL}/admin/rag-conversations`, 1200);
+
+  const href = await page.locator('table tbody tr').evaluateAll((rows) => {
+    for (const row of rows) {
+      const cells = Array.from(row.querySelectorAll('td'));
+      const rawMessages = (cells[3]?.textContent || '').replace(/[^\d]/g, '');
+      const messages = Number.parseInt(rawMessages, 10);
+      const link = row.querySelector('a[href]');
+
+      if (link && Number.isFinite(messages) && messages > 0) {
+        return link.href;
+      }
+    }
+
+    return rows[0]?.querySelector('a[href]')?.href || null;
+  });
+
+  if (!href) {
+    throw new Error('Could not find a conversation row to capture.');
+  }
+
+  await goto(page, href, 1500);
+  await page.locator('.fi-convo-transcript, .fi-convo-bubble-bot, .fi-convo-bubble-user').first().waitFor();
+  await page.waitForTimeout(1500);
+}
+
+async function captureWorkflowSidebar(page, name, description) {
+  const sidebar = page.locator('.fi-wf-panel-sidebar').first();
+  await sidebar.waitFor();
+  await page.waitForTimeout(900);
+  await screenshot(sidebar, name, description);
+}
+
+async function prepareWorkflowNodesSidebar(page) {
+  await page.evaluate(() => {
+    const sidebar = document.querySelector('.fi-wf-panel-sidebar');
+    const nodesWrapper = document.querySelector('.fi-wf-nodes-catalog-wrapper');
+    const nodesSection = document.querySelector('.fi-wf-sidebar-nodes');
+    const variablesSection = document.querySelector('.fi-wf-vars-section');
+
+    if (sidebar instanceof HTMLElement) {
+      sidebar.style.height = '620px';
+      sidebar.style.maxHeight = '620px';
+    }
+
+    if (nodesWrapper instanceof HTMLElement) {
+      nodesWrapper.style.height = '420px';
+      nodesWrapper.style.maxHeight = '420px';
+      nodesWrapper.style.flex = '0 0 420px';
+      nodesWrapper.style.overflow = 'hidden';
+    }
+
+    if (nodesSection instanceof HTMLElement) {
+      nodesSection.style.height = '420px';
+      nodesSection.style.maxHeight = '420px';
+      nodesSection.style.overflowY = 'auto';
+      nodesSection.scrollTop = 0;
+    }
+
+    if (variablesSection instanceof HTMLElement) {
+      variablesSection.style.display = 'none';
+    }
+  });
+
+  await page.waitForTimeout(700);
 }
 
 async function clickIfPresent(locator) {
@@ -101,32 +183,18 @@ async function main() {
   await screenshot(page, '01-bot-list.png', 'Bot list with sidebar', { fullPage: false });
 
   // -- 02: Bot edit ---------------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/rag-bots`, 800);
-  const firstBotLink = page.locator('table tbody tr:first-child td:first-child a, .fi-resource-table tbody tr:first-child a').first();
-  if (await firstBotLink.count() === 0) {
-    // try clicking the first row
-    await page.locator('tr:has(td)').first().click();
-  } else {
-    await firstBotLink.click();
-  }
-  await waitForUi(page, 1500);
-  // Scroll to show configuration sections
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await screenshot(page, '02-bot-edit.png', 'Bot edit page with analytics', { fullPage: false });
+  await goto(page, BOT_EDIT_URL, 1500);
+  await waitForBotEdit(page);
+  await scrollPage(page, 180, 700);
+  await screenshot(page, '02-bot-edit.png', 'Bot edit page with setup tabs and configuration sections', { fullPage: false });
 
   // -- 03: Source ingestion -------------------------------------------------
   await goto(page, `${BASE_URL}/admin/rag-sources`);
   await screenshot(page, '03-source-ingestion-table.png', 'Knowledge sources table', { fullPage: false });
 
   // -- 04: Conversations ----------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/rag-conversations`);
-  // Try to open first conversation
-  const firstConvo = page.locator('table tbody tr:first-child td:first-child a, tr:has(td) td:first-child').first();
-  if (await firstConvo.count() > 0) {
-    await firstConvo.click();
-    await waitForUi(page, 1500);
-  }
-  await page.evaluate(() => window.scrollTo(0, 0));
+  await openConversationWithMessages(page);
+  await scrollPage(page, 120, 500);
   await screenshot(page, '04-conversation-transcript.png', 'Conversation transcript', { fullPage: false });
 
   // -- 05: Widget desktop ---------------------------------------------------
@@ -150,23 +218,8 @@ async function main() {
   await waitForWorkflow(page);
   await page.getByRole('tab', { name: 'Nodes' }).click();
   await page.waitForTimeout(1200);
-  await fitWorkflowIntoView(page);
-  await zoomWorkflow(page, 2);
-  await page.evaluate(() => window.scrollTo(0, 40));
-  await page.waitForTimeout(400);
-  await screenshot(
-    page,
-    '08-workflow-editor-canvas.png',
-    'Workflow editor canvas with retrieval, AI, branching, and actions',
-    {
-      clip: {
-        x: 250,
-        y: 90,
-        width: 1310,
-        height: 520,
-      },
-    }
-  );
+  await prepareWorkflowNodesSidebar(page);
+  await captureWorkflowSidebar(page, '08-workflow-editor-canvas.png', 'Workflow nodes sidebar');
 
   // Click an AI Agent node to reveal its config panel.
   const aiAgentNode = page.locator('.fi-wf-node').filter({ hasText: 'Generate Answer' }).first();
@@ -182,39 +235,27 @@ async function main() {
   await page.waitForTimeout(600);
   await page.getByRole('tab', { name: 'AI Draft' }).click();
   await page.waitForTimeout(1500);
-  await page.evaluate(() => window.scrollTo(0, 120));
-  await screenshot(page, '09-workflow-generate-tab.png', 'Workflow AI Draft generate tab', { fullPage: false });
+  await captureWorkflowSidebar(page, '09-workflow-generate-tab.png', 'Workflow AI Draft sidebar');
 
   // -- 10: Workflow runs with completed path highlighting -------------------
   await goto(page, WORKFLOW_RUNS_URL, 1500);
   await waitForWorkflow(page);
   await page.getByRole('tab', { name: 'Runs' }).click();
   await page.waitForTimeout(1200);
-  const completedRun = page.getByRole('button', { name: /Test Completed #20/i }).first();
-  if (await completedRun.count() > 0) {
-    await completedRun.click();
-    await page.waitForTimeout(900);
-  }
   await waitForRunDetails(page);
-  await fitWorkflowIntoView(page);
-  await zoomWorkflow(page, 1);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await screenshot(page, '10-workflow-runs-tab.png', 'Workflow runs list with completed execution state', { fullPage: false });
+  await captureWorkflowSidebar(page, '10-workflow-runs-tab.png', 'Workflow runs sidebar with completed execution state');
 
   await scrollWorkflowIntoView(page, 240);
   await waitForRunDetails(page);
   await screenshot(page, '10b-workflow-run-trace.png', 'Workflow run trace with executed path highlighted on the canvas', { fullPage: false });
 
-  // Navigate to Versions tab (still on workflow 9)
+  // Navigate to Versions tab on the workflow with run history.
   await page.keyboard.press('Escape');
   await page.waitForTimeout(400);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.getByRole('tab', { name: 'Versions' }).click();
   await page.waitForTimeout(1000);
-  await fitWorkflowIntoView(page);
-  await zoomWorkflow(page, 1);
-  await scrollWorkflowIntoView(page, 160);
-  await screenshot(page, '11-workflow-releases-tab.png', 'Workflow versions tab', { fullPage: false });
+  await captureWorkflowSidebar(page, '11-workflow-releases-tab.png', 'Workflow versions sidebar');
 
   // -- 12: API Connectors ---------------------------------------------------
   await goto(page, `${BASE_URL}/admin/api-connectors`);

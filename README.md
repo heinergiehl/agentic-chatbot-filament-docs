@@ -92,9 +92,9 @@ See which workflows are active, which bot they belong to, and which drafts are r
 
 ### Visual workflow editor
 
-Design retrieval-aware, branching, agentic flows directly inside Filament without losing readability on the canvas.
+Browse the workflow node catalog from the sidebar so branching, AI, retrieval, and integrations stay discoverable while you build.
 
-![Workflow editor canvas](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+![Workflow nodes sidebar](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### Workflow drafting, completed runs, and versions
 

@@ -40,11 +40,11 @@ The embeddable widget ships as a polished landing-page experience with parallel 
 
 ### Visual workflow builder
 
-Design agentic flows visually without turning the canvas into noise. The editor keeps branching, AI, retrieval, and actions readable in one view.
+Start from the workflow sidebar to browse node types, then assemble branching, AI, retrieval, and action flows visually.
 
 ![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
 
-![Workflow editor canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
+![Workflow nodes sidebar](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### Node configuration
 
