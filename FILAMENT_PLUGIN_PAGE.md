@@ -18,7 +18,11 @@ Manage multiple assistants from a Filament-native control plane. Each bot has it
 
 ![Bot list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/01-bot-list.png)
 
-![Bot edit](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
+### Bot customization
+
+Tune widget style, copy, quick prompts, area overrides, and live preview without leaving the bot editor.
+
+![Bot widget customization](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
 
 ### Knowledge sources
 
@@ -34,23 +38,17 @@ Inspect conversation transcripts without leaving Filament. Review what users ask
 
 ### Chat widget
 
-The embeddable widget ships as a polished landing-page experience with parallel light and dark themes.
+Show the live embedded chat experience up close, including the branded header, structured replies, and quick prompts.
 
-![Widget — desktop](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
+![Widget close-up conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
 
 ### Visual workflow builder
 
-Start from the workflow sidebar to browse node types, then assemble branching, AI, retrieval, and action flows visually.
+Use the plugin feedback collector as a concrete example: the node library stays on the left, the canvas sits in the middle, and inline settings remain visible on the right while you build.
 
 ![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
 
-![Workflow nodes sidebar](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
-
-### Node configuration
-
-Click any canvas node to configure it inline — AI Agent nodes expose Provider, Model, and System Prompt fields directly beside the flow.
-
-![Workflow node config panel — AI Agent open](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08b-workflow-node-config.png)
+![Workflow editor with node library and settings panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### AI-assisted drafting
 

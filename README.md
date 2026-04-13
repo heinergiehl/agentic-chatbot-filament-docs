@@ -66,11 +66,11 @@ Manage multiple bots from inside Filament.
 
 ![Bot list](./images/agentic-chatbot/01-bot-list.png)
 
-### Bot configuration
+### Bot customization
 
-Configure prompt, provider, retrieval, access, and widget settings per bot.
+Tune widget style, copy, quick prompts, area overrides, and live preview without leaving the bot editor.
 
-![Bot edit](./images/agentic-chatbot/02-bot-edit.png)
+![Bot widget customization](./images/agentic-chatbot/02-bot-edit.png)
 
 ### Source ingestion visibility
 
@@ -92,9 +92,9 @@ See which workflows are active, which bot they belong to, and which drafts are r
 
 ### Visual workflow editor
 
-Browse the workflow node catalog from the sidebar so branching, AI, retrieval, and integrations stay discoverable while you build.
+Open a real plugin feedback collector workflow with the node library on the left, the canvas in the center, and inline settings on the right.
 
-![Workflow nodes sidebar](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### Workflow drafting, completed runs, and versions
 
@@ -114,9 +114,9 @@ Manage reusable external API profiles for workflow nodes.
 
 ### Widget experience
 
-Preview the embeddable widget in a polished landing-page demo with parallel light and dark themes.
+Show the embeddable chat experience up close, including the branded header, structured replies, and quick-prompt chips.
 
-![Widget desktop](./images/agentic-chatbot/05-widget-desktop.png)
+![Widget close-up conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
 
 ## Documentation Map
 

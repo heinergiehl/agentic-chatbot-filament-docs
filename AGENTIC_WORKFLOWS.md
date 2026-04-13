@@ -45,9 +45,9 @@ See active and draft workflows, linked bots, and release-ready configurations fr
 
 ### Visual editor
 
-Open the workflow sidebar to browse available node types before wiring them into a multi-step assistant.
+Use the plugin feedback collector as a concrete example: the node library stays on the left, the canvas sits in the middle, and inline settings remain visible on the right while you build.
 
-![Workflow nodes sidebar](./images/agentic-chatbot/08-workflow-editor-canvas.png)
+![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### AI-assisted drafting
 

@@ -11,8 +11,8 @@ const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://filament-agentic-c
 const OUT_DIR = path.join(__dirname, 'images', 'agentic-chatbot');
 
 const VIEWPORT = { width: 1600, height: 1200 };
-const BOT_EDIT_URL = `${BASE_URL}/admin/rag-bots/3/edit`;
-const WORKFLOW_EDITOR_URL = `${BASE_URL}/admin/agent-workflows/8/edit`;
+const BOT_EDIT_URL = `${BASE_URL}/admin/rag-bots/1/edit`;
+const WORKFLOW_EDITOR_URL = `${BASE_URL}/admin/agent-workflows/9/edit`;
 const WORKFLOW_RUNS_URL = `${BASE_URL}/admin/agent-workflows/2/edit`;
 
 async function screenshot(target, name, description, options = {}) {
@@ -82,72 +82,53 @@ async function openConversationWithMessages(page) {
   await page.waitForTimeout(1500);
 }
 
+async function dismissAnalyticsPrompt(page) {
+  const buttons = [
+    page.getByRole('button', { name: 'Essential only' }),
+    page.getByRole('button', { name: 'Accept analytics' }),
+  ];
+
+  for (const button of buttons) {
+    if ((await button.count()) > 0 && await button.first().isVisible().catch(() => false)) {
+      await button.first().click();
+      await page.waitForTimeout(700);
+      return;
+    }
+  }
+}
+
+async function captureWidgetCloseUp(page, name, description) {
+  const selectors = [
+    '#widget-demo [data-agentic-chatbot-widget]',
+    '#widget-demo .fi-acb-window',
+    '#widget-demo .fi-acb-widget',
+    '#widget-demo .fi-chat-widget',
+    '#widget-demo iframe',
+  ];
+
+  for (const selector of selectors) {
+    const locator = page.locator(selector).first();
+
+    if ((await locator.count()) > 0) {
+      await locator.scrollIntoViewIfNeeded().catch(() => {});
+      await page.waitForTimeout(700);
+      await screenshot(locator, name, description);
+      return;
+    }
+  }
+
+  const widgetSection = page.locator('#widget-demo').first();
+  await widgetSection.waitFor();
+  await widgetSection.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(700);
+  await screenshot(widgetSection, name, description);
+}
+
 async function captureWorkflowSidebar(page, name, description) {
   const sidebar = page.locator('.fi-wf-panel-sidebar').first();
   await sidebar.waitFor();
   await page.waitForTimeout(900);
   await screenshot(sidebar, name, description);
-}
-
-async function prepareWorkflowNodesSidebar(page) {
-  await page.evaluate(() => {
-    const sidebar = document.querySelector('.fi-wf-panel-sidebar');
-    const nodesWrapper = document.querySelector('.fi-wf-nodes-catalog-wrapper');
-    const nodesSection = document.querySelector('.fi-wf-sidebar-nodes');
-    const variablesSection = document.querySelector('.fi-wf-vars-section');
-
-    if (sidebar instanceof HTMLElement) {
-      sidebar.style.height = '620px';
-      sidebar.style.maxHeight = '620px';
-    }
-
-    if (nodesWrapper instanceof HTMLElement) {
-      nodesWrapper.style.height = '420px';
-      nodesWrapper.style.maxHeight = '420px';
-      nodesWrapper.style.flex = '0 0 420px';
-      nodesWrapper.style.overflow = 'hidden';
-    }
-
-    if (nodesSection instanceof HTMLElement) {
-      nodesSection.style.height = '420px';
-      nodesSection.style.maxHeight = '420px';
-      nodesSection.style.overflowY = 'auto';
-      nodesSection.scrollTop = 0;
-    }
-
-    if (variablesSection instanceof HTMLElement) {
-      variablesSection.style.display = 'none';
-    }
-  });
-
-  await page.waitForTimeout(700);
-}
-
-async function clickIfPresent(locator) {
-  if ((await locator.count()) > 0) {
-    await locator.first().click();
-    return true;
-  }
-
-  return false;
-}
-
-async function fitWorkflowIntoView(page) {
-  await clickIfPresent(page.locator('button[title="Dismiss run overlay"]'));
-  await clickIfPresent(page.locator('button[title="Fit all nodes in view"]'));
-  await page.waitForTimeout(700);
-}
-
-async function zoomWorkflow(page, count = 1) {
-  const zoomInButton = page.locator('button[title="Zoom in"]');
-
-  for (let index = 0; index < count; index += 1) {
-    if (!(await clickIfPresent(zoomInButton))) {
-      break;
-    }
-
-    await page.waitForTimeout(250);
-  }
 }
 
 async function waitForRunDetails(page) {
@@ -185,8 +166,12 @@ async function main() {
   // -- 02: Bot edit ---------------------------------------------------------
   await goto(page, BOT_EDIT_URL, 1500);
   await waitForBotEdit(page);
-  await scrollPage(page, 180, 700);
-  await screenshot(page, '02-bot-edit.png', 'Bot edit page with setup tabs and configuration sections', { fullPage: false });
+  await page.getByRole('tab', { name: 'Widget' }).click();
+  await page.getByText('Live Preview').first().waitFor({ state: 'visible' });
+  await page.waitForTimeout(1500);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(500);
+  await screenshot(page, '02-bot-edit.png', 'Bot widget customization with live preview', { fullPage: true });
 
   // -- 03: Source ingestion -------------------------------------------------
   await goto(page, `${BASE_URL}/admin/rag-sources`);
@@ -199,36 +184,32 @@ async function main() {
 
   // -- 05: Widget desktop ---------------------------------------------------
   await goto(page, `${BASE_URL}/?demo=feature-showcase#widget-demo`, 1800);
-  const widgetSection = page.locator('#widget-demo').first();
-  await widgetSection.waitFor();
-  await widgetSection.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(1800);
-  await screenshot(
-    widgetSection,
+  await dismissAnalyticsPrompt(page);
+  await page.waitForTimeout(1200);
+  await captureWidgetCloseUp(
+    page,
     '05-widget-desktop.png',
-    'Landing-page widget demo with light and dark themes'
+    'Conversation-focused widget close-up'
   );
 
   // -- 07: Workflow list ----------------------------------------------------
   await goto(page, `${BASE_URL}/admin/agent-workflows`);
   await screenshot(page, '07-workflow-list.png', 'Workflow list', { fullPage: false });
 
-  // -- 08: Workflow editor — cleaner branching workflow ---------------------
+  // -- 08: Workflow editor — plugin feedback collector ----------------------
   await goto(page, WORKFLOW_EDITOR_URL, 1500);
   await waitForWorkflow(page);
   await page.getByRole('tab', { name: 'Nodes' }).click();
   await page.waitForTimeout(1200);
-  await prepareWorkflowNodesSidebar(page);
-  await captureWorkflowSidebar(page, '08-workflow-editor-canvas.png', 'Workflow nodes sidebar');
-
-  // Click an AI Agent node to reveal its config panel.
-  const aiAgentNode = page.locator('.fi-wf-node').filter({ hasText: 'Generate Answer' }).first();
-  if (await aiAgentNode.count() > 0) {
-    await aiAgentNode.scrollIntoViewIfNeeded();
-    await aiAgentNode.click();
-    await page.waitForTimeout(1800);
-    await screenshot(page, '08b-workflow-node-config.png', 'Workflow node config panel open', { fullPage: false });
+  const sendMessageNode = page.locator('.fi-wf-node').filter({ hasText: 'Set Expectations' }).first();
+  if (await sendMessageNode.count() > 0) {
+    await sendMessageNode.scrollIntoViewIfNeeded();
+    await sendMessageNode.click();
+    await page.waitForTimeout(1500);
   }
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(700);
+  await screenshot(page, '08-workflow-editor-canvas.png', 'Workflow editor with node library and settings panel', { fullPage: false });
 
   // Navigate to AI Draft tab.
   await page.keyboard.press('Escape');
