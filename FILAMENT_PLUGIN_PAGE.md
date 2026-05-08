@@ -130,8 +130,8 @@ Define reusable external API connection profiles and reference them across any w
 
 ## Requirements
 
-- PHP `8.4+`
-- Laravel `12+`
+- PHP `8.3+`
+- Laravel `12 or 13`
 - Filament `5.2+`
 - PostgreSQL with `pgvector` extension (recommended) **or** a running ChromaDB instance
 - AI provider API key (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `XAI_API_KEY`)
@@ -146,6 +146,12 @@ composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 php artisan migrate
 php artisan queue:work
+```
+
+For Laravel 13 projects, install `v0.9.7` or newer:
+
+```bash
+composer require heiner/filament-agentic-chatbot:^0.9.7
 ```
 
 Register the plugin in your panel provider:

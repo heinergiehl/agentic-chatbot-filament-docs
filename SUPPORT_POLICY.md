@@ -15,6 +15,12 @@ Included support covers:
 - Bug triage and workaround guidance
 - Security issue intake and coordinated disclosure
 
+## Supported Runtime
+
+- PHP 8.3+
+- Laravel 12 and Laravel 13
+- Filament 5
+
 Not included:
 
 - Custom feature development

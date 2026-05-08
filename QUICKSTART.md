@@ -18,8 +18,8 @@ It helps you ship AI assistants inside your product faster. It does not replace 
 
 ## Prerequisites
 
-- PHP 8.4+
-- Laravel 12+
+- PHP 8.3+
+- Laravel 12 or 13
 - Filament 5.2+
 - PostgreSQL with `pgvector` (recommended) or ChromaDB as an optional backend
 - A provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `XAI_API_KEY`
@@ -31,6 +31,12 @@ For a standard install:
 ```bash
 composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
+```
+
+For the Laravel 13 compatibility release, use `^0.9.7` or newer:
+
+```bash
+composer require heiner/filament-agentic-chatbot:^0.9.7
 ```
 
 If you are installing from a GitHub repository before Packagist or marketplace distribution:
