@@ -155,6 +155,8 @@ Example:
 ></script>
 ```
 
+Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
+
 ## Common First-Run Issues
 
 - `Source pending`: queue worker is not running
