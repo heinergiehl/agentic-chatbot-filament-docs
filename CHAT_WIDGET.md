@@ -15,48 +15,48 @@ The chat widget is the embeddable UI layer that connects end users to your confi
 
 Per bot, you can customize all of these from the Filament panel:
 
-| Setting | Description | Example |
-|---------|-------------|---------|
-| **Title** | Header text in the chat panel | "Support Assistant" |
-| **Subtitle** | Smaller text below the title | "Always here to help" |
-| **Welcome message** | First message shown when the chat opens | "Hi! How can I help you today?" |
-| **Quick prompts** | Suggested starter questions shown as buttons | "How do I reset my password?" |
-| **Accent color** | Primary color for the header and send button | `#f97316` (orange) |
-| **Template** | Visual style preset (see below) | `aurora` |
-| **Font preset** | Typography style | `modern-sans` |
-| **Compact mode** | Smaller widget footprint for tight layouts | `true` / `false` |
-| **Show sources** | Whether to display cited source references | `true` / `false` |
-| **Input placeholder** | Placeholder text in the message input | "Type a message..." |
-| **Response format** | `markdown` or `plain_text` | `markdown` |
-| **Language** | Widget UI language code | `en`, `de`, `fr`, `es` |
+| Setting               | Description                                  | Example                         |
+| --------------------- | -------------------------------------------- | ------------------------------- |
+| **Title**             | Header text in the chat panel                | "Support Assistant"             |
+| **Subtitle**          | Smaller text below the title                 | "Always here to help"           |
+| **Welcome message**   | First message shown when the chat opens      | "Hi! How can I help you today?" |
+| **Quick prompts**     | Suggested starter questions shown as buttons | "How do I reset my password?"   |
+| **Accent color**      | Primary color for the header and send button | `#f97316` (orange)              |
+| **Template**          | Visual style preset (see below)              | `aurora`                        |
+| **Font preset**       | Typography style                             | `modern-sans`                   |
+| **Compact mode**      | Smaller widget footprint for tight layouts   | `true` / `false`                |
+| **Show sources**      | Whether to display cited source references   | `true` / `false`                |
+| **Input placeholder** | Placeholder text in the message input        | "Type a message..."             |
+| **Response format**   | `markdown` or `plain_text`                   | `markdown`                      |
+| **Language**          | Widget UI language code                      | `en`, `de`, `fr`, `es`          |
 
 ## Style Templates
 
 The widget ships with eleven visual themes:
 
-| Template | Description |
-|----------|-------------|
-| `clean` | Neutral and professional (default) |
-| `glass` | Frosted-glass translucent panels |
-| `bold` | High-contrast, saturated colors |
-| `neo-brutal` | Thick borders, raw geometric look |
-| `noir` | Dark background, minimal chrome |
-| `aurora` | Soft gradients and warm tones |
-| `minimal` | Maximum whitespace, understated UI |
-| `x-dark` | Bold dark surface inspired by X |
-| `imessage` | Bubble-forward chat styling |
-| `openai` | Clean assistant UI inspired by ChatGPT |
-| `solar` | Warm, high-contrast light palette |
+| Template     | Description                            |
+| ------------ | -------------------------------------- |
+| `clean`      | Neutral and professional (default)     |
+| `glass`      | Frosted-glass translucent panels       |
+| `bold`       | High-contrast, saturated colors        |
+| `neo-brutal` | Thick borders, raw geometric look      |
+| `noir`       | Dark background, minimal chrome        |
+| `aurora`     | Soft gradients and warm tones          |
+| `minimal`    | Maximum whitespace, understated UI     |
+| `x-dark`     | Bold dark surface inspired by X        |
+| `imessage`   | Bubble-forward chat styling            |
+| `openai`     | Clean assistant UI inspired by ChatGPT |
+| `solar`      | Warm, high-contrast light palette      |
 
 ## Font Presets
 
-| Preset | Stack |
-|--------|-------|
-| `modern-sans` | System UI sans-serif (default) |
-| `humanist-sans` | Segoe UI, Helvetica Neue, Arial |
+| Preset             | Stack                              |
+| ------------------ | ---------------------------------- |
+| `modern-sans`      | System UI sans-serif (default)     |
+| `humanist-sans`    | Segoe UI, Helvetica Neue, Arial    |
 | `friendly-rounded` | Trebuchet MS, Avenir Next, Verdana |
-| `editorial-serif` | Charter, Palatino, Georgia |
-| `technical-mono` | System monospace |
+| `editorial-serif`  | Charter, Palatino, Georgia         |
+| `technical-mono`   | System monospace                   |
 
 ## Embedding The Widget
 
@@ -77,7 +77,7 @@ Add a single `<script>` tag to any HTML page:
 
 ```html
 <script
-  src="https://your-app.com/filament-agentic-chatbot/widget.js"
+  src="https://your-app.com/filament-agentic-chatbot/widget"
   data-bot="YOUR_BOT_PUBLIC_ID"
   data-token="SIGNED_TOKEN"
   data-area="public"
@@ -92,11 +92,13 @@ Add a single `<script>` tag to any HTML page:
 ></script>
 ```
 
+The extensionless `/filament-agentic-chatbot/widget` endpoint is the recommended script URL. Existing snippets that use `/filament-agentic-chatbot/widget.js` remain supported for compatibility.
+
 **Required attributes:**
 
-| Attribute | Description |
-|-----------|-------------|
-| `data-bot` | The bot's public ID (found in the bot edit page in Filament) |
+| Attribute    | Description                                                            |
+| ------------ | ---------------------------------------------------------------------- |
+| `data-bot`   | The bot's public ID (found in the bot edit page in Filament)           |
 | `data-token` | A signed embed token (required when `RAG_WIDGET_SIGNING_ENABLED=true`) |
 
 All other `data-*` attributes are optional and override the bot's default settings.
@@ -112,25 +114,25 @@ npm install @heiner/filament-agentic-chatbot-widget
 Then mount it in your JavaScript:
 
 ```js
-import { mountFilamentAgenticChatbotWidget } from '@heiner/filament-agentic-chatbot-widget';
+import { mountFilamentAgenticChatbotWidget } from "@heiner/filament-agentic-chatbot-widget";
 
 mountFilamentAgenticChatbotWidget({
-  botId: 'YOUR_BOT_PUBLIC_ID',
-  scriptUrl: 'https://your-app.com/filament-agentic-chatbot/widget.js',
-  apiBase: 'https://your-app.com',
-  token: 'SIGNED_TOKEN',
-  area: 'public',
-  position: 'right',
-  template: 'aurora',
-  accent: '#f97316',
-  title: 'Support Assistant',
-  subtitle: 'Always here to help',
-  welcome: 'Hi! How can I help?',
-  inputPlaceholder: 'Type a message...',
+  botId: "YOUR_BOT_PUBLIC_ID",
+  scriptUrl: "https://your-app.com/filament-agentic-chatbot/widget",
+  apiBase: "https://your-app.com",
+  token: "SIGNED_TOKEN",
+  area: "public",
+  position: "right",
+  template: "aurora",
+  accent: "#f97316",
+  title: "Support Assistant",
+  subtitle: "Always here to help",
+  welcome: "Hi! How can I help?",
+  inputPlaceholder: "Type a message...",
   compactMode: false,
-  fontPreset: 'modern-sans',
+  fontPreset: "modern-sans",
   showSources: true,
-  lang: 'en',
+  lang: "en",
 });
 ```
 
@@ -138,24 +140,24 @@ The NPM loader creates and appends the `<script>` element with the right `data-*
 
 ### Available NPM Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `botId` | string | **Required.** Bot public ID |
-| `scriptUrl` | string | URL to widget.js |
-| `apiBase` | string | Your Laravel app's base URL |
-| `token` | string | Signed embed token |
-| `area` | string | Context area (`public`, `member`, `admin`) |
-| `position` | `'left'` \| `'right'` | Widget position on screen |
-| `template` | string | Style template name |
-| `accent` | string | Hex color for accent |
-| `title` | string | Chat panel header title |
-| `subtitle` | string | Chat panel header subtitle |
-| `welcome` | string | Welcome message |
-| `inputPlaceholder` | string | Input field placeholder |
-| `compactMode` | boolean | Enable compact layout |
-| `fontPreset` | string | Typography preset name |
-| `showSources` | boolean | Show source citations |
-| `lang` | string | UI language code |
+| Option             | Type                  | Description                                |
+| ------------------ | --------------------- | ------------------------------------------ |
+| `botId`            | string                | **Required.** Bot public ID                |
+| `scriptUrl`        | string                | URL to the widget script endpoint          |
+| `apiBase`          | string                | Your Laravel app's base URL                |
+| `token`            | string                | Signed embed token                         |
+| `area`             | string                | Context area (`public`, `member`, `admin`) |
+| `position`         | `'left'` \| `'right'` | Widget position on screen                  |
+| `template`         | string                | Style template name                        |
+| `accent`           | string                | Hex color for accent                       |
+| `title`            | string                | Chat panel header title                    |
+| `subtitle`         | string                | Chat panel header subtitle                 |
+| `welcome`          | string                | Welcome message                            |
+| `inputPlaceholder` | string                | Input field placeholder                    |
+| `compactMode`      | boolean               | Enable compact layout                      |
+| `fontPreset`       | string                | Typography preset name                     |
+| `showSources`      | boolean               | Show source citations                      |
+| `lang`             | string                | UI language code                           |
 
 ## Widget Security
 
@@ -180,11 +182,11 @@ $token = WidgetEmbedToken::make(
 
 **Token configuration:**
 
-| Env Variable | Description | Default |
-|-------------|-------------|---------|
-| `RAG_WIDGET_SIGNING_ENABLED` | Require signed tokens | `true` |
-| `RAG_WIDGET_SIGNING_KEY` | HMAC signing secret | falls back to `APP_KEY` |
-| Token TTL | Configured in the config file | 30 days |
+| Env Variable                 | Description                   | Default                 |
+| ---------------------------- | ----------------------------- | ----------------------- |
+| `RAG_WIDGET_SIGNING_ENABLED` | Require signed tokens         | `true`                  |
+| `RAG_WIDGET_SIGNING_KEY`     | HMAC signing secret           | falls back to `APP_KEY` |
+| Token TTL                    | Configured in the config file | 30 days                 |
 
 ### Domain Allowlists
 
@@ -192,18 +194,18 @@ Each bot can define a list of allowed domains. If set, the widget's CORS middlew
 
 ### Context Areas And Access Rules
 
-| Area | Behavior |
-|------|----------|
-| `public` | No authentication required |
+| Area     | Behavior                                                            |
+| -------- | ------------------------------------------------------------------- |
+| `public` | No authentication required                                          |
 | `member` | Requires an authenticated user (checked via configured auth guards) |
-| `admin` | Requires an authenticated user with admin ability |
+| `admin`  | Requires an authenticated user with admin ability                   |
 
 ### Rate Limiting
 
-| Env Variable | Default |
-|-------------|---------|
-| `RAG_MAX_REQUESTS_PER_MINUTE` | 40 |
-| `RAG_MAX_REQUESTS_PER_MINUTE_PER_IP` | 120 |
+| Env Variable                         | Default |
+| ------------------------------------ | ------- |
+| `RAG_MAX_REQUESTS_PER_MINUTE`        | 40      |
+| `RAG_MAX_REQUESTS_PER_MINUTE_PER_IP` | 120     |
 
 ## CORS Configuration
 

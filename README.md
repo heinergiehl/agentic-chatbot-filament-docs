@@ -165,7 +165,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way where practical.
 
-The current compatibility baseline is `v0.9.7`: PHP 8.3+, Laravel 12 or 13, and Filament 5.
+The current compatibility baseline is `v0.9.8`: PHP 8.3+, Laravel 12 or 13, and Filament 5.
 
 ## Related Repositories
 

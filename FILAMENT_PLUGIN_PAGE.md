@@ -86,7 +86,7 @@ Define reusable external API connection profiles and reference them across any w
 - **Source types** — URL page, PDF / file upload, plain-text snippet, XML sitemap
 - **Queue-based ingestion** — async chunking, embedding, and upsert with per-source status tracking
 - **Vector backends** — PostgreSQL + `pgvector` (recommended) or ChromaDB; configurable dimensions
-- **Provider support** — OpenAI, Gemini, Anthropic, xAI, or any provider compatible with `laravel/ai`
+- **Provider support** — Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, and Azure OpenAI for chat; Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI for embeddings
 - **Streaming chat** with grounded retrieval, inline source citations, and citation coverage metrics
 - **Conversation history** — full transcripts with per-message retrieval context and citation links
 - **Per-bot analytics** — conversation count, message volume, source health score, citation coverage chart
@@ -134,7 +134,7 @@ Define reusable external API connection profiles and reference them across any w
 - Laravel `12 or 13`
 - Filament `5.2+`
 - PostgreSQL with `pgvector` extension (recommended) **or** a running ChromaDB instance
-- AI provider API key (`GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `XAI_API_KEY`)
+- AI provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, or `AZURE_OPENAI_API_KEY`
 - A Laravel queue worker
 
 ---
@@ -148,10 +148,10 @@ php artisan migrate
 php artisan queue:work
 ```
 
-For Laravel 13 projects, install `v0.9.7` or newer:
+For Laravel 13 projects and expanded provider support, install `v0.9.8` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.9.7
+composer require heiner/filament-agentic-chatbot:^0.9.8
 ```
 
 Register the plugin in your panel provider:
@@ -198,7 +198,7 @@ RAG_DB_USERNAME=postgres
 RAG_DB_PASSWORD=secret
 
 # AI provider and models
-RAG_CHAT_PROVIDER=gemini             # gemini | openai | anthropic | xai
+RAG_CHAT_PROVIDER=gemini             # gemini | openai | anthropic | xai | openrouter | deepseek | groq | mistral | ollama | azure
 RAG_CHAT_MODEL=gemini-2.5-flash-lite
 RAG_EMBEDDING_PROVIDER=gemini
 RAG_EMBEDDING_MODEL=gemini-embedding-001
@@ -264,12 +264,14 @@ $token = WidgetToken::for(botId: $bot->id, userId: auth()->id());
 
 ```html
 <script
-  src="https://your-app.com/vendor/filament-agentic-chatbot/widget.js"
-  data-bot-id="YOUR_BOT_ID"
+  src="https://your-app.com/filament-agentic-chatbot/widget"
+  data-bot="YOUR_BOT_PUBLIC_ID"
   data-token="YOUR_SIGNED_TOKEN"
   defer
 ></script>
 ```
+
+The legacy `/filament-agentic-chatbot/widget.js` script URL remains supported for existing snippets.
 
 ### Option 3 — NPM package
 

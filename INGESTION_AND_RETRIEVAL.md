@@ -57,7 +57,9 @@ RAG_EMBEDDING_MODEL=gemini-embedding-001
 RAG_VECTOR_DIMENSIONS=1536
 ```
 
-The plugin supports any embedding provider compatible with `laravel/ai`. Per-bot embedding provider overrides are also available.
+The plugin supports embedding providers compatible with `laravel/ai`.
+
+Supported embedding providers in the package credential checks are Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI. DeepSeek, Groq, Anthropic, and xAI are chat providers only in the current Laravel AI SDK, so keep `RAG_EMBEDDING_PROVIDER` on an embedding-capable provider even when the chat model uses one of those providers.
 
 ## Vector Backends
 

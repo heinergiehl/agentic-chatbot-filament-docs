@@ -22,7 +22,7 @@ It helps you ship AI assistants inside your product faster. It does not replace 
 - Laravel 12 or 13
 - Filament 5.2+
 - PostgreSQL with `pgvector` (recommended) or ChromaDB as an optional backend
-- A provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, or `XAI_API_KEY`
+- A supported chat provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, or `AZURE_OPENAI_API_KEY`
 
 ## 1. Install The Package
 
@@ -33,10 +33,10 @@ composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
-For the Laravel 13 compatibility release, use `^0.9.7` or newer:
+For the Laravel 13 compatibility and expanded provider release, use `^0.9.8` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.9.7
+composer require heiner/filament-agentic-chatbot:^0.9.8
 ```
 
 If you are installing from a GitHub repository before Packagist or marketplace distribution:
@@ -148,7 +148,7 @@ Example:
 
 ```html
 <script
-  src="https://your-app.com/filament-agentic-chatbot/widget.js"
+  src="https://your-app.com/filament-agentic-chatbot/widget"
   data-bot="YOUR_BOT_PUBLIC_ID"
   data-token="SIGNED_WIDGET_TOKEN"
   defer
