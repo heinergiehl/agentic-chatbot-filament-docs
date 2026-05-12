@@ -13,12 +13,13 @@ Ingestion is the pipeline that prepares source content for retrieval. It runs on
 | **Text** | Raw text content pasted directly | Product FAQ, policy text, release notes |
 | **File** | Uploaded documents | PDF manuals, text files |
 | **URL** | Public web pages crawled and extracted | Documentation sites, blog posts, help articles |
+| **API** | JSON records fetched through a saved connector | Product catalogs, CMS records, public datasets |
 
 ### What Happens During Ingestion
 
 For each source, the plugin:
 
-1. **Extracts** readable content (HTML parsing for URLs, PDF extraction for files, raw text for text sources)
+1. **Extracts** readable content (HTML parsing for URLs, PDF extraction for files, raw text for text sources, JSON field mapping for API sources)
 2. **Normalizes** the text (strips boilerplate, normalizes whitespace)
 3. **Chunks** the content into smaller searchable sections
 4. **Embeds** each chunk using the configured embedding model
@@ -26,6 +27,30 @@ For each source, the plugin:
 6. **Writes vectors** to the configured vector backend
 
 If all steps succeed, the source status moves to `completed`. If any step fails, the source shows `failed` with error details visible in the Filament panel.
+
+### API Knowledge Sources
+
+API sources let an existing **API Connector** feed structured JSON records into the RAG knowledge base. In the source form, choose a connector, endpoint path, records JSON path, stable record ID path, and a content mapping template such as:
+
+```text
+{{name}}
+
+{{description}}
+
+Price: {{price}} EUR
+```
+
+Each mapped API record becomes its own RAG document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits.
+
+Auto sync can periodically queue API sources through:
+
+```bash
+php artisan filament-agentic-chatbot:sync-rag-sources
+```
+
+After a successful re-ingest, previous API documents for that source are replaced. This removes records that no longer appear in the API response while preserving the old index if the new sync fails.
+
+Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
 
 ### Chunking Strategy
 
@@ -174,5 +199,7 @@ If ingestion stays `pending` too long:
 ## Related Docs
 
 - [RAG Sources](RAG_SOURCES.md) — creating and managing sources
+- [API Connectors](API_CONNECTORS.md) — reusable API profiles used by workflows and API knowledge sources
+- [API Source Roadmap](API_SOURCE_ROADMAP.md) — current API source scope and future work
 - [Bots](BOTS.md) — per-bot retrieval configuration
 - [Core Concepts](CORE_CONCEPTS.md) — how ingestion fits into the overall architecture

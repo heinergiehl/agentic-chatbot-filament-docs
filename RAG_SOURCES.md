@@ -17,17 +17,19 @@ Examples:
 - a markdown guide
 - an uploaded PDF
 - a public documentation page
+- a JSON API endpoint with product or CMS records
 - a policy or onboarding article
 
 The bot does not answer from "the internet in general". It answers from the sources you attach and ingest.
 
 ## Which Source Types You Can Ingest
 
-Filament RAG supports three source types:
+Filament Agentic Chatbot supports four source types:
 
 - **Text**: paste content directly into the panel
 - **File**: upload a supported document such as markdown, text, HTML, JSON, CSV, or a text-based PDF
 - **URL**: fetch a public web page and extract readable content
+- **API**: fetch JSON records through a saved API Connector and map fields into searchable content
 
 ## When To Use Each Source Type
 
@@ -64,6 +66,18 @@ Best for:
 
 Use URL sources when the canonical source of truth is already published on the web.
 
+### API
+
+Best for:
+
+- product catalogs
+- CMS records
+- help-center APIs
+- structured public datasets
+- relatively stable business records that should be searchable later
+
+Use API sources when a JSON endpoint should sync records into the RAG knowledge base. Use workflow API Connector nodes instead for live, private, or user-specific data such as order status, customer accounts, or write actions.
+
 ## How To Create A Source
 
 ### Create A Text Source
@@ -98,6 +112,23 @@ Use URL sources when the canonical source of truth is already published on the w
 
 Private and local network URLs are blocked by default for SSRF safety.
 
+### Create An API Source
+
+1. Create an **API Connector** with the base URL, auth, headers, timeout, and SSL settings
+2. Open **RAG Sources**
+3. Click **Create**
+4. Select the target bot
+5. Choose **API Source**
+6. Select the connector and endpoint path
+7. Configure the records JSON path, record ID path, title path, content template, and optional URL path
+8. If the endpoint is paginated, choose page-number, offset, cursor, or next-URL pagination and set the safety limits
+9. Optionally enable **Auto Sync** and set the sync interval
+10. Save and wait for `completed`
+
+API source ingestion supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own RAG document. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-rag-sources`, which should be called by Laravel Scheduler.
+
+After a successful re-ingest, the source's previous API documents are replaced. Records that disappeared from the API response are removed from retrieval. If the new sync fails, the previous indexed content remains active.
+
 ## What Happens After You Save A Source
 
 The source record itself is only the input.
@@ -105,7 +136,7 @@ The source record itself is only the input.
 During ingestion it becomes:
 
 1. extracted content
-2. a normalized document
+2. one or more normalized documents
 3. multiple searchable chunks
 4. embeddings stored in the configured vector backend
 
@@ -190,13 +221,16 @@ Re-ingest when:
 
 - Group sources by bot and audience.
 - Prefer clean docs pages over noisy landing pages when possible.
+- Use API sources for relatively stable records that should become searchable knowledge.
+- Use workflow API Connector nodes for live lookups, user-specific data, and write actions.
 - Re-ingest after editing or replacing important content.
 - Use descriptive source names so citations are understandable.
 - Keep public bots on public docs and internal bots on internal runbooks.
 
 ## Related Docs
 
-- [Core Concepts](/docs/core-concepts)
-- [Bots](/docs/bots)
-- [Ingestion and Retrieval](/docs/ingestion-and-retrieval)
-- [Operations](/docs/operations)
+- [Core Concepts](CORE_CONCEPTS.md)
+- [Bots](BOTS.md)
+- [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
+- [API Connectors](API_CONNECTORS.md)
+- [Operations](OPERATIONS.md)

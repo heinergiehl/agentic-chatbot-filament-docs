@@ -26,6 +26,7 @@ But it also adds:
 - AI classification and routing
 - action execution
 - HTTP/API integrations
+- API-fed knowledge sources
 - AI-assisted workflow generation
 
 ## Comparison Table
@@ -42,6 +43,7 @@ But it also adds:
 | Input collection steps        | No           | Yes                      |
 | Action nodes                  | No           | Yes                      |
 | HTTP request nodes            | No           | Yes                      |
+| API-fed knowledge sources     | No           | Yes                      |
 | Prompt-to-workflow generation | No           | Yes                      |
 | Guided onboarding / triage    | Limited      | Yes                      |
 
@@ -64,6 +66,7 @@ Examples:
 - triage support requests into different workflows
 - gather structured intake information
 - call your app actions or third-party APIs
+- sync stable JSON API records into the RAG knowledge base
 - mix retrieval with task execution
 
 ## Important Positioning

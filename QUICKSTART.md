@@ -10,6 +10,7 @@ Filament Agentic Chatbot adds a managed AI assistant layer to a Laravel + Filame
 
 - Filament resources for bots, sources, workflows, and conversations
 - Retrieval and provider controls per bot
+- API-fed knowledge sources for JSON endpoints that should become searchable RAG knowledge
 - An embeddable widget for your app or external frontend
 - A visual workflow engine for routing, lead capture, onboarding, escalation, and automations
 - Operational checks, privacy endpoints, and production-readiness tooling
@@ -106,6 +107,14 @@ Optional but recommended for deployments:
 php artisan filament:assets
 ```
 
+If you enable scheduled API knowledge sources, call the sync command from Laravel Scheduler:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('filament-agentic-chatbot:sync-rag-sources')->everyMinute();
+```
+
 ## 5. Validate Setup
 
 ```bash
@@ -120,12 +129,14 @@ If you want the fastest path to value, start exactly like a traditional RAG chat
 
 1. Open Filament admin
 2. Create a bot
-3. Add a source in `RAG Sources` (text, file, or URL)
+3. Add a source in `RAG Sources` (text, file, URL, or API)
 4. Wait until source status is `completed`
 5. Use the bot test actions to verify retrieval and answer quality
 6. Generate the widget snippet and embed it
 
 At this point you already have a grounded chatbot.
+
+For API-fed knowledge, create an API Connector first, then create an API Source from **RAG Sources**. API Sources are best for relatively stable JSON records such as product catalogs, CMS entries, help-center articles, or structured public datasets. Use workflow API Connector nodes for live user-specific data or write actions.
 
 ## 7. Add Agentic Workflows When You Need More
 
@@ -171,4 +182,7 @@ Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that 
 - `PRODUCT_OVERVIEW.md`
 - `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
 - `AGENTIC_WORKFLOWS.md`
+- `RAG_SOURCES.md`
+- `API_CONNECTORS.md`
+- `API_SOURCE_ROADMAP.md`
 - `OPERATIONS.md`

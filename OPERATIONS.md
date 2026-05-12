@@ -17,6 +17,31 @@ php artisan queue:work database --queue=rag-ingestion
 `pending` sources are expected while waiting for retries after provider rate limits.  
 If pending items do not move for several minutes, verify worker health and provider quotas.
 
+## Scheduled API Source Sync
+
+API knowledge sources can be re-synced periodically. The plugin provides:
+
+```bash
+php artisan filament-agentic-chatbot:sync-rag-sources
+```
+
+Useful options:
+
+- `--dry-run`: show which sources are due without dispatching ingestion jobs
+- `--force`: sync matching API sources even when they are not due yet
+- `--source=123`: restrict sync to one source ID
+- `--limit=25`: cap how many due sources are dispatched in one run
+
+Recommended scheduler setup:
+
+```php
+use Illuminate\Support\Facades\Schedule;
+
+Schedule::command('filament-agentic-chatbot:sync-rag-sources')->everyMinute();
+```
+
+Each API source still controls its own interval in the Filament form. The scheduler command only decides which enabled sources are due and queues them. Previous API documents remain active if a new sync fails.
+
 ## Dev Bootstrap
 
 For local onboarding, run:
@@ -79,6 +104,7 @@ Track:
 
 - If ingestion fails: inspect `rag_sources.meta.error`, retry ingestion from Sources table.
 - If ingestion is pending: inspect `rag_sources.meta.retry_after` and `rag_sources.meta.retry_delay_seconds`.
+- If API source sync does not run: confirm the Laravel Scheduler is active and run `php artisan filament-agentic-chatbot:sync-rag-sources --dry-run`.
 - If you changed vector backend/model settings: use `Re-Ingest Bot Sources` (bot page) or `Re-Ingest All Sources` (sources list).
 - If chat rate-limited: reduce traffic burst and add retry backoff in clients.
 - If retrieval quality drops: tune `top_k`, `min_similarity`, and source quality.

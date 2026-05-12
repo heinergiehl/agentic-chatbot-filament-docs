@@ -29,12 +29,15 @@ Use the `filament-rag` links when discussing the earlier RAG-only plugin, and th
 - Bots: BOTS.md
 - RAG sources: RAG_SOURCES.md
 - Ingestion and retrieval: INGESTION_AND_RETRIEVAL.md
+- API connectors: API_CONNECTORS.md
+- API source roadmap: API_SOURCE_ROADMAP.md
 - Agentic workflows: AGENTIC_WORKFLOWS.md
 - Workflow prompt templates: WORKFLOW_PROMPT_TEMPLATES.md
 - Workflow JSON schema: WORKFLOW_JSON_SCHEMA.md
 - Chat widget: CHAT_WIDGET.md
 - Operations: OPERATIONS.md
 - Security and privacy: SECURITY_AND_PRIVACY.md
+- Known limitations: KNOWN_LIMITATIONS.md
 - Support policy: SUPPORT_POLICY.md
 - Refund and license: REFUND_AND_LICENSE.md
 

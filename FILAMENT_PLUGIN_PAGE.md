@@ -26,7 +26,7 @@ Tune widget style, copy, quick prompts, area overrides, and live preview without
 
 ### Knowledge sources
 
-Add URL, file, sitemap, or raw-text sources. Track ingestion status and refresh stale sources directly from the panel.
+Add URL, file, raw-text, or API-fed JSON sources. Track ingestion status and refresh stale sources directly from the panel.
 
 ![Source ingestion table](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03-source-ingestion-table.png)
 
@@ -72,7 +72,7 @@ Publish versioned releases with notes and roll back to any prior version in seco
 
 ### API connectors
 
-Define reusable external API connection profiles and reference them across any workflow HTTP Request node.
+Define reusable external API connection profiles and reference them across workflow nodes or API-fed knowledge sources.
 
 ![API connectors list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12-api-connectors-list.png)
 
@@ -83,8 +83,9 @@ Define reusable external API connection profiles and reference them across any w
 ### RAG foundation
 
 - **Multi-bot management** — unlimited bots, each with its own identity, model, prompt, retrieval config, and access controls
-- **Source types** — URL page, PDF / file upload, plain-text snippet, XML sitemap
+- **Source types** — URL page, PDF / file upload, plain-text snippet, API-fed JSON records
 - **Queue-based ingestion** — async chunking, embedding, and upsert with per-source status tracking
+- **API knowledge sources** — sync records from authenticated `GET` JSON endpoints through reusable API Connectors
 - **Vector backends** — PostgreSQL + `pgvector` (recommended) or ChromaDB; configurable dimensions
 - **Provider support** — Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, and Azure OpenAI for chat; Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI for embeddings
 - **Streaming chat** with grounded retrieval, inline source citations, and citation coverage metrics
@@ -107,8 +108,8 @@ Define reusable external API connection profiles and reference them across any w
 
 ### API connectors
 
-- **Reusable connection profiles** — URL, auth method (Bearer, API Key, Basic Auth), custom headers
-- **Referenced by name** in any HTTP Request node; update credentials in one place, all workflows update automatically
+- **Reusable connection profiles** — URL, auth method (Bearer, API Key, Basic Auth, Custom Header), default headers, SSL, and timeout
+- **Referenced by name** in workflow API nodes and API knowledge sources; update credentials in one place
 
 ### Chat widget
 
@@ -125,6 +126,7 @@ Define reusable external API connection profiles and reference them across any w
 - **Data retention policy** — scheduled pruning of old conversations with configurable age thresholds
 - **GDPR / privacy endpoints** — export and delete conversation data per user on demand
 - **Queue isolation** — ingestion jobs run on a configurable queue separate from your default queue
+- **Scheduled API source sync** — periodically re-ingest API-backed knowledge sources with safety limits
 
 ---
 
@@ -225,7 +227,7 @@ php artisan filament-agentic-chatbot:doctor
 ### Fastest path to a working bot
 
 1. Create a bot in **Chatbots → Bots**
-2. Add knowledge sources in **Knowledge → Sources**
+2. Add knowledge sources in **Knowledge → Sources** using text, file, URL, or API source types
 3. Wait for ingestion to complete
 4. Test from the bot edit screen using the **Test Widget** button
 5. Embed the widget (see below)
@@ -333,6 +335,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [RAG sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
+- [API source roadmap](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_SOURCE_ROADMAP.md)
 - [Chat widget embedding](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
 - [Conversations and messages](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CONVERSATIONS_AND_MESSAGES.md)
 - [Workflow JSON schema reference](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/WORKFLOW_JSON_SCHEMA.md)

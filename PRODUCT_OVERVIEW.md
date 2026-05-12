@@ -4,14 +4,14 @@ Filament Agentic Chatbot adds a production-ready AI assistant layer to a Laravel
 
 It can run in two modes:
 
-- **RAG chatbot mode** for grounded answers from your docs, files, and URLs
+- **RAG chatbot mode** for grounded answers from your docs, files, URLs, and API-fed records
 - **Agentic workflow mode** for multi-step conversations, routing, data collection, tool calls, and guided task flows
 
 ## What This Plugin Adds
 
 - A Filament-native control plane for bots, sources, workflows, conversations, and operations
 - An embeddable chat widget you can place on your marketing site, product frontend, or internal tools
-- Queue-driven ingestion for text, files, and public URLs
+- Queue-driven ingestion for text, files, public URLs, and JSON API records
 - Visual workflow orchestration with triggers, conditions, AI agents, retrieval nodes, actions, and external API calls
 - Per-bot provider, model, retrieval, access, branding, and behavior controls
 - Operational tooling such as setup diagnostics, ingestion visibility, testing actions, and privacy endpoints
@@ -49,6 +49,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - Business-specific actions and integrations
 - App-level permissions beyond the plugin's assistant controls
 - Your own domain knowledge, policies, and source content
+- Provider-specific OAuth2 flows or direct database-source ingestion unless you implement those integrations or expose curated APIs
 
 ## Core Feature Areas
 
@@ -60,7 +61,7 @@ You still need to provide the rest of the product stack that depends on your bus
 
 ### RAG Foundation
 
-- Text, file, and URL sources
+- Text, file, URL, and API sources
 - Queue-based ingestion and retry handling
 - Chunking, embedding, and vector persistence
 - Source-backed answers with citations and configurable retrieval controls
@@ -71,6 +72,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - AI agent nodes for classification, generation, extraction, and decision support
 - Knowledge-base nodes for grounded context inside workflows
 - Action and HTTP request nodes for backend automation and integrations
+- Reusable API connectors for workflow calls and API-fed knowledge sources
 
 ### Widget and Delivery
 
@@ -98,5 +100,7 @@ For a direct comparison, read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`.
 - Read `CORE_CONCEPTS.md` for the product model and terminology
 - Read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md` for positioning against the earlier plugin
 - Read `QUICKSTART.md` for installation and first setup
+- Read `RAG_SOURCES.md` and `API_CONNECTORS.md` for API-fed knowledge setup
+- Read `API_SOURCE_ROADMAP.md` for current API source scope and planned improvements
 - Read `AGENTIC_WORKFLOWS.md` for the workflow layer
 - Read `WORKFLOW_PROMPT_TEMPLATES.md` for practical examples

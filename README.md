@@ -46,6 +46,7 @@ It keeps the grounded RAG chatbot capabilities of the earlier Filament RAG plugi
 - AI agent nodes
 - action and HTTP nodes
 - API connectors for external services
+- API-fed knowledge sources for JSON records
 - guided intake, routing, and escalation flows
 
 That means it can work as:
@@ -108,7 +109,7 @@ Draft workflows from prompts, inspect completed execution paths, and publish cha
 
 ### API connectors
 
-Manage reusable external API profiles for workflow nodes.
+Manage reusable external API profiles for workflow nodes and API-fed knowledge sources.
 
 ![API connectors list](./images/agentic-chatbot/12-api-connectors-list.png)
 
@@ -140,15 +141,20 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
+- [API Source Roadmap](API_SOURCE_ROADMAP.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - [Chat Widget](CHAT_WIDGET.md)
+- [Context Areas](CONTEXT_AREAS.md)
+- [Conversations And Messages](CONVERSATIONS_AND_MESSAGES.md)
 
 ### Policies And Support
 
 - [Support Policy](SUPPORT_POLICY.md)
 - [Refund And License](REFUND_AND_LICENSE.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
+- [Data Retention Policy](DATA_RETENTION_POLICY.md)
+- [Known Limitations](KNOWN_LIMITATIONS.md)
 
 ## Common Questions
 
@@ -157,6 +163,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - Can I use it as a simple RAG chatbot first? → [Quickstart](QUICKSTART.md)
 - How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
+- Can the bot learn from APIs or databases? → [RAG Sources](RAG_SOURCES.md) and [API Source Roadmap](API_SOURCE_ROADMAP.md)
 - How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
