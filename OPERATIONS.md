@@ -75,6 +75,30 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as a release blocker.
 
+## Enterprise Smoke Test
+
+Run this after migrations when validating API integrations, scoped bot tokens, usage budgets, and OpenAI-compatible provider setup:
+
+```bash
+php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
+```
+
+The command creates temporary QA bots, workflows, and Bot Access Tokens, then checks:
+
+- JSON complete endpoint success through `Authorization: Bearer ...`
+- area-scope rejection
+- invalid-token rejection
+- max input token budget blocking before provider execution
+- OpenAI-compatible runtime alias creation and missing-base-URL failure
+
+Temporary records are removed automatically. Add `--keep-records` only when you need to inspect the generated fixtures.
+
+## AI Usage Monitoring
+
+Use **Agentic Chatbot > AI Usage** to inspect stored provider usage events across bots and access tokens.
+
+Use a bot's **Analytics** page to review per-bot token volume, estimated cost, provider calls, and active API tokens with monthly budgets.
+
 ## Go-Live Baseline
 
 Before production launch:

@@ -168,6 +168,23 @@ Example:
 
 Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
 
+## 9. Optional: Server API / Telegram Integration
+
+For Telegram bots, mobile apps, or backend integrations, create a Bot Access Token in Filament and call the JSON complete endpoint:
+
+```http
+POST /api/filament-agentic-chatbot/chat/{botPublicId}/complete
+Authorization: Bearer fac_generated_token
+```
+
+See [API Integrations](API_INTEGRATIONS.md) for the request/response contract, common error codes, and a Laravel Telegram webhook example.
+
+Run the enterprise smoke test after migrations:
+
+```bash
+php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
+```
+
 ## Common First-Run Issues
 
 - `Source pending`: queue worker is not running
@@ -185,4 +202,6 @@ Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that 
 - `RAG_SOURCES.md`
 - `API_CONNECTORS.md`
 - `API_SOURCE_ROADMAP.md`
+- `API_INTEGRATIONS.md`
+- `OPENAI_COMPATIBLE_PROVIDERS.md`
 - `OPERATIONS.md`

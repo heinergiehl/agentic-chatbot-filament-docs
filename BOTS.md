@@ -93,9 +93,11 @@ It guides the assistant, but it is not a replacement for real source content or 
 
 Choose the provider and model per bot to optimize for speed, cost, or quality.
 
-The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, and Azure OpenAI. Each provider includes a small curated model list, and the **Manual ID** option lets you enter exact model identifiers from your provider.
+The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible gateways. Each provider includes a small curated model list, and the **Manual ID** option lets you enter exact model identifiers from your provider.
 
-Use OpenRouter for routed models such as Qwen or DeepSeek variants without adding a provider-specific integration for each model family. For OpenAI-compatible gateways with a custom base URL, keep the provider as `openai`, configure `OPENAI_URL` in Laravel AI config, and enter the gateway's model ID as a custom model.
+Use OpenRouter for routed models such as Qwen or DeepSeek variants without adding a provider-specific integration for each model family. Use **OpenAI-Compatible** when the provider exposes a chat-completions-style API with a custom base URL, such as Qwen DashScope compatible mode or a private gateway. Enter the base URL on the bot, or configure it globally with `RAG_OPENAI_COMPATIBLE_BASE_URL`.
+
+For production examples, see [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md).
 
 ### Retrieval Settings
 
@@ -168,3 +170,5 @@ Dedicated knowledge, prompting, and branding for a tenant or client.
 - `INGESTION_AND_RETRIEVAL.md`
 - `AGENTIC_WORKFLOWS.md`
 - `CHAT_WIDGET.md`
+- `API_INTEGRATIONS.md`
+- `OPENAI_COMPATIBLE_PROVIDERS.md`

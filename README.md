@@ -141,7 +141,12 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
+- [API Integrations](API_INTEGRATIONS.md)
 - [API Source Roadmap](API_SOURCE_ROADMAP.md)
+- [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
+- [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
+- [Incident Management Example](examples/incident-management/README.md)
+- [Localization](LOCALIZATION.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - [Chat Widget](CHAT_WIDGET.md)
@@ -163,10 +168,14 @@ Show the embeddable chat experience up close, including the branded header, stru
 - Can I use it as a simple RAG chatbot first? → [Quickstart](QUICKSTART.md)
 - How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
+- How do I call a bot from Telegram or another backend? → [API Integrations](API_INTEGRATIONS.md)
+- How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
+- How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
 - Can the bot learn from APIs or databases? → [RAG Sources](RAG_SOURCES.md) and [API Source Roadmap](API_SOURCE_ROADMAP.md)
 - How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
+- How do I translate the package UI? → [Localization](LOCALIZATION.md)
 
 ## Versioning
 

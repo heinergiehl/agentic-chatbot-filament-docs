@@ -237,6 +237,12 @@ Best for admin support dashboard, back-office workflow assistance, authenticated
 
 Configuration: `area="member"` or `area="admin"`, requires auth guard, signing enabled.
 
+## Server-Side Integrations
+
+Use the widget for browser embeds. Use Bot Access Tokens and the JSON complete endpoint for trusted backend integrations such as Telegram bots, mobile API backends, cron jobs, or incident-management systems.
+
+See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract and webhook examples.
+
 ## Feedback And Session Controls
 
 - Assistant messages expose helpful / not-helpful feedback buttons with optional note capture.
@@ -252,4 +258,5 @@ The bot edit page provides a built-in **Live Preview** section in Filament where
 
 - [Bots](BOTS.md)
 - [Context Areas](CONTEXT_AREAS.md)
+- [API Integrations](API_INTEGRATIONS.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
