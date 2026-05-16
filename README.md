@@ -47,6 +47,7 @@ It keeps the grounded RAG chatbot capabilities of the earlier Filament RAG plugi
 - action and HTTP nodes
 - API connectors for external services
 - API-fed knowledge sources for JSON records
+- package-owned Telegram and Slack channel integrations
 - guided intake, routing, and escalation flows
 
 That means it can work as:
@@ -142,11 +143,13 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
 - [API Integrations](API_INTEGRATIONS.md)
+- [Channel Integrations](CHANNELS.md)
 - [API Source Roadmap](API_SOURCE_ROADMAP.md)
 - [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
 - [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
+- [Release Notes v0.11.1](RELEASE_NOTES_v0.11.1.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - [Chat Widget](CHAT_WIDGET.md)
@@ -168,7 +171,8 @@ Show the embeddable chat experience up close, including the branded header, stru
 - Can I use it as a simple RAG chatbot first? → [Quickstart](QUICKSTART.md)
 - How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
-- How do I call a bot from Telegram or another backend? → [API Integrations](API_INTEGRATIONS.md)
+- How do I connect Telegram or Slack? → [Channel Integrations](CHANNELS.md)
+- How do I call a bot from a custom backend? → [API Integrations](API_INTEGRATIONS.md)
 - How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
 - How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
 - Can the bot learn from APIs or databases? → [RAG Sources](RAG_SOURCES.md) and [API Source Roadmap](API_SOURCE_ROADMAP.md)
@@ -181,7 +185,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way where practical.
 
-The current compatibility baseline is `v0.9.8`: PHP 8.3+, Laravel 12 or 13, and Filament 5.
+The current compatibility baseline is `v0.11.1`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+.
 
 ## Related Repositories
 

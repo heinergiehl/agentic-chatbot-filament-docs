@@ -5,7 +5,7 @@ This example shows how to model a large operational incident system with:
 - indexed RAG sources for procedures and historical narrative reports
 - live database retrieval through `query_data_resource`
 - a workflow that combines active incidents, rescue stations, staff, and earthquake records
-- Bot Access Tokens for Telegram, dispatch tools, and other server-side integrations
+- Bot Access Tokens for Telegram/Slack channels, dispatch tools, and other server-side integrations
 - per-token rate limits and budgets
 
 The files in this directory are app-side examples. Put them in a host Laravel app, run the migration and seeder, register the data resources, then import the workflow JSON into Filament Agentic Chatbot.
@@ -115,7 +115,7 @@ Create a Bot Access Token:
 | Monthly Token Budget | `500000` |
 | Monthly Cost Budget | `1500` cents |
 
-Use that token from Telegram, dispatch dashboards, or backend jobs through the JSON complete endpoint documented in [API Integrations](../../API_INTEGRATIONS.md).
+Use that token from a Telegram or Slack Channel connection documented in [Channel Integrations](../../CHANNELS.md), or from dispatch dashboards and backend jobs through the JSON complete endpoint documented in [API Integrations](../../API_INTEGRATIONS.md).
 
 ## 6. Smoke Test
 

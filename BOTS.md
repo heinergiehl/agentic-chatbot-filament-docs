@@ -14,6 +14,7 @@ Think of it as the runtime definition for one assistant experience. A bot tells 
 - which workflow logic may run
 - who can access it
 - how the widget should look
+- which external channel connections may route messages into it
 
 This is why one Laravel + Filament app can run multiple assistants with very different behavior from one panel.
 
@@ -54,6 +55,7 @@ Each bot owns its own:
 - widget branding and prompts
 - linked sources
 - workflow-driven behavior
+- channel connections for Telegram or Slack when external chat entry points are enabled
 
 ## How To Create A Bot
 
@@ -170,5 +172,6 @@ Dedicated knowledge, prompting, and branding for a tenant or client.
 - `INGESTION_AND_RETRIEVAL.md`
 - `AGENTIC_WORKFLOWS.md`
 - `CHAT_WIDGET.md`
+- `CHANNELS.md`
 - `API_INTEGRATIONS.md`
 - `OPENAI_COMPATIBLE_PROVIDERS.md`

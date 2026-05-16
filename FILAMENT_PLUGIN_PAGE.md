@@ -1,6 +1,6 @@
 # Agentic Chatbot
 
-Build, manage, and embed production-ready **AI assistants** directly in your Filament panel — from a simple grounded Q&A bot to fully guided agentic workflows with branching logic, AI nodes, backend actions, and external API calls.
+Build, manage, and embed production-ready **AI assistants** directly in your Filament panel — from a simple grounded Q&A bot to guided agentic workflows with branching logic, AI nodes, backend actions, external API calls, and package-owned Telegram/Slack channels.
 
 ## Live Demo
 
@@ -94,12 +94,13 @@ Define reusable external API connection profiles and reference them across workf
 
 ### Visual agentic workflows
 
-- **10 node types**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Switch/Router, Join, Condition, Action (Database), HTTP Request
+- **Broad node catalog**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Answer, Switch/Router, Condition, Action, HTTP Request, API Connector, Memory Read/Write, Delay, Loop, Sub-Workflow, and more
 - **Multi-branch canvas** powered by Vue Flow — drag, connect, and organize nodes freely
 - **AI Agent node** — configurable Provider, Model, and System Prompt per node within the same workflow
 - **Knowledge Base node** — inline RAG retrieval mid-flow, configurable result count
 - **Switch/Router node** — N branches + default; route by intent, field value, or AI classification
 - **HTTP Request node** — call external APIs with variable interpolation in body and headers
+- **Scoped workflow memory** — keep normal chat state in the conversation scope and one-run scratch state in workflow-run scope
 - **Variable interpolation** — `{{variable_name}}` syntax in system prompts, messages, and node configs
 - **AI Draft** — generate a complete workflow graph from a natural-language description in seconds
 - **Run history** with step-level traces, current node, variable snapshot, halt reason, and timestamps
@@ -119,6 +120,13 @@ Define reusable external API connection profiles and reference them across workf
 - **Signed widget tokens** for access-controlled deployments (`RAG_WIDGET_SIGNING_ENABLED`)
 - **Mobile-polished** — responsive layout, keyboard-safe positioning, iOS safe-area support
 - **Customizable** — colors, placeholder text, greeting, launcher position, and z-index
+
+### Channel integrations
+
+- **Telegram and Slack drivers** — provider webhooks run through the same bot, workflow, conversation, usage, and budget runtime as the widget
+- **Channel admin resource** — manage credentials, webhook URLs, linked Bot Access Tokens, diagnostics, test sends, and Telegram setup actions from Filament
+- **Text-first rich rendering** — buttons, cards, sources, and images degrade cleanly to channel-safe text, with optional native Telegram buttons and Slack Block Kit
+- **Production delivery safeguards** — webhook verification, inbound event deduplication, retry-aware outbound delivery, long-message splitting, raw payload redaction, and queue-based processing
 
 ### Production tooling
 
@@ -150,10 +158,10 @@ php artisan migrate
 php artisan queue:work
 ```
 
-For Laravel 13 projects and expanded provider support, install `v0.9.8` or newer:
+For the current channel and workflow-memory release, install `v0.11.1` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.9.8
+composer require heiner/filament-agentic-chatbot:^0.11.1
 ```
 
 Register the plugin in your panel provider:
@@ -301,8 +309,11 @@ import { ChatWidget } from "@heiner/filament-agentic-chatbot-widget";
 | **Switch / Router**   | Route to N branches + default based on variable value or AI classification |
 | **Join**              | Merge multiple parallel branches back into a single path                   |
 | **Condition**         | Boolean if/else branch based on variable or expression                     |
-| **Action (Database)** | Persist collected variables to your database                               |
-| **HTTP Request**      | Call an external API; reference an API Connector for credentials           |
+| **Action**            | Run registered backend actions such as writes, data lookups, or image generation |
+| **HTTP Request**      | Call an external API directly from the workflow                            |
+| **API Connector**     | Reuse a saved external API profile with credentials and defaults           |
+| **Memory Read/Write** | Store and retrieve small scoped workflow facts across turns or a single run |
+| **Delay / Loop**      | Pause execution or iterate over a bounded collection                       |
 
 ---
 
@@ -335,6 +346,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [RAG sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
+- [Channel integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md)
 - [API source roadmap](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_SOURCE_ROADMAP.md)
 - [Chat widget embedding](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
 - [Conversations and messages](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CONVERSATIONS_AND_MESSAGES.md)
@@ -344,6 +356,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md)
 - [How it differs from Filament RAG](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- [Release notes v0.11.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.11.1.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
 
 ---

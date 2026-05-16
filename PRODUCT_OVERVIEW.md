@@ -13,6 +13,7 @@ It can run in two modes:
 - An embeddable chat widget you can place on your marketing site, product frontend, or internal tools
 - Queue-driven ingestion for text, files, public URLs, and JSON API records
 - Visual workflow orchestration with triggers, conditions, AI agents, retrieval nodes, actions, and external API calls
+- Package-owned Telegram and Slack channel integrations that reuse the same bot, workflow, conversation, usage, and budget runtime
 - Per-bot provider, model, retrieval, access, branding, and behavior controls
 - Operational tooling such as setup diagnostics, ingestion visibility, testing actions, and privacy endpoints
 
@@ -78,6 +79,7 @@ You still need to provide the rest of the product stack that depends on your bus
 
 - One-script embed for websites
 - Optional NPM loader for SPA frameworks
+- Native Telegram and Slack channel connections for realtime external chat entry points
 - Style templates, titles, subtitles, welcome text, quick prompts, and response formatting
 
 ### Operations and Security
@@ -103,4 +105,5 @@ For a direct comparison, read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`.
 - Read `RAG_SOURCES.md` and `API_CONNECTORS.md` for API-fed knowledge setup
 - Read `API_SOURCE_ROADMAP.md` for current API source scope and planned improvements
 - Read `AGENTIC_WORKFLOWS.md` for the workflow layer
+- Read `CHANNELS.md` for Telegram and Slack channel setup
 - Read `WORKFLOW_PROMPT_TEMPLATES.md` for practical examples

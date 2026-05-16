@@ -6,7 +6,7 @@ The goal is not to turn the package into a full incident-management platform. Th
 
 - indexed knowledge for stable reference material
 - live workflows for current operational data
-- scoped API access for Telegram bots, internal portals, or other clients
+- package-owned channel integrations for Telegram/Slack, or scoped API access for internal portals and other clients
 - token and cost controls per bot access token
 
 For a runnable app-side example with migrations, seed data, Eloquent models, data-resource definitions, and a workflow JSON file, see [docs/examples/incident-management](examples/incident-management/README.md).
@@ -31,7 +31,7 @@ A strong production setup usually has one bot per operational audience:
 | Field Team Bot | `field` | `query_only` or `query_and_write` | station details, equipment availability, short status capture |
 | Analyst Bot | `analyst` | `query_only` | historical incident and earthquake analysis |
 
-Then create separate Bot Access Tokens for each external channel. For example, Telegram gets its own token with only the areas and abilities it needs.
+Then create separate Bot Access Tokens for each external channel. For example, Telegram and Slack each get their own token with only the areas and abilities they need.
 
 ## Data Modeling
 
@@ -106,7 +106,9 @@ For manager-facing workflows, prefer a final Answer node that says which records
 
 ## External Channels
 
-For Telegram or another bot platform, use the JSON complete endpoint with a Bot Access Token:
+For Telegram and Slack, prefer the package-owned channel integrations in [Channel Integrations](CHANNELS.md). They handle provider webhooks, channel threads, diagnostics, delivery events, retries, activity indicators, and native image delivery while still using Bot Access Tokens for governance.
+
+For custom bot platforms, internal portals, or backend jobs, use the JSON complete endpoint with a Bot Access Token:
 
 ```bash
 curl -X POST "https://your-app.test/api/filament-agentic-chatbot/chat/{botPublicId}/complete" \

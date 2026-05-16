@@ -1,12 +1,14 @@
 # API Integrations
 
-Use Bot Access Tokens when a backend service, mobile app, scheduled job, Telegram bot, or another trusted server needs to call a configured chatbot without rendering the embeddable widget.
+Use Bot Access Tokens when a backend service, mobile app, scheduled job, custom bot, or another trusted server needs to call a configured chatbot without rendering the embeddable widget.
+
+For standard Telegram and Slack deployments, prefer the package-owned channel integrations in [Channel Integrations](CHANNELS.md). They handle provider webhooks, thread mapping, diagnostics, delivery events, native image delivery, retries, and webhook verification inside the plugin.
 
 ## Create A Bot Access Token
 
 1. Open **Agentic Chatbot > Bot Access Tokens** in Filament.
 2. Select the bot.
-3. Give the token a clear name such as `Telegram production`.
+3. Give the token a clear name such as `Mobile app production`, `Internal jobs`, or `Telegram production`.
 4. Set **Allowed Areas** if the token should only work for specific context areas.
 5. Keep only the abilities the integration needs. For chat integrations, `chat` is enough.
 6. Add a per-token rate limit and monthly token/cost budgets for production integrations.
@@ -100,7 +102,9 @@ $response = Http::withToken(config('services.incident_chatbot.token'))
 $answer = (string) data_get($response, 'content', '');
 ```
 
-## Telegram Webhook Example
+## Custom Telegram Webhook Example
+
+This is a do-it-yourself example for custom integrations. For normal Telegram installs on `v0.11.0+`, use [Channel Integrations](CHANNELS.md) instead.
 
 This example receives a Telegram update, forwards the user text to the chatbot, then sends the chatbot answer back to Telegram.
 

@@ -239,7 +239,7 @@ Configuration: `area="member"` or `area="admin"`, requires auth guard, signing e
 
 ## Server-Side Integrations
 
-Use the widget for browser embeds. Use Bot Access Tokens and the JSON complete endpoint for trusted backend integrations such as Telegram bots, mobile API backends, cron jobs, or incident-management systems.
+Use the widget for browser embeds. Use [Channel Integrations](CHANNELS.md) for standard Telegram and Slack installs. Use Bot Access Tokens and the JSON complete endpoint for trusted custom integrations such as mobile API backends, cron jobs, custom bots, or incident-management systems.
 
 See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract and webhook examples.
 

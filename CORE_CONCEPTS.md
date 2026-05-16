@@ -21,7 +21,7 @@ Or it can become more advanced:
 3. Retrieve knowledge from the knowledge base
 4. Route through **conditions**, **switches**, and **AI agent** nodes
 5. Call **actions** or **HTTP APIs**
-6. Return a guided response or complete a task
+6. Return a guided response or complete a task through the widget, server API, Telegram, or Slack
 
 ## Concept Map
 
@@ -38,6 +38,7 @@ Or it can become more advanced:
 | Action        | A backend capability invoked from a workflow, such as creating a ticket or sending data onward                              | [Agentic Workflows](AGENTIC_WORKFLOWS.md)             |
 | API Connector | A saved external API profile (base URL, auth, headers, timeout) reusable across workflows and API knowledge sources        | [API Connectors](API_CONNECTORS.md)                   |
 | Widget        | The embeddable chat UI for websites or product frontends                                                                    | [Chat Widget](CHAT_WIDGET.md)                         |
+| Channel       | A package-owned Telegram or Slack connection that maps provider threads to bot conversations                                | [Channel Integrations](CHANNELS.md)                   |
 | Context Area  | The access scope for a bot, such as public, member, or admin                                                                | [Bots](BOTS.md)                                       |
 | Conversation  | A stored chat session for one bot and one session identifier                                                                | [Product Overview](PRODUCT_OVERVIEW.md)               |
 
@@ -83,9 +84,9 @@ Instead of always producing one direct answer, a workflow can:
 - call backend actions or external APIs
 - send a final answer, summary, or next-step message
 
-### Conversations and Widget Runtime
+### Conversations, Widget Runtime, and Channels
 
-The widget is the interface layer. The bot, sources, workflows, retrieval, and conversations live in your Laravel app and are managed from Filament.
+The widget is the default browser interface layer. Channel integrations let Telegram and Slack reach the same bot runtime without custom app-level controllers. The bot, sources, workflows, retrieval, conversations, channel connections, and delivery events live in your Laravel app and are managed from Filament.
 
 ## Read These Next
 
@@ -93,6 +94,7 @@ The widget is the interface layer. The bot, sources, workflows, retrieval, and c
 - [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
+- [Channel Integrations](CHANNELS.md)
 - [API Source Roadmap](API_SOURCE_ROADMAP.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Quickstart](QUICKSTART.md)

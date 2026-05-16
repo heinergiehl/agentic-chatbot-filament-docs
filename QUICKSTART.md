@@ -13,6 +13,7 @@ Filament Agentic Chatbot adds a managed AI assistant layer to a Laravel + Filame
 - API-fed knowledge sources for JSON endpoints that should become searchable RAG knowledge
 - An embeddable widget for your app or external frontend
 - A visual workflow engine for routing, lead capture, onboarding, escalation, and automations
+- Optional package-owned Telegram and Slack channel integrations
 - Operational checks, privacy endpoints, and production-readiness tooling
 
 It helps you ship AI assistants inside your product faster. It does not replace your app-specific billing, tenancy, or domain workflows.
@@ -34,17 +35,17 @@ composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
-For the Laravel 13 compatibility and expanded provider release, use `^0.9.8` or newer:
+For the current channel and workflow-memory release, use `^0.11.1` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.9.8
+composer require heiner/filament-agentic-chatbot:^0.11.1
 ```
 
 If you are installing from a GitHub repository before Packagist or marketplace distribution:
 
 ```bash
 composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
-composer require heiner/filament-agentic-chatbot
+composer require heiner/filament-agentic-chatbot:^0.11.1
 ```
 
 ## 2. Register The Plugin
@@ -168,16 +169,18 @@ Example:
 
 Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
 
-## 9. Optional: Server API / Telegram Integration
+## 9. Optional: Channel Integrations Or Server API
 
-For Telegram bots, mobile apps, or backend integrations, create a Bot Access Token in Filament and call the JSON complete endpoint:
+For Telegram or Slack, use the package-owned channel integrations: create a Bot Access Token, create a Channel connection, configure the provider webhook, and run channel diagnostics. See [Channel Integrations](CHANNELS.md).
+
+For mobile apps, scheduled jobs, or custom backend integrations, create a Bot Access Token in Filament and call the JSON complete endpoint:
 
 ```http
 POST /api/filament-agentic-chatbot/chat/{botPublicId}/complete
 Authorization: Bearer fac_generated_token
 ```
 
-See [API Integrations](API_INTEGRATIONS.md) for the request/response contract, common error codes, and a Laravel Telegram webhook example.
+See [API Integrations](API_INTEGRATIONS.md) for the request/response contract and common error codes.
 
 Run the enterprise smoke test after migrations:
 
@@ -203,5 +206,6 @@ php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 - `API_CONNECTORS.md`
 - `API_SOURCE_ROADMAP.md`
 - `API_INTEGRATIONS.md`
+- `CHANNELS.md`
 - `OPENAI_COMPATIBLE_PROVIDERS.md`
 - `OPERATIONS.md`
