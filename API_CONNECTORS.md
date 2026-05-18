@@ -2,7 +2,7 @@
 
 API connectors let you save reusable external API connection profiles and reference them from workflow nodes. Instead of configuring base URL, authentication, headers, and timeout on every HTTP node, you define them once in a connector and select it when building workflows.
 
-Connectors are also reused by **API Knowledge Sources**. In that mode, the connector performs a `GET` request to a JSON endpoint, maps returned records into text, and feeds those records into the RAG knowledge base.
+Connectors are also reused by **API Knowledge Sources**. In that mode, the connector performs a `GET` request to a JSON endpoint, maps returned records into text, and feeds those records into the bot's knowledge base.
 
 ## When To Use Connectors vs HTTP Request Nodes
 
@@ -12,7 +12,7 @@ Connectors are also reused by **API Knowledge Sources**. In that mode, the conne
 | Repeated calls to the same service across multiple workflows | API Connector |
 | Service requires authentication that should be stored securely | API Connector |
 | Quick prototype or test integration | HTTP Request node |
-| JSON endpoint should feed the RAG knowledge base | API Knowledge Source using an API Connector |
+| JSON endpoint should feed the bot's knowledge base | API Knowledge Source using an API Connector |
 
 If you find yourself copy-pasting the same base URL and auth header into multiple HTTP nodes, create a connector instead.
 

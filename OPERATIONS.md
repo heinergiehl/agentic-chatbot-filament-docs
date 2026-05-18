@@ -99,6 +99,16 @@ Use **Agentic Chatbot > AI Usage** to inspect stored provider usage events acros
 
 Use a bot's **Analytics** page to review per-bot token volume, estimated cost, provider calls, and active API tokens with monthly budgets.
 
+## Data Resource Workflows
+
+For workflows that use `query_data_resource`:
+
+- Register the required data resources in the host app configuration.
+- Restrict each bot to the minimum required resource keys.
+- Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated workflows map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
+- Re-check permissions and config cache after publishing configuration changes.
+- Validate one real workflow run against representative production data before go-live.
+
 ## Go-Live Baseline
 
 Before production launch:

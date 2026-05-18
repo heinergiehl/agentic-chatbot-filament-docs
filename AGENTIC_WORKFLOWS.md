@@ -1,12 +1,12 @@
 # Agentic Workflows
 
-Workflows are the biggest capability gap between a standard RAG chatbot and this plugin. They turn a knowledge-grounded assistant into a guided, multi-step experience that can collect data, branch by intent, call APIs, and take backend actions.
+Workflows are the biggest capability gap between a knowledge-only assistant and this plugin. They turn the parent-agent runtime into a guided, multi-step experience that can collect data, branch by intent, call APIs, and take backend actions.
 
 ## What A Workflow Is
 
 A workflow is a visual graph that defines how a bot should behave over multiple conversation turns.
 
-Without a workflow, every interaction follows one path:
+Without a workflow, the parent agent can still answer directly, use memory, or search the knowledge base. A simple knowledge-grounded exchange usually follows this path:
 
 1. user asks a question
 2. retrieve context from the knowledge base
@@ -185,6 +185,10 @@ Built-in action keys include:
 
 `query_data_resource` is only valid when the linked bot allows queries and the selected resource key is explicitly enabled for that bot.
 
+For generic catalog questions such as newest, oldest, highest, lowest, cheapest, or filtered records, use a `structuredOutput` step to extract a query plan, then pass exact `{{planned_query.*}}` templates into `query_data_resource` via `filter_clauses`, `sort`, `mode`, and `limit`. Resource `field_metadata` should describe date, numeric, enum, and text fields so generated workflows can map natural language to safe allow-listed fields.
+
+For no-code setup, use the bot Behavior tab's **Smart Data Queries** settings plus the workflow editor's **Smart Data Query** starter. The admin only selects allowed data sources and chat-sized result limits; the generated workflow handles the query-plan JSON and the data-retrieval mapping.
+
 For request-style nodes, `GET` is treated as query behavior, while `POST`, `PUT`, `PATCH`, and `DELETE` are treated as write behavior when capability mode is enforced for the linked bot.
 
 ### HTTP Request
@@ -338,7 +342,7 @@ This is the intended UX model. Do not treat multiple workflows on one bot as mul
 
 Do not start by making every bot fully agentic. A cleaner path:
 
-1. Launch a simple RAG bot first
+1. Launch a simple knowledge-grounded assistant first
 2. Confirm your sources, retrieval settings, and widget UX are solid
 3. Identify a use case where pure Q&A is not enough (e.g., intake, triage, qualification)
 4. Add a workflow only for that use case

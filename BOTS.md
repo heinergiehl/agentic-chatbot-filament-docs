@@ -6,17 +6,31 @@ This is the page to share when someone asks what a bot is, how to create one, an
 
 A bot is one assistant configuration inside Filament Agentic Chatbot.
 
-Think of it as the runtime definition for one assistant experience. A bot tells the system:
+Think of it as the persisted product definition for one assistant experience. A bot tells the system:
 
 - what the assistant is for
 - which knowledge sources it can use
 - how retrieval should behave
+- whether the parent agent may use tools and workflows
 - which workflow logic may run
 - who can access it
 - how the widget should look
 - which external channel connections may route messages into it
 
 This is why one Laravel + Filament app can run multiple assistants with very different behavior from one panel.
+
+## Runtime Model
+
+By default, a bot runs through the `ParentAgent`. The parent agent keeps the conversation natural and chooses between:
+
+- answering directly from the bot prompt and conversation memory
+- calling `KnowledgeSearchTool` to retrieve source-backed context
+- calling `run_workflow` to start or resume the active workflow
+- using any other registered tool available to that bot
+
+RAG is still important, but it is not the whole chatbot. It is the knowledge capability behind `KnowledgeSearchTool` and workflow Knowledge Base nodes.
+
+The legacy `RagAgent` class remains for compatibility when the parent agent is disabled and for workflow AI nodes that need a focused model call. Do not treat it as the default product architecture.
 
 ## A Bot Can Be Simple Or Agentic
 
@@ -111,6 +125,49 @@ The most important retrieval settings are:
 
 These settings strongly influence whether a bot feels grounded, noisy, or too narrow.
 
+### Capability Mode
+
+Capability mode controls what linked workflows may do at runtime:
+
+- `query_only` allows knowledge queries and read-only internal data lookups
+- `write_only` allows structured writes or capture flows, but blocks query behavior
+- `query_and_write` allows both
+
+This matters most once a bot is linked to workflows.
+
+- `query_data_resource` and knowledge search require query capability.
+- `store_submission` requires write capability.
+- `httpRequest` and `apiConnector` treat `GET` as query behavior and `POST` / `PUT` / `PATCH` / `DELETE` as write behavior.
+- Custom workflow actions can opt into capability enforcement by declaring `capability: query` or `capability: write` in `filament-agentic-chatbot.workflow.actions`.
+- Untagged custom actions are not auto-classified, so treat them as application-level responsibility.
+
+### Allowed Internal Data Resources
+
+Bots can opt into specific internal data resources that workflows may read through `query_data_resource`.
+
+Each enabled resource is:
+
+- defined globally in config
+- allow-listed per bot
+- read-only at runtime
+- limited to the declared fields, filters, sort options, and max limit
+
+Use this when a workflow needs safe access to internal business records such as customers, cases, or orders without exposing arbitrary database access.
+
+If you need tenant-aware or actor-aware row filtering, add that through your model scopes or resource design. The registry controls which model fields are exposed, but it does not invent your business-specific authorization rules for you.
+
+### Smart Data Queries
+
+The Behavior tab also includes **Smart Data Queries**. This is the admin-friendly layer above `query_data_resource`.
+
+Admins choose:
+
+- which data sources the bot may read
+- whether generated workflows should accept natural data questions
+- the default and maximum number of records for smart generated query flows
+
+The workflow generator then handles phrases such as "newest workflow", "active products", "cheapest plan", or "highest priced item" by creating a structured query plan and passing it into `query_data_resource`. The runtime still validates all fields, filters, sorting, and limits against the allow-listed resource definition.
+
 ### Allowed Domains
 
 Allowed domains limit where the widget can be embedded.
@@ -164,10 +221,12 @@ Dedicated knowledge, prompting, and branding for a tenant or client.
 - Use workflows where structure matters, not for every single interaction
 - Give the widget title and subtitle a clear user-facing purpose
 - Test retrieval and workflow branches separately
+- Keep the parent agent enabled unless you explicitly need the legacy direct RAG runtime
 
 ## Related Docs
 
 - `CORE_CONCEPTS.md`
+- `AGENT_RUNTIME_ARCHITECTURE.md`
 - `RAG_SOURCES.md`
 - `INGESTION_AND_RETRIEVAL.md`
 - `AGENTIC_WORKFLOWS.md`

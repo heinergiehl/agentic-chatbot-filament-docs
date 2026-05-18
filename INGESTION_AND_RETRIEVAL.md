@@ -1,6 +1,8 @@
 # Ingestion And Retrieval
 
-This page explains how content enters the system and how the bot finds relevant context at question time.
+This page explains how content enters the system and how the assistant finds relevant context at question time.
+
+Retrieval is a capability used by the runtime. In the default architecture, the parent agent calls `KnowledgeSearchTool` when a user question needs source-backed knowledge. Workflows can also call the same retrieval layer through Knowledge Base nodes.
 
 ## Ingestion
 
@@ -30,7 +32,7 @@ If all steps succeed, the source status moves to `completed`. If any step fails,
 
 ### API Knowledge Sources
 
-API sources let an existing **API Connector** feed structured JSON records into the RAG knowledge base. In the source form, choose a connector, endpoint path, records JSON path, stable record ID path, and a content mapping template such as:
+API sources let an existing **API Connector** feed structured JSON records into the bot's knowledge base. In the source form, choose a connector, endpoint path, records JSON path, stable record ID path, and a content mapping template such as:
 
 ```text
 {{name}}
@@ -124,7 +126,7 @@ RAG_CHROMA_COLLECTION=filament-agentic-chatbot
 
 ## Retrieval
 
-Retrieval is the runtime step that finds relevant chunks when the user asks a question or a workflow Knowledge Base node runs.
+Retrieval is the runtime step that finds relevant chunks when the parent agent uses `KnowledgeSearchTool` or a workflow Knowledge Base node runs.
 
 ### What Happens During Retrieval
 
@@ -132,7 +134,7 @@ Retrieval is the runtime step that finds relevant chunks when the user asks a qu
 2. The vector backend finds the nearest chunks by cosine similarity
 3. Chunk filtering applies `top_k` and `min_similarity` thresholds
 4. The selected chunks are formatted as context with metadata
-5. The chat model generates an answer grounded in that context
+5. The parent agent or workflow AI step generates an answer grounded in that context
 
 This is what keeps the assistant grounded in your documentation instead of relying only on the base model's training data.
 
@@ -202,4 +204,5 @@ If ingestion stays `pending` too long:
 - [API Connectors](API_CONNECTORS.md) — reusable API profiles used by workflows and API knowledge sources
 - [API Source Roadmap](API_SOURCE_ROADMAP.md) — current API source scope and future work
 - [Bots](BOTS.md) — per-bot retrieval configuration
+- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) — how retrieval fits into the parent-agent runtime
 - [Core Concepts](CORE_CONCEPTS.md) — how ingestion fits into the overall architecture

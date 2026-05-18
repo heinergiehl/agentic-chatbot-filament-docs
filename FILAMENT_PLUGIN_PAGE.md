@@ -158,10 +158,10 @@ php artisan migrate
 php artisan queue:work
 ```
 
-For the current channel and workflow-memory release, install `v0.11.1` or newer:
+For the current agent-first runtime and workflow UX release, install `v0.12.0` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.11.1
+composer require heiner/filament-agentic-chatbot:^0.12.0
 ```
 
 Register the plugin in your panel provider:
@@ -342,6 +342,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
 - [Quick start guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
 - [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md)
+- [Agent runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
 - [Agentic workflows — all node types explained](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
 - [RAG sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
@@ -356,7 +357,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md)
 - [How it differs from Filament RAG](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- [Release notes v0.11.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.11.1.md)
+- [Release notes v0.12.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.12.0.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
 
 ---

@@ -35,17 +35,17 @@ composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
-For the current channel and workflow-memory release, use `^0.11.1` or newer:
+For the current agent-first runtime and workflow UX release, use `^0.12.0` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.11.1
+composer require heiner/filament-agentic-chatbot:^0.12.0
 ```
 
 If you are installing from a GitHub repository before Packagist or marketplace distribution:
 
 ```bash
 composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
-composer require heiner/filament-agentic-chatbot:^0.11.1
+composer require heiner/filament-agentic-chatbot:^0.12.0
 ```
 
 ## 2. Register The Plugin

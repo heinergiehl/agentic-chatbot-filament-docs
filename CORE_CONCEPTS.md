@@ -1,6 +1,6 @@
 # Core Concepts
 
-This page explains the main building blocks of Filament Agentic Chatbot and how the classic RAG layer connects to the newer workflow layer.
+This page explains the main building blocks of Filament Agentic Chatbot and how the knowledge layer connects to the parent-agent and workflow runtime.
 
 ## The Short Version
 
@@ -9,10 +9,11 @@ Filament Agentic Chatbot gives you a Filament-native control plane for running A
 The core flow can be as simple as:
 
 1. Create a **bot**
-2. Add **RAG sources**
+2. Add **knowledge sources**
 3. Let the system **ingest** those sources
-4. Retrieve relevant **chunks** at question time
-5. Answer through the **chat widget** or your own frontend
+4. Let the **parent agent** decide whether to answer directly, retrieve knowledge, or run a workflow
+5. Retrieve relevant **chunks** when the answer needs knowledge grounding
+6. Answer through the **chat widget** or your own frontend
 
 Or it can become more advanced:
 
@@ -28,6 +29,7 @@ Or it can become more advanced:
 | Concept       | What It Means                                                                                                               | Learn More                                            |
 | ------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Bot           | A configured assistant with its own prompt, model, retrieval settings, access rules, widget branding, and workflow behavior | [Bots](BOTS.md)                                       |
+| Parent Agent  | The default chat runtime that orchestrates memory, knowledge search, workflow execution, and direct replies                 | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
 | RAG Source    | A piece of knowledge the bot can use, such as text, a file, a URL, or mapped records from a JSON API                       | [RAG Sources](RAG_SOURCES.md)                         |
 | Document      | The normalized stored version of a source after extraction                                                                  | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
 | Chunk         | A smaller searchable section of a document used for retrieval and citations                                                 | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
@@ -65,15 +67,15 @@ That means the bot does not search whole files or pages at once. It searches sma
 
 When a user asks a question, the system can:
 
-1. embed the query
-2. find relevant chunks
-3. format those chunks as context
-4. send that context to the model or workflow node
-5. return an answer, often with citations
+1. route the message through the parent agent
+2. decide whether knowledge is needed
+3. embed the query and find relevant chunks
+4. format those chunks as context
+5. return a grounded answer, often with citations
 
 ### Workflows and Actions
 
-Workflows add orchestration on top of the RAG layer.
+Workflows add task orchestration on top of the parent-agent runtime.
 
 Instead of always producing one direct answer, a workflow can:
 
@@ -84,6 +86,15 @@ Instead of always producing one direct answer, a workflow can:
 - call backend actions or external APIs
 - send a final answer, summary, or next-step message
 
+### Runtime Naming
+
+The codebase still contains names such as `RagBot`, `RagSource`, and `RagAgent` for backward compatibility. Product behavior should be understood differently:
+
+- the **bot** is the persisted assistant configuration
+- the **parent agent** is the default chat runtime
+- **RAG** is the knowledge retrieval capability used through `KnowledgeSearchTool`
+- `RagAgent` is a legacy compatibility path, not the main chatbot architecture
+
 ### Conversations, Widget Runtime, and Channels
 
 The widget is the default browser interface layer. Channel integrations let Telegram and Slack reach the same bot runtime without custom app-level controllers. The bot, sources, workflows, retrieval, conversations, channel connections, and delivery events live in your Laravel app and are managed from Filament.
@@ -92,6 +103,7 @@ The widget is the default browser interface layer. Channel integrations let Tele
 
 - [Product Overview](PRODUCT_OVERVIEW.md)
 - [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
+- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
 - [Channel Integrations](CHANNELS.md)

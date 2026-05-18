@@ -42,10 +42,12 @@ Filament Agentic Chatbot is the newer, broader plugin in the product line.
 It keeps the grounded RAG chatbot capabilities of the earlier Filament RAG plugin and adds:
 
 - visual workflows
+- parent-agent orchestration with knowledge search and workflows exposed as tools
 - branching logic
 - AI agent nodes
 - action and HTTP nodes
 - API connectors for external services
+- Smart Data Queries for safe natural-language lookups against allowed internal resources
 - API-fed knowledge sources for JSON records
 - package-owned Telegram and Slack channel integrations
 - guided intake, routing, and escalation flows
@@ -138,6 +140,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 ### Learn The Product Model
 
 - [Bots](BOTS.md)
+- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
 - [RAG Sources](RAG_SOURCES.md)
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
@@ -149,7 +152,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
-- [Release Notes v0.11.1](RELEASE_NOTES_v0.11.1.md)
+- [Release Notes v0.12.0](RELEASE_NOTES_v0.12.0.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - [Chat Widget](CHAT_WIDGET.md)
@@ -185,7 +188,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way where practical.
 
-The current compatibility baseline is `v0.11.1`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+.
+The current compatibility baseline is `v0.12.0`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+.
 
 ## Related Repositories
 

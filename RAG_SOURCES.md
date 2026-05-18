@@ -76,7 +76,7 @@ Best for:
 - structured public datasets
 - relatively stable business records that should be searchable later
 
-Use API sources when a JSON endpoint should sync records into the RAG knowledge base. Use workflow API Connector nodes instead for live, private, or user-specific data such as order status, customer accounts, or write actions.
+Use API sources when a JSON endpoint should sync records into the bot's knowledge base. Use workflow API Connector nodes instead for live, private, or user-specific data such as order status, customer accounts, or write actions.
 
 ## How To Create A Source
 

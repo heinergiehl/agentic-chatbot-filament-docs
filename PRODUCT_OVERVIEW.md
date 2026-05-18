@@ -2,17 +2,20 @@
 
 Filament Agentic Chatbot adds a production-ready AI assistant layer to a Laravel + Filament app.
 
-It can run in two modes:
+The default runtime is now parent-agent first:
 
-- **RAG chatbot mode** for grounded answers from your docs, files, URLs, and API-fed records
-- **Agentic workflow mode** for multi-step conversations, routing, data collection, tool calls, and guided task flows
+- **Knowledge answers** when a user needs grounded context from docs, files, URLs, or API-fed records
+- **Workflow execution** when a user needs multi-step routing, data collection, tool calls, or guided task flows
+- **Direct conversation** when no tool call is needed
 
 ## What This Plugin Adds
 
 - A Filament-native control plane for bots, sources, workflows, conversations, and operations
 - An embeddable chat widget you can place on your marketing site, product frontend, or internal tools
 - Queue-driven ingestion for text, files, public URLs, and JSON API records
+- Parent-agent orchestration with knowledge search and workflow execution exposed as tools
 - Visual workflow orchestration with triggers, conditions, AI agents, retrieval nodes, actions, and external API calls
+- Smart Data Queries for safe natural-language lookups against allowed internal data resources
 - Package-owned Telegram and Slack channel integrations that reuse the same bot, workflow, conversation, usage, and budget runtime
 - Per-bot provider, model, retrieval, access, branding, and behavior controls
 - Operational tooling such as setup diagnostics, ingestion visibility, testing actions, and privacy endpoints
@@ -73,6 +76,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - AI agent nodes for classification, generation, extraction, and decision support
 - Knowledge-base nodes for grounded context inside workflows
 - Action and HTTP request nodes for backend automation and integrations
+- Data Retrieval and Smart Data Query starters for safe internal record lookups
 - Reusable API connectors for workflow calls and API-fed knowledge sources
 
 ### Widget and Delivery
@@ -100,6 +104,7 @@ For a direct comparison, read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`.
 ## Best Starting Points
 
 - Read `CORE_CONCEPTS.md` for the product model and terminology
+- Read `AGENT_RUNTIME_ARCHITECTURE.md` for the parent-agent runtime model
 - Read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md` for positioning against the earlier plugin
 - Read `QUICKSTART.md` for installation and first setup
 - Read `RAG_SOURCES.md` and `API_CONNECTORS.md` for API-fed knowledge setup

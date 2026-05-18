@@ -296,7 +296,7 @@ For simple workflows, use `scope: "conversation"` for chat state and `scope: "wo
 Common built-in action keys:
 
 - `store_submission`: persists a schema-driven record. `inputMapping` typically includes `schema_key`, `payload`, and optionally `schema_version`, `status`, `dedupe_key`, and `meta`.
-- `query_data_resource`: performs a read-only lookup against a configured internal resource. `inputMapping` must include `resource_key` and may include `mode`, `filters`, `select`, `limit`, and `sort`.
+- `query_data_resource`: performs a read-only lookup against a configured internal resource. `inputMapping` must include `resource_key` and may include `mode`, `filters`, `filter_clauses`, `select`, `limit`, and `sort`.
 - `format_records_for_chat`: formats a `query_data_resource` result for chat output as cards, an image gallery, or a compact bullet list.
 - `generate_image`: generates an image through a native Laravel AI image provider or a generic HTTP JSON image endpoint. `inputMapping` must include `prompt` and may include `transport`, `provider`, `model`, `url`, `headers`, `body`, `response_image_path`, `response_image_url_path`, `size`, `quality`, `width`, `height`, `steps`, `disk`, `path`, and `public_base_url`.
 
@@ -305,6 +305,10 @@ In the visual workflow editor, `query_data_resource` is also exposed as the dedi
 For Telegram and Slack, `generate_image.image_artifact` lets the channel drivers upload the stored image directly from Laravel storage. `generate_image.image_url` is still returned for web clients and for providers that prefer public URLs. When the image provider returns bytes or base64, the action stores the file and builds both the storage artifact and a URL from the storage disk URL or `RAG_WORKFLOW_IMAGE_PUBLIC_BASE_URL`.
 
 `query_data_resource` is validated against the linked bot at publish time. The bot must allow queries and the chosen `resource_key` must be enabled for that bot.
+
+Use `filters` when filter field names are known while authoring the workflow. Use `filter_clauses` for generic user-driven query plans where a previous `structuredOutput` step extracts safe field/operator/value clauses. Dynamic `mode`, `filter_clauses.*.field`, `filter_clauses.*.operator`, `sort.column`, `sort.direction`, and `limit` values must be exact `{{variable}}` templates; the action still validates resolved fields and sort columns against the resource allowlists at runtime.
+
+Blank `filter_clauses.*.field` values are ignored so fixed-size query-plan slots can be used safely when the visitor request needs fewer filters. Non-empty fields are still rejected unless the resource allow-list permits them.
 
 Custom actions may also declare `capability: query` or `capability: write` in config. When present, publish-time and runtime checks compare that requirement against the linked bot mode.
 
