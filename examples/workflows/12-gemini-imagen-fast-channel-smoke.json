@@ -1,0 +1,179 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "note_gemini_setup",
+            "type": "note",
+            "position": {
+                "x": 780,
+                "y": 60
+            },
+            "data": {
+                "label": "Gemini Imagen Fast",
+                "noteContent": "This workflow uses the generic generate_image action with Google Gemini API Imagen 4 Fast. Configure RAG_WORKFLOW_IMAGE_HTTP_HEADERS with your x-goog-api-key header and allow generativelanguage.googleapis.com. The sendMessage node passes both imageUrl and imageArtifact so Slack and Telegram can upload the stored file directly.",
+                "color": "#dbeafe"
+            }
+        },
+        {
+            "id": "trigger_user_message",
+            "type": "trigger",
+            "position": {
+                "x": 420,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "action_generate_gemini_image",
+            "type": "action",
+            "position": {
+                "x": 420,
+                "y": 390
+            },
+            "data": {
+                "label": "Generate Gemini Image",
+                "actionKey": "generate_image",
+                "inputMapping": {
+                    "transport": "http_json",
+                    "provider": "gemini_imagen",
+                    "model": "imagen-4.0-fast-generate-001",
+                    "url": "https://generativelanguage.googleapis.com/v1beta/models/imagen-4.0-fast-generate-001:predict",
+                    "prompt": "{{input}}",
+                    "merge_body": false,
+                    "body": {
+                        "instances": [
+                            {
+                                "prompt": "{{input}}"
+                            }
+                        ],
+                        "parameters": {
+                            "sampleCount": 1,
+                            "aspectRatio": "1:1",
+                            "personGeneration": "dont_allow"
+                        }
+                    },
+                    "response_image_path": "predictions.0.bytesBase64Encoded",
+                    "response_mime_path": "predictions.0.mimeType",
+                    "timeout": 300,
+                    "disk": "public",
+                    "path": "workflow-images/gemini-imagen-smoke"
+                },
+                "outputVariable": "generated_image",
+                "continueOnFail": true
+            }
+        },
+        {
+            "id": "check_prompt_present",
+            "type": "condition",
+            "position": {
+                "x": 420,
+                "y": 220
+            },
+            "data": {
+                "label": "Prompt Present?",
+                "leftOperand": "{{input}}",
+                "operator": "matches_regex",
+                "rightOperand": "/^\\s*(\\/start|hi|hello|hallo|hey)?\\s*$/i"
+            }
+        },
+        {
+            "id": "send_prompt_help",
+            "type": "sendMessage",
+            "position": {
+                "x": 680,
+                "y": 390
+            },
+            "data": {
+                "label": "Ask For Prompt",
+                "messageType": "text",
+                "messageContent": "Tell me what image to create. Example: /agent a colorful bird icon on a white background"
+            }
+        },
+        {
+            "id": "handle_generation_error",
+            "type": "errorHandler",
+            "position": {
+                "x": 420,
+                "y": 560
+            },
+            "data": {
+                "label": "Check Gemini Generation",
+                "errorVariable": "generated_image_error",
+                "fallbackMessage": "Gemini image generation failed. Provider error: {{generated_image_error}}",
+                "outputVariable": "image_generation_check"
+            }
+        },
+        {
+            "id": "send_generated_image",
+            "type": "sendMessage",
+            "position": {
+                "x": 180,
+                "y": 740
+            },
+            "data": {
+                "label": "Send Image",
+                "messageType": "image",
+                "messageContent": "Generated with Gemini Imagen 4 Fast for: {{input}}",
+                "imageUrl": "{{generated_image.image_url}}",
+                "imageArtifact": "{{generated_image.image_artifact}}"
+            }
+        },
+        {
+            "id": "send_generation_failure",
+            "type": "sendMessage",
+            "position": {
+                "x": 660,
+                "y": 740
+            },
+            "data": {
+                "label": "Send Failure",
+                "messageType": "text",
+                "messageContent": "{{image_generation_check_message}}"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e_trigger_to_prompt_check",
+            "source": "trigger_user_message",
+            "target": "check_prompt_present"
+        },
+        {
+            "id": "e_prompt_check_to_help",
+            "source": "check_prompt_present",
+            "target": "send_prompt_help",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e_prompt_check_to_generate",
+            "source": "check_prompt_present",
+            "target": "action_generate_gemini_image",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e_generate_to_handler",
+            "source": "action_generate_gemini_image",
+            "target": "handle_generation_error"
+        },
+        {
+            "id": "e_handler_to_image",
+            "source": "handle_generation_error",
+            "target": "send_generated_image",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e_handler_to_failure",
+            "source": "handle_generation_error",
+            "target": "send_generation_failure",
+            "sourceHandle": "invalid"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.85
+    }
+}

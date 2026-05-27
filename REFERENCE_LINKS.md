@@ -27,8 +27,10 @@ Use the `filament-rag` links when discussing the earlier RAG-only plugin, and th
 - Core concepts: CORE_CONCEPTS.md
 - Quickstart: QUICKSTART.md
 - Bots: BOTS.md
-- RAG sources: RAG_SOURCES.md
+- Sources: RAG_SOURCES.md
 - Ingestion and retrieval: INGESTION_AND_RETRIEVAL.md
+- AgentGraph SDK usage: AGENTGRAPH_SDK_USAGE.md
+- Database and breaking changes: DATABASE_AND_BREAKING_CHANGES.md
 - API connectors: API_CONNECTORS.md
 - API source roadmap: API_SOURCE_ROADMAP.md
 - Agentic workflows: AGENTIC_WORKFLOWS.md
@@ -43,7 +45,7 @@ Use the `filament-rag` links when discussing the earlier RAG-only plugin, and th
 
 ## What To Tell Evaluators
 
-- This plugin includes the same grounded RAG foundation as the earlier plugin and adds a workflow engine for agentic behavior
+- This plugin includes the same grounded Q&A foundation as the earlier plugin and adds an assistant graph plus workflow engine for agentic behavior
 - It can run as a straightforward docs chatbot or as a guided assistant that collects input, branches, and calls tools
 - It is designed for teams who want to sell or embed AI assistants from inside a Filament-managed Laravel app
 - The best starting points are `PRODUCT_OVERVIEW.md`, `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`, and `QUICKSTART.md`

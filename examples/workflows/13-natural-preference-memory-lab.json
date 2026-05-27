@@ -1,0 +1,597 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "trigger_incoming",
+      "type": "trigger",
+      "position": {
+        "x": 420,
+        "y": 40
+      },
+      "data": {
+        "label": "Incoming message",
+        "triggerType": "user_message"
+      }
+    },
+    {
+      "id": "read_profile_memory",
+      "type": "memoryRead",
+      "position": {
+        "x": 420,
+        "y": 180
+      },
+      "data": {
+        "label": "Read profile memory",
+        "scope": "conversation",
+        "namespace": "natural_preference_lab",
+        "key": "",
+        "defaultValue": "{}",
+        "outputVariable": "profile_memory"
+      }
+    },
+    {
+      "id": "classify_turn",
+      "type": "intentClassifier",
+      "position": {
+        "x": 420,
+        "y": 340
+      },
+      "data": {
+        "label": "Classify natural turn",
+        "intents": [
+          {
+            "label": "smalltalk",
+            "description": "Greeting, thanks, pleasantry, or a message that does not update memory and does not ask a knowledge question."
+          },
+          {
+            "label": "update_profile",
+            "description": "The user gives or changes a preference, constraint, desired language, tone, format, role, audience, goal, or personal working context."
+          },
+          {
+            "label": "recall_profile",
+            "description": "The user asks what preferences, constraints, context, goal, audience, tone, format, or profile details are remembered."
+          },
+          {
+            "label": "knowledge_follow_up",
+            "description": "A documentation or knowledge-base follow-up that depends on the previous query, topic, preference, or memory context, such as links, more detail, examples, alternatives, or clarification."
+          },
+          {
+            "label": "knowledge_question",
+            "description": "A standalone factual question about the product, docs, setup, RAG, workflows, widget, channels, ingestion, APIs, security, or behavior."
+          }
+        ],
+        "variable": "turn_intent",
+        "inputTemplate": "Latest user message:\n{{input}}\n\nStored profile memory JSON:\n{{profile_memory}}",
+        "systemPrompt": "You are a language-agnostic workflow router. Classify the latest user message into exactly one configured label. Use stored memory only to resolve references. Do not answer the user. Output only the label, with no JSON, markdown, punctuation, or explanation.",
+        "provider": "",
+        "model": "",
+        "useConversationMemory": false,
+        "heuristicFallback": false,
+        "maxTokens": 128
+      }
+    },
+    {
+      "id": "send_greeting",
+      "type": "sendMessage",
+      "position": {
+        "x": -120,
+        "y": 540
+      },
+      "data": {
+        "label": "Human greeting",
+        "messageType": "text",
+        "messageContent": "Hi. I can remember preferences for this conversation and use them while answering from the knowledge base."
+      }
+    },
+    {
+      "id": "extract_profile_update",
+      "type": "structuredOutput",
+      "position": {
+        "x": 140,
+        "y": 540
+      },
+      "data": {
+        "label": "Extract profile update",
+        "sourceTemplate": "Latest user message:\n{{input}}\n\nExisting profile memory:\n{{profile_memory}}",
+        "schema": "{\"memory_note\":\"string\",\"active_topic\":\"string\"}",
+        "instructions": "Return compact JSON only. Always include both keys. memory_note is a concise durable note about the user's preference, constraint, target audience, desired format, role, or goal. active_topic is the stable subject if the update clearly names one. If a value is unknown, return an empty string. Preserve exact product names, acronyms, languages, formats, dates, and constraints.",
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0,
+        "maxTokens": 256,
+        "outputVariable": "profile_update",
+        "rawOutputVariable": "",
+        "streamToChat": false,
+        "useConversationMemory": false,
+        "disableTools": true
+      }
+    },
+    {
+      "id": "remember_profile_note",
+      "type": "memoryWrite",
+      "position": {
+        "x": 40,
+        "y": 720
+      },
+      "data": {
+        "label": "Append profile note",
+        "scope": "conversation",
+        "namespace": "natural_preference_lab",
+        "key": "profile_notes",
+        "valueTemplate": "Previous profile notes:\n{{profile_memory.profile_notes}}\n\nLatest durable update:\n{{profile_update.memory_note}}",
+        "valueMode": "text",
+        "memoryType": "preference",
+        "merge": false,
+        "outputVariable": "remembered_profile_note",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_raw_profile_note",
+      "type": "memoryWrite",
+      "position": {
+        "x": 260,
+        "y": 720
+      },
+      "data": {
+        "label": "Fallback append raw note",
+        "scope": "conversation",
+        "namespace": "natural_preference_lab",
+        "key": "profile_notes",
+        "valueTemplate": "Previous profile notes:\n{{profile_memory.profile_notes}}\n\nLatest user update:\n{{input}}",
+        "valueMode": "text",
+        "memoryType": "preference",
+        "merge": false,
+        "outputVariable": "remembered_profile_note",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "build_profile_ack_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 140,
+        "y": 900
+      },
+      "data": {
+        "label": "Build profile acknowledgement context",
+        "outputVariable": "profile_ack_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "remembered_profile_note",
+            "label": "Updated profile memory"
+          },
+          {
+            "variable": "profile_update",
+            "label": "Extracted update"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 6000
+      }
+    },
+    {
+      "id": "answer_profile_ack",
+      "type": "answer",
+      "position": {
+        "x": 140,
+        "y": 1080
+      },
+      "data": {
+        "label": "Natural profile acknowledgement",
+        "contextVariable": "profile_ack_context",
+        "dataVariable": "",
+        "questionTemplate": "{{input}}",
+        "instructions": "Reply in the same language as the user. Acknowledge what was remembered without overexplaining internals. If the update changes an earlier preference, treat the latest update as authoritative. Keep it under three short sentences.",
+        "answerStyle": "natural, concise, human",
+        "fallbackMessage": "I captured that preference for this conversation.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.2,
+        "maxTokens": 512,
+        "outputVariable": "profile_ack_answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "has_profile_memory",
+      "type": "condition",
+      "position": {
+        "x": 460,
+        "y": 540
+      },
+      "data": {
+        "label": "Profile memory exists?",
+        "leftOperand": "{{profile_memory.profile_notes}}",
+        "operator": "is_not_empty",
+        "rightOperand": ""
+      }
+    },
+    {
+      "id": "build_profile_recall_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 360,
+        "y": 720
+      },
+      "data": {
+        "label": "Build profile recall context",
+        "outputVariable": "profile_recall_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "profile_memory",
+            "label": "Stored profile memory"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 7000
+      }
+    },
+    {
+      "id": "answer_profile_recall",
+      "type": "answer",
+      "position": {
+        "x": 360,
+        "y": 900
+      },
+      "data": {
+        "label": "Recall profile",
+        "contextVariable": "profile_recall_context",
+        "dataVariable": "",
+        "questionTemplate": "{{input}}",
+        "instructions": "Answer in the same language as the user. Report only what is explicitly present in stored profile memory. If the user asks for a short answer, obey the requested format. Treat later notes as more authoritative than earlier conflicting notes.",
+        "answerStyle": "direct, concise",
+        "fallbackMessage": "I do not have any reliable preference memory stored for this conversation yet.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.1,
+        "maxTokens": 700,
+        "outputVariable": "profile_recall_answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "send_no_profile_memory",
+      "type": "sendMessage",
+      "position": {
+        "x": 600,
+        "y": 720
+      },
+      "data": {
+        "label": "No profile memory",
+        "messageType": "text",
+        "messageContent": "I do not have any reliable preference memory stored for this conversation yet."
+      }
+    },
+    {
+      "id": "rewrite_followup_query",
+      "type": "queryRewrite",
+      "position": {
+        "x": 760,
+        "y": 540
+      },
+      "data": {
+        "label": "Rewrite follow-up query",
+        "inputTemplate": "Stored profile memory:\n{{profile_memory}}\n\nPrevious retrieval query:\n{{profile_memory.last_retrieval_query}}\n\nCurrent user message:\n{{input}}",
+        "instructions": "Rewrite this as a concise retrieval query for the knowledge base. Resolve pronouns and vague references from the stored previous retrieval query and profile memory. Preserve named features, acronyms, formats, languages, constraints, and requested link/source/detail focus. Return only the rewritten query.",
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0,
+        "maxTokens": 512,
+        "outputVariable": "retrieval_query",
+        "streamToChat": false,
+        "useConversationMemory": true,
+        "fallbackTemplate": "{{profile_memory.last_retrieval_query}} {{input}}"
+      }
+    },
+    {
+      "id": "set_direct_query",
+      "type": "setVariable",
+      "position": {
+        "x": 1060,
+        "y": 540
+      },
+      "data": {
+        "label": "Use current message as query",
+        "variableName": "retrieval_query",
+        "expression": "{{input}}"
+      }
+    },
+    {
+      "id": "search_knowledge",
+      "type": "knowledgeBase",
+      "position": {
+        "x": 920,
+        "y": 760
+      },
+      "data": {
+        "label": "Search knowledge base",
+        "query": "{{retrieval_query}}",
+        "topK": 8,
+        "minSimilarity": 0.42,
+        "outputVariable": "knowledge_context",
+        "useFollowUpMemory": false,
+        "rememberFollowUpQuery": false,
+        "memoryScope": "conversation",
+        "memoryNamespace": "natural_preference_lab",
+        "memoryKey": "last_retrieval_query",
+        "followUpMode": "never",
+        "followUpPattern": ""
+      }
+    },
+    {
+      "id": "check_context",
+      "type": "confidenceCheck",
+      "position": {
+        "x": 920,
+        "y": 940
+      },
+      "data": {
+        "label": "Enough context?",
+        "sourceVariable": "knowledge_context",
+        "countVariable": "knowledge_context_count",
+        "errorVariable": "knowledge_context_error",
+        "outputVariable": "context_ok",
+        "minCount": 1,
+        "minTextLength": 100
+      }
+    },
+    {
+      "id": "remember_last_query",
+      "type": "memoryWrite",
+      "position": {
+        "x": 780,
+        "y": 1120
+      },
+      "data": {
+        "label": "Remember retrieval query",
+        "scope": "conversation",
+        "namespace": "natural_preference_lab",
+        "key": "last_retrieval_query",
+        "valueTemplate": "{{retrieval_query}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_last_query",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_last_question",
+      "type": "memoryWrite",
+      "position": {
+        "x": 780,
+        "y": 1300
+      },
+      "data": {
+        "label": "Remember last user question",
+        "scope": "conversation",
+        "namespace": "natural_preference_lab",
+        "key": "last_user_question",
+        "valueTemplate": "{{input}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_last_question",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "build_answer_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 920,
+        "y": 1480
+      },
+      "data": {
+        "label": "Build grounded answer context",
+        "outputVariable": "answer_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "profile_memory",
+            "label": "Preference memory before this turn"
+          },
+          {
+            "variable": "retrieval_query",
+            "label": "Retrieval query used"
+          },
+          {
+            "variable": "knowledge_context",
+            "label": "Retrieved knowledge context"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 12000
+      }
+    },
+    {
+      "id": "answer_grounded",
+      "type": "answer",
+      "position": {
+        "x": 920,
+        "y": 1660
+      },
+      "data": {
+        "label": "Preference-aware grounded answer",
+        "contextVariable": "answer_context",
+        "dataVariable": "",
+        "questionTemplate": "Latest user message:\n{{input}}\n\nRetrieval query used:\n{{retrieval_query}}",
+        "instructions": "Answer in the same language as the user. Use preference memory only for tone, format, constraints, and resolving references. Use retrieved context for factual claims. If the user asks for a link or source and no public URL appears in context, say that no public URL is present in the retrieved context. Do not expose internal file paths as public links. Keep the answer concise and respect remembered format preferences.",
+        "answerStyle": "natural, grounded, preference-aware",
+        "fallbackMessage": "I do not have enough reliable context in the knowledge base to answer that.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.15,
+        "maxTokens": 3072,
+        "outputVariable": "answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "send_low_context",
+      "type": "sendMessage",
+      "position": {
+        "x": 1160,
+        "y": 1120
+      },
+      "data": {
+        "label": "Low-context fallback",
+        "messageType": "text",
+        "messageContent": "I could not find enough reliable knowledge-base context for that. Try naming the feature, page, error message, or workflow area you want to inspect."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_trigger_memory",
+      "source": "trigger_incoming",
+      "target": "read_profile_memory"
+    },
+    {
+      "id": "e_memory_classify",
+      "source": "read_profile_memory",
+      "target": "classify_turn"
+    },
+    {
+      "id": "e_smalltalk",
+      "source": "classify_turn",
+      "target": "send_greeting",
+      "sourceHandle": "case_0"
+    },
+    {
+      "id": "e_update_extract",
+      "source": "classify_turn",
+      "target": "extract_profile_update",
+      "sourceHandle": "case_1"
+    },
+    {
+      "id": "e_recall_profile",
+      "source": "classify_turn",
+      "target": "has_profile_memory",
+      "sourceHandle": "case_2"
+    },
+    {
+      "id": "e_followup_rewrite",
+      "source": "classify_turn",
+      "target": "rewrite_followup_query",
+      "sourceHandle": "case_3"
+    },
+    {
+      "id": "e_direct_query",
+      "source": "classify_turn",
+      "target": "set_direct_query",
+      "sourceHandle": "case_4"
+    },
+    {
+      "id": "e_default_query",
+      "source": "classify_turn",
+      "target": "set_direct_query",
+      "sourceHandle": "default"
+    },
+    {
+      "id": "e_extract_valid",
+      "source": "extract_profile_update",
+      "target": "remember_profile_note",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_extract_invalid",
+      "source": "extract_profile_update",
+      "target": "remember_raw_profile_note",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_remember_profile_context",
+      "source": "remember_profile_note",
+      "target": "build_profile_ack_context"
+    },
+    {
+      "id": "e_remember_raw_profile_context",
+      "source": "remember_raw_profile_note",
+      "target": "build_profile_ack_context"
+    },
+    {
+      "id": "e_profile_ack_answer",
+      "source": "build_profile_ack_context",
+      "target": "answer_profile_ack"
+    },
+    {
+      "id": "e_has_profile_yes",
+      "source": "has_profile_memory",
+      "target": "build_profile_recall_context",
+      "sourceHandle": "yes"
+    },
+    {
+      "id": "e_has_profile_no",
+      "source": "has_profile_memory",
+      "target": "send_no_profile_memory",
+      "sourceHandle": "no"
+    },
+    {
+      "id": "e_recall_answer",
+      "source": "build_profile_recall_context",
+      "target": "answer_profile_recall"
+    },
+    {
+      "id": "e_rewrite_search",
+      "source": "rewrite_followup_query",
+      "target": "search_knowledge"
+    },
+    {
+      "id": "e_direct_search",
+      "source": "set_direct_query",
+      "target": "search_knowledge"
+    },
+    {
+      "id": "e_search_check",
+      "source": "search_knowledge",
+      "target": "check_context"
+    },
+    {
+      "id": "e_context_valid",
+      "source": "check_context",
+      "target": "remember_last_query",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_context_invalid",
+      "source": "check_context",
+      "target": "send_low_context",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_query_question",
+      "source": "remember_last_query",
+      "target": "remember_last_question"
+    },
+    {
+      "id": "e_question_context",
+      "source": "remember_last_question",
+      "target": "build_answer_context"
+    },
+    {
+      "id": "e_context_answer",
+      "source": "build_answer_context",
+      "target": "answer_grounded"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.58
+  }
+}

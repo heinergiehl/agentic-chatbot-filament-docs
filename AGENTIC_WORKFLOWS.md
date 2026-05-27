@@ -1,12 +1,12 @@
 # Agentic Workflows
 
-Workflows are the biggest capability gap between a knowledge-only assistant and this plugin. They turn the parent-agent runtime into a guided, multi-step experience that can collect data, branch by intent, call APIs, and take backend actions.
+Workflows are the biggest capability gap between a knowledge-only assistant and this plugin. They turn the assistant runtime into a guided, multi-step experience that can collect data, branch by intent, call APIs, and take backend actions.
 
 ## What A Workflow Is
 
 A workflow is a visual graph that defines how a bot should behave over multiple conversation turns.
 
-Without a workflow, the parent agent can still answer directly, use memory, or search the knowledge base. A simple knowledge-grounded exchange usually follows this path:
+Without a workflow, the assistant can still answer directly, use memory, or search uploaded sources when that capability is available. A source-grounded exchange usually follows this path:
 
 1. user asks a question
 2. retrieve context from the knowledge base
@@ -110,9 +110,7 @@ Uses the configured AI model for tasks such as:
 - response generation
 - decision support
 
-The AI agent node can reference workflow variables and previous conversation context.
-
-Per-node `temperature` and `maxTokens` values are stored for future SDK support. The current runtime still uses the linked bot/provider defaults for those options.
+The AI agent node can reference workflow variables and previous conversation context. Per-node `temperature` and `maxTokens` values are passed through the Laravel AI SDK generation options where the selected provider supports them.
 
 ### Answer
 
@@ -137,7 +135,7 @@ Supported schema styles:
 
 ### Knowledge Base
 
-Runs RAG retrieval inside the workflow. This lets the assistant stay grounded in your documentation while still following a multi-step process. Configure it with the same `top_k` and `min_similarity` controls available on the bot.
+Runs source retrieval inside the workflow. This lets the assistant stay grounded in your documentation while still following a multi-step process. Configure it with the same `top_k` and `min_similarity` controls available on the bot.
 
 ### Confidence Check
 

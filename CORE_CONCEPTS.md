@@ -1,112 +1,94 @@
 # Core Concepts
 
-This page explains the main building blocks of Filament Agentic Chatbot and how the knowledge layer connects to the parent-agent and workflow runtime.
+This page explains the main building blocks of Filament Agentic Chatbot and links to the detailed docs for each one.
 
 ## The Short Version
 
-Filament Agentic Chatbot gives you a Filament-native control plane for running AI assistants inside a Laravel app.
+Filament Agentic Chatbot gives you a Filament-native control plane for running grounded AI assistants inside a Laravel app.
 
-The core flow can be as simple as:
+The core flow is:
 
 1. Create a **bot**
 2. Add **knowledge sources**
 3. Let the system **ingest** those sources
-4. Let the **parent agent** decide whether to answer directly, retrieve knowledge, or run a workflow
+4. Let the **assistant graph** decide whether to answer directly, search sources, or run a workflow
 5. Retrieve relevant **chunks** when the answer needs knowledge grounding
-6. Answer through the **chat widget** or your own frontend
-
-Or it can become more advanced:
-
-1. Trigger a **workflow**
-2. Collect input or inspect the conversation state
-3. Retrieve knowledge from the knowledge base
-4. Route through **conditions**, **switches**, and **AI agent** nodes
-5. Call **actions** or **HTTP APIs**
-6. Return a guided response or complete a task through the widget, server API, Telegram, or Slack
+6. Optionally guide task execution through an **agent workflow**
+7. Answer through the **chat widget** or your own frontend
+8. Review **conversations**, workflow runs, and operating health inside Filament
 
 ## Concept Map
 
-| Concept       | What It Means                                                                                                               | Learn More                                            |
-| ------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| Bot           | A configured assistant with its own prompt, model, retrieval settings, access rules, widget branding, and workflow behavior | [Bots](BOTS.md)                                       |
-| Parent Agent  | The default chat runtime that orchestrates memory, knowledge search, workflow execution, and direct replies                 | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
-| RAG Source    | A piece of knowledge the bot can use, such as text, a file, a URL, or mapped records from a JSON API                       | [RAG Sources](RAG_SOURCES.md)                         |
-| Document      | The normalized stored version of a source after extraction                                                                  | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
-| Chunk         | A smaller searchable section of a document used for retrieval and citations                                                 | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
-| Ingestion     | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                                           | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
-| Retrieval     | The step where relevant chunks are selected for a user question or workflow step                                            | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) |
-| Workflow      | A multi-step conversation graph that can ask questions, branch, retrieve context, and take actions                          | [Agentic Workflows](AGENTIC_WORKFLOWS.md)             |
-| Node          | One workflow building block such as `collectInput`, `condition`, `aiAgent`, or `knowledgeBase`                              | [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)       |
-| Action        | A backend capability invoked from a workflow, such as creating a ticket or sending data onward                              | [Agentic Workflows](AGENTIC_WORKFLOWS.md)             |
-| API Connector | A saved external API profile (base URL, auth, headers, timeout) reusable across workflows and API knowledge sources        | [API Connectors](API_CONNECTORS.md)                   |
-| Widget        | The embeddable chat UI for websites or product frontends                                                                    | [Chat Widget](CHAT_WIDGET.md)                         |
-| Channel       | A package-owned Telegram or Slack connection that maps provider threads to bot conversations                                | [Channel Integrations](CHANNELS.md)                   |
-| Context Area  | The access scope for a bot, such as public, member, or admin                                                                | [Bots](BOTS.md)                                       |
-| Conversation  | A stored chat session for one bot and one session identifier                                                                | [Product Overview](PRODUCT_OVERVIEW.md)               |
+| Concept        | What It Means                                                                                             | Learn More                                                  |
+| -------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
+| Bot            | A configured assistant with its own prompt, model, retrieval settings, access rules, and widget branding  | [Bots](BOTS.md)                                             |
+| Assistant Graph | The default chat runtime that orchestrates memory, optional knowledge search, workflow execution, and direct replies | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
+| Knowledge Source | A piece of knowledge you want the bot to use, such as text, a file, or a URL                            | [Sources](RAG_SOURCES.md)                                   |
+| Document       | The normalized stored version of a source after extraction                                                | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
+| Chunk          | A smaller searchable section of a document used for retrieval and citations                               | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
+| Ingestion      | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                         | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
+| Retrieval      | The step where relevant chunks are selected for a user question                                           | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
+| Agent Workflow | A visual runtime that adds branching, actions, handoffs, or integrations on top of grounded chat behavior | [Agentic Workflows](AGENTIC_WORKFLOWS.md)                   |
+| API Connector  | A saved external API connection profile reusable across workflows (base URL, auth, headers, timeout)      | [API Connectors](API_CONNECTORS.md)                         |
+| Widget         | The embeddable chat UI for websites or product frontends                                                  | [Chat Widget](CHAT_WIDGET.md)                               |
+| Context Area   | The access scope for a bot, such as public, member, or admin                                              | [Context Areas](CONTEXT_AREAS.md)                           |
+| Conversation   | A stored chat session for one bot and one session identifier                                              | [Conversations and Messages](CONVERSATIONS_AND_MESSAGES.md) |
+| Message        | An individual user or assistant entry inside a conversation                                               | [Conversations and Messages](CONVERSATIONS_AND_MESSAGES.md) |
 
 ## How The Pieces Fit Together
 
 ### Bot
 
-The bot is the main runtime definition. It decides:
+The bot is the central runtime definition. It decides:
 
-- which model and provider respond
+- which model and provider answer questions
 - which sources belong to it
 - how strict retrieval should be
 - which users or areas can access it
 - how the widget looks and behaves
-- whether the experience behaves like a straightforward chatbot or a workflow-driven assistant
 
 ### Sources, Documents, and Chunks
 
-A source is the input. During ingestion, that source becomes one or more normalized documents, and those documents are split into chunks. Text, file, and URL sources usually create one document. API sources can create one document per mapped API record. Those chunks are what retrieval actually searches.
+A source is the input. During ingestion, that source becomes a normalized document, and that document is split into chunks. Those chunks are what retrieval actually searches.
 
-That means the bot does not search whole files or pages at once. It searches smaller grounded pieces of content.
+That means the bot does not search entire files or pages at once. It searches smaller grounded pieces of content.
 
 ### Retrieval and Answers
 
-When a user asks a question, the system can:
+When a user asks a question:
 
-1. route the message through the parent agent
-2. decide whether knowledge is needed
-3. embed the query and find relevant chunks
-4. format those chunks as context
-5. return a grounded answer, often with citations
+1. the assistant graph receives the latest message plus conversation state
+2. the assistant decides whether uploaded sources are needed
+3. knowledge search embeds the query and finds relevant chunks
+4. retrieved chunks are formatted as context
+5. the model returns a grounded answer, often with citations
 
-### Workflows and Actions
+### Agent Workflows
 
-Workflows add task orchestration on top of the parent-agent runtime.
+Workflows are optional, but they are what make this product more than a knowledge-only assistant.
 
-Instead of always producing one direct answer, a workflow can:
-
-- ask follow-up questions
-- classify intent
-- route to different branches
-- combine retrieval with AI processing
-- call backend actions or external APIs
-- send a final answer, summary, or next-step message
+They let you add branching logic, AI classification, backend actions, connector calls, and safer release management on top of the assistant answer flow.
 
 ### Runtime Naming
 
 The codebase still contains names such as `RagBot`, `RagSource`, and `RagAgent` for backward compatibility. Product behavior should be understood differently:
 
 - the **bot** is the persisted assistant configuration
-- the **parent agent** is the default chat runtime
-- **RAG** is the knowledge retrieval capability used through `KnowledgeSearchTool`
-- `RagAgent` is a legacy compatibility path, not the main chatbot architecture
+- the **assistant graph** is the default chat runtime
+- **knowledge search** is the source-grounding capability used through `KnowledgeSearchTool`
+- `ParentAgent` and `RagAgent` are legacy compatibility aliases, not the main chatbot architecture
 
-### Conversations, Widget Runtime, and Channels
+### Conversations and Widget Runtime
 
-The widget is the default browser interface layer. Channel integrations let Telegram and Slack reach the same bot runtime without custom app-level controllers. The bot, sources, workflows, retrieval, conversations, channel connections, and delivery events live in your Laravel app and are managed from Filament.
+The widget is only the interface layer. The bot, sources, retrieval, workflows, and conversations live in your Laravel app and are managed from Filament.
 
 ## Read These Next
 
 - [Product Overview](PRODUCT_OVERVIEW.md)
-- [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
+- [Bots](BOTS.md)
+- [Sources](RAG_SOURCES.md)
+- [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
-- [Channel Integrations](CHANNELS.md)
-- [API Source Roadmap](API_SOURCE_ROADMAP.md)
-- [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
-- [Quickstart](QUICKSTART.md)
+- [Chat Widget](CHAT_WIDGET.md)

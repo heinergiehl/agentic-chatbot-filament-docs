@@ -85,16 +85,16 @@ Enable `continueOnFail` only when a downstream branch or Error Handler node read
 
 ## Using A Connector For API Knowledge Sources
 
-Use an API Knowledge Source when JSON records should become searchable RAG knowledge:
+Use an API Knowledge Source when JSON records should become searchable assistant knowledge:
 
 1. Create a connector for the service
-2. Open **RAG Sources**
+2. Open **Sources**
 3. Choose **API Source**
 4. Select the connector
 5. Enter the endpoint path, for example `/products?status=active`
 6. Map the returned records into text with a content template
 
-This is best for stable or semi-stable records such as product catalogs, CMS entries, public documentation records, or help-center article APIs. For live account-specific data, order status, stock levels, or write operations, use a workflow API Connector node instead of syncing the data into RAG.
+This is best for stable or semi-stable records such as product catalogs, CMS entries, public documentation records, or help-center article APIs. For live account-specific data, order status, stock levels, or write operations, use a workflow API Connector node instead of syncing the data into the knowledge index.
 
 ## Example: Stripe Charge Lookup
 
@@ -158,7 +158,7 @@ From the workflow editor, you can perform a **dry run** on an API Connector node
 ## Related Docs
 
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md) — how workflows use connectors
-- [RAG Sources](RAG_SOURCES.md) — how API knowledge sources use connectors
+- [Sources](RAG_SOURCES.md) — how API knowledge sources use connectors
 - [API Source Roadmap](API_SOURCE_ROADMAP.md) — current scope and planned improvements
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md) — the `apiConnector` node type schema
 - [Security And Privacy](SECURITY_AND_PRIVACY.md) — credential storage and data handling

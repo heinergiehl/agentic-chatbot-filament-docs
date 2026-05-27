@@ -1,0 +1,499 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "note_streaming_closure",
+            "type": "note",
+            "position": {
+                "x": 900,
+                "y": 2140
+            },
+            "data": {
+                "label": "Streaming Demo",
+                "noteContent": "This final AI step turns the structured bundle into a short streamed closing reply, so the workflow demonstrates deterministic prompts plus live token streaming in the same experience.",
+                "color": "#bfdbfe"
+            }
+        },
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 520,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_intro",
+            "type": "sendMessage",
+            "position": {
+                "x": 520,
+                "y": 200
+            },
+            "data": {
+                "label": "Set Expectations",
+                "messageType": "text",
+                "messageContent": "I captured your message for the plugin team. I will classify it, save it, and then ask once for an optional follow-up email."
+            }
+        },
+        {
+            "id": "input_primary_detail",
+            "type": "setVariable",
+            "position": {
+                "x": 520,
+                "y": 340
+            },
+            "data": {
+                "label": "Use Visitor Feedback",
+                "variableName": "primary_feedback_detail",
+                "expression": "{{input}}"
+            }
+        },
+        {
+            "id": "classify_feedback_type",
+            "type": "intentClassifier",
+            "position": {
+                "x": 520,
+                "y": 480
+            },
+            "data": {
+                "label": "Classify Feedback",
+                "variable": "classified_feedback_type",
+                "inputTemplate": "{{primary_feedback_detail}}",
+                "intents": [
+                    {
+                        "label": "Docs gap",
+                        "description": "Missing, unclear, stale, or incomplete documentation."
+                    },
+                    {
+                        "label": "UX frustration",
+                        "description": "Confusing editor, widget, setup, navigation, or interaction experience."
+                    },
+                    {
+                        "label": "Bug",
+                        "description": "Broken behavior, errors, regressions, or incorrect runtime output."
+                    },
+                    {
+                        "label": "Feature request",
+                        "description": "A new capability, integration, setting, or enhancement request."
+                    }
+                ],
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "set_type_docs",
+            "type": "setVariable",
+            "position": {
+                "x": 80,
+                "y": 620
+            },
+            "data": {
+                "label": "Set Docs Gap",
+                "variableName": "primary_feedback_type",
+                "expression": "Docs gap"
+            }
+        },
+        {
+            "id": "set_type_ux",
+            "type": "setVariable",
+            "position": {
+                "x": 300,
+                "y": 620
+            },
+            "data": {
+                "label": "Set UX Frustration",
+                "variableName": "primary_feedback_type",
+                "expression": "UX frustration"
+            }
+        },
+        {
+            "id": "set_type_bug",
+            "type": "setVariable",
+            "position": {
+                "x": 520,
+                "y": 620
+            },
+            "data": {
+                "label": "Set Bug",
+                "variableName": "primary_feedback_type",
+                "expression": "Bug"
+            }
+        },
+        {
+            "id": "set_type_feature",
+            "type": "setVariable",
+            "position": {
+                "x": 740,
+                "y": 620
+            },
+            "data": {
+                "label": "Set Feature Request",
+                "variableName": "primary_feedback_type",
+                "expression": "Feature request"
+            }
+        },
+        {
+            "id": "set_type_general",
+            "type": "setVariable",
+            "position": {
+                "x": 960,
+                "y": 620
+            },
+            "data": {
+                "label": "Set General Feedback",
+                "variableName": "primary_feedback_type",
+                "expression": "General feedback"
+            }
+        },
+        {
+            "id": "set_secondary_type_empty",
+            "type": "setVariable",
+            "position": {
+                "x": 520,
+                "y": 800
+            },
+            "data": {
+                "label": "Blank Second Type",
+                "variableName": "secondary_feedback_type",
+                "expression": ""
+            }
+        },
+        {
+            "id": "set_secondary_detail_empty",
+            "type": "setVariable",
+            "position": {
+                "x": 520,
+                "y": 940
+            },
+            "data": {
+                "label": "Blank Second Detail",
+                "variableName": "secondary_feedback_detail",
+                "expression": ""
+            }
+        },
+        {
+            "id": "set_single_summary",
+            "type": "setVariable",
+            "position": {
+                "x": 520,
+                "y": 1080
+            },
+            "data": {
+                "label": "Build Single Item Summary",
+                "variableName": "feedback_summary",
+                "expression": "1. {{primary_feedback_type}}: {{primary_feedback_detail}}"
+            }
+        },
+        {
+            "id": "msg_email",
+            "type": "sendMessage",
+            "position": {
+                "x": 520,
+                "y": 1620
+            },
+            "data": {
+                "label": "Ask For Email",
+                "messageType": "buttons",
+                "messageContent": "If you'd like a follow-up, send your email next. Otherwise tap Skip email or type skip.",
+                "buttons": [
+                    {
+                        "label": "Skip email",
+                        "value": "skip"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "input_contact_email_raw",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 1760
+            },
+            "data": {
+                "label": "Collect Email",
+                "prompt": "What's the best follow-up email? Type skip if you don't want to leave one.",
+                "variableName": "contact_email_raw",
+                "inputType": "text",
+                "validation": "regex:/^(skip|no|no thanks|[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,})$/i",
+                "required": true
+            }
+        },
+        {
+            "id": "cond_skip_email",
+            "type": "condition",
+            "position": {
+                "x": 520,
+                "y": 1900
+            },
+            "data": {
+                "label": "Skip Email",
+                "leftOperand": "{{contact_email_raw}}",
+                "operator": "matches_regex",
+                "rightOperand": "/^(skip|no|no thanks)$/i"
+            }
+        },
+        {
+            "id": "set_email_blank",
+            "type": "setVariable",
+            "position": {
+                "x": 260,
+                "y": 2040
+            },
+            "data": {
+                "label": "Clear Email",
+                "variableName": "contact_email",
+                "expression": ""
+            }
+        },
+        {
+            "id": "set_email_value",
+            "type": "setVariable",
+            "position": {
+                "x": 780,
+                "y": 2040
+            },
+            "data": {
+                "label": "Use Email",
+                "variableName": "contact_email",
+                "expression": "{{contact_email_raw}}"
+            }
+        },
+        {
+            "id": "join_contact_email",
+            "type": "join",
+            "position": {
+                "x": 520,
+                "y": 2180
+            },
+            "data": {
+                "label": "Merge Contact Paths"
+            }
+        },
+        {
+            "id": "confirm_store_feedback_bundle",
+            "type": "confirmation",
+            "position": {
+                "x": 520,
+                "y": 2320
+            },
+            "data": {
+                "label": "Review Before Storing",
+                "prompt": "Store this feedback bundle for review?",
+                "variableName": "feedback_bundle_store_confirmed",
+                "confirmLabel": "Store feedback",
+                "cancelLabel": "Skip storing",
+                "allowInterruptions": true,
+                "interruptionPatterns": "",
+                "semanticInterruptionCheck": true
+            }
+        },
+        {
+            "id": "action_store_feedback_bundle",
+            "type": "action",
+            "position": {
+                "x": 520,
+                "y": 2460
+            },
+            "data": {
+                "label": "Store Feedback Bundle",
+                "actionKey": "store_submission",
+                "inputMapping": {
+                    "schema_key": "feedback_form",
+                    "payload": {
+                        "primary_feedback_type": "{{primary_feedback_type}}",
+                        "primary_feedback_detail": "{{primary_feedback_detail}}",
+                        "secondary_feedback_type": "{{secondary_feedback_type}}",
+                        "secondary_feedback_detail": "{{secondary_feedback_detail}}",
+                        "feedback_summary": "{{feedback_summary}}",
+                        "contact_email": "{{contact_email}}"
+                    },
+                    "meta": {
+                        "source": "workflow_example.plugin_feedback_collector"
+                    }
+                },
+                "outputVariable": "stored_feedback"
+            }
+        },
+        {
+            "id": "msg_store_cancelled",
+            "type": "sendMessage",
+            "position": {
+                "x": 820,
+                "y": 2460
+            },
+            "data": {
+                "label": "Store Skipped",
+                "messageType": "text",
+                "messageContent": "No feedback record was stored."
+            }
+        },
+        {
+            "id": "ai_close_feedback",
+            "type": "aiAgent",
+            "position": {
+                "x": 520,
+                "y": 2600
+            },
+            "data": {
+                "label": "Draft Streamed Closing Reply",
+                "systemPrompt": "You are the customer-facing feedback triage assistant for the Filament Agentic Chatbot plugin. Write exactly two short sentences in plain text. Sentence 1 must begin with \"Feedback saved.\" and briefly acknowledge the submitted feedback themes. Sentence 2 must begin with \"Follow-up:\" and clearly say whether the team can contact the user based on the provided email. Keep it under 60 words. No markdown, no bullets.",
+                "userPromptTemplate": "Feedback summary:\n{{feedback_summary}}\n\nPrimary item: {{primary_feedback_type}}\nSecondary item: {{secondary_feedback_type}}\nFollow-up email: {{contact_email}}",
+                "temperature": 0.2,
+                "maxTokens": 120,
+                "outputVariable": "closing_message",
+                "streamToChat": true
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e1",
+            "source": "trigger_1",
+            "target": "msg_intro"
+        },
+        {
+            "id": "e2",
+            "source": "msg_intro",
+            "target": "input_primary_detail"
+        },
+        {
+            "id": "e3",
+            "source": "input_primary_detail",
+            "target": "classify_feedback_type"
+        },
+        {
+            "id": "e4",
+            "source": "classify_feedback_type",
+            "target": "set_type_docs",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e5",
+            "source": "classify_feedback_type",
+            "target": "set_type_ux",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e6",
+            "source": "classify_feedback_type",
+            "target": "set_type_bug",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e7",
+            "source": "classify_feedback_type",
+            "target": "set_type_feature",
+            "sourceHandle": "case_3"
+        },
+        {
+            "id": "e8",
+            "source": "classify_feedback_type",
+            "target": "set_type_general",
+            "sourceHandle": "default"
+        },
+        {
+            "id": "e9",
+            "source": "set_type_docs",
+            "target": "set_secondary_type_empty"
+        },
+        {
+            "id": "e10",
+            "source": "set_type_ux",
+            "target": "set_secondary_type_empty"
+        },
+        {
+            "id": "e11",
+            "source": "set_type_bug",
+            "target": "set_secondary_type_empty"
+        },
+        {
+            "id": "e12",
+            "source": "set_type_feature",
+            "target": "set_secondary_type_empty"
+        },
+        {
+            "id": "e13",
+            "source": "set_type_general",
+            "target": "set_secondary_type_empty"
+        },
+        {
+            "id": "e14",
+            "source": "set_secondary_type_empty",
+            "target": "set_secondary_detail_empty"
+        },
+        {
+            "id": "e15",
+            "source": "set_secondary_detail_empty",
+            "target": "set_single_summary"
+        },
+        {
+            "id": "e16",
+            "source": "set_single_summary",
+            "target": "msg_email"
+        },
+        {
+            "id": "e17",
+            "source": "msg_email",
+            "target": "input_contact_email_raw"
+        },
+        {
+            "id": "e18",
+            "source": "input_contact_email_raw",
+            "target": "cond_skip_email"
+        },
+        {
+            "id": "e19",
+            "source": "cond_skip_email",
+            "target": "set_email_blank",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e20",
+            "source": "cond_skip_email",
+            "target": "set_email_value",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e21",
+            "source": "set_email_blank",
+            "target": "join_contact_email"
+        },
+        {
+            "id": "e22",
+            "source": "set_email_value",
+            "target": "join_contact_email"
+        },
+        {
+            "id": "e23",
+            "source": "join_contact_email",
+            "target": "confirm_store_feedback_bundle"
+        },
+        {
+            "id": "e24",
+            "source": "confirm_store_feedback_bundle",
+            "target": "action_store_feedback_bundle",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e25",
+            "source": "confirm_store_feedback_bundle",
+            "target": "msg_store_cancelled",
+            "sourceHandle": "invalid"
+        },
+        {
+            "id": "e26",
+            "source": "action_store_feedback_bundle",
+            "target": "ai_close_feedback"
+        }
+    ],
+    "viewport": {
+        "x": 24,
+        "y": 36,
+        "zoom": 0.61
+    }
+}

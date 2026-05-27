@@ -1,0 +1,597 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "trigger_incoming",
+      "type": "trigger",
+      "position": {
+        "x": 430,
+        "y": 40
+      },
+      "data": {
+        "label": "Incoming message",
+        "triggerType": "user_message"
+      }
+    },
+    {
+      "id": "read_intake_memory",
+      "type": "memoryRead",
+      "position": {
+        "x": 430,
+        "y": 180
+      },
+      "data": {
+        "label": "Read intake memory",
+        "scope": "conversation",
+        "namespace": "natural_intake_lab",
+        "key": "",
+        "defaultValue": "{}",
+        "outputVariable": "intake_memory"
+      }
+    },
+    {
+      "id": "classify_turn",
+      "type": "intentClassifier",
+      "position": {
+        "x": 430,
+        "y": 340
+      },
+      "data": {
+        "label": "Classify intake turn",
+        "intents": [
+          {
+            "label": "smalltalk",
+            "description": "Greeting, thanks, pleasantry, or a message with no intake update and no knowledge-base request."
+          },
+          {
+            "label": "intake_update",
+            "description": "The user provides, changes, corrects, confirms, or adds requirements, goals, project details, contact details, deadline, priority, constraints, audience, or notes."
+          },
+          {
+            "label": "recall_status",
+            "description": "The user asks what has been collected, what is missing, what changed, what they said earlier, or asks for a summary/status of the intake."
+          },
+          {
+            "label": "knowledge_follow_up",
+            "description": "A documentation or knowledge-base follow-up that depends on the previous docs query, previous answer, or intake context."
+          },
+          {
+            "label": "knowledge_question",
+            "description": "A standalone factual question about the product, docs, setup, RAG, workflows, widget, channels, ingestion, APIs, security, or behavior."
+          }
+        ],
+        "variable": "turn_intent",
+        "inputTemplate": "Latest user message:\n{{input}}\n\nStored intake memory JSON:\n{{intake_memory}}",
+        "systemPrompt": "You are a language-agnostic workflow router for a humanlike intake conversation. Classify the latest user message into exactly one configured label. Use stored memory only to resolve references. Do not answer the user. Output only the label, with no JSON, markdown, punctuation, or explanation.",
+        "provider": "",
+        "model": "",
+        "useConversationMemory": false,
+        "heuristicFallback": false,
+        "maxTokens": 128
+      }
+    },
+    {
+      "id": "send_greeting",
+      "type": "sendMessage",
+      "position": {
+        "x": -120,
+        "y": 540
+      },
+      "data": {
+        "label": "Human greeting",
+        "messageType": "text",
+        "messageContent": "Hi. Tell me requirements, corrections, deadlines, constraints, or questions. I will keep an intake journal for this conversation."
+      }
+    },
+    {
+      "id": "extract_intake_update",
+      "type": "structuredOutput",
+      "position": {
+        "x": 140,
+        "y": 540
+      },
+      "data": {
+        "label": "Extract intake update",
+        "sourceTemplate": "Latest user message:\n{{input}}\n\nExisting intake memory:\n{{intake_memory}}",
+        "schema": "{\"summary_note\":\"string\",\"goal\":\"string\",\"constraint\":\"string\",\"deadline\":\"string\",\"contact\":\"string\",\"correction\":\"string\"}",
+        "instructions": "Return compact JSON only. Always include every key. summary_note is one durable event-journal entry describing what the user added, changed, corrected, or confirmed. Use correction when the message explicitly overrides earlier information. Use empty strings for unknown values. Preserve exact names, dates, channels, formats, languages, acronyms, and constraints.",
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0,
+        "maxTokens": 384,
+        "outputVariable": "intake_update",
+        "rawOutputVariable": "",
+        "streamToChat": false,
+        "useConversationMemory": false,
+        "disableTools": true
+      }
+    },
+    {
+      "id": "append_intake_journal",
+      "type": "memoryWrite",
+      "position": {
+        "x": 40,
+        "y": 720
+      },
+      "data": {
+        "label": "Append intake journal",
+        "scope": "conversation",
+        "namespace": "natural_intake_lab",
+        "key": "intake_journal",
+        "valueTemplate": "Previous intake journal:\n{{intake_memory.intake_journal}}\n\nLatest update:\n{{intake_update.summary_note}}\nRaw message:\n{{input}}",
+        "valueMode": "text",
+        "memoryType": "summary",
+        "merge": false,
+        "outputVariable": "updated_intake_journal",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "append_raw_intake_journal",
+      "type": "memoryWrite",
+      "position": {
+        "x": 260,
+        "y": 720
+      },
+      "data": {
+        "label": "Fallback append raw intake",
+        "scope": "conversation",
+        "namespace": "natural_intake_lab",
+        "key": "intake_journal",
+        "valueTemplate": "Previous intake journal:\n{{intake_memory.intake_journal}}\n\nLatest raw update:\n{{input}}",
+        "valueMode": "text",
+        "memoryType": "summary",
+        "merge": false,
+        "outputVariable": "updated_intake_journal",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_last_intake_update",
+      "type": "memoryWrite",
+      "position": {
+        "x": 140,
+        "y": 900
+      },
+      "data": {
+        "label": "Remember last intake update",
+        "scope": "conversation",
+        "namespace": "natural_intake_lab",
+        "key": "last_intake_update",
+        "valueTemplate": "{{input}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_last_intake_update",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "build_intake_ack_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 140,
+        "y": 1080
+      },
+      "data": {
+        "label": "Build intake acknowledgement context",
+        "outputVariable": "intake_ack_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "updated_intake_journal",
+            "label": "Updated intake journal"
+          },
+          {
+            "variable": "intake_update",
+            "label": "Extracted intake update"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 9000
+      }
+    },
+    {
+      "id": "answer_intake_ack",
+      "type": "answer",
+      "position": {
+        "x": 140,
+        "y": 1260
+      },
+      "data": {
+        "label": "Natural intake acknowledgement",
+        "contextVariable": "intake_ack_context",
+        "dataVariable": "",
+        "questionTemplate": "{{input}}",
+        "instructions": "Reply in the same language as the user. Confirm the update naturally. If there is a correction, state that the latest correction is now the authoritative version. Mention one useful missing detail only if it is natural. Keep it short.",
+        "answerStyle": "natural, concise, operational",
+        "fallbackMessage": "I updated the intake memory for this conversation.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.2,
+        "maxTokens": 700,
+        "outputVariable": "intake_ack_answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "has_intake_journal",
+      "type": "condition",
+      "position": {
+        "x": 470,
+        "y": 540
+      },
+      "data": {
+        "label": "Intake journal exists?",
+        "leftOperand": "{{intake_memory.intake_journal}}",
+        "operator": "is_not_empty",
+        "rightOperand": ""
+      }
+    },
+    {
+      "id": "build_status_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 360,
+        "y": 720
+      },
+      "data": {
+        "label": "Build intake status context",
+        "outputVariable": "status_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "intake_memory",
+            "label": "Stored intake memory"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 10000
+      }
+    },
+    {
+      "id": "answer_status",
+      "type": "answer",
+      "position": {
+        "x": 360,
+        "y": 900
+      },
+      "data": {
+        "label": "Recall intake status",
+        "contextVariable": "status_context",
+        "dataVariable": "",
+        "questionTemplate": "{{input}}",
+        "instructions": "Answer in the same language as the user. Summarize only what is present in the stored intake journal. Latest corrections override earlier conflicting details. If the user asks what is missing, infer only obvious gaps and phrase them as missing/unknown, not as facts. If the user asks for one word or a short format, obey it.",
+        "answerStyle": "direct, concise, stateful",
+        "fallbackMessage": "I do not have any reliable intake memory stored for this conversation yet.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.1,
+        "maxTokens": 900,
+        "outputVariable": "status_answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "send_no_intake_memory",
+      "type": "sendMessage",
+      "position": {
+        "x": 600,
+        "y": 720
+      },
+      "data": {
+        "label": "No intake memory",
+        "messageType": "text",
+        "messageContent": "I do not have any reliable intake memory stored for this conversation yet."
+      }
+    },
+    {
+      "id": "rewrite_doc_followup",
+      "type": "queryRewrite",
+      "position": {
+        "x": 760,
+        "y": 540
+      },
+      "data": {
+        "label": "Rewrite docs follow-up",
+        "inputTemplate": "Stored intake memory:\n{{intake_memory}}\n\nPrevious docs query:\n{{intake_memory.last_doc_query}}\n\nCurrent user message:\n{{input}}",
+        "instructions": "Rewrite this as a concise knowledge-base search query. Resolve references from previous docs query and intake context. Preserve product names, workflow areas, channels, constraints, dates, acronyms, and requested link/source/detail focus. Return only the rewritten query.",
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0,
+        "maxTokens": 512,
+        "outputVariable": "doc_query",
+        "streamToChat": false,
+        "useConversationMemory": true,
+        "fallbackTemplate": "{{intake_memory.last_doc_query}} {{input}}"
+      }
+    },
+    {
+      "id": "set_direct_doc_query",
+      "type": "setVariable",
+      "position": {
+        "x": 1060,
+        "y": 540
+      },
+      "data": {
+        "label": "Use current message as docs query",
+        "variableName": "doc_query",
+        "expression": "{{input}}"
+      }
+    },
+    {
+      "id": "search_docs",
+      "type": "knowledgeBase",
+      "position": {
+        "x": 920,
+        "y": 760
+      },
+      "data": {
+        "label": "Search docs",
+        "query": "{{doc_query}}",
+        "topK": 8,
+        "minSimilarity": 0.42,
+        "outputVariable": "doc_context",
+        "useFollowUpMemory": false,
+        "rememberFollowUpQuery": false,
+        "memoryScope": "conversation",
+        "memoryNamespace": "natural_intake_lab",
+        "memoryKey": "last_doc_query",
+        "followUpMode": "never",
+        "followUpPattern": ""
+      }
+    },
+    {
+      "id": "check_doc_context",
+      "type": "confidenceCheck",
+      "position": {
+        "x": 920,
+        "y": 940
+      },
+      "data": {
+        "label": "Enough docs context?",
+        "sourceVariable": "doc_context",
+        "countVariable": "doc_context_count",
+        "errorVariable": "doc_context_error",
+        "outputVariable": "doc_context_ok",
+        "minCount": 1,
+        "minTextLength": 100
+      }
+    },
+    {
+      "id": "remember_last_doc_query",
+      "type": "memoryWrite",
+      "position": {
+        "x": 780,
+        "y": 1120
+      },
+      "data": {
+        "label": "Remember docs query",
+        "scope": "conversation",
+        "namespace": "natural_intake_lab",
+        "key": "last_doc_query",
+        "valueTemplate": "{{doc_query}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_last_doc_query",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "build_doc_answer_context",
+      "type": "contextBuilder",
+      "position": {
+        "x": 920,
+        "y": 1300
+      },
+      "data": {
+        "label": "Build docs answer context",
+        "outputVariable": "doc_answer_context",
+        "includeInput": true,
+        "sources": [
+          {
+            "variable": "intake_memory",
+            "label": "Intake memory before this turn"
+          },
+          {
+            "variable": "doc_query",
+            "label": "Docs query used"
+          },
+          {
+            "variable": "doc_context",
+            "label": "Retrieved documentation context"
+          }
+        ],
+        "separator": "\n\n---\n\n",
+        "maxLength": 12000
+      }
+    },
+    {
+      "id": "answer_docs",
+      "type": "answer",
+      "position": {
+        "x": 920,
+        "y": 1480
+      },
+      "data": {
+        "label": "Intake-aware docs answer",
+        "contextVariable": "doc_answer_context",
+        "dataVariable": "",
+        "questionTemplate": "Latest user message:\n{{input}}\n\nDocs query used:\n{{doc_query}}",
+        "instructions": "Answer in the same language as the user. Use intake memory only to adapt relevance and resolve references. Use retrieved documentation context for factual claims. If a link is requested and no public URL appears in context, say no public URL is present in the retrieved context. Do not expose internal file paths as public links. Keep the answer concise.",
+        "answerStyle": "natural, grounded, state-aware",
+        "fallbackMessage": "I do not have enough reliable context in the knowledge base to answer that.",
+        "requireContext": true,
+        "provider": "",
+        "model": "",
+        "systemPrompt": "",
+        "temperature": 0.15,
+        "maxTokens": 3072,
+        "outputVariable": "doc_answer",
+        "streamToChat": true,
+        "useConversationMemory": true
+      }
+    },
+    {
+      "id": "send_low_doc_context",
+      "type": "sendMessage",
+      "position": {
+        "x": 1160,
+        "y": 1120
+      },
+      "data": {
+        "label": "Low docs context fallback",
+        "messageType": "text",
+        "messageContent": "I could not find enough reliable documentation context for that. Try naming the feature, page, workflow area, or error message."
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_trigger_memory",
+      "source": "trigger_incoming",
+      "target": "read_intake_memory"
+    },
+    {
+      "id": "e_memory_classify",
+      "source": "read_intake_memory",
+      "target": "classify_turn"
+    },
+    {
+      "id": "e_smalltalk",
+      "source": "classify_turn",
+      "target": "send_greeting",
+      "sourceHandle": "case_0"
+    },
+    {
+      "id": "e_intake_update",
+      "source": "classify_turn",
+      "target": "extract_intake_update",
+      "sourceHandle": "case_1"
+    },
+    {
+      "id": "e_recall_status",
+      "source": "classify_turn",
+      "target": "has_intake_journal",
+      "sourceHandle": "case_2"
+    },
+    {
+      "id": "e_followup_docs",
+      "source": "classify_turn",
+      "target": "rewrite_doc_followup",
+      "sourceHandle": "case_3"
+    },
+    {
+      "id": "e_direct_docs",
+      "source": "classify_turn",
+      "target": "set_direct_doc_query",
+      "sourceHandle": "case_4"
+    },
+    {
+      "id": "e_default_intake",
+      "source": "classify_turn",
+      "target": "extract_intake_update",
+      "sourceHandle": "default"
+    },
+    {
+      "id": "e_extract_valid",
+      "source": "extract_intake_update",
+      "target": "append_intake_journal",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_extract_invalid",
+      "source": "extract_intake_update",
+      "target": "append_raw_intake_journal",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_append_last_update",
+      "source": "append_intake_journal",
+      "target": "remember_last_intake_update"
+    },
+    {
+      "id": "e_append_raw_last_update",
+      "source": "append_raw_intake_journal",
+      "target": "remember_last_intake_update"
+    },
+    {
+      "id": "e_last_update_context",
+      "source": "remember_last_intake_update",
+      "target": "build_intake_ack_context"
+    },
+    {
+      "id": "e_intake_ack_answer",
+      "source": "build_intake_ack_context",
+      "target": "answer_intake_ack"
+    },
+    {
+      "id": "e_has_journal_yes",
+      "source": "has_intake_journal",
+      "target": "build_status_context",
+      "sourceHandle": "yes"
+    },
+    {
+      "id": "e_has_journal_no",
+      "source": "has_intake_journal",
+      "target": "send_no_intake_memory",
+      "sourceHandle": "no"
+    },
+    {
+      "id": "e_status_answer",
+      "source": "build_status_context",
+      "target": "answer_status"
+    },
+    {
+      "id": "e_rewrite_docs_search",
+      "source": "rewrite_doc_followup",
+      "target": "search_docs"
+    },
+    {
+      "id": "e_direct_docs_search",
+      "source": "set_direct_doc_query",
+      "target": "search_docs"
+    },
+    {
+      "id": "e_search_check",
+      "source": "search_docs",
+      "target": "check_doc_context"
+    },
+    {
+      "id": "e_doc_context_valid",
+      "source": "check_doc_context",
+      "target": "remember_last_doc_query",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_doc_context_invalid",
+      "source": "check_doc_context",
+      "target": "send_low_doc_context",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_doc_query_context",
+      "source": "remember_last_doc_query",
+      "target": "build_doc_answer_context"
+    },
+    {
+      "id": "e_doc_answer",
+      "source": "build_doc_answer_context",
+      "target": "answer_docs"
+    }
+  ],
+  "viewport": {
+    "x": 0,
+    "y": 0,
+    "zoom": 0.58
+  }
+}

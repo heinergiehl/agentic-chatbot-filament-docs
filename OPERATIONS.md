@@ -75,6 +75,35 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as a release blocker.
 
+The AgentGraph SDK refactor adds SDK persistence checks to this command. When the SDK store is database-backed, `doctor` verifies that the expected `agent_graph_*` tables exist. If the SDK store is configured as memory, those table checks are skipped.
+
+## Assistant Graph Runtime
+
+The assistant graph is the default chat runtime after the AgentGraph SDK refactor. New installs should use the `AGENTIC_CHATBOT_ASSISTANT_GRAPH_*` environment variables when overriding runtime behavior:
+
+```env
+AGENTIC_CHATBOT_ASSISTANT_GRAPH_ENABLED=true
+AGENTIC_CHATBOT_ASSISTANT_GRAPH_WORKFLOW_TOOL_ENABLED=true
+```
+
+The older `RAG_PARENT_AGENT_*` variables are still read as compatibility fallbacks, but product and deployment docs should prefer the assistant graph names.
+
+## AgentGraph SDK Persistence
+
+The plugin auto-loads AgentGraph SDK migrations through the SDK manager, so a normal host-app migration should create the SDK tables:
+
+- `agent_graph_runs`
+- `agent_graph_checkpoints`
+- `agent_graph_writes`
+- `agent_graph_tasks`
+- `agent_graph_interrupts`
+- `agent_graph_memories`
+- `agent_graph_traces`
+
+If `php artisan filament-agentic-chatbot:doctor` reports missing SDK tables, run `php artisan migrate` in the host app and confirm the SDK package is resolvable by Composer.
+
+For existing production apps, read [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) before migrating. The AgentGraph cutover creates SDK persistence tables and cancels old open workflow runs that do not have `workflow_runs.meta.agent_graph.run_id`.
+
 ## Enterprise Smoke Test
 
 Run this after migrations when validating API integrations, scoped bot tokens, usage budgets, and OpenAI-compatible provider setup:
@@ -118,6 +147,7 @@ Before production launch:
 - Queue worker process is supervised (systemd/Supervisor/Horizon)
 - `RAG_WIDGET_SIGNING_ENABLED=true` with a strong signing key
 - Domain allowlist configured per bot
+- Existing apps checked against [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) before migration
 - At least one successful load test run against a production-like environment
 
 ## Load Test Baseline

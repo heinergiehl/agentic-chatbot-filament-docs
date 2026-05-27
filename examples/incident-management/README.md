@@ -2,7 +2,7 @@
 
 This example shows how to model a large operational incident system with:
 
-- indexed RAG sources for procedures and historical narrative reports
+- indexed sources for procedures and historical narrative reports
 - live database retrieval through `query_data_resource`
 - a workflow that combines active incidents, rescue stations, staff, and earthquake records
 - Bot Access Tokens for Telegram/Slack channels, dispatch tools, and other server-side integrations
@@ -73,7 +73,7 @@ Recommended bot config:
 
 ## 3. Add Knowledge Sources
 
-Use RAG sources for documents that are better indexed than queried live:
+Use indexed sources for documents that are better searched than queried live:
 
 - emergency response SOPs
 - escalation policy

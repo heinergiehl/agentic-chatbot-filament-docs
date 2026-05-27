@@ -1,0 +1,265 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "New User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_welcome",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Welcome",
+                "messageType": "text",
+                "messageContent": "Welcome to Acme! 🎉 Let's get you set up in under a minute."
+            }
+        },
+        {
+            "id": "input_name",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Ask Name",
+                "prompt": "What's your name?",
+                "variableName": "user_name",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "input_role",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 480
+            },
+            "data": {
+                "label": "Ask Role",
+                "prompt": "What best describes your role, {{user_name}}?",
+                "variableName": "user_role",
+                "inputType": "choice",
+                "choices": "Developer,Designer,Product Manager,Marketing,Sales,Other",
+                "required": true
+            }
+        },
+        {
+            "id": "input_goal",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 620
+            },
+            "data": {
+                "label": "Ask Primary Goal",
+                "prompt": "What's the first thing you want to accomplish?",
+                "variableName": "primary_goal",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "input_team",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 760
+            },
+            "data": {
+                "label": "Ask Team Size",
+                "prompt": "How large is your team?",
+                "variableName": "team_size",
+                "inputType": "choice",
+                "choices": "Just me,2-5,6-20,20+",
+                "required": true
+            }
+        },
+        {
+            "id": "kb_onboarding",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 400,
+                "y": 900
+            },
+            "data": {
+                "label": "Search Onboarding Docs",
+                "query": "getting started {{user_role}} {{primary_goal}}",
+                "topK": 6,
+                "minSimilarity": 0.55,
+                "outputVariable": "onboarding_context"
+            }
+        },
+        {
+            "id": "cond_enterprise",
+            "type": "condition",
+            "position": {
+                "x": 400,
+                "y": 1060
+            },
+            "data": {
+                "label": "Enterprise Lead?",
+                "leftOperand": "{{team_size}}",
+                "operator": "equals",
+                "rightOperand": "20+"
+            }
+        },
+        {
+            "id": "ai_enterprise",
+            "type": "aiAgent",
+            "position": {
+                "x": 150,
+                "y": 1220
+            },
+            "data": {
+                "label": "Enterprise Onboarding AI",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are an enterprise onboarding specialist at Acme. The new user leads a large team (20+ people). Create a personalized quick-start plan with:\n1. Three recommended first steps tailored to their role\n2. Two features relevant for enterprise teams (SSO, team management, audit logs)\n3. Mention dedicated account management and priority support\nUse the knowledge base context for accurate feature references. Be professional yet warm.",
+                "userPromptTemplate": "New user profile:\n- Name: {{user_name}}\n- Role: {{user_role}}\n- Goal: {{primary_goal}}\n- Team size: {{team_size}}\n\nKnowledge base:\n{{onboarding_context}}",
+                "temperature": 0.7,
+                "maxTokens": 1500,
+                "outputVariable": "onboarding_plan",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "ai_standard",
+            "type": "aiAgent",
+            "position": {
+                "x": 650,
+                "y": 1220
+            },
+            "data": {
+                "label": "Standard Onboarding AI",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a friendly onboarding assistant at Acme. Create a personalized quick-start guide based on the user's role and goals. Include:\n1. Three quick-win first steps\n2. Two features they should explore based on their role\n3. One pro tip\nUse the knowledge base context for accurate feature references. Keep it concise, encouraging, and use emoji sparingly for warmth.",
+                "userPromptTemplate": "New user profile:\n- Name: {{user_name}}\n- Role: {{user_role}}\n- Goal: {{primary_goal}}\n- Team size: {{team_size}}\n\nKnowledge base:\n{{onboarding_context}}",
+                "temperature": 0.7,
+                "maxTokens": 1200,
+                "outputVariable": "onboarding_plan",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "join_1",
+            "type": "join",
+            "position": {
+                "x": 400,
+                "y": 1400
+            },
+            "data": {
+                "label": "Merge Paths"
+            }
+        },
+        {
+            "id": "msg_closing",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 1540
+            },
+            "data": {
+                "label": "Closing Message",
+                "messageType": "text",
+                "messageContent": "You're all set, {{user_name}}! Feel free to ask me anything as you explore. I'm always here to help. 🚀"
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About This Workflow",
+                "noteContent": "SaaS Onboarding Wizard — Progressively collects user info, searches the knowledge base for relevant getting-started content, then generates a personalized onboarding plan. Enterprise leads get a premium experience.",
+                "color": "#60a5fa"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_welcome"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_welcome",
+            "target": "input_name"
+        },
+        {
+            "id": "e-3",
+            "source": "input_name",
+            "target": "input_role"
+        },
+        {
+            "id": "e-4",
+            "source": "input_role",
+            "target": "input_goal"
+        },
+        {
+            "id": "e-5",
+            "source": "input_goal",
+            "target": "input_team"
+        },
+        {
+            "id": "e-6",
+            "source": "input_team",
+            "target": "kb_onboarding"
+        },
+        {
+            "id": "e-7",
+            "source": "kb_onboarding",
+            "target": "cond_enterprise"
+        },
+        {
+            "id": "e-8",
+            "source": "cond_enterprise",
+            "target": "ai_enterprise",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-9",
+            "source": "cond_enterprise",
+            "target": "ai_standard",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-10",
+            "source": "ai_enterprise",
+            "target": "join_1"
+        },
+        {
+            "id": "e-11",
+            "source": "ai_standard",
+            "target": "join_1"
+        },
+        {
+            "id": "e-12",
+            "source": "join_1",
+            "target": "msg_closing"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

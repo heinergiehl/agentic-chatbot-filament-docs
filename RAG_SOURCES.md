@@ -1,15 +1,15 @@
-# RAG Sources
+# Sources
 
 This is the specific documentation page to share when someone asks:
 
-- what RAG sources are
+- what sources are
 - how to create a source
 - which source types can be ingested
-- what content the bot can learn from
+- what content the assistant can use for grounded answers
 
-## What A RAG Source Is
+## What A Source Is
 
-A RAG source is a piece of content the bot is allowed to learn from.
+A source is a piece of content the bot is allowed to use for source-grounded answers.
 
 Examples:
 
@@ -20,7 +20,7 @@ Examples:
 - a JSON API endpoint with product or CMS records
 - a policy or onboarding article
 
-The bot does not answer from "the internet in general". It answers from the sources you attach and ingest.
+The bot does not answer from "the internet in general". When source grounding is needed, it answers from the sources you attach and ingest.
 
 ## Which Source Types You Can Ingest
 
@@ -82,7 +82,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A Text Source
 
-1. Open **RAG Sources**
+1. Open **Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **Manual Text**
@@ -92,7 +92,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A File Source
 
-1. Open **RAG Sources**
+1. Open **Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **File Upload**
@@ -102,7 +102,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A URL Source
 
-1. Open **RAG Sources**
+1. Open **Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **URL**
@@ -115,7 +115,7 @@ Private and local network URLs are blocked by default for SSRF safety.
 ### Create An API Source
 
 1. Create an **API Connector** with the base URL, auth, headers, timeout, and SSL settings
-2. Open **RAG Sources**
+2. Open **Sources**
 3. Click **Create**
 4. Select the target bot
 5. Choose **API Source**
@@ -125,7 +125,7 @@ Private and local network URLs are blocked by default for SSRF safety.
 9. Optionally enable **Auto Sync** and set the sync interval
 10. Save and wait for `completed`
 
-API source ingestion supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own RAG document. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-rag-sources`, which should be called by Laravel Scheduler.
+API source ingestion supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own stored document for retrieval. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-rag-sources`, which should be called by Laravel Scheduler.
 
 After a successful re-ingest, the source's previous API documents are replaced. Records that disappeared from the API response are removed from retrieval. If the new sync fails, the previous indexed content remains active.
 
@@ -178,7 +178,7 @@ Use descriptive names so citations are understandable.
 
 Good examples:
 
-- `RAG Sources`
+- `Sources`
 - `Quickstart`
 - `Security and Privacy`
 - `Public Pricing FAQ`

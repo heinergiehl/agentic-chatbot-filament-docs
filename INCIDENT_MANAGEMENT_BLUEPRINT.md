@@ -17,7 +17,7 @@ Use two retrieval paths intentionally:
 
 | Data type | Recommended path | Why |
 | --------- | ---------------- | --- |
-| SOPs, manuals, response protocols, training content | RAG sources | Stable text benefits from embeddings and citations |
+| SOPs, manuals, response protocols, training content | Indexed sources | Stable text benefits from embeddings and citations |
 | Historical incidents and earthquake archives | API knowledge sources when mostly analytical; data resources when filtered live answers matter | Indexed data is fast for broad questions; live queries are better for exact counts and filters |
 | Active incidents, staff status, station availability | Workflows with data resources or API connectors | These records change too often to trust a stale vector index |
 | Actions such as creating reports or sending notifications | Workflow actions or API connector write calls | Writes need explicit capability and audit boundaries |
@@ -78,7 +78,7 @@ Enable only the required resources on each bot via `rag_config.data_resources.al
 
 ## Knowledge Sources
 
-Index stable materials as RAG sources:
+Index stable materials as sources:
 
 - response protocols and SOPs
 - public safety guidance
@@ -88,7 +88,7 @@ Index stable materials as RAG sources:
 
 Use API knowledge sources for large external JSON datasets that are useful as searchable background context. Good examples are earthquake archives, public historical incident datasets, or station catalogs that sync nightly.
 
-Do not use indexed RAG as the source of truth for active incidents. Active incident status should come from a workflow call to a data resource or API connector.
+Do not use indexed sources as the source of truth for active incidents. Active incident status should come from a workflow call to a data resource or API connector.
 
 ## Workflow Patterns
 
@@ -143,7 +143,7 @@ Keep sensitive fields out of `allowed_selects` unless the bot genuinely needs th
 ## Rollout Checklist
 
 1. Create manager, public, field, and analyst bots only where the audiences truly differ.
-2. Add RAG sources for stable manuals, protocols, and public knowledge.
+2. Add sources for stable manuals, protocols, and public knowledge.
 3. Create API connectors for external incident APIs and test each connector from Filament.
 4. Register data resources for live Eloquent data with strict allow-lists.
 5. Enable only the required data resources per bot.

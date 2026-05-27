@@ -1,0 +1,321 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_greet",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Greet Visitor",
+                "messageType": "text",
+                "messageContent": "Hi! I'd love to learn about your needs. Let me ask a few quick questions to find the best solution for you."
+            }
+        },
+        {
+            "id": "input_name",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Ask Name",
+                "prompt": "What's your name?",
+                "variableName": "lead_name",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "msg_nice",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 460
+            },
+            "data": {
+                "label": "Acknowledge",
+                "messageType": "text",
+                "messageContent": "Nice to meet you, {{lead_name}}!"
+            }
+        },
+        {
+            "id": "input_email",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 580
+            },
+            "data": {
+                "label": "Ask Email",
+                "prompt": "What's your work email?",
+                "variableName": "lead_email",
+                "inputType": "email",
+                "required": true
+            }
+        },
+        {
+            "id": "input_company_size",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 720
+            },
+            "data": {
+                "label": "Ask Company Size",
+                "prompt": "How many employees does your company have?",
+                "variableName": "company_size",
+                "inputType": "choice",
+                "choices": "1-10,11-50,51-200,200+",
+                "required": true
+            }
+        },
+        {
+            "id": "input_interest",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 860
+            },
+            "data": {
+                "label": "Ask Interest",
+                "prompt": "What are you most interested in?",
+                "variableName": "interest",
+                "inputType": "choice",
+                "choices": "Product demo,Pricing information,Technical integration,Partnership",
+                "required": true
+            }
+        },
+        {
+            "id": "input_budget",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 1000
+            },
+            "data": {
+                "label": "Ask Budget Range",
+                "prompt": "What's your approximate monthly budget for this kind of solution?",
+                "variableName": "budget",
+                "inputType": "choice",
+                "choices": "Under $500,$500-$2000,$2000-$10000,$10000+,Not sure yet",
+                "required": true
+            }
+        },
+        {
+            "id": "set_lead_summary",
+            "type": "setVariable",
+            "position": {
+                "x": 400,
+                "y": 1140
+            },
+            "data": {
+                "label": "Build Lead Summary",
+                "variableName": "lead_summary",
+                "expression": "Name: {{lead_name}}\nEmail: {{lead_email}}\nCompany size: {{company_size}}\nInterest: {{interest}}\nBudget: {{budget}}"
+            }
+        },
+        {
+            "id": "cond_enterprise",
+            "type": "condition",
+            "position": {
+                "x": 400,
+                "y": 1280
+            },
+            "data": {
+                "label": "High-Value Lead?",
+                "leftOperand": "{{company_size}}",
+                "operator": "equals",
+                "rightOperand": "200+"
+            }
+        },
+        {
+            "id": "ai_enterprise",
+            "type": "aiAgent",
+            "position": {
+                "x": 150,
+                "y": 1440
+            },
+            "data": {
+                "label": "Enterprise Sales AI",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are an enterprise sales assistant. The lead is from a large company (200+ employees). Provide a premium, personalized response:\n- Acknowledge their scale and needs\n- Mention dedicated account management and custom pricing\n- Suggest a personalized demo with a solutions architect\n- Be enthusiastic but professional\nDo NOT include any internal lead scoring or notes.",
+                "userPromptTemplate": "Lead profile:\n{{lead_summary}}",
+                "temperature": 0.7,
+                "maxTokens": 1200,
+                "outputVariable": "response",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "ai_standard",
+            "type": "aiAgent",
+            "position": {
+                "x": 650,
+                "y": 1440
+            },
+            "data": {
+                "label": "Standard Sales AI",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a friendly sales assistant. Provide a helpful response based on the lead's interest:\n- Mention self-service options and a free trial\n- Tailor recommendations to their budget and interest\n- Be warm and encouraging\n- Suggest next steps (free trial, docs, community)\nDo NOT include any internal lead scoring or notes.",
+                "userPromptTemplate": "Lead profile:\n{{lead_summary}}",
+                "temperature": 0.7,
+                "maxTokens": 1200,
+                "outputVariable": "response",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "join_1",
+            "type": "join",
+            "position": {
+                "x": 400,
+                "y": 1620
+            },
+            "data": {
+                "label": "Merge Paths"
+            }
+        },
+        {
+            "id": "action_crm",
+            "type": "action",
+            "position": {
+                "x": 400,
+                "y": 1760
+            },
+            "data": {
+                "label": "Save to CRM",
+                "actionKey": "save_lead",
+                "inputMapping": "{\"name\": \"{{lead_name}}\", \"email\": \"{{lead_email}}\", \"company_size\": \"{{company_size}}\", \"interest\": \"{{interest}}\", \"budget\": \"{{budget}}\"}",
+                "outputVariable": "crm_result"
+            }
+        },
+        {
+            "id": "msg_closing",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 1900
+            },
+            "data": {
+                "label": "Thank You",
+                "messageType": "text",
+                "messageContent": "{{response}}\n\nThank you, {{lead_name}}! We'll follow up at {{lead_email}} shortly. 📬"
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About",
+                "noteContent": "Lead Qualification Bot — Progressively collects lead info, qualifies by company size, generates personalized responses via AI, and saves to CRM via a backend action. Shows: collectInput, condition, setVariable, action node, join.",
+                "color": "#a78bfa"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_greet"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_greet",
+            "target": "input_name"
+        },
+        {
+            "id": "e-3",
+            "source": "input_name",
+            "target": "msg_nice"
+        },
+        {
+            "id": "e-4",
+            "source": "msg_nice",
+            "target": "input_email"
+        },
+        {
+            "id": "e-5",
+            "source": "input_email",
+            "target": "input_company_size"
+        },
+        {
+            "id": "e-6",
+            "source": "input_company_size",
+            "target": "input_interest"
+        },
+        {
+            "id": "e-7",
+            "source": "input_interest",
+            "target": "input_budget"
+        },
+        {
+            "id": "e-8",
+            "source": "input_budget",
+            "target": "set_lead_summary"
+        },
+        {
+            "id": "e-9",
+            "source": "set_lead_summary",
+            "target": "cond_enterprise"
+        },
+        {
+            "id": "e-10",
+            "source": "cond_enterprise",
+            "target": "ai_enterprise",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-11",
+            "source": "cond_enterprise",
+            "target": "ai_standard",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-12",
+            "source": "ai_enterprise",
+            "target": "join_1"
+        },
+        {
+            "id": "e-13",
+            "source": "ai_standard",
+            "target": "join_1"
+        },
+        {
+            "id": "e-14",
+            "source": "join_1",
+            "target": "action_crm"
+        },
+        {
+            "id": "e-15",
+            "source": "action_crm",
+            "target": "msg_closing"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

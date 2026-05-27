@@ -1,6 +1,6 @@
 # Quick Start
 
-This guide is optimized for first-time setup and for buyers who want to answer one question quickly: can I get a grounded chatbot running first, then grow into agentic workflows later?
+This guide is optimized for first-time setup and for buyers who want to answer one question quickly: can I get a source-grounded assistant running first, then grow into agentic workflows later?
 
 Yes.
 
@@ -10,7 +10,7 @@ Filament Agentic Chatbot adds a managed AI assistant layer to a Laravel + Filame
 
 - Filament resources for bots, sources, workflows, and conversations
 - Retrieval and provider controls per bot
-- API-fed knowledge sources for JSON endpoints that should become searchable RAG knowledge
+- API-fed knowledge sources for JSON endpoints that should become searchable assistant knowledge
 - An embeddable widget for your app or external frontend
 - A visual workflow engine for routing, lead capture, onboarding, escalation, and automations
 - Optional package-owned Telegram and Slack channel integrations
@@ -35,17 +35,18 @@ composer require heiner/filament-agentic-chatbot
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
-For the current agent-first runtime and workflow UX release, use `^0.12.0` or newer:
+For the current public release line, use `^0.12.0` or newer:
 
 ```bash
 composer require heiner/filament-agentic-chatbot:^0.12.0
 ```
 
-If you are installing from a GitHub repository before Packagist or marketplace distribution:
+If you are installing the post-`v0.12.0` AgentGraph SDK refactor branch before all packages are published to your Composer repository, add the SDK repository in the host app as well:
 
 ```bash
+composer config repositories.agent-graph vcs https://github.com/heinergiehl/agent-graph.git
 composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
-composer require heiner/filament-agentic-chatbot:^0.12.0
+composer require heiner/filament-agentic-chatbot:'*@dev'
 ```
 
 ## 2. Register The Plugin
@@ -102,6 +103,8 @@ php artisan migrate
 php artisan queue:work
 ```
 
+If you are upgrading an existing app to the AgentGraph SDK refactor, read [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) before running migrations in production. The refactor adds `agent_graph_*` tables and intentionally cancels open legacy workflow runs that cannot be resumed by the new runtime.
+
 Optional but recommended for deployments:
 
 ```bash
@@ -124,24 +127,24 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as blocking before you move on.
 
-## 6. Launch In RAG-Only Mode First
+## 6. Create A Source-Grounded Assistant First
 
-If you want the fastest path to value, start exactly like a traditional RAG chatbot:
+If you want the fastest path to value, start with the knowledge layer before adding workflows:
 
 1. Open Filament admin
 2. Create a bot
-3. Add a source in `RAG Sources` (text, file, URL, or API)
+3. Add a source in **Sources** (text, file, URL, or API)
 4. Wait until source status is `completed`
 5. Use the bot test actions to verify retrieval and answer quality
 6. Generate the widget snippet and embed it
 
-At this point you already have a grounded chatbot.
+At this point you already have a grounded assistant.
 
-For API-fed knowledge, create an API Connector first, then create an API Source from **RAG Sources**. API Sources are best for relatively stable JSON records such as product catalogs, CMS entries, help-center articles, or structured public datasets. Use workflow API Connector nodes for live user-specific data or write actions.
+For API-fed knowledge, create an API Connector first, then create an API Source from **Sources**. API Sources are best for relatively stable JSON records such as product catalogs, CMS entries, help-center articles, or structured public datasets. Use workflow API Connector nodes for live user-specific data or write actions.
 
 ## 7. Add Agentic Workflows When You Need More
 
-Once the RAG base is working, add workflows for cases such as:
+Once source grounding is working, add workflows for cases such as:
 
 - lead qualification
 - support routing
@@ -203,6 +206,7 @@ php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 - `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`
 - `AGENTIC_WORKFLOWS.md`
 - `RAG_SOURCES.md`
+- `DATABASE_AND_BREAKING_CHANGES.md`
 - `API_CONNECTORS.md`
 - `API_SOURCE_ROADMAP.md`
 - `API_INTEGRATIONS.md`

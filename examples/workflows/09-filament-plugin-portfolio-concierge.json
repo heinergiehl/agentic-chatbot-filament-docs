@@ -1,0 +1,674 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "note_overview",
+            "type": "note",
+            "position": {
+                "x": -220,
+                "y": 20
+            },
+            "data": {
+                "label": "Portfolio Demo",
+                "noteContent": "Routes catalog requests through live database retrieval and routes emotional feedback through structured capture plus sentiment.",
+                "color": "#bfdbfe"
+            }
+        },
+        {
+            "id": "note_catalog_lane",
+            "type": "note",
+            "position": {
+                "x": 480,
+                "y": 20
+            },
+            "data": {
+                "label": "Catalog Lane",
+                "noteContent": "Catalog and recommendation requests use query_data_resource against the seeded filament_plugins table, then blend that with docs context.",
+                "color": "#fef08a"
+            }
+        },
+        {
+            "id": "note_feedback_lane",
+            "type": "note",
+            "position": {
+                "x": 420,
+                "y": 1040
+            },
+            "data": {
+                "label": "Feedback Lane",
+                "noteContent": "This path asks for a favorite plugin, a 1-5 intensity score, and a short explanation before saving a taste profile with sentiment.",
+                "color": "#fecaca"
+            }
+        },
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 160,
+                "y": 180
+            },
+            "data": {
+                "label": "Visitor Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "set_portfolio_request",
+            "type": "setVariable",
+            "position": {
+                "x": 420,
+                "y": 180
+            },
+            "data": {
+                "label": "Store Original Request",
+                "variableName": "portfolio_request",
+                "expression": "{{input}}"
+            }
+        },
+        {
+            "id": "classify_portfolio_intent",
+            "type": "intentClassifier",
+            "position": {
+                "x": 700,
+                "y": 180
+            },
+            "data": {
+                "label": "Classify Portfolio Intent",
+                "variable": "portfolio_intent",
+                "inputTemplate": "{{portfolio_request}}",
+                "intents": [
+                    {
+                        "label": "List plugins",
+                        "description": "The visitor wants to see the full plugin catalog or asks what is currently available."
+                    },
+                    {
+                        "label": "Recommend plugin",
+                        "description": "The visitor wants help choosing which plugin best fits a use case."
+                    },
+                    {
+                        "label": "Share favorites",
+                        "description": "The visitor wants to share feelings, favorite plugins, ratings, or preference signals."
+                    },
+                    {
+                        "label": "General question",
+                        "description": "The visitor asks a general plugin question that may still benefit from catalog and docs context."
+                    }
+                ],
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "set_mode_catalog",
+            "type": "setVariable",
+            "position": {
+                "x": 1020,
+                "y": 60
+            },
+            "data": {
+                "label": "Set Catalog Mode",
+                "variableName": "response_mode",
+                "expression": "catalog"
+            }
+        },
+        {
+            "id": "set_mode_recommendation",
+            "type": "setVariable",
+            "position": {
+                "x": 1020,
+                "y": 180
+            },
+            "data": {
+                "label": "Set Recommendation Mode",
+                "variableName": "response_mode",
+                "expression": "recommendation"
+            }
+        },
+        {
+            "id": "send_feedback_intro",
+            "type": "sendMessage",
+            "position": {
+                "x": 1020,
+                "y": 1040
+            },
+            "data": {
+                "label": "Open Taste Profile",
+                "messageType": "text",
+                "messageContent": "Let's build your Filament plugin taste profile. Pick your current favorite, rate the intensity from 1 to 5, and tell me what is landing well or what still needs work."
+            }
+        },
+        {
+            "id": "set_mode_general",
+            "type": "setVariable",
+            "position": {
+                "x": 1020,
+                "y": 300
+            },
+            "data": {
+                "label": "Set General Mode",
+                "variableName": "response_mode",
+                "expression": "general"
+            }
+        },
+        {
+            "id": "query_plugin_catalog",
+            "type": "action",
+            "position": {
+                "x": 1320,
+                "y": 180
+            },
+            "data": {
+                "label": "Load Plugin Catalog",
+                "actionKey": "query_data_resource",
+                "inputMapping": {
+                    "resource_key": "filament_plugins",
+                    "mode": "list",
+                    "select": [
+                        "id",
+                        "name",
+                        "slug",
+                        "tagline",
+                        "summary",
+                        "experience_focus",
+                        "availability",
+                        "is_featured",
+                        "docs_url",
+                        "sort_order"
+                    ],
+                    "sort": {
+                        "column": "sort_order",
+                        "direction": "asc"
+                    },
+                    "limit": 10
+                },
+                "outputVariable": "plugin_catalog"
+            }
+        },
+        {
+            "id": "search_plugin_docs",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 1600,
+                "y": 180
+            },
+            "data": {
+                "label": "Retrieve Plugin Docs",
+                "query": "{{portfolio_request}}",
+                "topK": 5,
+                "minSimilarity": 0.62,
+                "outputVariable": "kb_context"
+            }
+        },
+        {
+            "id": "ai_plugin_concierge",
+            "type": "aiAgent",
+            "position": {
+                "x": 1880,
+                "y": 180
+            },
+            "data": {
+                "label": "Answer Catalog Or Recommendation",
+                "systemPrompt": "You are the Filament plugin portfolio concierge for a sandbox showcase. The plugin catalog records are authoritative for what exists right now. If response_mode is catalog, list every available plugin with one short positioning line each. If response_mode is recommendation, recommend the strongest fit for the request and briefly explain the tradeoff against the other options. If response_mode is general, answer the question directly, using docs context first and the catalog only when it improves the answer. Keep the answer concrete, concise, and under 180 words. No markdown tables.",
+                "userPromptTemplate": "Visitor request:\n{{portfolio_request}}\n\nResponse mode: {{response_mode}}\n\nPlugin catalog:\n{{plugin_catalog.records}}\n\nDocs context:\n{{kb_context}}",
+                "temperature": 0.2,
+                "maxTokens": 500,
+                "outputVariable": "assistant_response",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "collect_favorite_plugin",
+            "type": "collectInput",
+            "position": {
+                "x": 1320,
+                "y": 1040
+            },
+            "data": {
+                "label": "Choose Favorite Plugin",
+                "prompt": "Which plugin is your current favorite?",
+                "variableName": "favorite_plugin",
+                "inputType": "choice",
+                "choices": "[{\"label\":\"Filament RAG\",\"value\":\"Filament RAG\"},{\"label\":\"Filament Image Studio Pro\",\"value\":\"Filament Image Studio Pro\"},{\"label\":\"Filament Agentic Chatbot\",\"value\":\"Filament Agentic Chatbot\"}]",
+                "required": true
+            }
+        },
+        {
+            "id": "collect_affection_score",
+            "type": "collectInput",
+            "position": {
+                "x": 1600,
+                "y": 1040
+            },
+            "data": {
+                "label": "Rate Preference Intensity",
+                "prompt": "How strong is that preference on a 1 to 5 scale?",
+                "variableName": "affection_score",
+                "inputType": "choice",
+                "choices": "[{\"label\":\"1 - not for me yet\",\"value\":\"1\"},{\"label\":\"2 - useful in parts\",\"value\":\"2\"},{\"label\":\"3 - solid fit\",\"value\":\"3\"},{\"label\":\"4 - I reach for it often\",\"value\":\"4\"},{\"label\":\"5 - core part of my stack\",\"value\":\"5\"}]",
+                "required": true
+            }
+        },
+        {
+            "id": "collect_feeling_summary",
+            "type": "collectInput",
+            "position": {
+                "x": 1880,
+                "y": 1040
+            },
+            "data": {
+                "label": "Capture Feeling",
+                "prompt": "What makes you feel that way about it right now?",
+                "variableName": "feeling_summary",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "analyze_feeling_sentiment",
+            "type": "sentiment",
+            "position": {
+                "x": 2160,
+                "y": 1040
+            },
+            "data": {
+                "label": "Analyze Feeling Sentiment",
+                "variable": "feeling_sentiment",
+                "inputTemplate": "{{feeling_summary}}"
+            }
+        },
+        {
+            "id": "set_follow_up_celebrate",
+            "type": "setVariable",
+            "position": {
+                "x": 2440,
+                "y": 900
+            },
+            "data": {
+                "label": "Set Celebrate Lane",
+                "variableName": "follow_up_lane",
+                "expression": "celebrate"
+            }
+        },
+        {
+            "id": "set_follow_up_repair",
+            "type": "setVariable",
+            "position": {
+                "x": 2440,
+                "y": 1040
+            },
+            "data": {
+                "label": "Set Repair Lane",
+                "variableName": "follow_up_lane",
+                "expression": "repair"
+            }
+        },
+        {
+            "id": "set_follow_up_clarify",
+            "type": "setVariable",
+            "position": {
+                "x": 2440,
+                "y": 1180
+            },
+            "data": {
+                "label": "Set Clarify Lane",
+                "variableName": "follow_up_lane",
+                "expression": "clarify"
+            }
+        },
+        {
+            "id": "join_sentiment_paths",
+            "type": "join",
+            "position": {
+                "x": 2720,
+                "y": 1040
+            },
+            "data": {
+                "label": "Merge Sentiment Lanes"
+            }
+        },
+        {
+            "id": "ai_feedback_recap",
+            "type": "aiAgent",
+            "position": {
+                "x": 3000,
+                "y": 1040
+            },
+            "data": {
+                "label": "Summarize Taste Profile",
+                "systemPrompt": "Write one short plain-text sentence summarizing the user's plugin taste profile. Mention the favorite plugin, the affection score out of 5, the sentiment, and the reason in under 35 words. No bullets.",
+                "userPromptTemplate": "Favorite plugin: {{favorite_plugin}}\nAffection score: {{affection_score}}/5\nSentiment: {{feeling_sentiment}}\nReason: {{feeling_summary}}",
+                "temperature": 0.2,
+                "maxTokens": 120,
+                "outputVariable": "feedback_summary",
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "collect_contact_email_raw",
+            "type": "collectInput",
+            "position": {
+                "x": 3280,
+                "y": 1040
+            },
+            "data": {
+                "label": "Collect Follow-up Email",
+                "prompt": "If you want the plugin team to follow up, drop your email now. Otherwise type skip.",
+                "variableName": "contact_email_raw",
+                "inputType": "text",
+                "validation": "regex:/^(skip|no|no thanks|[A-Z0-9._%+-]+@[A-Z0-9.-]+\\.[A-Z]{2,})$/i",
+                "required": true
+            }
+        },
+        {
+            "id": "cond_skip_email",
+            "type": "condition",
+            "position": {
+                "x": 3560,
+                "y": 1040
+            },
+            "data": {
+                "label": "Skip Email",
+                "leftOperand": "{{contact_email_raw}}",
+                "operator": "matches_regex",
+                "rightOperand": "/^(skip|no|no thanks)$/i"
+            }
+        },
+        {
+            "id": "set_contact_email_blank",
+            "type": "setVariable",
+            "position": {
+                "x": 3840,
+                "y": 920
+            },
+            "data": {
+                "label": "Clear Email",
+                "variableName": "contact_email",
+                "expression": ""
+            }
+        },
+        {
+            "id": "set_contact_email_value",
+            "type": "setVariable",
+            "position": {
+                "x": 3840,
+                "y": 1160
+            },
+            "data": {
+                "label": "Use Email",
+                "variableName": "contact_email",
+                "expression": "{{contact_email_raw}}"
+            }
+        },
+        {
+            "id": "join_contact_paths",
+            "type": "join",
+            "position": {
+                "x": 4120,
+                "y": 1040
+            },
+            "data": {
+                "label": "Merge Contact Paths"
+            }
+        },
+        {
+            "id": "confirm_store_portfolio_feedback",
+            "type": "confirmation",
+            "position": {
+                "x": 4400,
+                "y": 1040
+            },
+            "data": {
+                "label": "Review Before Storing",
+                "prompt": "Store this taste profile for review?",
+                "variableName": "portfolio_store_confirmed",
+                "confirmLabel": "Store profile",
+                "cancelLabel": "Skip storing",
+                "allowInterruptions": true,
+                "interruptionPatterns": "",
+                "semanticInterruptionCheck": true
+            }
+        },
+        {
+            "id": "action_store_portfolio_feedback",
+            "type": "action",
+            "position": {
+                "x": 4400,
+                "y": 1180
+            },
+            "data": {
+                "label": "Store Taste Profile",
+                "actionKey": "store_submission",
+                "inputMapping": {
+                    "schema_key": "plugin_portfolio_feedback",
+                    "payload": {
+                        "original_request": "{{portfolio_request}}",
+                        "favorite_plugin": "{{favorite_plugin}}",
+                        "affection_score": "{{affection_score}}",
+                        "feeling_summary": "{{feeling_summary}}",
+                        "sentiment": "{{feeling_sentiment}}",
+                        "follow_up_lane": "{{follow_up_lane}}",
+                        "feedback_summary": "{{feedback_summary}}",
+                        "contact_email": "{{contact_email}}"
+                    },
+                    "meta": {
+                        "source": "workflow_example.plugin_portfolio_concierge"
+                    }
+                },
+                "outputVariable": "stored_portfolio_feedback"
+            }
+        },
+        {
+            "id": "msg_store_cancelled",
+            "type": "sendMessage",
+            "position": {
+                "x": 4680,
+                "y": 1040
+            },
+            "data": {
+                "label": "Store Skipped",
+                "messageType": "text",
+                "messageContent": "No taste profile was stored."
+            }
+        },
+        {
+            "id": "ai_close_portfolio_feedback",
+            "type": "aiAgent",
+            "position": {
+                "x": 4680,
+                "y": 1180
+            },
+            "data": {
+                "label": "Draft Taste Profile Closing",
+                "systemPrompt": "You are the plugin portfolio concierge for the Filament showcase. Write exactly two short sentences in plain text. Sentence 1 must begin with \"Taste profile saved.\" and mention the favorite plugin, the affection score out of 5, and whether the lane is celebrate, repair, or clarify in natural wording. Sentence 2 must begin with \"Follow-up:\" and either confirm the email address or say no email was provided. Keep it under 55 words. No markdown, no bullets.",
+                "userPromptTemplate": "Favorite plugin: {{favorite_plugin}}\nAffection score: {{affection_score}}\nSentiment: {{feeling_sentiment}}\nLane: {{follow_up_lane}}\nSummary: {{feedback_summary}}\nFollow-up email: {{contact_email}}",
+                "temperature": 0.2,
+                "maxTokens": 140,
+                "outputVariable": "closing_message",
+                "streamToChat": true
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e1",
+            "source": "trigger_1",
+            "target": "set_portfolio_request"
+        },
+        {
+            "id": "e2",
+            "source": "set_portfolio_request",
+            "target": "classify_portfolio_intent"
+        },
+        {
+            "id": "e3",
+            "source": "classify_portfolio_intent",
+            "target": "set_mode_catalog",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e4",
+            "source": "classify_portfolio_intent",
+            "target": "set_mode_recommendation",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e5",
+            "source": "classify_portfolio_intent",
+            "target": "send_feedback_intro",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e6",
+            "source": "classify_portfolio_intent",
+            "target": "set_mode_general",
+            "sourceHandle": "default"
+        },
+        {
+            "id": "e7",
+            "source": "set_mode_catalog",
+            "target": "query_plugin_catalog"
+        },
+        {
+            "id": "e8",
+            "source": "set_mode_recommendation",
+            "target": "query_plugin_catalog"
+        },
+        {
+            "id": "e9",
+            "source": "set_mode_general",
+            "target": "query_plugin_catalog"
+        },
+        {
+            "id": "e10",
+            "source": "query_plugin_catalog",
+            "target": "search_plugin_docs"
+        },
+        {
+            "id": "e11",
+            "source": "search_plugin_docs",
+            "target": "ai_plugin_concierge"
+        },
+        {
+            "id": "e12",
+            "source": "send_feedback_intro",
+            "target": "collect_favorite_plugin"
+        },
+        {
+            "id": "e13",
+            "source": "collect_favorite_plugin",
+            "target": "collect_affection_score"
+        },
+        {
+            "id": "e14",
+            "source": "collect_affection_score",
+            "target": "collect_feeling_summary"
+        },
+        {
+            "id": "e15",
+            "source": "collect_feeling_summary",
+            "target": "analyze_feeling_sentiment"
+        },
+        {
+            "id": "e16",
+            "source": "analyze_feeling_sentiment",
+            "target": "set_follow_up_celebrate",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e17",
+            "source": "analyze_feeling_sentiment",
+            "target": "set_follow_up_repair",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e18",
+            "source": "analyze_feeling_sentiment",
+            "target": "set_follow_up_clarify",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e19",
+            "source": "analyze_feeling_sentiment",
+            "target": "set_follow_up_clarify",
+            "sourceHandle": "default"
+        },
+        {
+            "id": "e20",
+            "source": "set_follow_up_celebrate",
+            "target": "join_sentiment_paths"
+        },
+        {
+            "id": "e21",
+            "source": "set_follow_up_repair",
+            "target": "join_sentiment_paths"
+        },
+        {
+            "id": "e22",
+            "source": "set_follow_up_clarify",
+            "target": "join_sentiment_paths"
+        },
+        {
+            "id": "e23",
+            "source": "join_sentiment_paths",
+            "target": "ai_feedback_recap"
+        },
+        {
+            "id": "e24",
+            "source": "ai_feedback_recap",
+            "target": "collect_contact_email_raw"
+        },
+        {
+            "id": "e25",
+            "source": "collect_contact_email_raw",
+            "target": "cond_skip_email"
+        },
+        {
+            "id": "e26",
+            "source": "cond_skip_email",
+            "target": "set_contact_email_blank",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e27",
+            "source": "cond_skip_email",
+            "target": "set_contact_email_value",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e28",
+            "source": "set_contact_email_blank",
+            "target": "join_contact_paths"
+        },
+        {
+            "id": "e29",
+            "source": "set_contact_email_value",
+            "target": "join_contact_paths"
+        },
+        {
+            "id": "e30",
+            "source": "join_contact_paths",
+            "target": "confirm_store_portfolio_feedback"
+        },
+        {
+            "id": "e31",
+            "source": "confirm_store_portfolio_feedback",
+            "target": "action_store_portfolio_feedback",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e32",
+            "source": "confirm_store_portfolio_feedback",
+            "target": "msg_store_cancelled",
+            "sourceHandle": "invalid"
+        },
+        {
+            "id": "e33",
+            "source": "action_store_portfolio_feedback",
+            "target": "ai_close_portfolio_feedback"
+        }
+    ],
+    "viewport": {
+        "x": 62,
+        "y": 41,
+        "zoom": 0.42
+    }
+}

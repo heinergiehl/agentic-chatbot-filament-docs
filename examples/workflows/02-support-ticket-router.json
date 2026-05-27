@@ -1,0 +1,287 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_welcome",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Welcome",
+                "messageType": "text",
+                "messageContent": "Welcome to Acme Support! How can I help you today?"
+            }
+        },
+        {
+            "id": "input_question",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Collect Question",
+                "prompt": "Please describe your issue or question:",
+                "variableName": "user_question",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "kb_search",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 400,
+                "y": 480
+            },
+            "data": {
+                "label": "Search Support KB",
+                "query": "{{user_question}}",
+                "topK": 6,
+                "minSimilarity": 0.6,
+                "outputVariable": "kb_context"
+            }
+        },
+        {
+            "id": "ai_classify",
+            "type": "aiAgent",
+            "position": {
+                "x": 400,
+                "y": 640
+            },
+            "data": {
+                "label": "Classify Intent",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "Classify the customer's question into exactly ONE category. Respond with a single lowercase word only: billing, technical, account, or general. No explanation.",
+                "userPromptTemplate": "{{user_question}}",
+                "temperature": 0,
+                "maxTokens": 10,
+                "outputVariable": "intent",
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "switch_intent",
+            "type": "switchRouter",
+            "position": {
+                "x": 400,
+                "y": 800
+            },
+            "data": {
+                "label": "Route by Department",
+                "switchValue": "{{intent}}",
+                "cases": "[{\"case\": \"billing\", \"label\": \"Billing\"}, {\"case\": \"technical\", \"label\": \"Technical\"}, {\"case\": \"account\", \"label\": \"Account\"}]",
+                "defaultLabel": "General"
+            }
+        },
+        {
+            "id": "ai_billing",
+            "type": "aiAgent",
+            "position": {
+                "x": 0,
+                "y": 1000
+            },
+            "data": {
+                "label": "Billing Specialist",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a billing specialist at Acme. Help the customer with invoices, payments, subscriptions, and pricing. Use the provided knowledge base context when relevant. Be professional, clear, and empathetic about billing concerns.",
+                "userPromptTemplate": "Knowledge base context:\n{{kb_context}}\n\nCustomer question: {{user_question}}",
+                "temperature": 0.5,
+                "maxTokens": 1500,
+                "outputVariable": "answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "ai_tech",
+            "type": "aiAgent",
+            "position": {
+                "x": 300,
+                "y": 1000
+            },
+            "data": {
+                "label": "Tech Support Engineer",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a senior technical support engineer at Acme. Help troubleshoot issues, explain configurations, and guide through solutions step by step. Use the provided knowledge base context. Be patient, thorough, and number your steps when giving instructions.",
+                "userPromptTemplate": "Knowledge base context:\n{{kb_context}}\n\nCustomer question: {{user_question}}",
+                "temperature": 0.3,
+                "maxTokens": 2048,
+                "outputVariable": "answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "ai_account",
+            "type": "aiAgent",
+            "position": {
+                "x": 600,
+                "y": 1000
+            },
+            "data": {
+                "label": "Account Manager",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are an account manager at Acme. Help with account settings, profile changes, access issues, and permissions. Use the provided knowledge base context. Be helpful, security-conscious, and explain any verification steps needed.",
+                "userPromptTemplate": "Knowledge base context:\n{{kb_context}}\n\nCustomer question: {{user_question}}",
+                "temperature": 0.5,
+                "maxTokens": 1500,
+                "outputVariable": "answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "ai_general",
+            "type": "aiAgent",
+            "position": {
+                "x": 900,
+                "y": 1000
+            },
+            "data": {
+                "label": "General Support",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a friendly support representative at Acme. Answer the customer's question using the provided knowledge base context. If you're unsure, suggest contacting support directly at support@acme.com. Be warm and helpful.",
+                "userPromptTemplate": "Knowledge base context:\n{{kb_context}}\n\nCustomer question: {{user_question}}",
+                "temperature": 0.7,
+                "maxTokens": 1500,
+                "outputVariable": "answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "join_1",
+            "type": "join",
+            "position": {
+                "x": 400,
+                "y": 1200
+            },
+            "data": {
+                "label": "Merge Departments"
+            }
+        },
+        {
+            "id": "msg_reply",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 1340
+            },
+            "data": {
+                "label": "Send Answer",
+                "messageType": "text",
+                "messageContent": "{{answer}}"
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About",
+                "noteContent": "Multi-Department Support Router — AI classifies intent then routes to a specialized agent per department. Each agent has its own system prompt and tone. Shows: switchRouter, KB search, intent classification, streaming AI responses.",
+                "color": "#34d399"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_welcome"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_welcome",
+            "target": "input_question"
+        },
+        {
+            "id": "e-3",
+            "source": "input_question",
+            "target": "kb_search"
+        },
+        {
+            "id": "e-4",
+            "source": "kb_search",
+            "target": "ai_classify"
+        },
+        {
+            "id": "e-5",
+            "source": "ai_classify",
+            "target": "switch_intent"
+        },
+        {
+            "id": "e-6",
+            "source": "switch_intent",
+            "target": "ai_billing",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e-7",
+            "source": "switch_intent",
+            "target": "ai_tech",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e-8",
+            "source": "switch_intent",
+            "target": "ai_account",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e-9",
+            "source": "switch_intent",
+            "target": "ai_general",
+            "sourceHandle": "default"
+        },
+        {
+            "id": "e-10",
+            "source": "ai_billing",
+            "target": "join_1"
+        },
+        {
+            "id": "e-11",
+            "source": "ai_tech",
+            "target": "join_1"
+        },
+        {
+            "id": "e-12",
+            "source": "ai_account",
+            "target": "join_1"
+        },
+        {
+            "id": "e-13",
+            "source": "ai_general",
+            "target": "join_1"
+        },
+        {
+            "id": "e-14",
+            "source": "join_1",
+            "target": "msg_reply"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

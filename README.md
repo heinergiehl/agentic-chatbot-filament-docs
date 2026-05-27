@@ -20,9 +20,9 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 ## 📦 Workflow Examples
 
-7 ready-to-import workflow JSON files demonstrating real-world scenarios — onboarding, support routing, order tracking, lead qualification, webhook alerting, FAQ bots, and content research:
+15 ready-to-import workflow JSON files demonstrate real-world scenarios including onboarding, support routing, order tracking, lead qualification, feedback capture, image delivery, scoped memory, and adversarial reliability testing:
 
-**[agentic-chatbot-workflow-examples](https://github.com/heinergiehl/agentic-chatbot-workflow-examples)**
+**[Browse the examples](examples/README.md)**
 
 ---
 
@@ -39,10 +39,10 @@ If you are evaluating the plugin, read these in order:
 
 Filament Agentic Chatbot is the newer, broader plugin in the product line.
 
-It keeps the grounded RAG chatbot capabilities of the earlier Filament RAG plugin and adds:
+It keeps the source-grounded answer capabilities of the earlier Filament RAG plugin and adds:
 
 - visual workflows
-- parent-agent orchestration with knowledge search and workflows exposed as tools
+- assistant graph orchestration with optional knowledge search and workflows exposed as tools
 - branching logic
 - AI agent nodes
 - action and HTTP nodes
@@ -135,15 +135,18 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 - [Quickstart](QUICKSTART.md)
 - [Operations](OPERATIONS.md)
+- [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
 ### Learn The Product Model
 
 - [Bots](BOTS.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
-- [RAG Sources](RAG_SOURCES.md)
+- [Sources](RAG_SOURCES.md)
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md)
+- [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - [API Connectors](API_CONNECTORS.md)
 - [API Integrations](API_INTEGRATIONS.md)
 - [Channel Integrations](CHANNELS.md)
@@ -153,6 +156,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
 - [Release Notes v0.12.0](RELEASE_NOTES_v0.12.0.md)
+- [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - [Chat Widget](CHAT_WIDGET.md)
@@ -171,14 +175,15 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 - What does the plugin add? → [Product Overview](PRODUCT_OVERVIEW.md)
 - How is it different from the older RAG plugin? → [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- Can I use it as a simple RAG chatbot first? → [Quickstart](QUICKSTART.md)
+- Can I use it as a simple source-grounded chatbot first? → [Quickstart](QUICKSTART.md)
 - How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- What changed in the database after the AgentGraph SDK refactor? → [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
 - How do I connect Telegram or Slack? → [Channel Integrations](CHANNELS.md)
 - How do I call a bot from a custom backend? → [API Integrations](API_INTEGRATIONS.md)
 - How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
 - How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
-- Can the bot learn from APIs or databases? → [RAG Sources](RAG_SOURCES.md) and [API Source Roadmap](API_SOURCE_ROADMAP.md)
+- Can the bot use API-fed knowledge or database-backed resources? → [Sources](RAG_SOURCES.md), [API Source Roadmap](API_SOURCE_ROADMAP.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
@@ -188,7 +193,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way where practical.
 
-The current compatibility baseline is `v0.12.0`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+.
+The current compatibility baseline is `v0.12.0`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+. The current docs also cover the post-`v0.12.0` AgentGraph SDK refactor where the assistant graph is the default runtime and old agent class names are compatibility aliases.
 
 ## Related Repositories
 

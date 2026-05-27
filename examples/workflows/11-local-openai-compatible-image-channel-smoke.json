@@ -1,0 +1,136 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "note_local_endpoint",
+            "type": "note",
+            "position": {
+                "x": 780,
+                "y": 60
+            },
+            "data": {
+                "label": "Local Image Model",
+                "noteContent": "This workflow uses the generic generate_image action against a local OpenAI-compatible image endpoint. For Ollama, keep the URL as http://127.0.0.1:11434/v1/images/generations. The sendMessage node passes both imageUrl and imageArtifact so Slack and Telegram can upload the stored file directly.",
+                "color": "#dcfce7"
+            }
+        },
+        {
+            "id": "trigger_user_message",
+            "type": "trigger",
+            "position": {
+                "x": 420,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "action_generate_local_image",
+            "type": "action",
+            "position": {
+                "x": 420,
+                "y": 220
+            },
+            "data": {
+                "label": "Generate Local Image",
+                "actionKey": "generate_image",
+                "inputMapping": {
+                    "transport": "http_json",
+                    "provider": "local_openai_compatible",
+                    "model": "x/z-image-turbo",
+                    "url": "http://127.0.0.1:11434/v1/images/generations",
+                    "headers": {
+                        "Authorization": "Bearer ollama"
+                    },
+                    "prompt": "{{input}}",
+                    "merge_body": false,
+                    "body": {
+                        "model": "x/z-image-turbo",
+                        "prompt": "{{input}}",
+                        "size": "1024x1024",
+                        "response_format": "b64_json"
+                    },
+                    "response_image_path": "data.0.b64_json",
+                    "timeout": 900,
+                    "disk": "public",
+                    "path": "workflow-images/local-image-smoke"
+                },
+                "outputVariable": "generated_image",
+                "continueOnFail": true
+            }
+        },
+        {
+            "id": "handle_generation_error",
+            "type": "errorHandler",
+            "position": {
+                "x": 420,
+                "y": 390
+            },
+            "data": {
+                "label": "Check Local Generation",
+                "errorVariable": "generated_image_error",
+                "fallbackMessage": "Local image generation failed. Check that Ollama is running, x/z-image-turbo is pulled, the /v1/images/generations endpoint is reachable, and the configured Laravel storage disk is writable.",
+                "outputVariable": "image_generation_check"
+            }
+        },
+        {
+            "id": "send_generated_image",
+            "type": "sendMessage",
+            "position": {
+                "x": 180,
+                "y": 570
+            },
+            "data": {
+                "label": "Send Image",
+                "messageType": "image",
+                "messageContent": "Generated locally with x/z-image-turbo for: {{input}}",
+                "imageUrl": "{{generated_image.image_url}}",
+                "imageArtifact": "{{generated_image.image_artifact}}"
+            }
+        },
+        {
+            "id": "send_generation_failure",
+            "type": "sendMessage",
+            "position": {
+                "x": 660,
+                "y": 570
+            },
+            "data": {
+                "label": "Send Failure",
+                "messageType": "text",
+                "messageContent": "{{image_generation_check_message}}"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e_trigger_to_generate",
+            "source": "trigger_user_message",
+            "target": "action_generate_local_image"
+        },
+        {
+            "id": "e_generate_to_handler",
+            "source": "action_generate_local_image",
+            "target": "handle_generation_error"
+        },
+        {
+            "id": "e_handler_to_image",
+            "source": "handle_generation_error",
+            "target": "send_generated_image",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e_handler_to_failure",
+            "source": "handle_generation_error",
+            "target": "send_generation_failure",
+            "sourceHandle": "invalid"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.85
+    }
+}

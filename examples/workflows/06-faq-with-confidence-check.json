@@ -1,0 +1,241 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_greet",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Greet",
+                "messageType": "text",
+                "messageContent": "Hi! I can answer questions about our service. What would you like to know?"
+            }
+        },
+        {
+            "id": "input_question",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Get Question",
+                "prompt": "Type your question:",
+                "variableName": "user_question",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "kb_search",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 400,
+                "y": 480
+            },
+            "data": {
+                "label": "Search FAQ KB",
+                "query": "{{user_question}}",
+                "topK": 6,
+                "minSimilarity": 0.65,
+                "outputVariable": "kb_context"
+            }
+        },
+        {
+            "id": "cond_has_context",
+            "type": "condition",
+            "position": {
+                "x": 400,
+                "y": 640
+            },
+            "data": {
+                "label": "KB Results Found?",
+                "leftOperand": "{{kb_context}}",
+                "operator": "is_not_empty",
+                "rightOperand": ""
+            }
+        },
+        {
+            "id": "ai_confidence",
+            "type": "aiAgent",
+            "position": {
+                "x": 200,
+                "y": 820
+            },
+            "data": {
+                "label": "Confidence Check",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "Evaluate whether the provided context contains enough information to answer the question accurately. Respond with ONLY one word: 'confident' or 'uncertain'. Nothing else.",
+                "userPromptTemplate": "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}",
+                "temperature": 0,
+                "maxTokens": 10,
+                "outputVariable": "confidence_check",
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "cond_confident",
+            "type": "condition",
+            "position": {
+                "x": 200,
+                "y": 980
+            },
+            "data": {
+                "label": "AI Confident?",
+                "leftOperand": "{{confidence_check}}",
+                "operator": "contains",
+                "rightOperand": "confident"
+            }
+        },
+        {
+            "id": "ai_answer",
+            "type": "aiAgent",
+            "position": {
+                "x": 50,
+                "y": 1160
+            },
+            "data": {
+                "label": "Generate Confident Answer",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "Answer the question using the provided context. Be accurate, concise, and helpful. Cite specific details from the context. If the context references multiple topics, focus on the most relevant one.",
+                "userPromptTemplate": "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}",
+                "temperature": 0.5,
+                "maxTokens": 1500,
+                "outputVariable": "answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "msg_confident_reply",
+            "type": "sendMessage",
+            "position": {
+                "x": 50,
+                "y": 1340
+            },
+            "data": {
+                "label": "Send Answer",
+                "messageType": "text",
+                "messageContent": "{{answer}}"
+            }
+        },
+        {
+            "id": "msg_uncertain",
+            "type": "sendMessage",
+            "position": {
+                "x": 350,
+                "y": 1160
+            },
+            "data": {
+                "label": "Uncertain — Offer Handoff",
+                "messageType": "buttons",
+                "messageContent": "I found some related information but I'm not fully confident in the answer. Would you like me to connect you with a team member for a more detailed response?",
+                "buttons": "[{\"label\": \"Yes, connect me\", \"value\": \"connect\"}, {\"label\": \"Show what you found\", \"value\": \"show\"}]"
+            }
+        },
+        {
+            "id": "msg_no_context",
+            "type": "sendMessage",
+            "position": {
+                "x": 650,
+                "y": 820
+            },
+            "data": {
+                "label": "No KB Results",
+                "messageType": "buttons",
+                "messageContent": "I don't have information about that in my knowledge base yet. Would you like me to connect you with a team member who can help?",
+                "buttons": "[{\"label\": \"Yes, connect me\", \"value\": \"connect\"}, {\"label\": \"Ask another question\", \"value\": \"retry\"}]"
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About",
+                "noteContent": "FAQ Bot with Confidence Check — Searches KB, uses a zero-temp AI to assess confidence, then either answers confidently or offers human handoff. Shows: two-stage AI (classify + answer), condition chaining, button messages, graceful KB miss handling.",
+                "color": "#2dd4bf"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_greet"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_greet",
+            "target": "input_question"
+        },
+        {
+            "id": "e-3",
+            "source": "input_question",
+            "target": "kb_search"
+        },
+        {
+            "id": "e-4",
+            "source": "kb_search",
+            "target": "cond_has_context"
+        },
+        {
+            "id": "e-5",
+            "source": "cond_has_context",
+            "target": "ai_confidence",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-6",
+            "source": "cond_has_context",
+            "target": "msg_no_context",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-7",
+            "source": "ai_confidence",
+            "target": "cond_confident"
+        },
+        {
+            "id": "e-8",
+            "source": "cond_confident",
+            "target": "ai_answer",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-9",
+            "source": "cond_confident",
+            "target": "msg_uncertain",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-10",
+            "source": "ai_answer",
+            "target": "msg_confident_reply"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

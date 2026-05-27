@@ -8,7 +8,7 @@ It is different.
 
 The earlier plugin is primarily a **RAG chatbot product**.
 
-The newer plugin is an **agentic assistant platform** built on top of the same RAG foundation.
+The newer plugin is an **agentic assistant platform** that includes the same source-grounded knowledge foundation.
 
 That means the newer plugin still handles:
 
@@ -66,23 +66,23 @@ Examples:
 - triage support requests into different workflows
 - gather structured intake information
 - call your app actions or third-party APIs
-- sync stable JSON API records into the RAG knowledge base
+- sync stable JSON API records into the source-grounded knowledge index
 - mix retrieval with task execution
 
 ## Important Positioning
 
-This plugin is not “RAG replaced.”
+This plugin is not "RAG replaced" or "RAG renamed."
 
 It is better described as:
 
-- **RAG foundation included**
+- **source-grounded knowledge included**
 - **agentic capabilities added on top**
 
-So if a buyer wants a normal RAG chatbot, this plugin can still satisfy that use case.
+So if a buyer wants a normal source-grounded chatbot, this plugin can still satisfy that use case.
 The main difference is that they are not limited to that use case anymore.
 
 ## Recommended Message For Buyers
 
 Use language like this:
 
-> Filament Agentic Chatbot includes all the core RAG chatbot capabilities of the earlier plugin, but adds a workflow engine for multi-step conversations, branching, actions, and automation. Start with a grounded chatbot, then layer in agentic behavior only where it adds value.
+> Filament Agentic Chatbot includes the grounded Q&A capabilities of the earlier RAG plugin, but adds an assistant graph and workflow engine for multi-step conversations, branching, actions, and automation. Start with source-grounded answers, then layer in agentic behavior only where it adds value.

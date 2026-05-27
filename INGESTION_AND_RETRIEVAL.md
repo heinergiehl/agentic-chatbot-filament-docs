@@ -2,7 +2,7 @@
 
 This page explains how content enters the system and how the assistant finds relevant context at question time.
 
-Retrieval is a capability used by the runtime. In the default architecture, the parent agent calls `KnowledgeSearchTool` when a user question needs source-backed knowledge. Workflows can also call the same retrieval layer through Knowledge Base nodes.
+Retrieval is a capability used by the runtime. In the default architecture, the assistant calls `KnowledgeSearchTool` only when uploaded sources are available and the user question needs source-backed knowledge. Workflows can also call the same retrieval layer through Knowledge Base nodes.
 
 ## Ingestion
 
@@ -10,12 +10,12 @@ Ingestion is the pipeline that prepares source content for retrieval. It runs on
 
 ### Supported Source Types
 
-| Source Type | Description | Example |
-|-------------|-------------|---------|
-| **Text** | Raw text content pasted directly | Product FAQ, policy text, release notes |
-| **File** | Uploaded documents | PDF manuals, text files |
-| **URL** | Public web pages crawled and extracted | Documentation sites, blog posts, help articles |
-| **API** | JSON records fetched through a saved connector | Product catalogs, CMS records, public datasets |
+| Source Type | Description                                      | Example                                        |
+| ----------- | ------------------------------------------------ | ---------------------------------------------- |
+| **Text**    | Raw text content pasted directly                 | Product FAQ, policy text, release notes        |
+| **File**    | Uploaded documents                               | PDF manuals, text files                        |
+| **URL**     | Public web pages crawled and extracted           | Documentation sites, blog posts, help articles |
+| **API**     | JSON records fetched through a saved connector   | Product catalogs, CMS records, public datasets |
 
 ### What Happens During Ingestion
 
@@ -42,30 +42,20 @@ API sources let an existing **API Connector** feed structured JSON records into 
 Price: {{price}} EUR
 ```
 
-Each mapped API record becomes its own RAG document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits.
-
-Auto sync can periodically queue API sources through:
-
-```bash
-php artisan filament-agentic-chatbot:sync-rag-sources
-```
-
-After a successful re-ingest, previous API documents for that source are replaced. This removes records that no longer appear in the API response while preserving the old index if the new sync fails.
-
-Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
+Each mapped API record becomes its own stored document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. Auto sync can periodically queue API sources through `php artisan filament-agentic-chatbot:sync-rag-sources`. After a successful re-ingest, previous API documents for that source are replaced, which removes records that no longer appear in the API response while preserving the old index if the new sync fails. Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
 
 ### Chunking Strategy
 
 The plugin splits content into overlapping chunks to preserve context across boundaries:
 
-| Setting | Env Variable | Default | Description |
-|---------|-------------|---------|-------------|
-| Chunk size | `RAG_CHUNK_SIZE_TOKENS` | 1200 chars | Maximum size of each chunk |
-| Overlap | `RAG_CHUNK_OVERLAP_TOKENS` | 200 chars | How much text overlaps between adjacent chunks |
-| Token mode | `RAG_CHUNK_USE_ESTIMATED_TOKENS` | `false` | Use token-based sizing instead of character-based |
-| Tokenizer | `RAG_CHUNK_TOKENIZER_ENCODING` | `cl100k_base` | Tokenizer encoding when using token mode |
-| Batch size | — | 20 | Number of chunks embedded per API call |
-| Max chunks | — | 500 | Maximum chunks per source |
+| Setting    | Env Variable                     | Default       | Description                                       |
+| ---------- | -------------------------------- | ------------- | ------------------------------------------------- |
+| Chunk size | `RAG_CHUNK_SIZE_TOKENS`          | 1200 chars    | Maximum size of each chunk                        |
+| Overlap    | `RAG_CHUNK_OVERLAP_TOKENS`       | 200 chars     | How much text overlaps between adjacent chunks    |
+| Token mode | `RAG_CHUNK_USE_ESTIMATED_TOKENS` | `false`       | Use token-based sizing instead of character-based |
+| Tokenizer  | `RAG_CHUNK_TOKENIZER_ENCODING`   | `cl100k_base` | Tokenizer encoding when using token mode          |
+| Batch size | —                                | 20            | Number of chunks embedded per API call            |
+| Max chunks | —                                | 500           | Maximum chunks per source                         |
 
 **When to adjust chunking:**
 
@@ -84,7 +74,7 @@ RAG_EMBEDDING_MODEL=gemini-embedding-001
 RAG_VECTOR_DIMENSIONS=1536
 ```
 
-The plugin supports embedding providers compatible with `laravel/ai`.
+The plugin supports any embedding provider compatible with `laravel/ai`. Per-bot embedding provider overrides are also available.
 
 Supported embedding providers in the package credential checks are Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI. DeepSeek, Groq, Anthropic, and xAI are chat providers only in the current Laravel AI SDK, so keep `RAG_EMBEDDING_PROVIDER` on an embedding-capable provider even when the chat model uses one of those providers.
 
@@ -126,7 +116,7 @@ RAG_CHROMA_COLLECTION=filament-agentic-chatbot
 
 ## Retrieval
 
-Retrieval is the runtime step that finds relevant chunks when the parent agent uses `KnowledgeSearchTool` or a workflow Knowledge Base node runs.
+Retrieval is the runtime step that finds relevant chunks when the assistant uses `KnowledgeSearchTool` or a workflow Knowledge Base node runs.
 
 ### What Happens During Retrieval
 
@@ -134,7 +124,7 @@ Retrieval is the runtime step that finds relevant chunks when the parent agent u
 2. The vector backend finds the nearest chunks by cosine similarity
 3. Chunk filtering applies `top_k` and `min_similarity` thresholds
 4. The selected chunks are formatted as context with metadata
-5. The parent agent or workflow AI step generates an answer grounded in that context
+5. The assistant or workflow AI step generates an answer grounded in that context
 
 This is what keeps the assistant grounded in your documentation instead of relying only on the base model's training data.
 
@@ -142,11 +132,11 @@ This is what keeps the assistant grounded in your documentation instead of relyi
 
 All settings are configurable per bot from the Filament panel and as global defaults in `.env`:
 
-| Setting | Env / Config | Default | Description |
-|---------|-------------|---------|-------------|
-| **top_k** | `retrieval.top_k` | 6 | How many chunks to retrieve |
-| **min_similarity** | `retrieval.min_similarity` | 0.65 | Minimum cosine similarity threshold |
-| **Context budget** | `retrieval.max_context_chars` | 12000 | Maximum characters of context sent to the model |
+| Setting            | Env / Config                  | Default | Description                                     |
+| ------------------ | ----------------------------- | ------- | ----------------------------------------------- |
+| **top_k**          | `retrieval.top_k`             | 6       | How many chunks to retrieve                     |
+| **min_similarity** | `retrieval.min_similarity`    | 0.65    | Minimum cosine similarity threshold             |
+| **Context budget** | `retrieval.max_context_chars` | 12000   | Maximum characters of context sent to the model |
 
 **Tuning guidance:**
 
@@ -200,9 +190,7 @@ If ingestion stays `pending` too long:
 
 ## Related Docs
 
-- [RAG Sources](RAG_SOURCES.md) — creating and managing sources
-- [API Connectors](API_CONNECTORS.md) — reusable API profiles used by workflows and API knowledge sources
-- [API Source Roadmap](API_SOURCE_ROADMAP.md) — current API source scope and future work
+- [Sources](RAG_SOURCES.md) — creating and managing sources
 - [Bots](BOTS.md) — per-bot retrieval configuration
-- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) — how retrieval fits into the parent-agent runtime
+- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) — how retrieval fits into the assistant graph runtime
 - [Core Concepts](CORE_CONCEPTS.md) — how ingestion fits into the overall architecture

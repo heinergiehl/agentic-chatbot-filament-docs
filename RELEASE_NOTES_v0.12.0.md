@@ -30,7 +30,8 @@
 
 ## Links
 
-- Full changelog: [heinergiehl/filament-agentic-chatbot CHANGELOG.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/CHANGELOG.md)
-- Upgrade guide: [heinergiehl/filament-agentic-chatbot UPGRADING.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/UPGRADING.md)
+- Full changelog: [filament-agentic-chatbot CHANGELOG.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/CHANGELOG.md)
+- Upgrade guide: [filament-agentic-chatbot UPGRADING.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/UPGRADING.md)
 - Runtime architecture: [AGENT_RUNTIME_ARCHITECTURE.md](AGENT_RUNTIME_ARCHITECTURE.md)
+- Post-v0.12 AgentGraph SDK refactor: [RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - Previous release: [RELEASE_NOTES_v0.11.1.md](RELEASE_NOTES_v0.11.1.md)

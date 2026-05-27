@@ -1,0 +1,260 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_welcome",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Welcome",
+                "messageType": "text",
+                "messageContent": "Hi! I'm your content research assistant. I'll help you draft content by researching our knowledge base first."
+            }
+        },
+        {
+            "id": "input_topic",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Ask Topic",
+                "prompt": "What topic do you want to write about?",
+                "variableName": "topic",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "input_format",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 480
+            },
+            "data": {
+                "label": "Ask Content Format",
+                "prompt": "What format should the content be in?",
+                "variableName": "content_format",
+                "inputType": "choice",
+                "choices": "Blog post,Email newsletter,Social media thread,Product description,Internal memo",
+                "required": true
+            }
+        },
+        {
+            "id": "input_tone",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 620
+            },
+            "data": {
+                "label": "Ask Tone",
+                "prompt": "What tone should I aim for?",
+                "variableName": "tone",
+                "inputType": "choice",
+                "choices": "Professional,Casual,Technical,Persuasive,Educational",
+                "required": true
+            }
+        },
+        {
+            "id": "input_length",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 760
+            },
+            "data": {
+                "label": "Ask Length",
+                "prompt": "How long should the content be?",
+                "variableName": "target_length",
+                "inputType": "choice",
+                "choices": "Short (100-200 words),Medium (300-500 words),Long (800+ words)",
+                "required": true
+            }
+        },
+        {
+            "id": "delay_research",
+            "type": "delay",
+            "position": {
+                "x": 400,
+                "y": 900
+            },
+            "data": {
+                "label": "Researching",
+                "delaySeconds": 2,
+                "waitMessage": "Researching \"{{topic}}\" in our knowledge base…"
+            }
+        },
+        {
+            "id": "kb_research",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 400,
+                "y": 1040
+            },
+            "data": {
+                "label": "Research KB",
+                "query": "{{topic}}",
+                "topK": 10,
+                "minSimilarity": 0.5,
+                "outputVariable": "research_context"
+            }
+        },
+        {
+            "id": "ai_outline",
+            "type": "aiAgent",
+            "position": {
+                "x": 400,
+                "y": 1200
+            },
+            "data": {
+                "label": "Generate Outline",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a content strategist. Based on the topic and research context, create a brief outline (3-5 bullet points) for the content piece. Each bullet should be a section heading with a one-sentence description of what to cover. Only use information from the provided context — do not invent facts.",
+                "userPromptTemplate": "Topic: {{topic}}\nFormat: {{content_format}}\nTone: {{tone}}\n\nResearch context:\n{{research_context}}",
+                "temperature": 0.5,
+                "maxTokens": 500,
+                "outputVariable": "outline",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "msg_show_outline",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 1360
+            },
+            "data": {
+                "label": "Show Outline",
+                "messageType": "text",
+                "messageContent": "Here's the outline I came up with:\n\n{{outline}}\n\nNow let me draft the full content…"
+            }
+        },
+        {
+            "id": "ai_draft",
+            "type": "aiAgent",
+            "position": {
+                "x": 400,
+                "y": 1520
+            },
+            "data": {
+                "label": "Write Draft",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a skilled content writer. Write the full content piece following the provided outline. Rules:\n- Match the requested tone and length\n- Only use facts from the research context — do not fabricate information\n- Structure with clear headings and paragraphs\n- Make it engaging and ready to publish\n- End with a brief conclusion or call to action appropriate for the format",
+                "userPromptTemplate": "Topic: {{topic}}\nFormat: {{content_format}}\nTone: {{tone}}\nTarget length: {{target_length}}\n\nOutline:\n{{outline}}\n\nResearch context:\n{{research_context}}",
+                "temperature": 0.7,
+                "maxTokens": 3000,
+                "outputVariable": "draft",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "msg_draft",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 1700
+            },
+            "data": {
+                "label": "Deliver Draft",
+                "messageType": "text",
+                "messageContent": "Here's your {{content_format}} draft about \"{{topic}}\":\n\n{{draft}}\n\n---\nFeel free to ask me to revise sections, change the tone, or adjust the length!"
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About",
+                "noteContent": "Content Research Assistant — Multi-step workflow that collects content requirements, researches the knowledge base, generates an outline, then writes a full draft. Shows: multi-stage AI (outline → draft), KB-grounded content generation, progressive disclosure, delay node.",
+                "color": "#818cf8"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_welcome"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_welcome",
+            "target": "input_topic"
+        },
+        {
+            "id": "e-3",
+            "source": "input_topic",
+            "target": "input_format"
+        },
+        {
+            "id": "e-4",
+            "source": "input_format",
+            "target": "input_tone"
+        },
+        {
+            "id": "e-5",
+            "source": "input_tone",
+            "target": "input_length"
+        },
+        {
+            "id": "e-6",
+            "source": "input_length",
+            "target": "delay_research"
+        },
+        {
+            "id": "e-7",
+            "source": "delay_research",
+            "target": "kb_research"
+        },
+        {
+            "id": "e-8",
+            "source": "kb_research",
+            "target": "ai_outline"
+        },
+        {
+            "id": "e-9",
+            "source": "ai_outline",
+            "target": "msg_show_outline"
+        },
+        {
+            "id": "e-10",
+            "source": "msg_show_outline",
+            "target": "ai_draft"
+        },
+        {
+            "id": "e-11",
+            "source": "ai_draft",
+            "target": "msg_draft"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

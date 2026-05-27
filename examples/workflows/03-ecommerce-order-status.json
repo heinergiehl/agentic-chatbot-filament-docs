@@ -1,0 +1,269 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 400,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_welcome",
+            "type": "sendMessage",
+            "position": {
+                "x": 400,
+                "y": 200
+            },
+            "data": {
+                "label": "Greet User",
+                "messageType": "text",
+                "messageContent": "Hi there! I can help you track your order. Let me look that up for you."
+            }
+        },
+        {
+            "id": "input_email",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 340
+            },
+            "data": {
+                "label": "Ask Email",
+                "prompt": "What email address did you use for your order?",
+                "variableName": "customer_email",
+                "inputType": "email",
+                "required": true
+            }
+        },
+        {
+            "id": "input_order_id",
+            "type": "collectInput",
+            "position": {
+                "x": 400,
+                "y": 480
+            },
+            "data": {
+                "label": "Ask Order ID",
+                "prompt": "What's your order number? (e.g., ORD-12345)",
+                "variableName": "order_id",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "delay_lookup",
+            "type": "delay",
+            "position": {
+                "x": 400,
+                "y": 620
+            },
+            "data": {
+                "label": "Looking Up Order",
+                "delaySeconds": 2,
+                "waitMessage": "Looking up order {{order_id}}…"
+            }
+        },
+        {
+            "id": "http_order",
+            "type": "httpRequest",
+            "position": {
+                "x": 400,
+                "y": 760
+            },
+            "data": {
+                "label": "Fetch Order Status",
+                "method": "GET",
+                "url": "https://api.example.com/orders/{{order_id}}?email={{customer_email}}",
+                "headers": "{\"Accept\": \"application/json\", \"Authorization\": \"Bearer ${ORDER_API_KEY}\"}",
+                "body": "{}",
+                "outputVariable": "order_data",
+                "timeout": 15
+            }
+        },
+        {
+            "id": "cond_found",
+            "type": "condition",
+            "position": {
+                "x": 400,
+                "y": 920
+            },
+            "data": {
+                "label": "Order Found?",
+                "leftOperand": "{{order_data.status}}",
+                "operator": "is_not_empty",
+                "rightOperand": ""
+            }
+        },
+        {
+            "id": "switch_status",
+            "type": "switchRouter",
+            "position": {
+                "x": 300,
+                "y": 1080
+            },
+            "data": {
+                "label": "Route by Status",
+                "switchValue": "{{order_data.status}}",
+                "cases": "[{\"case\": \"processing\", \"label\": \"Processing\"}, {\"case\": \"shipped\", \"label\": \"Shipped\"}, {\"case\": \"delivered\", \"label\": \"Delivered\"}]",
+                "defaultLabel": "Other Status"
+            }
+        },
+        {
+            "id": "msg_processing",
+            "type": "sendMessage",
+            "position": {
+                "x": 0,
+                "y": 1260
+            },
+            "data": {
+                "label": "Processing Status",
+                "messageType": "card",
+                "messageContent": "📦 **Order {{order_id}}** — Processing\n\nYour order is being prepared. Estimated ship date: {{order_data.estimated_ship_date}}.\n\nWe'll notify you at {{customer_email}} once it ships!"
+            }
+        },
+        {
+            "id": "msg_shipped",
+            "type": "sendMessage",
+            "position": {
+                "x": 250,
+                "y": 1260
+            },
+            "data": {
+                "label": "Shipped Status",
+                "messageType": "card",
+                "messageContent": "🚚 **Order {{order_id}}** — Shipped!\n\nCarrier: {{order_data.carrier}}\nTracking: {{order_data.tracking_number}}\nEstimated delivery: {{order_data.estimated_delivery}}\n\nTrack your package: {{order_data.tracking_url}}"
+            }
+        },
+        {
+            "id": "msg_delivered",
+            "type": "sendMessage",
+            "position": {
+                "x": 500,
+                "y": 1260
+            },
+            "data": {
+                "label": "Delivered Status",
+                "messageType": "card",
+                "messageContent": "✅ **Order {{order_id}}** — Delivered\n\nDelivered on: {{order_data.delivered_at}}\n\nWe hope you enjoy your purchase! If you have any issues, just let me know."
+            }
+        },
+        {
+            "id": "msg_other",
+            "type": "sendMessage",
+            "position": {
+                "x": 750,
+                "y": 1260
+            },
+            "data": {
+                "label": "Other Status",
+                "messageType": "text",
+                "messageContent": "Your order {{order_id}} has status: **{{order_data.status}}**. If you need more details, I can connect you with our support team."
+            }
+        },
+        {
+            "id": "msg_not_found",
+            "type": "sendMessage",
+            "position": {
+                "x": 650,
+                "y": 1080
+            },
+            "data": {
+                "label": "Order Not Found",
+                "messageType": "text",
+                "messageContent": "I couldn't find an order with ID **{{order_id}}** for {{customer_email}}. Please double-check your order number and email, or contact support@example.com for help."
+            }
+        },
+        {
+            "id": "note_1",
+            "type": "note",
+            "position": {
+                "x": 50,
+                "y": 60
+            },
+            "data": {
+                "label": "About",
+                "noteContent": "E-Commerce Order Status Tracker — Collects order details, calls an external API, routes by order status, and displays rich card messages. Shows: httpRequest, switchRouter, delay, card messages, variable interpolation.",
+                "color": "#f59e0b"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_welcome"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_welcome",
+            "target": "input_email"
+        },
+        {
+            "id": "e-3",
+            "source": "input_email",
+            "target": "input_order_id"
+        },
+        {
+            "id": "e-4",
+            "source": "input_order_id",
+            "target": "delay_lookup"
+        },
+        {
+            "id": "e-5",
+            "source": "delay_lookup",
+            "target": "http_order"
+        },
+        {
+            "id": "e-6",
+            "source": "http_order",
+            "target": "cond_found"
+        },
+        {
+            "id": "e-7",
+            "source": "cond_found",
+            "target": "switch_status",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-8",
+            "source": "cond_found",
+            "target": "msg_not_found",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-9",
+            "source": "switch_status",
+            "target": "msg_processing",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e-10",
+            "source": "switch_status",
+            "target": "msg_shipped",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e-11",
+            "source": "switch_status",
+            "target": "msg_delivered",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e-12",
+            "source": "switch_status",
+            "target": "msg_other",
+            "sourceHandle": "default"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 1
+    }
+}

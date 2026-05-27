@@ -6,13 +6,13 @@ This page records the current API Source scope and the most valuable follow-up w
 
 ## Current Implemented Scope
 
-API Sources can feed the RAG pipeline from external JSON APIs.
+API Sources can feed the assistant knowledge pipeline from external JSON APIs.
 
 What works today:
 
 - create reusable API Connectors with base URL, auth, default headers, timeout, and SSL settings
 - authenticate with no auth, API key header, Bearer token, Basic auth, or custom header
-- create a RAG Source of type **API Source**
+- create a Source of type **API Source**
 - fetch records from a `GET` JSON endpoint
 - select a JSON path that resolves to the records array
 - map record fields into searchable text with `{{field.path}}` placeholders
@@ -27,7 +27,7 @@ What works today:
 
 Recommended customer wording:
 
-> You can feed the RAG knowledge base from external JSON APIs now. Database data can also be used if you expose the records through a stable API endpoint. Direct database-source ingestion and OAuth2 login flows are planned future improvements, not part of the current v1 scope.
+> You can feed the assistant knowledge index from external JSON APIs now. Database data can also be used if you expose the records through a stable API endpoint. Direct database-source ingestion and OAuth2 login flows are planned future improvements, not part of the current v1 scope.
 
 ## Product Positioning
 
@@ -185,7 +185,7 @@ Do not promise these as current behavior:
 - universal support for every API shape
 - OAuth2 login and refresh tokens
 - direct database ingestion
-- real-time RAG over rapidly changing private data
+- real-time retrieval over rapidly changing private data
 - automatic permission-aware retrieval per end user
 - automatic schema understanding without user mapping
 

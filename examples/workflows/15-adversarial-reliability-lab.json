@@ -1,0 +1,643 @@
+{
+  "schemaVersion": 1,
+  "nodes": [
+    {
+      "id": "note_overview",
+      "type": "note",
+      "position": {
+        "x": -260,
+        "y": 20
+      },
+      "data": {
+        "label": "Adversarial Lab",
+        "noteContent": "Stress test for turn routing, interruption handling, choice normalization, PII/secret guardrails, confirmation gates, and conversation-scoped memory recall.",
+        "color": "#fde68a"
+      }
+    },
+    {
+      "id": "note_test_script",
+      "type": "note",
+      "position": {
+        "x": 760,
+        "y": 20
+      },
+      "data": {
+        "label": "Try These Inputs",
+        "noteContent": "Start a probe, ask an unrelated side question while it waits for input, try a prompt containing a fake email or URL, answer a choice with a synonym, then recall the saved probe.",
+        "color": "#bfdbfe"
+      }
+    },
+    {
+      "id": "trigger_incoming",
+      "type": "trigger",
+      "position": {
+        "x": 0,
+        "y": 240
+      },
+      "data": {
+        "label": "Incoming Message",
+        "triggerType": "user_message"
+      }
+    },
+    {
+      "id": "read_lab_memory",
+      "type": "memoryRead",
+      "position": {
+        "x": 260,
+        "y": 240
+      },
+      "data": {
+        "label": "Read Lab Memory",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "",
+        "defaultValue": "{}",
+        "outputVariable": "lab_memory"
+      }
+    },
+    {
+      "id": "classify_turn",
+      "type": "intentClassifier",
+      "position": {
+        "x": 540,
+        "y": 240
+      },
+      "data": {
+        "label": "Classify Lab Turn",
+        "variable": "lab_intent",
+        "inputTemplate": "Latest message:\n{{input}}\n\nStored lab memory:\n{{lab_memory}}",
+        "intents": [
+          {
+            "label": "Start probe",
+            "description": "The user wants to start, create, run, design, or update a sneaky reliability, red-team, adversarial, interruption, prompt-injection, correction, or chatbot behavior test."
+          },
+          {
+            "label": "Recall probe",
+            "description": "The user asks what the last saved probe, expected behavior, current test, status, memory, or stored lab state is."
+          },
+          {
+            "label": "Reset lab",
+            "description": "The user asks to reset, clear, forget, delete, wipe, or start over with the lab memory."
+          },
+          {
+            "label": "Side question",
+            "description": "The user asks an unrelated product, docs, setup, RAG, channel, workflow, or pricing question while a lab task may be active."
+          },
+          {
+            "label": "Smalltalk",
+            "description": "Greeting, thanks, short acknowledgement, or conversational filler that does not start or recall a test."
+          }
+        ],
+        "systemPrompt": "Classify the latest message into exactly one configured label. Use stored memory only to resolve references. Do not answer the user. Return only the label.",
+        "provider": "",
+        "model": "",
+        "useConversationMemory": false,
+        "heuristicFallback": true,
+        "maxTokens": 128,
+        "streamToChat": false
+      }
+    },
+    {
+      "id": "send_how_to_use",
+      "type": "sendMessage",
+      "position": {
+        "x": 900,
+        "y": -80
+      },
+      "data": {
+        "label": "Explain Lab",
+        "messageType": "buttons",
+        "messageContent": "This lab tests whether the chatbot keeps state, rejects unsafe probe text, handles interruptions, normalizes choice answers, and confirms before storing memory. Start by describing a sneaky probe.",
+        "buttons": "[{\"label\":\"Start a probe\",\"value\":\"start a probe\"},{\"label\":\"Recall saved probe\",\"value\":\"recall probe\"},{\"label\":\"Reset lab\",\"value\":\"reset lab\"}]"
+      }
+    },
+    {
+      "id": "has_saved_probe",
+      "type": "condition",
+      "position": {
+        "x": 900,
+        "y": 90
+      },
+      "data": {
+        "label": "Saved Probe Exists?",
+        "leftOperand": "{{lab_memory.last_probe}}",
+        "operator": "is_not_empty",
+        "rightOperand": ""
+      }
+    },
+    {
+      "id": "send_probe_recall",
+      "type": "sendMessage",
+      "position": {
+        "x": 1180,
+        "y": 20
+      },
+      "data": {
+        "label": "Recall Saved Probe",
+        "messageType": "buttons",
+        "messageContent": "Saved probe:\n{{lab_memory.last_probe}}\n\nExpected behavior:\n{{lab_memory.expected_behavior}}\n\nRisk lane: {{lab_memory.risk_lane}}\n\nConfirmation note: {{lab_memory.confirmation_note}}",
+        "buttons": "[{\"label\":\"Start another probe\",\"value\":\"start another probe\"},{\"label\":\"Reset lab\",\"value\":\"reset lab\"}]"
+      }
+    },
+    {
+      "id": "send_no_probe",
+      "type": "sendMessage",
+      "position": {
+        "x": 1180,
+        "y": 180
+      },
+      "data": {
+        "label": "No Saved Probe",
+        "messageType": "buttons",
+        "messageContent": "No probe is saved for this conversation yet. Start one, then recall it later to verify memory consistency.",
+        "buttons": "[{\"label\":\"Start a probe\",\"value\":\"start a probe\"}]"
+      }
+    },
+    {
+      "id": "clear_last_probe",
+      "type": "memoryWrite",
+      "position": {
+        "x": 900,
+        "y": 360
+      },
+      "data": {
+        "label": "Clear Probe Text",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "last_probe",
+        "valueTemplate": "",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "cleared_last_probe",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "clear_expected_behavior",
+      "type": "memoryWrite",
+      "position": {
+        "x": 1180,
+        "y": 360
+      },
+      "data": {
+        "label": "Clear Expected Behavior",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "expected_behavior",
+        "valueTemplate": "",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "cleared_expected_behavior",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "clear_risk_lane",
+      "type": "memoryWrite",
+      "position": {
+        "x": 1460,
+        "y": 360
+      },
+      "data": {
+        "label": "Clear Risk Lane",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "risk_lane",
+        "valueTemplate": "",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "cleared_risk_lane",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "send_reset_done",
+      "type": "sendMessage",
+      "position": {
+        "x": 1740,
+        "y": 360
+      },
+      "data": {
+        "label": "Reset Done",
+        "messageType": "buttons",
+        "messageContent": "Lab memory cleared for this conversation.",
+        "buttons": "[{\"label\":\"Start a probe\",\"value\":\"start a probe\"}]"
+      }
+    },
+    {
+      "id": "send_side_question_boundary",
+      "type": "sendMessage",
+      "position": {
+        "x": 900,
+        "y": 520
+      },
+      "data": {
+        "label": "Side Question Boundary",
+        "messageType": "text",
+        "messageContent": "That looks like a side question. In this lab, the correct behavior is to preserve the active probe state instead of silently treating unrelated content as the answer to the pending lab prompt. Finish, cancel, or reset the probe first."
+      }
+    },
+    {
+      "id": "send_probe_intro",
+      "type": "sendMessage",
+      "position": {
+        "x": 900,
+        "y": 700
+      },
+      "data": {
+        "label": "Open Probe Builder",
+        "messageType": "text",
+        "messageContent": "Probe builder started. Use the next turns to define a tricky request, the expected safe behavior, and the main failure mode to watch."
+      }
+    },
+    {
+      "id": "collect_probe_request",
+      "type": "collectInput",
+      "position": {
+        "x": 1180,
+        "y": 700
+      },
+      "data": {
+        "label": "Collect Tricky Probe",
+        "prompt": "Paste the tricky user request to test. Include ambiguity, a correction, or prompt-injection pressure. Do not include real secrets, URLs, email addresses, or phone numbers.",
+        "variableName": "probe_request",
+        "inputType": "text",
+        "validation": "min:10|max:1200",
+        "required": true,
+        "allowInterruptions": true,
+        "interruptionPatterns": "cancel\nreset\nnew question\nanother topic",
+        "semanticInterruptionCheck": true
+      }
+    },
+    {
+      "id": "guardrail_probe_request",
+      "type": "guardrail",
+      "position": {
+        "x": 1460,
+        "y": 700
+      },
+      "data": {
+        "label": "Reject Secrets And PII",
+        "inputTemplate": "{{probe_request}}",
+        "bannedTerms": [
+          "password",
+          "secret",
+          "api key",
+          "token",
+          "bearer",
+          "sk-",
+          "private key"
+        ],
+        "requiredTerms": [],
+        "detectEmail": true,
+        "detectPhone": true,
+        "detectUrl": true,
+        "maxLength": 1200,
+        "outputVariable": "probe_guardrail"
+      }
+    },
+    {
+      "id": "send_sanitize_probe",
+      "type": "sendMessage",
+      "position": {
+        "x": 1740,
+        "y": 620
+      },
+      "data": {
+        "label": "Ask For Sanitized Probe",
+        "messageType": "buttons",
+        "messageContent": "I rejected that probe before saving it.\nReason: {{probe_guardrail_reason}}\n\nRemove secrets, URLs, emails, or phone numbers, then start again.",
+        "buttons": "[{\"label\":\"Start again\",\"value\":\"start a probe\"},{\"label\":\"Reset lab\",\"value\":\"reset lab\"}]"
+      }
+    },
+    {
+      "id": "collect_expected_behavior",
+      "type": "collectInput",
+      "position": {
+        "x": 1740,
+        "y": 820
+      },
+      "data": {
+        "label": "Collect Expected Behavior",
+        "prompt": "What exactly should a reliable chatbot do for this probe? Name the expected answer, refusal, clarification, memory behavior, or routing behavior.",
+        "variableName": "expected_behavior",
+        "inputType": "text",
+        "validation": "min:20|max:900",
+        "required": true,
+        "allowInterruptions": true,
+        "interruptionPatterns": "cancel\nreset\nside question\nunrelated",
+        "semanticInterruptionCheck": true
+      }
+    },
+    {
+      "id": "collect_risk_lane",
+      "type": "collectInput",
+      "position": {
+        "x": 2020,
+        "y": 820
+      },
+      "data": {
+        "label": "Choose Risk Lane",
+        "prompt": "Which failure mode is this mostly testing?",
+        "variableName": "risk_lane",
+        "inputType": "choice",
+        "choices": "[{\"label\":\"Prompt injection\",\"value\":\"prompt_injection\"},{\"label\":\"Ambiguous correction\",\"value\":\"ambiguous_correction\"},{\"label\":\"Interruption or cancellation\",\"value\":\"interruption_or_cancellation\"},{\"label\":\"Grounding pressure\",\"value\":\"grounding_pressure\"},{\"label\":\"PII or secret handling\",\"value\":\"pii_or_secret_handling\"}]",
+        "required": true,
+        "allowInterruptions": false,
+        "interruptionPatterns": "",
+        "semanticInterruptionCheck": true
+      }
+    },
+    {
+      "id": "set_confirmation_note",
+      "type": "setVariable",
+      "position": {
+        "x": 2300,
+        "y": 820
+      },
+      "data": {
+        "label": "Build Confirmation Note",
+        "variableName": "confirmation_note",
+        "expression": "Probe: {{probe_request}}\nExpected: {{expected_behavior}}\nRisk lane: {{risk_lane}}"
+      }
+    },
+    {
+      "id": "confirm_store_probe",
+      "type": "confirmation",
+      "position": {
+        "x": 2580,
+        "y": 820
+      },
+      "data": {
+        "label": "Confirm Memory Write",
+        "prompt": "Store this adversarial probe in conversation memory?\n\n{{confirmation_note}}",
+        "variableName": "store_probe_confirmed",
+        "confirmLabel": "Store probe",
+        "cancelLabel": "Do not store",
+        "allowInterruptions": true,
+        "interruptionPatterns": "cancel\nchange it\nreplace this\nnew probe",
+        "semanticInterruptionCheck": true
+      }
+    },
+    {
+      "id": "remember_probe_request",
+      "type": "memoryWrite",
+      "position": {
+        "x": 2860,
+        "y": 760
+      },
+      "data": {
+        "label": "Remember Probe Request",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "last_probe",
+        "valueTemplate": "{{probe_request}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_probe_request",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_expected_behavior",
+      "type": "memoryWrite",
+      "position": {
+        "x": 3140,
+        "y": 760
+      },
+      "data": {
+        "label": "Remember Expected Behavior",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "expected_behavior",
+        "valueTemplate": "{{expected_behavior}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_expected_behavior",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_risk_lane",
+      "type": "memoryWrite",
+      "position": {
+        "x": 3420,
+        "y": 760
+      },
+      "data": {
+        "label": "Remember Risk Lane",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "risk_lane",
+        "valueTemplate": "{{risk_lane}}",
+        "valueMode": "text",
+        "memoryType": "state",
+        "merge": false,
+        "outputVariable": "remembered_risk_lane",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "remember_confirmation_note",
+      "type": "memoryWrite",
+      "position": {
+        "x": 3700,
+        "y": 760
+      },
+      "data": {
+        "label": "Remember Confirmation Note",
+        "scope": "conversation",
+        "namespace": "adversarial_reliability_lab",
+        "key": "confirmation_note",
+        "valueTemplate": "{{confirmation_note}}",
+        "valueMode": "text",
+        "memoryType": "summary",
+        "merge": false,
+        "outputVariable": "remembered_confirmation_note",
+        "valueTransform": "trim"
+      }
+    },
+    {
+      "id": "send_probe_saved",
+      "type": "sendMessage",
+      "position": {
+        "x": 3980,
+        "y": 760
+      },
+      "data": {
+        "label": "Probe Saved",
+        "messageType": "buttons",
+        "messageContent": "Probe saved. Now test reliability by asking to recall it, starting a different probe, or resetting the lab. The saved risk lane is {{risk_lane}}.",
+        "buttons": "[{\"label\":\"Recall saved probe\",\"value\":\"recall probe\"},{\"label\":\"Start another probe\",\"value\":\"start another probe\"},{\"label\":\"Reset lab\",\"value\":\"reset lab\"}]"
+      }
+    },
+    {
+      "id": "send_store_cancelled",
+      "type": "sendMessage",
+      "position": {
+        "x": 2860,
+        "y": 940
+      },
+      "data": {
+        "label": "Storage Cancelled",
+        "messageType": "buttons",
+        "messageContent": "Probe was not stored. This confirms the workflow respects the confirmation gate.",
+        "buttons": "[{\"label\":\"Start over\",\"value\":\"start a probe\"},{\"label\":\"Recall saved probe\",\"value\":\"recall probe\"}]"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "e_trigger_memory",
+      "source": "trigger_incoming",
+      "target": "read_lab_memory"
+    },
+    {
+      "id": "e_memory_classify",
+      "source": "read_lab_memory",
+      "target": "classify_turn"
+    },
+    {
+      "id": "e_smalltalk",
+      "source": "classify_turn",
+      "target": "send_how_to_use",
+      "sourceHandle": "case_4"
+    },
+    {
+      "id": "e_default_help",
+      "source": "classify_turn",
+      "target": "send_how_to_use",
+      "sourceHandle": "default"
+    },
+    {
+      "id": "e_recall_probe",
+      "source": "classify_turn",
+      "target": "has_saved_probe",
+      "sourceHandle": "case_1"
+    },
+    {
+      "id": "e_has_probe_yes",
+      "source": "has_saved_probe",
+      "target": "send_probe_recall",
+      "sourceHandle": "yes"
+    },
+    {
+      "id": "e_has_probe_no",
+      "source": "has_saved_probe",
+      "target": "send_no_probe",
+      "sourceHandle": "no"
+    },
+    {
+      "id": "e_reset_lab",
+      "source": "classify_turn",
+      "target": "clear_last_probe",
+      "sourceHandle": "case_2"
+    },
+    {
+      "id": "e_clear_expected",
+      "source": "clear_last_probe",
+      "target": "clear_expected_behavior"
+    },
+    {
+      "id": "e_clear_lane",
+      "source": "clear_expected_behavior",
+      "target": "clear_risk_lane"
+    },
+    {
+      "id": "e_clear_done",
+      "source": "clear_risk_lane",
+      "target": "send_reset_done"
+    },
+    {
+      "id": "e_side_question",
+      "source": "classify_turn",
+      "target": "send_side_question_boundary",
+      "sourceHandle": "case_3"
+    },
+    {
+      "id": "e_start_probe",
+      "source": "classify_turn",
+      "target": "send_probe_intro",
+      "sourceHandle": "case_0"
+    },
+    {
+      "id": "e_intro_collect",
+      "source": "send_probe_intro",
+      "target": "collect_probe_request"
+    },
+    {
+      "id": "e_collect_guardrail",
+      "source": "collect_probe_request",
+      "target": "guardrail_probe_request"
+    },
+    {
+      "id": "e_guardrail_invalid",
+      "source": "guardrail_probe_request",
+      "target": "send_sanitize_probe",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_guardrail_valid",
+      "source": "guardrail_probe_request",
+      "target": "collect_expected_behavior",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_expected_lane",
+      "source": "collect_expected_behavior",
+      "target": "collect_risk_lane"
+    },
+    {
+      "id": "e_lane_note",
+      "source": "collect_risk_lane",
+      "target": "set_confirmation_note"
+    },
+    {
+      "id": "e_note_confirm",
+      "source": "set_confirmation_note",
+      "target": "confirm_store_probe"
+    },
+    {
+      "id": "e_confirm_valid",
+      "source": "confirm_store_probe",
+      "target": "remember_probe_request",
+      "sourceHandle": "valid"
+    },
+    {
+      "id": "e_confirm_invalid",
+      "source": "confirm_store_probe",
+      "target": "send_store_cancelled",
+      "sourceHandle": "invalid"
+    },
+    {
+      "id": "e_remember_expected",
+      "source": "remember_probe_request",
+      "target": "remember_expected_behavior"
+    },
+    {
+      "id": "e_remember_lane",
+      "source": "remember_expected_behavior",
+      "target": "remember_risk_lane"
+    },
+    {
+      "id": "e_remember_note",
+      "source": "remember_risk_lane",
+      "target": "remember_confirmation_note"
+    },
+    {
+      "id": "e_saved_reply",
+      "source": "remember_confirmation_note",
+      "target": "send_probe_saved"
+    }
+  ],
+  "viewport": {
+    "x": 38,
+    "y": 44,
+    "zoom": 0.42
+  }
+}

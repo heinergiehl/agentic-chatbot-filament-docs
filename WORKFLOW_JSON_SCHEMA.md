@@ -210,11 +210,11 @@ Has **two outputs**: `"yes"` and `"no"` handles.
 | `maxTokens`          | `integer` | **Yes**  | Max response tokens (default: 2048)             |
 | `outputVariable`     | `string`  | **Yes**  | Variable name to store the AI response          |
 
-> **Current runtime note:** `temperature` and `maxTokens` are stored, validated, and preserved in workflow JSON, but they are not yet applied per AI call at runtime. The current `laravel/ai` runtime does not expose a stable per-request override API for these settings, so use bot/provider defaults for live behavior today.
+> **Runtime note:** `temperature` and `maxTokens` are stored, validated, preserved in workflow JSON, and passed through the Laravel AI SDK generation options where the selected provider supports them.
 
 ---
 
-### 6. `knowledgeBase` — RAG Retrieval
+### 6. `knowledgeBase` — Knowledge Retrieval
 
 ```json
 {
@@ -264,7 +264,7 @@ These nodes are available in addition to the core message, logic, AI, and integr
 
 `confirmation`, `structuredOutput`, `confidenceCheck`, `guardrail`, and `errorHandler` use `sourceHandle: "valid"` and `sourceHandle: "invalid"` for their branches. The editor also accepts legacy `yes`/`no` handles for confirmation and normalizes them.
 
-Per-node `temperature` and `maxTokens` values on AI-backed nodes are stored in JSON but are not applied by the current Laravel AI SDK runtime yet. The linked bot/provider defaults are used until the SDK exposes per-call option overrides.
+Per-node `temperature` and `maxTokens` values on AI-backed nodes are passed through the Laravel AI SDK generation options where the selected provider gateway supports them.
 
 For simple workflows, use `scope: "conversation"` for chat state and `scope: "workflow_run"` for one-run scratch state. The runtime also accepts `session`, `actor`, and `bot` for advanced API/import use cases where broader reuse is intentional. `memoryType: "semantic"` is accepted as metadata, but it does not create vector-search memory by itself.
 

@@ -80,7 +80,7 @@ Define reusable external API connection profiles and reference them across workf
 
 ## Features
 
-### RAG foundation
+### Source-grounded knowledge
 
 - **Multi-bot management** — unlimited bots, each with its own identity, model, prompt, retrieval config, and access controls
 - **Source types** — URL page, PDF / file upload, plain-text snippet, API-fed JSON records
@@ -88,7 +88,7 @@ Define reusable external API connection profiles and reference them across workf
 - **API knowledge sources** — sync records from authenticated `GET` JSON endpoints through reusable API Connectors
 - **Vector backends** — PostgreSQL + `pgvector` (recommended) or ChromaDB; configurable dimensions
 - **Provider support** — Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, and Azure OpenAI for chat; Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI for embeddings
-- **Streaming chat** with grounded retrieval, inline source citations, and citation coverage metrics
+- **Streaming chat** with optional grounded retrieval, inline source citations, and citation coverage metrics
 - **Conversation history** — full transcripts with per-message retrieval context and citation links
 - **Per-bot analytics** — conversation count, message volume, source health score, citation coverage chart
 
@@ -97,7 +97,7 @@ Define reusable external API connection profiles and reference them across workf
 - **Broad node catalog**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Answer, Switch/Router, Condition, Action, HTTP Request, API Connector, Memory Read/Write, Delay, Loop, Sub-Workflow, and more
 - **Multi-branch canvas** powered by Vue Flow — drag, connect, and organize nodes freely
 - **AI Agent node** — configurable Provider, Model, and System Prompt per node within the same workflow
-- **Knowledge Base node** — inline RAG retrieval mid-flow, configurable result count
+- **Knowledge Base node** — inline source retrieval mid-flow, configurable result count
 - **Switch/Router node** — N branches + default; route by intent, field value, or AI classification
 - **HTTP Request node** — call external APIs with variable interpolation in body and headers
 - **Scoped workflow memory** — keep normal chat state in the conversation scope and one-run scratch state in workflow-run scope
@@ -158,10 +158,18 @@ php artisan migrate
 php artisan queue:work
 ```
 
-For the current agent-first runtime and workflow UX release, install `v0.12.0` or newer:
+For the current public release line, install `v0.12.0` or newer:
 
 ```bash
 composer require heiner/filament-agentic-chatbot:^0.12.0
+```
+
+If you are testing the post-`v0.12.0` AgentGraph SDK refactor branch before the SDK is published to your Composer repository, add the SDK repository to the host app root composer config before requiring the plugin:
+
+```bash
+composer config repositories.agent-graph vcs https://github.com/heinergiehl/agent-graph.git
+composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
+composer require heiner/filament-agentic-chatbot:'*@dev'
 ```
 
 Register the plugin in your panel provider:
@@ -319,7 +327,7 @@ import { ChatWidget } from "@heiner/filament-agentic-chatbot-widget";
 
 ## Importable Example Workflows
 
-Seven ready-to-import examples covering common agentic patterns:
+Fifteen ready-to-import examples covering common agentic patterns:
 
 | Workflow                   | What it demonstrates                                   |
 | -------------------------- | ------------------------------------------------------ |
@@ -327,11 +335,13 @@ Seven ready-to-import examples covering common agentic patterns:
 | Support Ticket Router      | AI intent classification → 4-branch switch             |
 | E-Commerce Order Status    | External API lookup + status-based responses           |
 | Lead Qualification         | Multi-step data collection + CRM write action          |
-| Webhook Inventory Alert    | Headless webhook trigger → multi-channel notifications |
-| FAQ with Confidence Check  | Two-stage AI confidence evaluation before answering    |
-| Content Research Assistant | KB search → outline → full draft generation            |
+| Early Access Feedback Triage | Structured feedback intake and submission capture     |
+| FAQ with Confidence Check    | Two-stage AI confidence evaluation before answering    |
+| Content Research Assistant   | KB search → outline → full draft generation            |
+| Memory Labs                  | Conversation-scoped preference and correction memory   |
+| Reliability Lab              | Interruptions, guardrails, confirmations, and recall   |
 
-**[Browse and download on GitHub](https://github.com/heinergiehl/agentic-chatbot-workflow-examples)**
+**[Browse workflow examples](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/examples/README.md)**
 
 Import any JSON file via the workflow editor's **Import** button.
 
@@ -344,8 +354,9 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md)
 - [Agent runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
 - [Agentic workflows — all node types explained](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
-- [RAG sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
+- [Sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
+- [Database and breaking changes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATABASE_AND_BREAKING_CHANGES.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
 - [Channel integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md)
 - [API source roadmap](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_SOURCE_ROADMAP.md)
@@ -358,6 +369,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md)
 - [How it differs from Filament RAG](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
 - [Release notes v0.12.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.12.0.md)
+- [AgentGraph SDK refactor notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
 
 ---

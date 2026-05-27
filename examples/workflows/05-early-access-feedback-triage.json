@@ -1,0 +1,884 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "trigger_1",
+            "type": "trigger",
+            "position": {
+                "x": 520,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "msg_intro",
+            "type": "sendMessage",
+            "position": {
+                "x": 520,
+                "y": 200
+            },
+            "data": {
+                "label": "Set Expectations",
+                "messageType": "text",
+                "messageContent": "Thanks for trying our Early Access product. I can collect bug reports, feature requests, docs/setup issues, or general product feedback in a structured way so the team can act on it."
+            }
+        },
+        {
+            "id": "input_feedback_type",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 340
+            },
+            "data": {
+                "label": "Choose Feedback Type",
+                "prompt": "What kind of feedback is this?",
+                "variableName": "feedback_type",
+                "inputType": "choice",
+                "choices": "Bug report,Feature request,Docs/setup issue,General product feedback",
+                "required": true
+            }
+        },
+        {
+            "id": "input_feedback_title",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 480
+            },
+            "data": {
+                "label": "Capture Short Title",
+                "prompt": "Give your feedback a short title so the team can recognize it quickly.",
+                "variableName": "feedback_title",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "input_feedback_detail",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 620
+            },
+            "data": {
+                "label": "Capture Full Detail",
+                "prompt": "Describe the issue, request, or feedback in as much detail as you can.",
+                "variableName": "feedback_detail",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "input_impact",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 760
+            },
+            "data": {
+                "label": "Capture Impact",
+                "prompt": "How much impact does this have right now?",
+                "variableName": "impact_level",
+                "inputType": "choice",
+                "choices": "Low - minor annoyance,Medium - slows me down,High - blocks a task,Critical - production risk",
+                "required": true
+            }
+        },
+        {
+            "id": "switch_feedback_type",
+            "type": "switchRouter",
+            "position": {
+                "x": 520,
+                "y": 920
+            },
+            "data": {
+                "label": "Route By Feedback Type",
+                "switchValue": "{{feedback_type}}",
+                "cases": "[{\"case\":\"Bug report\",\"label\":\"Bug\"},{\"case\":\"Feature request\",\"label\":\"Feature\"},{\"case\":\"Docs/setup issue\",\"label\":\"Docs\"}]",
+                "defaultLabel": "General"
+            }
+        },
+        {
+            "id": "bug_expected",
+            "type": "collectInput",
+            "position": {
+                "x": 40,
+                "y": 1080
+            },
+            "data": {
+                "label": "Expected Behavior",
+                "prompt": "What did you expect to happen?",
+                "variableName": "expected_behavior",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "bug_actual",
+            "type": "collectInput",
+            "position": {
+                "x": 40,
+                "y": 1220
+            },
+            "data": {
+                "label": "Actual Behavior",
+                "prompt": "What happened instead?",
+                "variableName": "actual_behavior",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "bug_steps",
+            "type": "collectInput",
+            "position": {
+                "x": 40,
+                "y": 1360
+            },
+            "data": {
+                "label": "Reproduction Steps",
+                "prompt": "How can someone reproduce this? Share the shortest reliable steps you know.",
+                "variableName": "reproduce_steps",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "bug_environment",
+            "type": "collectInput",
+            "position": {
+                "x": 40,
+                "y": 1500
+            },
+            "data": {
+                "label": "Environment",
+                "prompt": "Where did this happen?",
+                "variableName": "bug_environment",
+                "inputType": "choice",
+                "choices": "Sandbox demo,Local install,Staging app,Production app",
+                "required": true
+            }
+        },
+        {
+            "id": "set_bug_case_details",
+            "type": "setVariable",
+            "position": {
+                "x": 40,
+                "y": 1640
+            },
+            "data": {
+                "label": "Build Bug Detail Summary",
+                "variableName": "case_details",
+                "expression": "Environment: {{bug_environment}}\nExpected: {{expected_behavior}}\nActual: {{actual_behavior}}\nRepro steps: {{reproduce_steps}}"
+            }
+        },
+        {
+            "id": "set_bug_type",
+            "type": "setVariable",
+            "position": {
+                "x": 40,
+                "y": 1780
+            },
+            "data": {
+                "label": "Normalize Bug Type",
+                "variableName": "submission_type",
+                "expression": "bug_report"
+            }
+        },
+        {
+            "id": "feature_outcome",
+            "type": "collectInput",
+            "position": {
+                "x": 320,
+                "y": 1080
+            },
+            "data": {
+                "label": "Desired Outcome",
+                "prompt": "What should the product help you do that it cannot do well enough today?",
+                "variableName": "desired_outcome",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "feature_workaround",
+            "type": "collectInput",
+            "position": {
+                "x": 320,
+                "y": 1220
+            },
+            "data": {
+                "label": "Current Workaround",
+                "prompt": "What is your current workaround, if any?",
+                "variableName": "current_workaround",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "feature_use_case",
+            "type": "collectInput",
+            "position": {
+                "x": 320,
+                "y": 1360
+            },
+            "data": {
+                "label": "Use Case Context",
+                "prompt": "What real-world use case or workflow is this request for?",
+                "variableName": "use_case_context",
+                "inputType": "text",
+                "required": true
+            }
+        },
+        {
+            "id": "set_feature_case_details",
+            "type": "setVariable",
+            "position": {
+                "x": 320,
+                "y": 1500
+            },
+            "data": {
+                "label": "Build Feature Detail Summary",
+                "variableName": "case_details",
+                "expression": "Desired outcome: {{desired_outcome}}\nCurrent workaround: {{current_workaround}}\nUse case: {{use_case_context}}"
+            }
+        },
+        {
+            "id": "set_feature_type",
+            "type": "setVariable",
+            "position": {
+                "x": 320,
+                "y": 1640
+            },
+            "data": {
+                "label": "Normalize Feature Type",
+                "variableName": "submission_type",
+                "expression": "feature_request"
+            }
+        },
+        {
+            "id": "kb_docs",
+            "type": "knowledgeBase",
+            "position": {
+                "x": 620,
+                "y": 1080
+            },
+            "data": {
+                "label": "Search Docs Context",
+                "query": "{{feedback_title}} {{feedback_detail}}",
+                "topK": 6,
+                "minSimilarity": 0.6,
+                "outputVariable": "kb_docs_context"
+            }
+        },
+        {
+            "id": "ai_docs_coverage",
+            "type": "aiAgent",
+            "position": {
+                "x": 620,
+                "y": 1220
+            },
+            "data": {
+                "label": "Check Docs Coverage",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are deciding whether the existing docs already contain enough information to help the user. Respond with exactly one lowercase word: covered or gap.",
+                "userPromptTemplate": "Issue title: {{feedback_title}}\nIssue detail: {{feedback_detail}}\n\nDocs context:\n{{kb_docs_context}}",
+                "temperature": 0,
+                "maxTokens": 10,
+                "outputVariable": "docs_coverage",
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "cond_docs_covered",
+            "type": "condition",
+            "position": {
+                "x": 620,
+                "y": 1360
+            },
+            "data": {
+                "label": "Docs Already Cover This?",
+                "leftOperand": "{{docs_coverage}}",
+                "operator": "contains",
+                "rightOperand": "covered"
+            }
+        },
+        {
+            "id": "ai_docs_answer",
+            "type": "aiAgent",
+            "position": {
+                "x": 460,
+                "y": 1500
+            },
+            "data": {
+                "label": "Draft Docs Answer",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are a product docs assistant. Use the docs context to answer the user's setup or documentation issue with the shortest actionable answer you can. If the context is partial, say that clearly and still help. End by saying you will also log the feedback for the team.",
+                "userPromptTemplate": "Docs context:\n{{kb_docs_context}}\n\nIssue title: {{feedback_title}}\nIssue detail: {{feedback_detail}}",
+                "temperature": 0.2,
+                "maxTokens": 500,
+                "outputVariable": "docs_answer",
+                "streamToChat": true
+            }
+        },
+        {
+            "id": "input_docs_resolution",
+            "type": "collectInput",
+            "position": {
+                "x": 460,
+                "y": 1660
+            },
+            "data": {
+                "label": "Docs Resolution Status",
+                "prompt": "Did that answer solve the issue?",
+                "variableName": "docs_resolution_status",
+                "inputType": "choice",
+                "choices": "Solved,Partly solved,Still blocked",
+                "required": true
+            }
+        },
+        {
+            "id": "set_docs_case_details_yes",
+            "type": "setVariable",
+            "position": {
+                "x": 460,
+                "y": 1800
+            },
+            "data": {
+                "label": "Build Covered Docs Summary",
+                "variableName": "case_details",
+                "expression": "Knowledge base coverage: covered\nResolution status: {{docs_resolution_status}}\nSuggested answer: {{docs_answer}}"
+            }
+        },
+        {
+            "id": "msg_docs_gap",
+            "type": "sendMessage",
+            "position": {
+                "x": 820,
+                "y": 1500
+            },
+            "data": {
+                "label": "Explain Docs Gap",
+                "messageType": "text",
+                "messageContent": "I could not find a confident answer in the current docs, so I will log this as a docs/setup issue for the team."
+            }
+        },
+        {
+            "id": "set_docs_case_details_no",
+            "type": "setVariable",
+            "position": {
+                "x": 820,
+                "y": 1660
+            },
+            "data": {
+                "label": "Build Docs Gap Summary",
+                "variableName": "case_details",
+                "expression": "Knowledge base coverage: gap\nResolution status: still_blocked\nSuggested answer: No confident match found in the knowledge base."
+            }
+        },
+        {
+            "id": "join_docs_case",
+            "type": "join",
+            "position": {
+                "x": 620,
+                "y": 1940
+            },
+            "data": {
+                "label": "Merge Docs Outcomes"
+            }
+        },
+        {
+            "id": "set_docs_type",
+            "type": "setVariable",
+            "position": {
+                "x": 620,
+                "y": 2080
+            },
+            "data": {
+                "label": "Normalize Docs Type",
+                "variableName": "submission_type",
+                "expression": "docs_setup_issue"
+            }
+        },
+        {
+            "id": "set_general_case_details",
+            "type": "setVariable",
+            "position": {
+                "x": 1020,
+                "y": 1080
+            },
+            "data": {
+                "label": "Build General Feedback Summary",
+                "variableName": "case_details",
+                "expression": "Open product feedback without additional branch-specific fields."
+            }
+        },
+        {
+            "id": "set_general_type",
+            "type": "setVariable",
+            "position": {
+                "x": 1020,
+                "y": 1220
+            },
+            "data": {
+                "label": "Normalize General Type",
+                "variableName": "submission_type",
+                "expression": "general_feedback"
+            }
+        },
+        {
+            "id": "join_capture_branch",
+            "type": "join",
+            "position": {
+                "x": 520,
+                "y": 2280
+            },
+            "data": {
+                "label": "Merge Capture Paths"
+            }
+        },
+        {
+            "id": "input_followup_permission",
+            "type": "collectInput",
+            "position": {
+                "x": 520,
+                "y": 2420
+            },
+            "data": {
+                "label": "Follow-up Permission",
+                "prompt": "May we follow up if the team needs more context?",
+                "variableName": "follow_up_permission",
+                "inputType": "choice",
+                "choices": "Yes, you may follow up,No follow-up needed",
+                "required": true
+            }
+        },
+        {
+            "id": "cond_followup_yes",
+            "type": "condition",
+            "position": {
+                "x": 520,
+                "y": 2560
+            },
+            "data": {
+                "label": "Follow-up Allowed?",
+                "leftOperand": "{{follow_up_permission}}",
+                "operator": "contains",
+                "rightOperand": "Yes"
+            }
+        },
+        {
+            "id": "input_followup_email",
+            "type": "collectInput",
+            "position": {
+                "x": 320,
+                "y": 2700
+            },
+            "data": {
+                "label": "Capture Follow-up Email",
+                "prompt": "What email should we use if we need more context?",
+                "variableName": "contact_email",
+                "inputType": "email",
+                "required": true
+            }
+        },
+        {
+            "id": "set_followup_message_yes",
+            "type": "setVariable",
+            "position": {
+                "x": 320,
+                "y": 2840
+            },
+            "data": {
+                "label": "Build Follow-up Message",
+                "variableName": "followup_message",
+                "expression": "If we need more context, we can reach you at {{contact_email}}."
+            }
+        },
+        {
+            "id": "set_contact_email_not_provided",
+            "type": "setVariable",
+            "position": {
+                "x": 760,
+                "y": 2700
+            },
+            "data": {
+                "label": "Mark No Contact Email",
+                "variableName": "contact_email",
+                "expression": "not_provided"
+            }
+        },
+        {
+            "id": "set_followup_message_no",
+            "type": "setVariable",
+            "position": {
+                "x": 760,
+                "y": 2840
+            },
+            "data": {
+                "label": "Record No Follow-up",
+                "variableName": "followup_message",
+                "expression": "No follow-up contact was requested."
+            }
+        },
+        {
+            "id": "join_followup",
+            "type": "join",
+            "position": {
+                "x": 520,
+                "y": 2980
+            },
+            "data": {
+                "label": "Merge Follow-up Paths"
+            }
+        },
+        {
+            "id": "ai_operator_triage",
+            "type": "aiAgent",
+            "position": {
+                "x": 520,
+                "y": 3120
+            },
+            "data": {
+                "label": "Create Internal Triage Note",
+                "provider": "",
+                "model": "",
+                "systemPrompt": "You are preparing an internal product-ops note. Output exactly three lines and nothing else. Line 1: Priority: low | medium | high | critical. Line 2: Area: workflow editor | runtime | widget | docs/setup | AI quality | integration | other. Line 3: Summary: a concise actionable summary in at most 180 characters.",
+                "userPromptTemplate": "Type: {{submission_type}}\nTitle: {{feedback_title}}\nDetail: {{feedback_detail}}\nImpact: {{impact_level}}\nCase details:\n{{case_details}}",
+                "temperature": 0,
+                "maxTokens": 120,
+                "outputVariable": "operator_triage",
+                "streamToChat": false
+            }
+        },
+        {
+            "id": "confirm_store_feedback",
+            "type": "confirmation",
+            "position": {
+                "x": 520,
+                "y": 3260
+            },
+            "data": {
+                "label": "Review Before Storing",
+                "prompt": "Store this feedback submission for review?",
+                "variableName": "feedback_store_confirmed",
+                "confirmLabel": "Store feedback",
+                "cancelLabel": "Skip storing",
+                "allowInterruptions": true,
+                "interruptionPatterns": "",
+                "semanticInterruptionCheck": true
+            }
+        },
+        {
+            "id": "action_store_feedback",
+            "type": "action",
+            "position": {
+                "x": 520,
+                "y": 3400
+            },
+            "data": {
+                "label": "Store Structured Feedback",
+                "actionKey": "store_submission",
+                "inputMapping": "{\"schema_key\":\"feedback_form\",\"payload\":{\"feedback_type\":\"{{submission_type}}\",\"title\":\"{{feedback_title}}\",\"detail\":\"{{feedback_detail}}\",\"impact\":\"{{impact_level}}\",\"case_details\":\"{{case_details}}\",\"follow_up_permission\":\"{{follow_up_permission}}\",\"contact_email\":\"{{contact_email}}\",\"operator_triage\":\"{{operator_triage}}\"},\"meta\":{\"source\":\"workflow_example.early_access_feedback_triage\"}}",
+                "outputVariable": "submission_result"
+            }
+        },
+        {
+            "id": "msg_store_cancelled",
+            "type": "sendMessage",
+            "position": {
+                "x": 860,
+                "y": 3400
+            },
+            "data": {
+                "label": "Store Skipped",
+                "messageType": "text",
+                "messageContent": "No feedback record was stored. You can still ask another question or start again later."
+            }
+        },
+        {
+            "id": "msg_confirmation",
+            "type": "sendMessage",
+            "position": {
+                "x": 520,
+                "y": 3540
+            },
+            "data": {
+                "label": "Confirm Submission",
+                "messageType": "text",
+                "messageContent": "Thanks. I've logged this as {{feedback_type}} for the team.\n\n{{followup_message}}\n\nEarly Access feedback like this directly shapes what we build next."
+            }
+        },
+        {
+            "id": "note_about",
+            "type": "note",
+            "position": {
+                "x": 1180,
+                "y": 80
+            },
+            "data": {
+                "label": "About This Workflow",
+                "noteContent": "Early Access Feedback Triage — Shows structured intake, per-type branching, docs self-service with KB + AI coverage check, shared AI operator triage, and schema-based submission capture. Requires a linked bot in query_and_write mode plus a feedback_form submission schema.",
+                "color": "#f59e0b"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e-1",
+            "source": "trigger_1",
+            "target": "msg_intro"
+        },
+        {
+            "id": "e-2",
+            "source": "msg_intro",
+            "target": "input_feedback_type"
+        },
+        {
+            "id": "e-3",
+            "source": "input_feedback_type",
+            "target": "input_feedback_title"
+        },
+        {
+            "id": "e-4",
+            "source": "input_feedback_title",
+            "target": "input_feedback_detail"
+        },
+        {
+            "id": "e-5",
+            "source": "input_feedback_detail",
+            "target": "input_impact"
+        },
+        {
+            "id": "e-6",
+            "source": "input_impact",
+            "target": "switch_feedback_type"
+        },
+        {
+            "id": "e-7",
+            "source": "switch_feedback_type",
+            "target": "bug_expected",
+            "sourceHandle": "case_0"
+        },
+        {
+            "id": "e-8",
+            "source": "bug_expected",
+            "target": "bug_actual"
+        },
+        {
+            "id": "e-9",
+            "source": "bug_actual",
+            "target": "bug_steps"
+        },
+        {
+            "id": "e-10",
+            "source": "bug_steps",
+            "target": "bug_environment"
+        },
+        {
+            "id": "e-11",
+            "source": "bug_environment",
+            "target": "set_bug_case_details"
+        },
+        {
+            "id": "e-12",
+            "source": "set_bug_case_details",
+            "target": "set_bug_type"
+        },
+        {
+            "id": "e-13",
+            "source": "set_bug_type",
+            "target": "join_capture_branch"
+        },
+        {
+            "id": "e-14",
+            "source": "switch_feedback_type",
+            "target": "feature_outcome",
+            "sourceHandle": "case_1"
+        },
+        {
+            "id": "e-15",
+            "source": "feature_outcome",
+            "target": "feature_workaround"
+        },
+        {
+            "id": "e-16",
+            "source": "feature_workaround",
+            "target": "feature_use_case"
+        },
+        {
+            "id": "e-17",
+            "source": "feature_use_case",
+            "target": "set_feature_case_details"
+        },
+        {
+            "id": "e-18",
+            "source": "set_feature_case_details",
+            "target": "set_feature_type"
+        },
+        {
+            "id": "e-19",
+            "source": "set_feature_type",
+            "target": "join_capture_branch"
+        },
+        {
+            "id": "e-20",
+            "source": "switch_feedback_type",
+            "target": "kb_docs",
+            "sourceHandle": "case_2"
+        },
+        {
+            "id": "e-21",
+            "source": "kb_docs",
+            "target": "ai_docs_coverage"
+        },
+        {
+            "id": "e-22",
+            "source": "ai_docs_coverage",
+            "target": "cond_docs_covered"
+        },
+        {
+            "id": "e-23",
+            "source": "cond_docs_covered",
+            "target": "ai_docs_answer",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-24",
+            "source": "ai_docs_answer",
+            "target": "input_docs_resolution"
+        },
+        {
+            "id": "e-25",
+            "source": "input_docs_resolution",
+            "target": "set_docs_case_details_yes"
+        },
+        {
+            "id": "e-26",
+            "source": "set_docs_case_details_yes",
+            "target": "join_docs_case"
+        },
+        {
+            "id": "e-27",
+            "source": "cond_docs_covered",
+            "target": "msg_docs_gap",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-28",
+            "source": "msg_docs_gap",
+            "target": "set_docs_case_details_no"
+        },
+        {
+            "id": "e-29",
+            "source": "set_docs_case_details_no",
+            "target": "join_docs_case"
+        },
+        {
+            "id": "e-30",
+            "source": "join_docs_case",
+            "target": "set_docs_type"
+        },
+        {
+            "id": "e-31",
+            "source": "set_docs_type",
+            "target": "join_capture_branch"
+        },
+        {
+            "id": "e-32",
+            "source": "switch_feedback_type",
+            "target": "set_general_case_details",
+            "sourceHandle": "default"
+        },
+        {
+            "id": "e-33",
+            "source": "set_general_case_details",
+            "target": "set_general_type"
+        },
+        {
+            "id": "e-34",
+            "source": "set_general_type",
+            "target": "join_capture_branch"
+        },
+        {
+            "id": "e-35",
+            "source": "join_capture_branch",
+            "target": "input_followup_permission"
+        },
+        {
+            "id": "e-36",
+            "source": "input_followup_permission",
+            "target": "cond_followup_yes"
+        },
+        {
+            "id": "e-37",
+            "source": "cond_followup_yes",
+            "target": "input_followup_email",
+            "sourceHandle": "yes"
+        },
+        {
+            "id": "e-38",
+            "source": "input_followup_email",
+            "target": "set_followup_message_yes"
+        },
+        {
+            "id": "e-39",
+            "source": "set_followup_message_yes",
+            "target": "join_followup"
+        },
+        {
+            "id": "e-40",
+            "source": "cond_followup_yes",
+            "target": "set_contact_email_not_provided",
+            "sourceHandle": "no"
+        },
+        {
+            "id": "e-41",
+            "source": "set_contact_email_not_provided",
+            "target": "set_followup_message_no"
+        },
+        {
+            "id": "e-42",
+            "source": "set_followup_message_no",
+            "target": "join_followup"
+        },
+        {
+            "id": "e-43",
+            "source": "join_followup",
+            "target": "ai_operator_triage"
+        },
+        {
+            "id": "e-44",
+            "source": "ai_operator_triage",
+            "target": "confirm_store_feedback"
+        },
+        {
+            "id": "e-45",
+            "source": "confirm_store_feedback",
+            "target": "action_store_feedback",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e-46",
+            "source": "confirm_store_feedback",
+            "target": "msg_store_cancelled",
+            "sourceHandle": "invalid"
+        },
+        {
+            "id": "e-47",
+            "source": "action_store_feedback",
+            "target": "msg_confirmation"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.75
+    }
+}

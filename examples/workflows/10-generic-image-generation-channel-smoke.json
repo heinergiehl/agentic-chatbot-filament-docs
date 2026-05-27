@@ -1,0 +1,121 @@
+{
+    "schemaVersion": 1,
+    "nodes": [
+        {
+            "id": "note_provider_config",
+            "type": "note",
+            "position": {
+                "x": 780,
+                "y": 60
+            },
+            "data": {
+                "label": "Provider Neutral",
+                "noteContent": "This workflow uses the built-in generate_image action. Configure RAG_WORKFLOW_IMAGE_TRANSPORT, provider/model, or HTTP URL outside the workflow so the same JSON works with native cloud providers and local HTTP image endpoints.",
+                "color": "#bfdbfe"
+            }
+        },
+        {
+            "id": "trigger_user_message",
+            "type": "trigger",
+            "position": {
+                "x": 420,
+                "y": 60
+            },
+            "data": {
+                "label": "User Message",
+                "triggerType": "user_message"
+            }
+        },
+        {
+            "id": "action_generate_image",
+            "type": "action",
+            "position": {
+                "x": 420,
+                "y": 220
+            },
+            "data": {
+                "label": "Generate Image",
+                "actionKey": "generate_image",
+                "inputMapping": {
+                    "transport": "auto",
+                    "prompt": "{{input}}",
+                    "size": "1:1",
+                    "quality": "medium"
+                },
+                "outputVariable": "generated_image",
+                "continueOnFail": true
+            }
+        },
+        {
+            "id": "handle_generation_error",
+            "type": "errorHandler",
+            "position": {
+                "x": 420,
+                "y": 380
+            },
+            "data": {
+                "label": "Check Generation",
+                "errorVariable": "generated_image_error",
+                "fallbackMessage": "I could not generate the image. Check the configured image provider, model, endpoint, and public image base URL.",
+                "outputVariable": "image_generation_check"
+            }
+        },
+        {
+            "id": "send_generated_image",
+            "type": "sendMessage",
+            "position": {
+                "x": 180,
+                "y": 560
+            },
+            "data": {
+                "label": "Send Image",
+                "messageType": "image",
+                "messageContent": "Generated image for: {{input}}",
+                "imageUrl": "{{generated_image.image_url}}",
+                "imageArtifact": "{{generated_image.image_artifact}}"
+            }
+        },
+        {
+            "id": "send_generation_failure",
+            "type": "sendMessage",
+            "position": {
+                "x": 660,
+                "y": 560
+            },
+            "data": {
+                "label": "Send Failure",
+                "messageType": "text",
+                "messageContent": "{{image_generation_check_message}}"
+            }
+        }
+    ],
+    "edges": [
+        {
+            "id": "e_trigger_to_generate",
+            "source": "trigger_user_message",
+            "target": "action_generate_image"
+        },
+        {
+            "id": "e_generate_to_handler",
+            "source": "action_generate_image",
+            "target": "handle_generation_error"
+        },
+        {
+            "id": "e_handler_to_image",
+            "source": "handle_generation_error",
+            "target": "send_generated_image",
+            "sourceHandle": "valid"
+        },
+        {
+            "id": "e_handler_to_failure",
+            "source": "handle_generation_error",
+            "target": "send_generation_failure",
+            "sourceHandle": "invalid"
+        }
+    ],
+    "viewport": {
+        "x": 0,
+        "y": 0,
+        "zoom": 0.85
+    }
+}

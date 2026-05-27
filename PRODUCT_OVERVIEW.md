@@ -2,18 +2,18 @@
 
 Filament Agentic Chatbot adds a production-ready AI assistant layer to a Laravel + Filament app.
 
-The default runtime is now parent-agent first:
+The default runtime is now assistant-graph first:
 
-- **Knowledge answers** when a user needs grounded context from docs, files, URLs, or API-fed records
+- **Direct assistant answers** when no tool call is needed
+- **Source-grounded answers** when a user needs grounded context from docs, files, URLs, or API-fed records
 - **Workflow execution** when a user needs multi-step routing, data collection, tool calls, or guided task flows
-- **Direct conversation** when no tool call is needed
 
 ## What This Plugin Adds
 
 - A Filament-native control plane for bots, sources, workflows, conversations, and operations
 - An embeddable chat widget you can place on your marketing site, product frontend, or internal tools
 - Queue-driven ingestion for text, files, public URLs, and JSON API records
-- Parent-agent orchestration with knowledge search and workflow execution exposed as tools
+- Assistant graph orchestration with optional knowledge search and workflow execution exposed as tools
 - Visual workflow orchestration with triggers, conditions, AI agents, retrieval nodes, actions, and external API calls
 - Smart Data Queries for safe natural-language lookups against allowed internal data resources
 - Package-owned Telegram and Slack channel integrations that reuse the same bot, workflow, conversation, usage, and budget runtime
@@ -63,7 +63,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - Public, member, and admin context areas
 - Domain allowlists and signed widget embeds
 
-### RAG Foundation
+### Source-Grounded Knowledge
 
 - Text, file, URL, and API sources
 - Queue-based ingestion and retry handling
@@ -104,7 +104,9 @@ For a direct comparison, read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`.
 ## Best Starting Points
 
 - Read `CORE_CONCEPTS.md` for the product model and terminology
-- Read `AGENT_RUNTIME_ARCHITECTURE.md` for the parent-agent runtime model
+- Read `AGENT_RUNTIME_ARCHITECTURE.md` for the assistant graph runtime model
+- Read `AGENTGRAPH_SDK_USAGE.md` for the AgentGraph SDK integration surface
+- Read `DATABASE_AND_BREAKING_CHANGES.md` before upgrading an existing production app
 - Read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md` for positioning against the earlier plugin
 - Read `QUICKSTART.md` for installation and first setup
 - Read `RAG_SOURCES.md` and `API_CONNECTORS.md` for API-fed knowledge setup
