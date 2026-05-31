@@ -1,116 +1,96 @@
 # Product Overview
 
-Filament Agentic Chatbot adds a production-ready AI assistant layer to a Laravel + Filament app.
+Filament Agentic Chatbot adds a Commercial Early Access grounded assistant layer to a Laravel + Filament app. It is designed for teams that want the control surface, workflow tooling, and embed experience of an AI product without building the entire operational layer from scratch.
 
-The default runtime is now assistant-graph first:
-
-- **Direct assistant answers** when no tool call is needed
-- **Source-grounded answers** when a user needs grounded context from docs, files, URLs, or API-fed records
-- **Workflow execution** when a user needs multi-step routing, data collection, tool calls, or guided task flows
+> Commercial Early Access means the `0.x` line is already sold and usable in real host apps, but still pre-`1.0`. Core install, widget embeds, workflows, analytics, privacy endpoints, server API access, and operator tooling ship today. Expect a few rough edges while the package hardens, validate in staging, and treat buyer feedback as part of rollout. Early-access pricing reflects that stage.
 
 ## What This Plugin Adds
 
-- A Filament-native control plane for bots, sources, workflows, conversations, and operations
-- An embeddable chat widget you can place on your marketing site, product frontend, or internal tools
-- Queue-driven ingestion for text, files, public URLs, and JSON API records
-- Assistant graph orchestration with optional knowledge search and workflow execution exposed as tools
-- Visual workflow orchestration with triggers, conditions, AI agents, retrieval nodes, actions, and external API calls
-- Smart Data Queries for safe natural-language lookups against allowed internal data resources
-- Package-owned Telegram and Slack channel integrations that reuse the same bot, workflow, conversation, usage, and budget runtime
-- Per-bot provider, model, retrieval, access, branding, and behavior controls
-- Operational tooling such as setup diagnostics, ingestion visibility, testing actions, and privacy endpoints
+- A Filament-native control plane for managing bots, sources, workflows, ingestion, retrieval, and conversations
+- An embeddable chat widget you can place on your website or product frontend
+- Queue-driven source ingestion for text, files, and public URLs
+- Retrieval tuning per bot, including top-k, similarity thresholds, and context limits
+- Provider and model configuration per bot
+- Agentic workflows with branching, actions, connectors, releases, and execution traces
+- Bot analytics, widget feedback capture, and knowledge-gap reporting
+- Operational tooling such as setup checks, source health, testing actions, privacy endpoints, and analytics
 
-## Why This Plugin Exists
+## Why Someone Would Use It
 
-The earlier Filament RAG plugin solves one important problem well: grounded question answering over your knowledge base.
+- To add a support, onboarding, product-help, or internal-assistant chatbot to an existing Filament app
+- To ship a sellable AI feature faster without building the full assistant admin and workflow layer from scratch
+- To manage multiple assistants from one admin panel
+- To let non-developers manage bot behavior, sources, workflows, and widget branding inside Filament
 
-This newer plugin keeps that capability and adds a second layer:
+## Best Fit
 
-- workflows that guide the conversation instead of only answering one message at a time
-- branching logic for qualification, routing, escalation, and onboarding
-- action and HTTP nodes for task execution and integrations
-- AI-assisted workflow generation and import/export support
-
-If you only need a classic documentation bot, this plugin can do that.
-If you want a bot that can also collect information, choose a path, call tools, and complete business flows, this is the plugin for that.
-
-## Typical Use Cases
-
-- Customer support bots that answer from docs and escalate when confidence is low
-- Sales assistants that qualify leads and route enterprise prospects differently
-- Onboarding assistants that ask follow-up questions and personalize next steps
-- Internal helpdesk bots that search runbooks and trigger actions or API calls
-- Product copilots that combine retrieval with structured workflows
+This plugin is a strong fit when you already have a Laravel application, already use Filament for operations, and want AI assistants to feel like a real product surface instead of a side experiment. It is especially well suited to support portals, SaaS dashboards, onboarding flows, product-help assistants, and internal operator tooling.
 
 ## What It Does Not Do On Its Own
 
-This plugin does not automatically become your full AI product.
+This plugin does not automatically turn a Filament panel into a complete AI product by itself.
 
 You still need to provide the rest of the product stack that depends on your business:
 
 - Billing
 - Tenancy
-- Business-specific actions and integrations
-- App-level permissions beyond the plugin's assistant controls
-- Your own domain knowledge, policies, and source content
-- Provider-specific OAuth2 flows or direct database-source ingestion unless you implement those integrations or expose curated APIs
+- Product-specific workflows
+- User permissions beyond the plugin's assistant access controls
+- Your own domain data and source content
 
 ## Core Feature Areas
 
 ### Bot Management
 
-- Multiple bots with separate prompts, models, providers, branding, and access rules
+- Multiple bots with separate prompts, models, providers, and widget branding
 - Public, member, and admin context areas
 - Domain allowlists and signed widget embeds
 
-### Source-Grounded Knowledge
+### Knowledge Ingestion
 
-- Text, file, URL, and API sources
+- Text, file, and URL sources
 - Queue-based ingestion and retry handling
 - Chunking, embedding, and vector persistence
-- Source-backed answers with citations and configurable retrieval controls
+- Re-ingest and rebuild tooling when settings change
+
+### Retrieval and Answers
+
+- Configurable retrieval depth and similarity
+- Source-backed chat responses with citations
+- Streaming responses for the widget experience
+- Markdown or plain-text answer formats
 
 ### Agentic Workflows
 
-- Visual builder for triggers, messages, inputs, conditions, routers, and loops
-- AI agent nodes for classification, generation, extraction, and decision support
-- Knowledge-base nodes for grounded context inside workflows
-- Action and HTTP request nodes for backend automation and integrations
-- Data Retrieval and Smart Data Query starters for safe internal record lookups
-- Reusable API connectors for workflow calls and API-fed knowledge sources
+- Visual workflow builder for guided assistant behavior
+- Natural-language workflow generation for first drafts
+- Runs, traces, and release history for safe iteration
+- Connector and action steps for backend or external system handoffs
 
-### Widget and Delivery
+### Widget and Embeds
 
 - One-script embed for websites
-- Optional NPM loader for SPA frameworks
-- Native Telegram and Slack channel connections for realtime external chat entry points
-- Style templates, titles, subtitles, welcome text, quick prompts, and response formatting
+- NPM loader for SPA frameworks
+- Style templates, accent colors, titles, subtitles, quick prompts, welcome text, and live preview inside the bot editor
+
+### Analytics and Operator Confidence
+
+- Bot analytics with traffic, citation coverage, user feedback, and potential knowledge gaps
+- Runtime status, setup checks, and provider test actions before public rollout
+- Privacy/history controls for export and deletion workflows
 
 ### Operations and Security
 
 - Setup diagnostics through `php artisan filament-agentic-chatbot:doctor`
 - Queue and ingestion visibility in the panel
-- Domain restrictions, signing, throttling, and SSRF protections
-- Privacy endpoints for export and deletion workflows
-
-## How It Differs From The RAG-Only Plugin
-
-- The RAG plugin is optimized for knowledge-grounded Q&A
-- The agentic plugin includes that foundation and adds workflow execution
-- The RAG plugin answers questions; this plugin can also collect state, branch, and take actions
-
-For a direct comparison, read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md`.
+- Domain restrictions, signing, rate limiting, and workflow request hardening
+- Privacy endpoints for export and deletion workflows, plus workflow trace redaction controls
 
 ## Best Starting Points
 
-- Read `CORE_CONCEPTS.md` for the product model and terminology
-- Read `AGENT_RUNTIME_ARCHITECTURE.md` for the assistant graph runtime model
-- Read `AGENTGRAPH_SDK_USAGE.md` for the AgentGraph SDK integration surface
-- Read `DATABASE_AND_BREAKING_CHANGES.md` before upgrading an existing production app
-- Read `HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md` for positioning against the earlier plugin
-- Read `QUICKSTART.md` for installation and first setup
-- Read `RAG_SOURCES.md` and `API_CONNECTORS.md` for API-fed knowledge setup
-- Read `API_SOURCE_ROADMAP.md` for current API source scope and planned improvements
-- Read `AGENTIC_WORKFLOWS.md` for the workflow layer
-- Read `CHANNELS.md` for Telegram and Slack channel setup
-- Read `WORKFLOW_PROMPT_TEMPLATES.md` for practical examples
+- Read [Core Concepts](CORE_CONCEPTS.md) for the product model and terminology
+- Read [Bots](BOTS.md) for assistant configuration
+- Read [Knowledge Sources](KNOWLEDGE_SOURCES.md) for source types and creation flow
+- Read [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) for how grounding works
+- Read [Chat Widget](CHAT_WIDGET.md) for embedding and UX
+- Read [Quickstart](QUICKSTART.md) for installation and first setup

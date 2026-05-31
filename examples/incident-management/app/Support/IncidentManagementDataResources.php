@@ -63,7 +63,7 @@ class IncidentManagementDataResources
             'earthquake_records' => [
                 'label' => 'Earthquake Records',
                 'description' => 'Historical and recent earthquake event records.',
-                'query_guidance' => 'Use this for recent earthquake context, magnitude checks, and regional history. Combine with RAG sources for procedures and after-action reports.',
+                'query_guidance' => 'Use this for recent earthquake context, magnitude checks, and regional history. Combine with knowledge sources for procedures and after-action reports.',
                 'model' => EarthquakeRecord::class,
                 'allowed_modes' => ['list', 'first'],
                 'allowed_filters' => ['external_id', 'region', 'magnitude', 'occurred_at'],

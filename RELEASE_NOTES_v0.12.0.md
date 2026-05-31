@@ -1,10 +1,12 @@
 # Release Notes: v0.12.0
 
+> **Superseded:** Install **`v0.13.0`** instead. The `v0.12.0` git tag marked an early preview; [RELEASE_NOTES_v0.13.0.md](RELEASE_NOTES_v0.13.0.md) is the current recommended release.
+
 `v0.12.0` is the agent-first runtime, workflow UX, and smart data query release. It is the next recommended early-access target after `v0.11.1`.
 
 ## Highlights
 
-- **Parent-agent runtime by default**: normal chat now routes through `ParentAgent`, which can answer directly, search the knowledge base, run the active workflow as a tool, or ask for clarification. The older direct RAG path remains available for compatibility.
+- **Assistant graph runtime by default**: normal chat now routes through the assistant graph, which can answer directly, search uploaded sources, run the active workflow as a tool, or ask for clarification. Older agent class names remain available only as compatibility aliases.
 - **Smarter workflow follow-ups**: paused workflow runs no longer blindly consume every next message. The runtime classifies follow-ups as resume, cancel, interrupt, side question, or clarify before resuming a `collectInput` or `confirmation` node.
 - **Provider-aware structured classifiers**: workflow turn routing and choice resolution use structured-output classifiers with provider-native schema handling where available, including the Ollama JSON Schema path for local testing.
 - **Large workflow editor UX pass**: node setup was simplified across common nodes, the catalog is easier to navigate, field-level validation is clearer, the workflow navigator helps with larger canvases, and editor drag/save/publish interactions are quieter.
@@ -23,15 +25,14 @@
 
 ## Notes
 
-- Existing bots keep their knowledge-base behavior, but the product model should now be understood as bot -> parent agent -> tools, with RAG as the knowledge capability.
+- Existing bots keep their knowledge-base behavior, but the product model should now be understood as bot -> assistant graph -> tools, with source-grounded knowledge as an optional capability.
 - Existing workflows continue to run. The new turn router mainly affects halted `collectInput` and `confirmation` steps by handling cancellations, topic switches, and side questions more deliberately.
 - `query_data_resource` remains allow-list based. Smart generated query flows still validate fields, filters, sorts, and limits against the linked bot's configured data resources.
 - No new package-owned database tables are introduced in this release. The workflow run status vocabulary now includes `cancelled`.
 
 ## Links
 
-- Full changelog: [filament-agentic-chatbot CHANGELOG.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/CHANGELOG.md)
-- Upgrade guide: [filament-agentic-chatbot UPGRADING.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/UPGRADING.md)
+- Full changelog: [CHANGELOG.md](CHANGELOG.md)
+- Upgrade guide: [UPGRADING.md](UPGRADING.md)
 - Runtime architecture: [AGENT_RUNTIME_ARCHITECTURE.md](AGENT_RUNTIME_ARCHITECTURE.md)
-- Post-v0.12 AgentGraph SDK refactor: [RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - Previous release: [RELEASE_NOTES_v0.11.1.md](RELEASE_NOTES_v0.11.1.md)

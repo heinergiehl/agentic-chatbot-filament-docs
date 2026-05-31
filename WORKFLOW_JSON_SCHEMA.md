@@ -302,7 +302,7 @@ Common built-in action keys:
 
 In the visual workflow editor, `query_data_resource` is also exposed as the dedicated `Data Retrieval` node preset. Persisted workflow JSON still serializes it as an `action` node with `actionKey: "query_data_resource"`.
 
-For Telegram and Slack, `generate_image.image_artifact` lets the channel drivers upload the stored image directly from Laravel storage. `generate_image.image_url` is still returned for web clients and for providers that prefer public URLs. When the image provider returns bytes or base64, the action stores the file and builds both the storage artifact and a URL from the storage disk URL or `RAG_WORKFLOW_IMAGE_PUBLIC_BASE_URL`.
+For Telegram and Slack, `generate_image.image_artifact` lets the channel drivers upload the stored image directly from Laravel storage. `generate_image.image_url` is still returned for web clients and for providers that prefer public URLs. When the image provider returns bytes or base64, the action stores the file and builds both the storage artifact and a URL from the storage disk URL or `AGENTIC_CHATBOT_WORKFLOW_IMAGE_PUBLIC_BASE_URL`.
 
 `query_data_resource` is validated against the linked bot at publish time. The bot must allow queries and the chosen `resource_key` must be enabled for that bot.
 

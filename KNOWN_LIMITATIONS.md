@@ -1,101 +1,80 @@
 # Known Limitations
 
-> **Version**: 0.12.0 plus AgentGraph SDK refactor notes<br>
-> **Last updated**: 2026-05-27
+> **Version**: 0.13.0<br>
+> **Last updated**: 2026-05-31
 
-This page documents known constraints, upstream limitations, and recommended workarounds.
+This page documents known constraints, upstream limitations, and workarounds.
 
-## 1. Provider Generation Options Vary
+---
 
-The plugin supports `laravel/ai` `^0.7` and `^1.0`, but provider gateways still differ in how they apply request-level generation options.
+## 1. `laravel/ai` provider behavior varies by version
 
-**Impact:**
+The plugin depends on [`laravel/ai`](https://github.com/laravel/ai) at `^0.7 || ^1.0`.
+Provider and gateway support can still vary across SDK and upstream provider versions.
 
-- Per-node `temperature` and `maxTokens` values are passed through for workflow AI calls, but the selected provider may ignore or clamp one of those options.
+**Impact**:
+
+- Per-node `temperature` and `maxTokens` overrides are passed to the SDK generation options, but exact behavior still depends on the selected provider gateway.
 - Streaming support is limited to what the underlying SDK exposes.
 
-**Workaround:** If a provider ignores a generation option, configure matching defaults in the provider/model settings or choose a gateway that supports the option.
+**Workaround**: If a provider ignores a generation option, configure matching defaults in the provider or choose a model gateway that supports the option.
 
-## 2. AgentGraph SDK Is Now A Runtime Dependency
+---
 
-The post-`v0.12.0` refactor depends on `heiner/agent-graph` for assistant chat graphs, workflow execution, sub-workflows, delays, memory, and run inspection.
+## 2. PostgreSQL + pgvector is still the default path
 
-**Impact:**
+The package supports both PostgreSQL + `pgvector` and ChromaDB, but PostgreSQL remains the default and most battle-tested path.
 
-- Fresh installs must be able to resolve the SDK package through Packagist, Private Packagist, or a root Composer repository entry.
-- Host apps using the database-backed SDK store must run the SDK migrations. The plugin auto-loads them, so normal `php artisan migrate` should create the `agent_graph_*` tables.
-- `php artisan filament-agentic-chatbot:doctor` checks the SDK tables unless the SDK store is configured as memory.
-- Upgrading apps with open legacy workflow runs need a cutover check because those runs may be cancelled if they have no AgentGraph run metadata.
+**Impact**: Tests use an in-memory SQLite database with a pgvector shim, which is enough for package validation but not representative of production retrieval performance. If you do not want PostgreSQL, you should run ChromaDB explicitly instead of assuming SQLite can replace a vector backend.
 
-**Workaround:** For unreleased branch testing, add `heinergiehl/agent-graph` as a VCS repository in the host app root composer config before requiring the plugin. For production upgrades, follow [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md).
+**Workaround**: Use ChromaDB as an alternative vector store backend (see configuration).
 
-## 3. PostgreSQL + pgvector Is The Default Path
+ChromaDB now keeps similarity thresholds strict by default. `AGENTIC_CHATBOT_CHROMA_ALLOW_THRESHOLD_BYPASS=true` is available only as an explicit compatibility escape hatch and marks bypassed chunks.
 
-The package supports PostgreSQL + `pgvector` and ChromaDB. PostgreSQL remains the default and most battle-tested path.
+---
 
-**Impact:** SQLite is useful for local package tests, but it is not a production vector backend.
+## 3. Workflow loop execution limits
 
-**Workaround:** Use PostgreSQL + `pgvector` for the normal production path, or configure ChromaDB explicitly.
+Loop nodes enforce a hard iteration ceiling (configurable via `workflow.max_steps`). Exceeding the limit terminates the workflow with a user-facing error.
 
-## 4. API Knowledge Source v1 Scope
+**Impact**: Very large loop-count workflows will fail. Default is 50 steps.
 
-API knowledge sources currently support authenticated `GET` JSON endpoints, field mapping, page-number/offset/cursor/next-URL pagination, scheduled full re-sync, per-sync safety limits, and full source replacement after successful sync.
+**Workaround**: Increase `max_steps` in config, or break complex logic into smaller chat-focused workflows.
 
-**Supported auth today:**
+---
 
-- no auth
-- API key header
-- Bearer token
-- Basic auth
-- custom header
+## 4. LLM-generated workflow JSON
 
-**Not implemented yet:**
+The "Generate from prompt" feature produces workflow JSON via the configured LLM. Generated workflows:
 
-- OAuth2 login flows with callback URLs and automatic refresh-token rotation
-- direct database source type
-- provider-specific request signing
-- webhooks or event-driven delta sync
-- automatic schema/mapping generation
-- non-JSON API parsing as first-class API source input
+- Are always saved as **drafts** (never auto-published)
+- Must pass the full structural + semantic validation pipeline before activation
+- May occasionally require manual adjustment of edge connections or node data
 
-**Workaround:** Expose stable JSON endpoints or use an API gateway. For live, private, or user-specific data, use workflow API Connector nodes instead of syncing the data into the source-grounded knowledge index.
+**Best practice**: Always review generated workflows in the visual editor before publishing.
 
-## 5. Direct Database Ingestion Is Not A Source Type Yet
+---
 
-The plugin can read from databases at workflow runtime through configured internal actions/resources, but direct "sync this table/query into the knowledge index" is not currently a first-class source type.
+## 5. Widget SDK CSP restrictions
 
-**Impact:** Database-backed knowledge should currently be exposed through a curated API endpoint if it needs to become searchable assistant knowledge.
+The embeddable chat widget is loaded through a `<script>` tag and calls the plugin's API endpoints directly. Sites with strict Content Security Policy headers must allow the widget script URL plus the API origin used by the chat endpoints. The current widget runtime also injects its own `<style>` tag, so CSP policies that forbid inline styles can still block the widget even on the same Laravel app.
 
-**Workaround:** Create a read-only JSON endpoint for the records you want to sync, then configure an API Source against that endpoint.
+Query-string and request-body widget tokens are still accepted by default for compatibility. Production hosts should disable them and use the widget token header before public rollout.
 
-## 6. Source Ingestion And Runtime Retrieval Should Stay Separate
+---
 
-Source ingestion is best for relatively stable knowledge that can be embedded and searched later. Workflow runtime retrieval is better for live data such as order status, stock counts, account state, permissions, or write actions.
+## 6. API knowledge source scope
 
-**Impact:** Syncing live user-specific data into the knowledge index can create stale answers and privacy risks.
+API knowledge sources support authenticated `GET` JSON endpoints, field mapping, page-number/offset/cursor/next-URL pagination, scheduled full re-sync, per-sync safety limits, and full source replacement after successful sync. OAuth refresh flows and delta/incremental sync are intentionally not universal in this release.
 
-**Workaround:** Use API Sources for stable knowledge. Use workflow API Connector nodes or internal actions for live data.
+**Impact**: APIs that require provider-specific auth flows, custom request signing, webhooks, or complex delta sync still need a curated endpoint or gateway.
 
-## 7. Workflow Loop Execution Limits
+**Workaround**: Start with curated JSON endpoints or API gateways. Use workflow API Connector nodes for live/user-specific lookups instead of syncing private transactional data into the knowledge base.
 
-Loop nodes enforce a hard step ceiling through workflow configuration.
+---
 
-**Impact:** Very large loop workflows can terminate before finishing.
+## 7. Delay nodes require a queue worker
 
-**Workaround:** Keep chat workflows focused, or raise the configured step limit with care.
+Delay/timer nodes dispatch a `ResumeWorkflowRunJob` to the queue. If your queue driver is `sync`, delay nodes will block the HTTP request. The `filament-agentic-chatbot:doctor` command warns about this.
 
-## 8. Widget CSP Restrictions
-
-The embeddable widget is loaded through a script tag and injects its own styles.
-
-**Impact:** Strict Content Security Policy headers can block the widget script, API calls, or injected styles.
-
-**Workaround:** Allow the widget script origin, the chat API origin, and the required style behavior for pages that embed the widget.
-
-## 9. Delay Nodes Require A Queue Worker
-
-Delay/timer nodes dispatch a resume job to the queue.
-
-**Impact:** With a `sync` queue driver, delay nodes can block the HTTP request.
-
-**Workaround:** Use `database`, `redis`, or another real queue driver in production and supervise `php artisan queue:work`.
+**Workaround**: Use `database`, `redis`, or `sqs` queue driver in production and ensure `php artisan queue:work` is running.

@@ -6,7 +6,7 @@ Filament Agentic Chatbot loads Laravel translation files under the package names
 __('filament-agentic-chatbot::filament-agentic-chatbot.navigation.group')
 ```
 
-Enterprise administration surfaces such as Bot Access Tokens and AI Usage use translation keys for labels, helper text, actions, empty states, and notifications.
+The PHP-based Filament administration UI uses package translations for labels, helper text, actions, empty states, notifications, option labels, widget headings, and navigation labels.
 
 ## Publish Translation Files
 
@@ -18,13 +18,16 @@ Then edit:
 
 ```text
 lang/vendor/filament-agentic-chatbot/{locale}/filament-agentic-chatbot.php
+lang/vendor/filament-agentic-chatbot/{locale}/workflow-editor.php
 ```
 
 For example:
 
 ```text
 lang/vendor/filament-agentic-chatbot/de/filament-agentic-chatbot.php
+lang/vendor/filament-agentic-chatbot/de/workflow-editor.php
 lang/vendor/filament-agentic-chatbot/fa/filament-agentic-chatbot.php
+lang/vendor/filament-agentic-chatbot/fa/workflow-editor.php
 ```
 
 ## Current Coverage
@@ -32,12 +35,17 @@ lang/vendor/filament-agentic-chatbot/fa/filament-agentic-chatbot.php
 The translation file currently covers:
 
 - Agentic Chatbot navigation group
-- Bot Access Tokens resource
-- Bot Access Token create/rotate/revoke notifications
-- AI Usage resource
+- Bot, source, API connector, workflow, conversation, submission, workflow run, Bot Access Token, and AI Usage Filament resources
+- Filament resource navigation labels, model labels, form labels, table labels, actions, notifications, empty states, widget headings, and common option labels
 - AI usage dashboard widgets
+- English fallback strings under the `raw` array for broad legacy UI coverage
+- React workflow editor labels, tooltips, helper copy, sidebar tabs, settings fields, run/debug panels, release history, test chat empty states, and node catalog copy
 
-Older workflow-editor labels and some legacy bot/source form labels still need a broader translation sweep before `1.0`.
+The React workflow editor is configured through `resources/lang/{locale}/workflow-editor.php`. Its `texts` array uses the English source copy as keys, so project translators can replace visible editor text without touching the compiled JavaScript.
+
+## QA Guard
+
+The package includes `tests/Unit/LocalizationCoverageTest.php`, which fails when new hard-coded English strings are added to common PHP/Filament UI APIs or workflow editor UI surfaces without going through the package translation helpers.
 
 ## Recommended Project Workflow
 

@@ -51,24 +51,24 @@ The inbound runtime maps `1`, `2`, or the typed label back to the original workf
 Native controls are opt-in:
 
 ```env
-RAG_CHANNELS_TELEGRAM_NATIVE_BUTTONS=true
-RAG_CHANNELS_TELEGRAM_NATIVE_IMAGES=true
-RAG_CHANNELS_SLACK_NATIVE_BUTTONS=true
-RAG_CHANNELS_SLACK_NATIVE_BLOCKS=true
-RAG_CHANNELS_SLACK_NATIVE_IMAGES=true
-RAG_CHANNELS_SLACK_ACCEPT_THREAD_REPLIES_TO_BOT_MESSAGES=true
-RAG_CHANNELS_ACTIVITY_ENABLED=true
-RAG_CHANNELS_TELEGRAM_ACTIVITY_MODE=native_typing
-RAG_CHANNELS_TELEGRAM_ACTIVITY_PULSE_INTERVAL_SECONDS=4
-RAG_CHANNELS_TELEGRAM_ACTIVITY_PULSE_MAX_SECONDS=240
-RAG_CHANNELS_SLACK_ACTIVITY_MODE=placeholder
-RAG_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT="Working on it..."
-RAG_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT_EN="Working on it..."
-RAG_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT_DE="Bin dran..."
-RAG_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE=false
-RAG_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE_TYPE=ephemeral
-RAG_CHANNELS_SLACK_ACTIVITY_UPDATE_FINAL_MESSAGE=true
-RAG_CHANNELS_SLACK_ACTIVITY_EPHEMERAL_PLACEHOLDER=false
+AGENTIC_CHATBOT_CHANNELS_TELEGRAM_NATIVE_BUTTONS=true
+AGENTIC_CHATBOT_CHANNELS_TELEGRAM_NATIVE_IMAGES=true
+AGENTIC_CHATBOT_CHANNELS_SLACK_NATIVE_BUTTONS=true
+AGENTIC_CHATBOT_CHANNELS_SLACK_NATIVE_BLOCKS=true
+AGENTIC_CHATBOT_CHANNELS_SLACK_NATIVE_IMAGES=true
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACCEPT_THREAD_REPLIES_TO_BOT_MESSAGES=true
+AGENTIC_CHATBOT_CHANNELS_ACTIVITY_ENABLED=true
+AGENTIC_CHATBOT_CHANNELS_TELEGRAM_ACTIVITY_MODE=native_typing
+AGENTIC_CHATBOT_CHANNELS_TELEGRAM_ACTIVITY_PULSE_INTERVAL_SECONDS=4
+AGENTIC_CHATBOT_CHANNELS_TELEGRAM_ACTIVITY_PULSE_MAX_SECONDS=240
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_MODE=placeholder
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT="Working on it..."
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT_EN="Working on it..."
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_PLACEHOLDER_TEXT_DE="Bin dran..."
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE=false
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE_TYPE=ephemeral
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_UPDATE_FINAL_MESSAGE=true
+AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_EPHEMERAL_PLACEHOLDER=false
 ```
 
 You can also set `"presentation_mode": "native"` on an individual channel connection. Keep `"presentation_mode": "text"` for the most predictable cross-channel behavior.
@@ -95,7 +95,7 @@ The **Channels** table includes operational actions:
 Release checklist for customer environments:
 
 1. Run a queue worker under a supervisor, not an interactive terminal.
-2. Set a stable public HTTPS webhook base URL on each channel connection or through `RAG_CHANNELS_WEBHOOK_BASE_URL`.
+2. Set a stable public HTTPS webhook base URL on each channel connection or through `AGENTIC_CHATBOT_CHANNELS_WEBHOOK_BASE_URL`.
 3. Enable webhook verification in production and configure Telegram `webhook_secret` or Slack `signing_secret`.
 4. Run **Diagnostics** after saving credentials and after every tunnel/domain change.
 5. For Telegram, run **Set Telegram Webhook** after the public URL changes.
@@ -155,11 +155,11 @@ curl "https://api.telegram.org/bot<bot_token>/setWebhook" \
 
 The package verifies `X-Telegram-Bot-Api-Secret-Token` when `webhook_secret` is configured. Telegram renders workflow choices as numbered text options by default. If native buttons are enabled, `callback_query` is used for inline button clicks. Typed labels and numbered choices are normalized back to the workflow button value. Workflow `imageUrl` output is sent with `sendPhoto` by URL, and workflow `imageArtifact` output is sent with multipart `sendPhoto`; set `"native_images": false` on the channel connection to fall back to text links.
 
-For local tunneling, set `RAG_CHANNELS_WEBHOOK_BASE_URL=https://your-ngrok-host.ngrok-free.app` or add `"webhook_base_url": "https://your-ngrok-host.ngrok-free.app"` to the channel connection settings before using the Filament webhook action.
+For local tunneling, set `AGENTIC_CHATBOT_CHANNELS_WEBHOOK_BASE_URL=https://your-ngrok-host.ngrok-free.app` or add `"webhook_base_url": "https://your-ngrok-host.ngrok-free.app"` to the channel connection settings before using the Filament webhook action.
 
 Telegram callback clicks are acknowledged with `answerCallbackQuery` by default so the Telegram client does not keep showing a loading state. Set `"answer_callback_query": false` in channel settings to disable this.
 
-Telegram replies send a `sendChatAction` activity indicator before workflow execution when possible. With an async queue connection, the runtime also schedules a heartbeat job that repeats `sendChatAction` every few seconds while the inbound event is still processing. Set `"activity_indicator_mode": "none"` on the channel connection or `RAG_CHANNELS_TELEGRAM_ACTIVITY_MODE=none` to disable it. The runtime also handles operational commands before the workflow is called:
+Telegram replies send a `sendChatAction` activity indicator before workflow execution when possible. With an async queue connection, the runtime also schedules a heartbeat job that repeats `sendChatAction` every few seconds while the inbound event is still processing. Set `"activity_indicator_mode": "none"` on the channel connection or `AGENTIC_CHATBOT_CHANNELS_TELEGRAM_ACTIVITY_MODE=none` to disable it. The runtime also handles operational commands before the workflow is called:
 
 | Command | Behavior |
 | ------- | -------- |
@@ -207,10 +207,10 @@ Runtime behavior:
 - Event and button conversations in public/private channels are scoped by Slack `thread_ts`, so two active Slack threads in the same channel do not share workflow state. Direct messages remain user-scoped.
 - Plain Slack `message` events in public/private channels are ignored by default, except replies inside a thread that started from one of the bot's own messages. Set `"accept_channel_messages": true` only when the app is intentionally allowed to answer broad channel messages.
 - App mentions strip the bot mention before the text reaches the workflow.
-- Replies are text-first by default. Public workflow `imageUrl` output is rendered as a Block Kit image block by default. Stored workflow `imageArtifact` output is uploaded through Slack files when native images are enabled, which avoids relying on Slack fetching a local tunnel URL. Set `RAG_CHANNELS_SLACK_NATIVE_BLOCKS=true` or `"presentation_mode": "native"` when you intentionally want Block Kit sections, cards, sources, and buttons for the full message.
+- Replies are text-first by default. Public workflow `imageUrl` output is rendered as a Block Kit image block by default. Stored workflow `imageArtifact` output is uploaded through Slack files when native images are enabled, which avoids relying on Slack fetching a local tunnel URL. Set `AGENTIC_CHATBOT_CHANNELS_SLACK_NATIVE_BLOCKS=true` or `"presentation_mode": "native"` when you intentionally want Block Kit sections, cards, sources, and buttons for the full message.
 - Set `"slack_response_mode": "ephemeral"` in channel settings to send private Slack replies with `chat.postEphemeral`; otherwise replies use `chat.postMessage`.
 - Set `"use_threads": false` in channel settings if you do not want replies to continue in Slack threads when an inbound event has a thread timestamp.
-- Slack does not expose a native bot typing indicator. Slack activity therefore uses a normal placeholder message by default and updates it in place with `chat.update` for text/block replies. When a reply cannot be updated in place, for example a file upload, the placeholder remains visible until the final reply is sent successfully and is deleted afterwards. This avoids leaving a private slash-command acknowledgement stuck in the channel UI. Set `"activity_immediate_response": true` or `RAG_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE=true` only when you prefer an immediate ephemeral slash-command acknowledgement before the queue worker starts. Ephemeral activity placeholders are disabled by default because Slack does not provide a reliable delete/update path for them.
+- Slack does not expose a native bot typing indicator. Slack activity therefore uses a normal placeholder message by default and updates it in place with `chat.update` for text/block replies. When a reply cannot be updated in place, for example a file upload, the placeholder remains visible until the final reply is sent successfully and is deleted afterwards. This avoids leaving a private slash-command acknowledgement stuck in the channel UI. Set `"activity_immediate_response": true` or `AGENTIC_CHATBOT_CHANNELS_SLACK_ACTIVITY_IMMEDIATE_RESPONSE=true` only when you prefer an immediate ephemeral slash-command acknowledgement before the queue worker starts. Ephemeral activity placeholders are disabled by default because Slack does not provide a reliable delete/update path for them.
 - Slack placeholder text is resolved from connection-level `activity_placeholder_texts.{locale}` first, then `activity_placeholder_text`, provider config, and finally `Working on it...`. Locale candidates come from connection settings such as `activity_locale` or `locale`, bot widget language, app config, and `en`.
 
 Recommended local settings:
@@ -247,23 +247,23 @@ php artisan queue:work
 Optional queue overrides:
 
 ```env
-RAG_CHANNELS_QUEUE_CONNECTION=redis
-RAG_CHANNELS_QUEUE=channels
-RAG_CHANNELS_PROCESSING_TIMEOUT_SECONDS=300
+AGENTIC_CHATBOT_CHANNELS_QUEUE_CONNECTION=redis
+AGENTIC_CHATBOT_CHANNELS_QUEUE=channels
+AGENTIC_CHATBOT_CHANNELS_PROCESSING_TIMEOUT_SECONDS=300
 ```
 
-`RAG_CHANNELS_PROCESSING_TIMEOUT_SECONDS` controls when an inbound delivery event stuck in `processing` can be reclaimed by a retry. This protects against worker crashes without allowing fresh duplicate provider retries to double-run the same message.
+`AGENTIC_CHATBOT_CHANNELS_PROCESSING_TIMEOUT_SECONDS` controls when an inbound delivery event stuck in `processing` can be reclaimed by a retry. This protects against worker crashes without allowing fresh duplicate provider retries to double-run the same message.
 
 Repeated Telegram typing indicators require a real async queue connection. When the channel queue resolves to Laravel's `sync` driver, the first `sendChatAction` is still sent, but no background heartbeat is scheduled.
 
-If a provider returns a retry-after response while sending a channel reply, the inbound event is marked completed and the outbound delivery event stays in `processing`. The queued outbound retry sends the saved reply text again later, so the chat responder, RAG search, workflow execution, budgets, and usage accounting are not run twice for the same inbound message.
+If a provider returns a retry-after response while sending a channel reply, the inbound event is marked completed and the outbound delivery event stays in `processing`. The queued outbound retry sends the saved reply text again later, so the chat responder, knowledge search, workflow execution, budgets, and usage accounting are not run twice for the same inbound message.
 
 Ingress rate-limit overrides:
 
 ```env
-RAG_CHANNELS_RATE_LIMITER=rag-channels
-RAG_CHANNELS_MAX_WEBHOOK_REQUESTS_PER_MINUTE=120
-RAG_CHANNELS_MAX_WEBHOOK_REQUESTS_PER_MINUTE_PER_IP=240
+AGENTIC_CHATBOT_CHANNELS_RATE_LIMITER=agentic-chatbot-channels
+AGENTIC_CHATBOT_CHANNELS_MAX_WEBHOOK_REQUESTS_PER_MINUTE=120
+AGENTIC_CHATBOT_CHANNELS_MAX_WEBHOOK_REQUESTS_PER_MINUTE_PER_IP=240
 ```
 
 These ingress limits are only abuse protection for provider webhooks. Bot-level product limits should be configured on the channel's Bot Access Token.
@@ -271,12 +271,12 @@ These ingress limits are only abuse protection for provider webhooks. Bot-level 
 Security defaults:
 
 ```env
-RAG_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION=true
-RAG_CHANNELS_STORE_RAW_WEBHOOK_PAYLOADS=false
-RAG_CHANNELS_ERROR_REPLY_MESSAGE="The bot could not process this message. Please try again later."
+AGENTIC_CHATBOT_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION=true
+AGENTIC_CHATBOT_CHANNELS_STORE_RAW_WEBHOOK_PAYLOADS=false
+AGENTIC_CHATBOT_CHANNELS_ERROR_REPLY_MESSAGE="The bot could not process this message. Please try again later."
 ```
 
-`RAG_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION` defaults to `true` in production and `false` outside production. When enabled, Telegram requires `webhook_secret` and Slack requires `signing_secret`. Raw provider payload storage is disabled by default; enable it only for short-lived debugging. Stored and queued payloads are redacted for token, secret, signature, password, and API-key fields. `RAG_CHANNELS_ERROR_REPLY_MESSAGE` is used when the bot runtime returns an error payload without a user-safe message.
+`AGENTIC_CHATBOT_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION` defaults to `true` in production and `false` outside production. When enabled, Telegram requires `webhook_secret` and Slack requires `signing_secret`. Raw provider payload storage is disabled by default; enable it only for short-lived debugging. Stored and queued payloads are redacted for token, secret, signature, password, and API-key fields. `AGENTIC_CHATBOT_CHANNELS_ERROR_REPLY_MESSAGE` is used when the bot runtime returns an error payload without a user-safe message.
 
 ## Provider Notes
 

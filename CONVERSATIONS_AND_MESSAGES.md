@@ -1,4 +1,4 @@
-# Conversations And Messages
+# Conversations and Messages
 
 Filament Agentic Chatbot stores chat history in conversations and messages.
 
@@ -71,4 +71,3 @@ Filament Agentic Chatbot includes privacy-oriented endpoints for these workflows
 - [Core Concepts](CORE_CONCEPTS.md)
 - [Security and Privacy](SECURITY_AND_PRIVACY.md)
 - [Support Policy](SUPPORT_POLICY.md)
-- [Data Retention Policy](DATA_RETENTION_POLICY.md)

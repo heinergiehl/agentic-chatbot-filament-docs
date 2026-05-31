@@ -6,22 +6,22 @@ This policy defines how conversation and ingestion data is retained when using F
 
 ## Data Classes
 
-- Conversation records (`rag_conversations`, `rag_messages`)
-- Source and ingestion records (`rag_sources`, `rag_documents`, `rag_chunks`)
+- Conversation records (`bot_conversations`, `bot_messages`)
+- Source and ingestion records (`bot_knowledge_sources`, `bot_knowledge_documents`, `bot_knowledge_chunks`)
 - Runtime metadata (`meta` JSON fields, ingestion error details)
 
 ## Recommended Defaults
 
-- Chat history retention: 30 to 180 days, based on legal and compliance needs
-- Failed ingestion metadata: retain until the issue is resolved, then purge on schedule
-- Vector chunks: retain while the source is active and relevant
+- Chat history retention: 30 to 180 days (based on legal/compliance needs)
+- Failed ingestion metadata: retain until issue is resolved, then purge on schedule
+- Vector chunks: retain while source is active and relevant
 
 ## User Rights
 
 - Export session history:
-  - `GET /api/filament-agentic-chatbot/chat/{botPublicId}/history/export?session_id=...`
+    - `GET /api/filament-agentic-chatbot/chat/{botPublicId}/history/export?session_id=...`
 - Delete session history:
-  - `DELETE /api/filament-agentic-chatbot/chat/{botPublicId}/history`
+    - `DELETE /api/filament-agentic-chatbot/chat/{botPublicId}/history`
 
 ## Operational Rules
 

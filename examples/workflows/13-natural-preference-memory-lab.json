@@ -57,7 +57,7 @@
           },
           {
             "label": "knowledge_question",
-            "description": "A standalone factual question about the product, docs, setup, RAG, workflows, widget, channels, ingestion, APIs, security, or behavior."
+            "description": "A standalone factual question about the product, docs, setup, knowledge retrieval, workflows, widget, channels, ingestion, APIs, security, or behavior."
           }
         ],
         "variable": "turn_intent",

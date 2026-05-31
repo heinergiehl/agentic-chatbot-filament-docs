@@ -199,4 +199,4 @@ Every new API Source capability should include:
 - Bruno or CLI smoke request when an HTTP endpoint is involved
 - failed-sync test proving the old index remains active
 - private-network/SSRF guard test where URLs are user-configurable
-- docs update in `RAG_SOURCES.md`, `API_CONNECTORS.md`, and `KNOWN_LIMITATIONS.md`
+- docs update in `KNOWLEDGE_SOURCES.md`, `API_CONNECTORS.md`, and `KNOWN_LIMITATIONS.md`

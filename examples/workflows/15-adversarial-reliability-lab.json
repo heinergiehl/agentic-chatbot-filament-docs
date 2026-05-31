@@ -81,7 +81,7 @@
           },
           {
             "label": "Side question",
-            "description": "The user asks an unrelated product, docs, setup, RAG, channel, workflow, or pricing question while a lab task may be active."
+            "description": "The user asks an unrelated product, docs, setup, knowledge retrieval, channel, workflow, or pricing question while a lab task may be active."
           },
           {
             "label": "Smalltalk",

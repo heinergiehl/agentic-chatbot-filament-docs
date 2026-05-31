@@ -3,8 +3,8 @@
 ## Contact
 
 - Primary support channel: `webdevislife2021@gmail.com`
-- Documentation: `https://filament-agentic-chatbot.heinerdevelops.tech/docs`
-- Issue tracker: GitHub Issues (for reproducible bug reports)
+- Documentation: `https://github.com/heinergiehl/agentic-chatbot-filament-docs`
+- Reproducible bug reports: send version, logs, and clear reproduction steps to the primary support channel
 
 ## Scope
 

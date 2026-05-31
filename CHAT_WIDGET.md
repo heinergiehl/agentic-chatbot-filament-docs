@@ -32,7 +32,7 @@ Per bot, you can customize all of these from the Filament panel:
 
 ## Style Templates
 
-The widget ships with eleven visual themes:
+The widget ships with twelve visual themes:
 
 | Template     | Description                            |
 | ------------ | -------------------------------------- |
@@ -42,6 +42,7 @@ The widget ships with eleven visual themes:
 | `neo-brutal` | Thick borders, raw geometric look      |
 | `noir`       | Dark background, minimal chrome        |
 | `aurora`     | Soft gradients and warm tones          |
+| `control-plane` | Product-grade panel styling for operational SaaS demos |
 | `minimal`    | Maximum whitespace, understated UI     |
 | `x-dark`     | Bold dark surface inspired by X        |
 | `imessage`   | Bubble-forward chat styling            |
@@ -77,29 +78,29 @@ Add a single `<script>` tag to any HTML page:
 
 ```html
 <script
-  src="https://your-app.com/filament-agentic-chatbot/widget"
-  data-bot="YOUR_BOT_PUBLIC_ID"
-  data-token="SIGNED_TOKEN"
-  data-area="public"
-  data-template="aurora"
-  data-accent="#f97316"
-  data-title="Support Assistant"
-  data-subtitle="Always here to help"
-  data-compact="false"
-  data-show-sources="true"
-  data-lang="en"
-  defer
+    src="https://your-app.com/filament-agentic-chatbot/widget"
+    data-bot="YOUR_BOT_PUBLIC_ID"
+    data-token="SIGNED_TOKEN"
+    data-area="public"
+    data-template="aurora"
+    data-accent="#f97316"
+    data-title="Support Assistant"
+    data-subtitle="Always here to help"
+    data-compact="false"
+    data-show-sources="true"
+    data-lang="en"
+    defer
 ></script>
 ```
 
-The extensionless `/filament-agentic-chatbot/widget` endpoint is the recommended script URL. Existing snippets that use `/filament-agentic-chatbot/widget.js` remain supported for compatibility.
+Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
 
 **Required attributes:**
 
 | Attribute    | Description                                                            |
 | ------------ | ---------------------------------------------------------------------- |
 | `data-bot`   | The bot's public ID (found in the bot edit page in Filament)           |
-| `data-token` | A signed embed token (required when `RAG_WIDGET_SIGNING_ENABLED=true`) |
+| `data-token` | A signed embed token (required when `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true`) |
 
 All other `data-*` attributes are optional and override the bot's default settings.
 
@@ -117,22 +118,22 @@ Then mount it in your JavaScript:
 import { mountFilamentAgenticChatbotWidget } from "@heiner/filament-agentic-chatbot-widget";
 
 mountFilamentAgenticChatbotWidget({
-  botId: "YOUR_BOT_PUBLIC_ID",
-  scriptUrl: "https://your-app.com/filament-agentic-chatbot/widget",
-  apiBase: "https://your-app.com",
-  token: "SIGNED_TOKEN",
-  area: "public",
-  position: "right",
-  template: "aurora",
-  accent: "#f97316",
-  title: "Support Assistant",
-  subtitle: "Always here to help",
-  welcome: "Hi! How can I help?",
-  inputPlaceholder: "Type a message...",
-  compactMode: false,
-  fontPreset: "modern-sans",
-  showSources: true,
-  lang: "en",
+    botId: "YOUR_BOT_PUBLIC_ID",
+    scriptUrl: "https://your-app.com/filament-agentic-chatbot/widget",
+    apiBase: "https://your-app.com",
+    token: "SIGNED_TOKEN",
+    area: "public",
+    position: "right",
+    template: "aurora",
+    accent: "#f97316",
+    title: "Support Assistant",
+    subtitle: "Always here to help",
+    welcome: "Hi! How can I help?",
+    inputPlaceholder: "Type a message...",
+    compactMode: false,
+    fontPreset: "modern-sans",
+    showSources: true,
+    lang: "en",
 });
 ```
 
@@ -163,7 +164,7 @@ The NPM loader creates and appends the `<script>` element with the right `data-*
 
 ### Signed Tokens
 
-When `RAG_WIDGET_SIGNING_ENABLED=true` (recommended for production), every widget request must include a valid signed token. Tokens are HMAC-SHA256 signed and include:
+When `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` (recommended for production), every widget request must include a valid signed token. Tokens are HMAC-SHA256 signed and include:
 
 - the bot's public ID
 - an expiration timestamp
@@ -184,13 +185,19 @@ $token = WidgetEmbedToken::make(
 
 | Env Variable                 | Description                   | Default                 |
 | ---------------------------- | ----------------------------- | ----------------------- |
-| `RAG_WIDGET_SIGNING_ENABLED` | Require signed tokens         | `true`                  |
-| `RAG_WIDGET_SIGNING_KEY`     | HMAC signing secret           | falls back to `APP_KEY` |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED` | Require signed tokens         | `true`                  |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`     | HMAC signing secret           | falls back to `APP_KEY` |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS` | Accept `?token=` on API requests | `true`                  |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS`  | Accept `token` in JSON/form bodies | `true`                  |
 | Token TTL                    | Configured in the config file | 30 days                 |
+
+Production embeds should send tokens with the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens remain enabled by default for compatibility, but `php artisan filament-agentic-chatbot:doctor` warns in production so you can migrate toward header-only transport.
 
 ### Domain Allowlists
 
 Each bot can define a list of allowed domains. If set, the widget's CORS middleware only responds to requests from those domains. Wildcard subdomains are supported (e.g., `*.example.com`).
+
+Empty allowlists are still allowed by default through `AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=true` for older installs. Treat that as a compatibility bridge, not a production target. Set `AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=false` and list the exact hosts before public rollout.
 
 ### Context Areas And Access Rules
 
@@ -204,14 +211,28 @@ Each bot can define a list of allowed domains. If set, the widget's CORS middlew
 
 | Env Variable                         | Default |
 | ------------------------------------ | ------- |
-| `RAG_MAX_REQUESTS_PER_MINUTE`        | 40      |
-| `RAG_MAX_REQUESTS_PER_MINUTE_PER_IP` | 120     |
+| `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE`        | 40      |
+| `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE_PER_IP` | 120     |
+
+The session and IP limits are independent. The IP limit is no longer raised to match the session limit, so keep both values explicit for your expected traffic shape.
 
 ## CORS Configuration
 
 The plugin includes a `HandleWidgetCors` middleware that automatically sets CORS headers based on the bot's allowed domain list. No additional Laravel CORS configuration is needed for the widget endpoints.
 
 If you embed the widget on pages served by the same Laravel monolith, CORS is usually a non-issue because the widget script and chat API calls stay on the same origin.
+
+## Config Payload
+
+`GET /api/filament-agentic-chatbot/chat/{botPublicId}/config` keeps its existing shape and adds `bot.knowledge_health`:
+
+- `has_sources`
+- `ready_sources`
+- `chunk_count`
+- `source_status_counts`
+- `is_ready`
+
+Use it for custom widget empty states such as "sources are still indexing" without guessing from source records.
 
 ## Content Security Policy
 
@@ -231,6 +252,8 @@ Best for marketing site chat, public documentation assistant, product onboarding
 
 Configuration: `area="public"`, no auth required, domain allowlist recommended.
 
+For production public widgets, use signed header tokens, a non-empty domain allowlist, and a supervised queue worker if the bot can trigger ingestion, delays, or workflows.
+
 ### Internal Widget
 
 Best for admin support dashboard, back-office workflow assistance, authenticated internal knowledge.
@@ -239,7 +262,7 @@ Configuration: `area="member"` or `area="admin"`, requires auth guard, signing e
 
 ## Server-Side Integrations
 
-Use the widget for browser embeds. Use [Channel Integrations](CHANNELS.md) for standard Telegram and Slack installs. Use Bot Access Tokens and the JSON complete endpoint for trusted custom integrations such as mobile API backends, cron jobs, custom bots, or incident-management systems.
+Use the widget for browser embeds. Use Bot Access Tokens and the JSON complete endpoint for trusted server-side API clients, Telegram bots, Slack apps, or incident-management systems.
 
 See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract and webhook examples.
 

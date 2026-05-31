@@ -180,7 +180,7 @@
             },
             "data": {
                 "label": "Compose Manager Answer",
-                "systemPrompt": "You are an operational incident-management assistant for managers. Use live operational records first. Use SOP/RAG context only for procedure and policy guidance. Be concise, factual, and explicit about uncertainty. Never invent incident, staff, station, or earthquake records. Do not expose rescuer phone numbers.",
+                "systemPrompt": "You are an operational incident-management assistant for managers. Use live operational records first. Use SOP and knowledge context only for procedure and policy guidance. Be concise, factual, and explicit about uncertainty. Never invent incident, staff, station, or earthquake records. Do not expose rescuer phone numbers.",
                 "userPromptTemplate": "Manager question:\n{{input}}\n\nOpen incidents:\n{{open_incidents.records}}\n\nActive stations:\n{{active_stations.records}}\n\nRescuers:\n{{rescuers.records}}\n\nRecent earthquakes:\n{{recent_earthquakes.records}}\n\nSOP context:\n{{sop_context}}\n\nWrite an answer with: current status, relevant risks, available response capacity, and recommended next operational step.",
                 "temperature": 0.2,
                 "maxTokens": 600,

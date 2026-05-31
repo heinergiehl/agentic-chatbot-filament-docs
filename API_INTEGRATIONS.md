@@ -1,18 +1,38 @@
 # API Integrations
 
-Use Bot Access Tokens when a backend service, mobile app, scheduled job, custom bot, or another trusted server needs to call a configured chatbot without rendering the embeddable widget.
-
-For standard Telegram and Slack deployments, prefer the package-owned channel integrations in [Channel Integrations](CHANNELS.md). They handle provider webhooks, thread mapping, diagnostics, delivery events, native image delivery, retries, and webhook verification inside the plugin.
+Use Bot Access Tokens when a trusted server-side API client, widget bridge, Telegram bot, or Slack app needs to call a configured chatbot.
 
 ## Create A Bot Access Token
 
 1. Open **Agentic Chatbot > Bot Access Tokens** in Filament.
 2. Select the bot.
-3. Give the token a clear name such as `Mobile app production`, `Internal jobs`, or `Telegram production`.
-4. Set **Allowed Areas** if the token should only work for specific context areas.
-5. Keep only the abilities the integration needs. For chat integrations, `chat` is enough.
-6. Add a per-token rate limit and monthly token/cost budgets for production integrations.
-7. Store the generated token immediately. It is shown once.
+3. Give the token a clear name such as `Telegram production`.
+4. Set **Channel** to classify where the token is used, for example `API`, `Web Widget Bridge`, `Telegram`, or `Slack`.
+5. Optionally set a channel label such as a Telegram bot name, Slack workspace, API client, or environment.
+6. Set **Allowed Areas** if the token should only work for specific context areas.
+7. Keep only the abilities the integration needs. For chat integrations, `chat` is enough.
+8. Add a per-token rate limit and monthly token/cost budgets for production integrations.
+9. Store the generated token immediately. It is shown once.
+
+Bot Access Tokens are credentials for your Laravel chatbot API. They are not Telegram or Slack provider tokens. External platforms keep their own credentials in your app config or secret manager, and your webhook/controller uses the Bot Access Token only when it calls the chatbot endpoint.
+
+`last_used_at` writes are throttled to reduce write pressure on busy integrations. Configure the window with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES` (default `5`). Per-token rate limits remain enforced on every request.
+
+## Optional Ownership Metadata
+
+If your host app wants to assign tokens to users, teams, tenants, customers, or departments, configure allowed owner model classes:
+
+```php
+// config/filament-agentic-chatbot.php
+'bot_access_tokens' => [
+    'owner_types' => [
+        'user' => \App\Models\User::class,
+        'team' => \App\Models\Team::class,
+    ],
+],
+```
+
+The package stores `owner_type` and `owner_id` only. It does not create a user system, tenant system, or authorization policy. Use this metadata for reporting, filtering, support, and cleanup workflows; keep real access control in your application.
 
 ## Complete Chat Endpoint
 
@@ -73,8 +93,9 @@ The endpoint returns the final assistant message in a stable JSON shape. If an a
 | HTTP | `error` | Meaning |
 | --- | --- | --- |
 | `401` | `bot_access_token_invalid` | Missing or invalid Bearer token. |
-| `401` | `bot_access_token_inactive` | Token exists but is disabled. |
-| `401` | `bot_access_token_expired` | Token is past `expires_at`. |
+| `403` | `bot_access_token_inactive` | Token exists but is disabled. |
+| `403` | `bot_access_token_expired` | Token is past `expires_at`. |
+| `403` | `bot_access_token_revoked` | Token was revoked and cannot be reactivated. |
 | `403` | `bot_access_token_forbidden` | Token is for another bot, area, or ability. |
 | `422` | `area_not_allowed` | The bot itself does not allow the requested area. |
 | `422` | `ai_input_token_limit_exceeded` | Prompt was blocked before the provider call. |
@@ -83,6 +104,7 @@ The endpoint returns the final assistant message in a stable JSON shape. If an a
 | `429` | `ai_access_token_monthly_token_budget_exceeded` | Access token monthly token budget is exhausted. |
 | `429` | `ai_bot_monthly_cost_budget_exceeded` | Bot monthly cost budget is exhausted. |
 | `429` | `ai_access_token_monthly_cost_budget_exceeded` | Access token monthly cost budget is exhausted. |
+| `429` | `ai_cost_budget_pricing_missing` | A cost budget is configured but provider/model pricing is missing, so the request is blocked fail-closed. |
 
 ## Laravel HTTP Client Example
 
@@ -102,9 +124,7 @@ $response = Http::withToken(config('services.incident_chatbot.token'))
 $answer = (string) data_get($response, 'content', '');
 ```
 
-## Custom Telegram Webhook Example
-
-This is a do-it-yourself example for custom integrations. For normal Telegram installs on `v0.11.0+`, use [Channel Integrations](CHANNELS.md) instead.
+## Telegram Webhook Example
 
 This example receives a Telegram update, forwards the user text to the chatbot, then sends the chatbot answer back to Telegram.
 
@@ -181,4 +201,4 @@ After migrations and token setup, run:
 php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 ```
 
-Use **Agentic Chatbot > AI Usage** to inspect recorded usage events and the bot **Analytics** page to review per-bot token/cost trends.
+Use **Agentic Chatbot > AI Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.

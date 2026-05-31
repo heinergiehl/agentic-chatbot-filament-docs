@@ -33,7 +33,9 @@ By default, a bot runs through the assistant chat graph. The assistant keeps the
 
 Source-grounded retrieval is still important, but it is not the whole chatbot. It is the knowledge capability behind `KnowledgeSearchTool` and workflow Knowledge Base nodes.
 
-The legacy `ParentAgent` and `RagAgent` classes remain as compatibility aliases. Do not treat them as the default product architecture.
+The UI now makes this split explicit with **Chat behavior** on the bot edit page and **Chat Mode** in the bots table. Sources make direct bots useful; active workflows must explicitly search sources. If a bot has sources and no active workflow, direct chat can retrieve from those sources. If an active workflow is live, the workflow controls the conversation and must include a reachable Knowledge Base node for source-grounded answers.
+
+The legacy `ParentAgent` and `KnowledgeAgent` classes remain as compatibility aliases. Do not treat them as the default product architecture.
 
 ## What You Can Customize Per Bot
 
@@ -68,7 +70,7 @@ In practice, this means you can create:
 7. Configure **allowed domains** and **context areas**.
 8. Customize the **widget** title, subtitle, welcome message, and quick prompts.
 9. Save the bot.
-10. Add one or more [Sources](/docs/rag-sources) and test retrieval.
+10. Add one or more [Knowledge Sources](KNOWLEDGE_SOURCES.md) and test retrieval.
 
 Creating the bot is only the first step. A bot becomes useful when it has the right sources and retrieval settings behind it.
 
@@ -77,6 +79,7 @@ Creating the bot is only the first step. A bot becomes useful when it has the ri
 After saving a bot, use the edit page as your rollout checklist before you publish or embed it widely.
 
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the bot.
+- **Production readiness** also surfaces widget signing/domain posture and knowledge chunk readiness so public rollout issues are visible before you copy the embed snippet.
 - **Live Preview** renders the current widget theme, copy, and area-specific styling choices directly inside the bot form.
 - **Test Retrieval** checks whether the bot is grounding on the right source material.
 - **Test Bot Answer** runs the full answer path so you can spot provider, prompt, or retrieval issues early.
@@ -132,9 +135,9 @@ The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter
 Use OpenRouter for routed models such as Qwen or DeepSeek variants without adding a provider-specific integration for each model family. Use **OpenAI-Compatible** when the provider exposes a chat-completions-style API with a custom base URL, such as Qwen DashScope compatible mode or a private gateway. Enter the base URL on the bot, or configure it globally with:
 
 ```env
-RAG_OPENAI_COMPATIBLE_DRIVER=openrouter
-RAG_OPENAI_COMPATIBLE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-RAG_OPENAI_COMPATIBLE_API_KEY=...
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_DRIVER=openrouter
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY=...
 ```
 
 The custom base URL is used by both normal bot replies and workflow AI steps. It should include the provider's `/v1` path when that provider requires it.
@@ -182,6 +185,8 @@ Use this when a workflow needs safe access to internal business records such as 
 
 If you need tenant-aware or actor-aware row filtering, add that through your model scopes or resource design. The registry controls which model fields are exposed, but it does not invent your business-specific authorization rules for you.
 
+The built-in `bots` resource is scoped to the current bot by default. Expose a global bot catalog only by overriding that resource in your host app configuration.
+
 ### Smart Data Queries
 
 The Behavior tab also includes **Smart Data Queries**. This is the admin-friendly layer above `query_data_resource`.
@@ -191,14 +196,19 @@ Admins choose:
 - which data sources the bot may read
 - whether generated workflows should accept natural data questions
 - the default and maximum number of records for smart generated query flows
+- a preview of each selected resource's sortable fields, filterable fields, returned fields, runtime scope, and resource limits
 
 The workflow generator then handles phrases such as "newest workflow", "active products", "cheapest plan", or "highest priced item" by creating a structured query plan and passing it into `query_data_resource`. The runtime still validates all fields, filters, sorting, and limits against the allow-listed resource definition.
+
+For product catalogs, define useful `field_metadata` for columns such as price, created date, availability, and name. Natural requests like "cheapest product" or "two newest products" work best when numeric and date fields have clear labels, types, aliases, and descriptions.
 
 ### Allowed Domains
 
 Allowed domains limit where the widget can be embedded.
 
 Use this when you want a public bot on your marketing site but do not want the widget embedded elsewhere.
+
+Empty allowlists are compatibility-only when `AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=true`. Production bots should list exact hosts.
 
 ### Context Areas
 
@@ -320,11 +330,11 @@ Use when you need:
 
 ## Related Docs
 
-- [Core Concepts](/docs/core-concepts)
+- [Core Concepts](CORE_CONCEPTS.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
-- [Sources](/docs/rag-sources)
-- [Ingestion and Retrieval](/docs/ingestion-and-retrieval)
-- [Context Areas](/docs/context-areas)
-- [Chat Widget](/docs/chat-widget)
+- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
+- [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
+- [Context Areas](CONTEXT_AREAS.md)
+- [Chat Widget](CHAT_WIDGET.md)
 - [API Integrations](API_INTEGRATIONS.md)
 - [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)

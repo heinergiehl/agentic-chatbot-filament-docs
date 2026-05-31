@@ -158,19 +158,13 @@ php artisan migrate
 php artisan queue:work
 ```
 
-For the current public release line, install `v0.12.0` or newer:
+For the current public release line, install `v0.13.0` or newer:
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.12.0
+composer require heiner/filament-agentic-chatbot:^0.13.0
 ```
 
-If you are testing the post-`v0.12.0` AgentGraph SDK refactor branch before the SDK is published to your Composer repository, add the SDK repository to the host app root composer config before requiring the plugin:
-
-```bash
-composer config repositories.agent-graph vcs https://github.com/heinergiehl/agent-graph.git
-composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
-composer require heiner/filament-agentic-chatbot:'*@dev'
-```
+Composer installs `heiner/agent-graph` transitively. Production host apps should not need a custom AgentGraph repository entry for the `0.13` release line.
 
 Register the plugin in your panel provider:
 
@@ -354,7 +348,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md)
 - [Agent runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
 - [Agentic workflows — all node types explained](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
-- [Sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RAG_SOURCES.md)
+- [Knowledge sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWLEDGE_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
 - [Database and breaking changes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATABASE_AND_BREAKING_CHANGES.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
@@ -368,7 +362,7 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md)
 - [How it differs from Filament RAG](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- [Release notes v0.12.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.12.0.md)
+- [Release notes v0.13.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.13.0.md)
 - [AgentGraph SDK refactor notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
 

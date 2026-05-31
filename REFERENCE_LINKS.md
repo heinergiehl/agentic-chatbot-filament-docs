@@ -27,7 +27,7 @@ Use the `filament-rag` links when discussing the earlier RAG-only plugin, and th
 - Core concepts: CORE_CONCEPTS.md
 - Quickstart: QUICKSTART.md
 - Bots: BOTS.md
-- Sources: RAG_SOURCES.md
+- Knowledge sources: KNOWLEDGE_SOURCES.md
 - Ingestion and retrieval: INGESTION_AND_RETRIEVAL.md
 - AgentGraph SDK usage: AGENTGRAPH_SDK_USAGE.md
 - Database and breaking changes: DATABASE_AND_BREAKING_CHANGES.md

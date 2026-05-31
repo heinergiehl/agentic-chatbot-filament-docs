@@ -23,7 +23,7 @@ The core flow is:
 | -------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
 | Bot            | A configured assistant with its own prompt, model, retrieval settings, access rules, and widget branding  | [Bots](BOTS.md)                                             |
 | Assistant Graph | The default chat runtime that orchestrates memory, optional knowledge search, workflow execution, and direct replies | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
-| Knowledge Source | A piece of knowledge you want the bot to use, such as text, a file, or a URL                            | [Sources](RAG_SOURCES.md)                                   |
+| Knowledge Source | A piece of knowledge you want the bot to use, such as text, a file, or a URL                            | [Knowledge Sources](KNOWLEDGE_SOURCES.md)                               |
 | Document       | The normalized stored version of a source after extraction                                                | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
 | Chunk          | A smaller searchable section of a document used for retrieval and citations                               | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
 | Ingestion      | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                         | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
@@ -71,12 +71,12 @@ They let you add branching logic, AI classification, backend actions, connector 
 
 ### Runtime Naming
 
-The codebase still contains names such as `RagBot`, `RagSource`, and `RagAgent` for backward compatibility. Product behavior should be understood differently:
+The codebase still contains names such as `Bot`, `KnowledgeSource`, and `KnowledgeAgent` for backward compatibility. Product behavior should be understood differently:
 
 - the **bot** is the persisted assistant configuration
 - the **assistant graph** is the default chat runtime
 - **knowledge search** is the source-grounding capability used through `KnowledgeSearchTool`
-- `ParentAgent` and `RagAgent` are legacy compatibility aliases, not the main chatbot architecture
+- `ParentAgent` and `KnowledgeAgent` are legacy compatibility aliases, not the main chatbot architecture
 
 ### Conversations and Widget Runtime
 
@@ -87,7 +87,7 @@ The widget is only the interface layer. The bot, sources, retrieval, workflows, 
 - [Product Overview](PRODUCT_OVERVIEW.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
 - [Bots](BOTS.md)
-- [Sources](RAG_SOURCES.md)
+- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
 - [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)

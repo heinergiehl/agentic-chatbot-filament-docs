@@ -1,17 +1,15 @@
-# Sources
-
-> Legacy page name. For the current docs, use [Knowledge Sources](KNOWLEDGE_SOURCES.md).
+# Knowledge Sources
 
 This is the specific documentation page to share when someone asks:
 
-- what sources are
+- what knowledge sources are
 - how to create a source
 - which source types can be ingested
-- what content the assistant can use for grounded answers
+- what content the bot can learn from
 
-## What A Source Is
+## What A Knowledge Source Is
 
-A source is a piece of content the bot is allowed to use for source-grounded answers.
+A knowledge source is a piece of content the bot is allowed to learn from.
 
 Examples:
 
@@ -22,7 +20,7 @@ Examples:
 - a JSON API endpoint with product or CMS records
 - a policy or onboarding article
 
-The bot does not answer from "the internet in general". When source grounding is needed, it answers from the sources you attach and ingest.
+The bot does not answer from "the internet in general". It answers from the sources you attach and ingest.
 
 ## Which Source Types You Can Ingest
 
@@ -84,7 +82,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A Text Source
 
-1. Open **Sources**
+1. Open **Knowledge Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **Manual Text**
@@ -94,7 +92,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A File Source
 
-1. Open **Sources**
+1. Open **Knowledge Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **File Upload**
@@ -104,7 +102,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 ### Create A URL Source
 
-1. Open **Sources**
+1. Open **Knowledge Sources**
 2. Click **Create**
 3. Select the target bot
 4. Choose **URL**
@@ -117,7 +115,7 @@ Private and local network URLs are blocked by default for SSRF safety.
 ### Create An API Source
 
 1. Create an **API Connector** with the base URL, auth, headers, timeout, and SSL settings
-2. Open **Sources**
+2. Open **Knowledge Sources**
 3. Click **Create**
 4. Select the target bot
 5. Choose **API Source**
@@ -127,9 +125,7 @@ Private and local network URLs are blocked by default for SSRF safety.
 9. Optionally enable **Auto Sync** and set the sync interval
 10. Save and wait for `completed`
 
-API source ingestion supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own stored document for retrieval. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-rag-sources`, which should be called by Laravel Scheduler.
-
-After a successful re-ingest, the source's previous API documents are replaced. Records that disappeared from the API response are removed from retrieval. If the new sync fails, the previous indexed content remains active.
+API source ingestion currently supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own knowledge document. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-knowledge-sources`, which should be called by Laravel Scheduler. After a successful re-ingest, the source's previous API documents are replaced, so records that disappeared from the API response are removed from retrieval; if the new sync fails, the previous indexed content remains active.
 
 ## What Happens After You Save A Source
 
@@ -180,7 +176,7 @@ Use descriptive names so citations are understandable.
 
 Good examples:
 
-- `Sources`
+- `Knowledge Sources`
 - `Quickstart`
 - `Security and Privacy`
 - `Public Pricing FAQ`
@@ -223,8 +219,6 @@ Re-ingest when:
 
 - Group sources by bot and audience.
 - Prefer clean docs pages over noisy landing pages when possible.
-- Use API sources for relatively stable records that should become searchable knowledge.
-- Use workflow API Connector nodes for live lookups, user-specific data, and write actions.
 - Re-ingest after editing or replacing important content.
 - Use descriptive source names so citations are understandable.
 - Keep public bots on public docs and internal bots on internal runbooks.
@@ -234,5 +228,4 @@ Re-ingest when:
 - [Core Concepts](CORE_CONCEPTS.md)
 - [Bots](BOTS.md)
 - [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
-- [API Connectors](API_CONNECTORS.md)
 - [Operations](OPERATIONS.md)

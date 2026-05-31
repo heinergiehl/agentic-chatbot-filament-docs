@@ -6,7 +6,7 @@ The goal is not to turn the package into a full incident-management platform. Th
 
 - indexed knowledge for stable reference material
 - live workflows for current operational data
-- package-owned channel integrations for Telegram/Slack, or scoped API access for internal portals and other clients
+- scoped API access for Telegram bots, internal portals, or other clients
 - token and cost controls per bot access token
 
 For a runnable app-side example with migrations, seed data, Eloquent models, data-resource definitions, and a workflow JSON file, see [docs/examples/incident-management](examples/incident-management/README.md).
@@ -17,7 +17,7 @@ Use two retrieval paths intentionally:
 
 | Data type | Recommended path | Why |
 | --------- | ---------------- | --- |
-| SOPs, manuals, response protocols, training content | Indexed sources | Stable text benefits from embeddings and citations |
+| SOPs, manuals, response protocols, training content | knowledge sources | Stable text benefits from embeddings and citations |
 | Historical incidents and earthquake archives | API knowledge sources when mostly analytical; data resources when filtered live answers matter | Indexed data is fast for broad questions; live queries are better for exact counts and filters |
 | Active incidents, staff status, station availability | Workflows with data resources or API connectors | These records change too often to trust a stale vector index |
 | Actions such as creating reports or sending notifications | Workflow actions or API connector write calls | Writes need explicit capability and audit boundaries |
@@ -31,7 +31,7 @@ A strong production setup usually has one bot per operational audience:
 | Field Team Bot | `field` | `query_only` or `query_and_write` | station details, equipment availability, short status capture |
 | Analyst Bot | `analyst` | `query_only` | historical incident and earthquake analysis |
 
-Then create separate Bot Access Tokens for each external channel. For example, Telegram and Slack each get their own token with only the areas and abilities they need.
+Then create separate Bot Access Tokens for each external channel. For example, Telegram gets its own token with the `telegram` channel, only the areas and abilities it needs, and its own rate/cost budget. The Telegram provider token remains in your webhook app; the Bot Access Token is only used server-side when the webhook calls the chatbot API.
 
 ## Data Modeling
 
@@ -74,11 +74,11 @@ Example config:
 ],
 ```
 
-Enable only the required resources on each bot via `rag_config.data_resources.allowed_keys`. That keeps a public bot from reading manager-only operational tables.
+Enable only the required resources on each bot via `runtime_config.data_resources.allowed_keys`. That keeps a public bot from reading manager-only operational tables.
 
 ## Knowledge Sources
 
-Index stable materials as sources:
+Index stable materials as knowledge sources:
 
 - response protocols and SOPs
 - public safety guidance
@@ -88,7 +88,7 @@ Index stable materials as sources:
 
 Use API knowledge sources for large external JSON datasets that are useful as searchable background context. Good examples are earthquake archives, public historical incident datasets, or station catalogs that sync nightly.
 
-Do not use indexed sources as the source of truth for active incidents. Active incident status should come from a workflow call to a data resource or API connector.
+Do not use indexed retrieval as the source of truth for active incidents. Active incident status should come from a workflow call to a data resource or API connector.
 
 ## Workflow Patterns
 
@@ -106,9 +106,7 @@ For manager-facing workflows, prefer a final Answer node that says which records
 
 ## External Channels
 
-For Telegram and Slack, prefer the package-owned channel integrations in [Channel Integrations](CHANNELS.md). They handle provider webhooks, channel threads, diagnostics, delivery events, retries, activity indicators, and native image delivery while still using Bot Access Tokens for governance.
-
-For custom bot platforms, internal portals, or backend jobs, use the JSON complete endpoint with a Bot Access Token:
+For Telegram or another bot platform, use the JSON complete endpoint with a Bot Access Token:
 
 ```bash
 curl -X POST "https://your-app.test/api/filament-agentic-chatbot/chat/{botPublicId}/complete" \
@@ -130,6 +128,8 @@ Use Bot Access Tokens as the integration boundary:
 
 | Control | Recommendation |
 | ------- | -------------- |
+| Channel | Classify each token as `api`, `widget`, `telegram`, or `slack` for reporting and incident triage |
+| Owner | Optionally attach the token to an app user, team, tenant, or department through owner metadata; do not move app authorization into the package |
 | Areas | Give each token only the areas it needs, such as `manager` or `public` |
 | Abilities | For external chat clients, usually allow only `chat` and optionally `config`; reserve `history.delete`, `feedback`, or `*` for trusted integrations |
 | Rate limit | Set a per-minute limit per token, especially for public or Telegram channels |
@@ -143,12 +143,12 @@ Keep sensitive fields out of `allowed_selects` unless the bot genuinely needs th
 ## Rollout Checklist
 
 1. Create manager, public, field, and analyst bots only where the audiences truly differ.
-2. Add sources for stable manuals, protocols, and public knowledge.
+2. Add knowledge sources for stable manuals, protocols, and public knowledge.
 3. Create API connectors for external incident APIs and test each connector from Filament.
 4. Register data resources for live Eloquent data with strict allow-lists.
 5. Enable only the required data resources per bot.
 6. Build one workflow per high-value question pattern instead of one huge all-purpose workflow.
-7. Create a Bot Access Token for each external client, with area, ability, rate, and budget limits.
+7. Create a Bot Access Token for each external client, with channel, optional owner, area, ability, rate, and budget limits.
 8. Test with real operational questions and check workflow traces for wrong filters or overexposed fields.
 9. Add monitoring around failed workflow runs, provider errors, token budget denials, and connector failures.
 

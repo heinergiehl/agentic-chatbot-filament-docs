@@ -2,10 +2,10 @@
 
 This example shows how to model a large operational incident system with:
 
-- indexed sources for procedures and historical narrative reports
+- indexed knowledge sources for procedures and historical narrative reports
 - live database retrieval through `query_data_resource`
 - a workflow that combines active incidents, rescue stations, staff, and earthquake records
-- Bot Access Tokens for Telegram/Slack channels, dispatch tools, and other server-side integrations
+- Bot Access Tokens for Telegram, dispatch tools, and other server-side integrations
 - per-token rate limits and budgets
 
 The files in this directory are app-side examples. Put them in a host Laravel app, run the migration and seeder, register the data resources, then import the workflow JSON into Filament Agentic Chatbot.
@@ -44,7 +44,7 @@ Recommended bot config:
     'public_id' => 'incident-manager',
     'name' => 'Incident Manager',
     'model' => 'gemini-2.5-flash-lite',
-    'rag_config' => [
+    'runtime_config' => [
         'provider' => 'gemini',
         'capabilities' => [
             'mode' => 'query_only',
@@ -73,7 +73,7 @@ Recommended bot config:
 
 ## 3. Add Knowledge Sources
 
-Use indexed sources for documents that are better searched than queried live:
+Use knowledge sources for documents that are better indexed than queried live:
 
 - emergency response SOPs
 - escalation policy
@@ -109,13 +109,16 @@ Create a Bot Access Token:
 | Setting | Value |
 | --- | --- |
 | Bot | `Incident Manager` |
+| Channel | `Telegram`, `Slack`, or `API` |
+| Channel Label | `Operations Telegram Bot` |
+| Owner | Optional app user, team, tenant, or department if owner types are configured |
 | Abilities | `chat` |
 | Allowed Areas | `manager`, `dispatch` |
 | Rate Limit | `60` per minute |
 | Monthly Token Budget | `500000` |
 | Monthly Cost Budget | `1500` cents |
 
-Use that token from a Telegram or Slack Channel connection documented in [Channel Integrations](../../CHANNELS.md), or from dispatch dashboards and backend jobs through the JSON complete endpoint documented in [API Integrations](../../API_INTEGRATIONS.md).
+Use that token from Telegram, Slack, dispatch dashboards, or other trusted server-side API clients through the JSON complete endpoint documented in [API Integrations](../../API_INTEGRATIONS.md).
 
 ## 6. Smoke Test
 

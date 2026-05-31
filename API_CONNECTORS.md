@@ -6,13 +6,13 @@ Connectors are also reused by **API Knowledge Sources**. In that mode, the conne
 
 ## When To Use Connectors vs HTTP Request Nodes
 
-| Scenario | Use |
-|----------|-----|
-| One-off call to an external URL | HTTP Request node |
-| Repeated calls to the same service across multiple workflows | API Connector |
-| Service requires authentication that should be stored securely | API Connector |
-| Quick prototype or test integration | HTTP Request node |
-| JSON endpoint should feed the bot's knowledge base | API Knowledge Source using an API Connector |
+| Scenario                                                       | Use               |
+| -------------------------------------------------------------- | ----------------- |
+| One-off call to an external URL                                | HTTP Request node |
+| Repeated calls to the same service across multiple workflows   | API Connector     |
+| Service requires authentication that should be stored securely | API Connector     |
+| Quick prototype or test integration                            | HTTP Request node |
+| JSON endpoint should feed the bot's knowledge base              | API Knowledge Source using an API Connector |
 
 If you find yourself copy-pasting the same base URL and auth header into multiple HTTP nodes, create a connector instead.
 
@@ -22,39 +22,37 @@ Navigate to **Agentic → API Connectors** in your Filament panel and click **Ne
 
 ### Connection Details
 
-| Field | Description |
-|-------|-------------|
-| **Name** | A human-readable label, e.g., "Stripe API", "Internal CRM", "SendGrid" |
-| **Description** | Optional notes about what this connector is used for |
-| **Base URL** | The root URL for the API, e.g., `https://api.stripe.com/v1` |
-| **Authentication Type** | How the connector authenticates (see below) |
-| **Auth Credentials** | JSON-formatted credentials, stored encrypted at rest |
+| Field                   | Description                                                            |
+| ----------------------- | ---------------------------------------------------------------------- |
+| **Name**                | A human-readable label, e.g., "Stripe API", "Internal CRM", "SendGrid" |
+| **Description**         | Optional notes about what this connector is used for                   |
+| **Base URL**            | The root URL for the API, e.g., `https://api.stripe.com/v1`            |
+| **Authentication Type** | How the connector authenticates (see below)                            |
+| **Auth Credentials**    | JSON-formatted credentials, stored encrypted at rest                   |
 
 ### Authentication Types
 
-| Type | Credential JSON Format | What Happens |
-|------|------------------------|--------------|
-| **None** | — | No auth headers are added |
-| **API Key** | `{"header_name": "X-Api-Key", "api_key": "sk-..."}` | Adds the specified header with the key value |
-| **Bearer Token** | `{"token": "your-token"}` | Adds `Authorization: Bearer your-token` |
-| **Basic Auth** | `{"username": "user", "password": "pass"}` | Adds `Authorization: Basic <base64>` |
+| Type              | Credential JSON Format                                 | What Happens                                       |
+| ----------------- | ------------------------------------------------------ | -------------------------------------------------- |
+| **None**          | —                                                      | No auth headers are added                          |
+| **API Key**       | `{"header_name": "X-Api-Key", "api_key": "sk-..."}`    | Adds the specified header with the key value       |
+| **Bearer Token**  | `{"token": "your-token"}`                              | Adds `Authorization: Bearer your-token`            |
+| **Basic Auth**    | `{"username": "user", "password": "pass"}`             | Adds `Authorization: Basic <base64>`               |
 | **Custom Header** | `{"header_name": "X-Custom", "header_value": "value"}` | Adds the specified header with the specified value |
 
 > **Security note:** All credential values are stored using Laravel's encrypted casting. They are never stored in plain text in the database.
 
 Authentication credentials are validated before a request is sent. Missing tokens, invalid header names, or incomplete custom header credentials fail with a connector configuration error instead of sending an unauthenticated request. Connector auth headers also take precedence over default or per-request headers so `Authorization` cannot be accidentally overwritten.
 
-> **Current scope:** API Key, Bearer Token, Basic Auth, and Custom Header cover many practical APIs. OAuth2 login flows with refresh tokens are not implemented yet. See [API Source Roadmap](API_SOURCE_ROADMAP.md).
-
 ### Request Defaults
 
-| Field | Description | Default |
-|-------|-------------|---------|
-| **Default Headers** | JSON object merged into every request, e.g., `{"Content-Type": "application/json"}` | none |
-| **Default Timeout** | Seconds before a request times out | 30 |
-| **Verify SSL** | Whether to verify the server's TLS certificate | true |
-| **Expected Response Format** | `json`, `xml`, or `text` — helps the connector parse responses | auto-detect |
-| **Active** | Whether this connector is available for use in workflows | true |
+| Field                        | Description                                                                                                                             | Default     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ----------- |
+| **Default Headers**          | JSON object merged into every request, e.g., `{"Content-Type": "application/json"}`                                                     | none        |
+| **Default Timeout**          | Seconds before a request times out                                                                                                      | 30          |
+| **Verify SSL**               | Whether to verify the server's TLS certificate                                                                                          | true        |
+| **Expected Response Format** | `json`, `xml`, or `text` — stored as the operator's expected shape; runtime JSON-decodes when possible and otherwise keeps the raw body | auto-detect |
+| **Active**                   | Whether this connector is available for use in workflows                                                                                | true        |
 
 > **Runtime note:** `responseJsonPath` extraction only works on JSON responses. Non-JSON responses are preserved as raw text, and XML-specific parsing is not performed yet.
 
@@ -83,39 +81,26 @@ By default, connector failures stop the workflow. That includes missing or inact
 
 Enable `continueOnFail` only when a downstream branch or Error Handler node reads those variables and sends a deliberate fallback response.
 
-## Using A Connector For API Knowledge Sources
-
-Use an API Knowledge Source when JSON records should become searchable assistant knowledge:
-
-1. Create a connector for the service
-2. Open **Sources**
-3. Choose **API Source**
-4. Select the connector
-5. Enter the endpoint path, for example `/products?status=active`
-6. Map the returned records into text with a content template
-
-This is best for stable or semi-stable records such as product catalogs, CMS entries, public documentation records, or help-center article APIs. For live account-specific data, order status, stock levels, or write operations, use a workflow API Connector node instead of syncing the data into the knowledge index.
-
 ## Example: Stripe Charge Lookup
 
 **Connector setup:**
 
-| Field | Value |
-|-------|-------|
-| Name | Stripe API |
-| Base URL | `https://api.stripe.com/v1` |
-| Auth Type | Bearer Token |
-| Credentials | `{"token": "sk_live_..."}` |
+| Field           | Value                                                   |
+| --------------- | ------------------------------------------------------- |
+| Name            | Stripe API                                              |
+| Base URL        | `https://api.stripe.com/v1`                             |
+| Auth Type       | Bearer Token                                            |
+| Credentials     | `{"token": "sk_live_..."}`                              |
 | Default Headers | `{"Content-Type": "application/x-www-form-urlencoded"}` |
-| Timeout | 15 |
+| Timeout         | 15                                                      |
 
 **Workflow node:**
 
-| Field | Value |
-|-------|-------|
-| Connector | Stripe API |
-| Method | GET |
-| Path | `/charges/{charge_id}` |
+| Field     | Value                                          |
+| --------- | ---------------------------------------------- |
+| Connector | Stripe API                                     |
+| Method    | GET                                            |
+| Path      | `/charges/{charge_id}`                         |
 | Variables | `charge_id` from a previous Collect Input node |
 
 The connector merges its auth and headers with the node's path and variables to produce the final request.
@@ -126,7 +111,7 @@ The connector merges its auth and headers with the node's path and variables to 
 
 The connector list shows name, base URL, auth type badge, active status, and last update time. Use the search bar to filter by name.
 
-Use the row **Test** action to send a `GET` request to the connector base URL with the saved auth and default headers. A `404` can still be acceptable for APIs that require a path on the workflow node or API knowledge source. `401` and `403` usually indicate an auth or permission problem.
+Use the row **Test** action to send a `GET` request to the connector base URL with the saved auth and default headers. A `404` can still be acceptable for APIs that require a path on the workflow node or API knowledge source; `401` and `403` indicate an auth or permission problem.
 
 ### Editing
 
@@ -153,12 +138,9 @@ From the workflow editor, you can perform a **dry run** on an API Connector node
 - **Add notes** — record rate limits and usage constraints so your team does not hit them unexpectedly
 - **Test with dry runs** before publishing a workflow that depends on a new connector
 - **Keep `continueOnFail` off by default** unless the workflow has an explicit error path
-- **Use one connector per service** and reuse it from both workflows and API knowledge sources when appropriate
 
 ## Related Docs
 
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md) — how workflows use connectors
-- [Sources](RAG_SOURCES.md) — how API knowledge sources use connectors
-- [API Source Roadmap](API_SOURCE_ROADMAP.md) — current scope and planned improvements
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md) — the `apiConnector` node type schema
 - [Security And Privacy](SECURITY_AND_PRIVACY.md) — credential storage and data handling

@@ -25,6 +25,6 @@
 
 ## Links
 
-- Full changelog: [filament-agentic-chatbot CHANGELOG.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/CHANGELOG.md)
-- Upgrade guide: [QUICKSTART.md](QUICKSTART.md)
+- Full changelog: [CHANGELOG.md](CHANGELOG.md)
+- Upgrade guide: [UPGRADING.md](UPGRADING.md)
 - Previous release: [RELEASE_NOTES_v0.11.0.md](RELEASE_NOTES_v0.11.0.md)

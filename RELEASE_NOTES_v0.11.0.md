@@ -47,9 +47,10 @@ Existing installs should run migrations normally. Channel records are optional a
 
 ## Links
 
-- Full changelog: [CHANGELOG.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/CHANGELOG.md)
-- Upgrade guide: [UPGRADING.md](https://github.com/heinergiehl/filament-agentic-chatbot/blob/main/UPGRADING.md)
+- Full changelog: [CHANGELOG.md](CHANGELOG.md)
+- Upgrade guide: [UPGRADING.md](UPGRADING.md)
 - Channel integrations: [CHANNELS.md](CHANNELS.md)
 - API integrations: [API_INTEGRATIONS.md](API_INTEGRATIONS.md)
 - Workflow JSON schema: [WORKFLOW_JSON_SCHEMA.md](WORKFLOW_JSON_SCHEMA.md)
 - Known limitations: [KNOWN_LIMITATIONS.md](KNOWN_LIMITATIONS.md)
+- Previous release: [RELEASE_NOTES_v0.10.0.md](RELEASE_NOTES_v0.10.0.md)

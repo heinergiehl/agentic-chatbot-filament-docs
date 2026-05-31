@@ -10,7 +10,7 @@
             },
             "data": {
                 "label": "Provider Neutral",
-                "noteContent": "This workflow uses the built-in generate_image action. Configure RAG_WORKFLOW_IMAGE_TRANSPORT, provider/model, or HTTP URL outside the workflow so the same JSON works with native cloud providers and local HTTP image endpoints.",
+                "noteContent": "This workflow uses the built-in generate_image action. Configure AGENTIC_CHATBOT_WORKFLOW_IMAGE_TRANSPORT, provider/model, or HTTP URL outside the workflow so the same JSON works with native cloud providers and local HTTP image endpoints.",
                 "color": "#bfdbfe"
             }
         },

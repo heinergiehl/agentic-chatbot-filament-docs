@@ -11,59 +11,54 @@ php artisan queue:work
 If using a dedicated ingestion queue:
 
 ```bash
-php artisan queue:work database --queue=rag-ingestion
+php artisan queue:work database --queue=agentic-chatbot-ingestion
 ```
 
 `pending` sources are expected while waiting for retries after provider rate limits.  
 If pending items do not move for several minutes, verify worker health and provider quotas.
 
+Source deletion also uses the queue when the backend needs an external vector delete call. Keep workers running after bulk deletes so `CleanupKnowledgeSourceVectorsJob` can remove Chroma vectors by collected chunk ID. The job is idempotent and safe to retry.
+
 ## Scheduled API Source Sync
 
-API knowledge sources can be re-synced periodically. The plugin provides:
+API knowledge sources can be configured with **Auto Sync** and a sync interval in the source form. The plugin exposes a command that queues due API sources:
 
 ```bash
-php artisan filament-agentic-chatbot:sync-rag-sources
+php artisan filament-agentic-chatbot:sync-knowledge-sources
 ```
 
-Useful options:
-
-- `--dry-run`: show which sources are due without dispatching ingestion jobs
-- `--force`: sync matching API sources even when they are not due yet
-- `--source=123`: restrict sync to one source ID
-- `--limit=25`: cap how many due sources are dispatched in one run
-
-Recommended scheduler setup:
+Call it from Laravel's scheduler every minute or every few minutes:
 
 ```php
 use Illuminate\Support\Facades\Schedule;
 
-Schedule::command('filament-agentic-chatbot:sync-rag-sources')->everyMinute();
+Schedule::command('filament-agentic-chatbot:sync-knowledge-sources')->everyMinute();
 ```
 
-Each API source still controls its own interval in the Filament form. The scheduler command only decides which enabled sources are due and queues them. Previous API documents remain active if a new sync fails.
-
-## Dev Bootstrap
-
-For local onboarding, run:
+Useful options:
 
 ```bash
-php artisan filament-agentic-chatbot:dev-bootstrap
+php artisan filament-agentic-chatbot:sync-knowledge-sources --dry-run
+php artisan filament-agentic-chatbot:sync-knowledge-sources --force
+php artisan filament-agentic-chatbot:sync-knowledge-sources --source=123
+php artisan filament-agentic-chatbot:sync-knowledge-sources --limit=25
 ```
 
-Useful flags:
-
-- `--no-docker` (if services already run)
-- `--services=pgsql,chroma` (start both services for backend switching tests)
-- `--no-doctor` (skip readiness checks)
+The command only queues sources whose `next_sync_at` is due. It skips busy sources and inactive bots. Successful dispatch records `meta.api.sync.last_scheduled_at` and advances `meta.api.sync.next_sync_at`.
 
 ## Signed Widget Tokens
 
 If enabled, all widget API requests require a valid signed token.
 
 ```env
-RAG_WIDGET_SIGNING_ENABLED=true
-RAG_WIDGET_SIGNING_KEY=your-long-random-secret
+AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true
+AGENTIC_CHATBOT_WIDGET_SIGNING_KEY=your-long-random-secret
+AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS=false
+AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS=false
+AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=false
 ```
+
+For browser embeds, prefer the `X-filament-agentic-chatbot-Token` header. Keep query/body token compatibility only during migration.
 
 ## Health Check
 
@@ -75,34 +70,11 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as a release blocker.
 
-The AgentGraph SDK refactor adds SDK persistence checks to this command. When the SDK store is database-backed, `doctor` verifies that the expected `agent_graph_*` tables exist. If the SDK store is configured as memory, those table checks are skipped.
+For faster in-panel checks during setup, use the **Setup Check** action on bot and source pages. It gives you a quick vector-backend and queue-readiness signal before you fall back to the full doctor command.
 
-## Assistant Graph Runtime
+Supported vector backends today are `pgvector` and `chroma`. If the doctor output mentions Pinecone scaffolding, that path is not a supported production backend yet.
 
-The assistant graph is the default chat runtime after the AgentGraph SDK refactor. New installs should use the `AGENTIC_CHATBOT_ASSISTANT_GRAPH_*` environment variables when overriding runtime behavior:
-
-```env
-AGENTIC_CHATBOT_ASSISTANT_GRAPH_ENABLED=true
-AGENTIC_CHATBOT_ASSISTANT_GRAPH_WORKFLOW_TOOL_ENABLED=true
-```
-
-The older `RAG_PARENT_AGENT_*` variables are still read as compatibility fallbacks, but product and deployment docs should prefer the assistant graph names.
-
-## AgentGraph SDK Persistence
-
-The plugin auto-loads AgentGraph SDK migrations through the SDK manager, so a normal host-app migration should create the SDK tables:
-
-- `agent_graph_runs`
-- `agent_graph_checkpoints`
-- `agent_graph_writes`
-- `agent_graph_tasks`
-- `agent_graph_interrupts`
-- `agent_graph_memories`
-- `agent_graph_traces`
-
-If `php artisan filament-agentic-chatbot:doctor` reports missing SDK tables, run `php artisan migrate` in the host app and confirm the SDK package is resolvable by Composer.
-
-For existing production apps, read [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) before migrating. The AgentGraph cutover creates SDK persistence tables and cancels old open workflow runs that do not have `workflow_runs.meta.agent_graph.run_id`.
+Production warnings are intentionally early and actionable. Review warnings for widget query/body token transport, active bots without domain allowlists, APP_KEY fallback signing, multiple active workflows on one bot, full workflow trace capture, and encrypted bot credentials that cannot decrypt with the current `APP_KEY`.
 
 ## Enterprise Smoke Test
 
@@ -122,32 +94,63 @@ The command creates temporary QA bots, workflows, and Bot Access Tokens, then ch
 
 Temporary records are removed automatically. Add `--keep-records` only when you need to inspect the generated fixtures.
 
-## AI Usage Monitoring
+## Commercial Profile
 
-Use **Agentic Chatbot > AI Usage** to inspect stored provider usage events across bots and access tokens.
+If you run the plugin in commercial mode, set the profile metadata that the doctor command checks before launch:
 
-Use a bot's **Analytics** page to review per-bot token volume, estimated cost, provider calls, and active API tokens with monthly budgets.
+```env
+AGENTIC_CHATBOT_COMMERCIAL_MODE=true
+AGENTIC_CHATBOT_ANYSTACK_ID=your-anystack-product-id
+AGENTIC_CHATBOT_DOCS_URL=https://github.com/heinergiehl/agentic-chatbot-filament-docs
+AGENTIC_CHATBOT_SUPPORT_EMAIL=webdevislife2021@gmail.com
+```
 
-## Data Resource Workflows
+Use a public documentation URL for `AGENTIC_CHATBOT_DOCS_URL`, not an internal admin route or a private repository link.
 
-For workflows that use `query_data_resource`:
+## Workflow Runtime Guardrails
 
-- Register the required data resources in the host app configuration.
-- Restrict each bot to the minimum required resource keys.
-- Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated workflows map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
-- Re-check permissions and config cache after publishing configuration changes.
-- Validate one real workflow run against representative production data before go-live.
+- `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks workflow HTTP Request and API Connector nodes from targeting localhost, RFC1918, or other reserved/private destinations.
+- `AGENTIC_CHATBOT_WORKFLOW_RUNNING_TIMEOUT_SECONDS` lets abandoned `running` workflow executions be reclaimed so future conversations are not blocked forever.
+- `AGENTIC_CHATBOT_WORKFLOW_TRACE_CAPTURE_*`, `AGENTIC_CHATBOT_WORKFLOW_TRACE_MAX_STRING_LENGTH`, and `AGENTIC_CHATBOT_WORKFLOW_TRACE_REDACT_*` control how much trace data is stored and how sensitive values are scrubbed.
+
+If all trace capture flags are left enabled in production, doctor reports a warning. That keeps this release compatible while making privacy review explicit.
+
+## Ingestion Fetch Limits
+
+URL ingestion is bounded by:
+
+```env
+AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES=5242880
+AGENTIC_CHATBOT_INGESTION_MAX_REDIRECTS=3
+AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS=false
+```
+
+Allowed content types live in `filament-agentic-chatbot.ingestion.allowed_content_types`. Keep JSON out of generic URL ingestion unless you intentionally need it for a curated source path; API knowledge sources remain the right integration point for authenticated JSON records.
+
+## Runtime Write Pressure
+
+Bot Access Tokens update `last_used_at` at most once per throttle window:
+
+```env
+AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES=5
+```
+
+Session and IP chat rate limits are configured independently with `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE_PER_IP`.
 
 ## Go-Live Baseline
 
 Before production launch:
 
-- `RAG_VECTOR_BACKEND=pgvector`
-- If app DB is MySQL, set `RAG_DB_CONNECTION=rag_pgsql` and configure `RAG_DB_*` PostgreSQL env vars
+- `AGENTIC_CHATBOT_VECTOR_BACKEND=pgvector`
+- If app DB is MySQL, set `AGENTIC_CHATBOT_DB_CONNECTION=agentic_chatbot_pgsql` and configure `AGENTIC_CHATBOT_DB_*` PostgreSQL env vars
 - Queue worker process is supervised (systemd/Supervisor/Horizon)
-- `RAG_WIDGET_SIGNING_ENABLED=true` with a strong signing key
+- Laravel scheduler calls `filament-agentic-chatbot:sync-knowledge-sources` if API source auto sync is used
+- `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` with a strong signing key
+- If `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, set `AGENTIC_CHATBOT_ANYSTACK_ID`, `AGENTIC_CHATBOT_DOCS_URL`, and `AGENTIC_CHATBOT_SUPPORT_EMAIL`
 - Domain allowlist configured per bot
-- Existing apps checked against [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) before migration
+- Header-only widget token transport for public embeds
+- No workflow routing conflicts in the Workflows list
+- Knowledge sources show completed chunks before public launch
 - At least one successful load test run against a production-like environment
 
 ## Load Test Baseline
@@ -166,9 +169,20 @@ Track:
 
 ## Recovery Playbook
 
-- If ingestion fails: inspect `rag_sources.meta.error`, retry ingestion from Sources table.
-- If ingestion is pending: inspect `rag_sources.meta.retry_after` and `rag_sources.meta.retry_delay_seconds`.
-- If API source sync does not run: confirm the Laravel Scheduler is active and run `php artisan filament-agentic-chatbot:sync-rag-sources --dry-run`.
+- If ingestion fails: inspect `bot_knowledge_sources.meta.error`, retry ingestion from Sources table.
+- If ingestion is pending: inspect `bot_knowledge_sources.meta.retry_after` and `bot_knowledge_sources.meta.retry_delay_seconds`.
+- If API auto sync does not run: inspect `bot_knowledge_sources.meta.api.sync.next_sync_at`, run the sync command with `--dry-run`, and verify Laravel Scheduler is active.
 - If you changed vector backend/model settings: use `Re-Ingest Bot Sources` (bot page) or `Re-Ingest All Sources` (sources list).
+- If bot setup still feels unclear: use `Test Retrieval`, `Test Bot Answer`, and `Setup Check` before you debug deeper infrastructure.
 - If chat rate-limited: reduce traffic burst and add retry backoff in clients.
 - If retrieval quality drops: tune `top_k`, `min_similarity`, and source quality.
+
+## Data Resources (query_data_resource)
+
+For workflows that use `query_data_resource`:
+
+- Register the required data resources in the host app configuration.
+- Restrict each bot to the minimum required resource keys.
+- Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated workflows map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
+- Re-check permissions and config cache after publishing configuration changes.
+- Validate one real workflow run against representative production data before go-live.

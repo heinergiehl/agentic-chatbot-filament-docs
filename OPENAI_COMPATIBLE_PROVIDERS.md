@@ -7,11 +7,11 @@ This is useful for Qwen/DashScope compatible mode, private gateways, local OpenA
 ## Configure Globally
 
 ```env
-RAG_CHAT_PROVIDER=openai_compatible
-RAG_CHAT_MODEL=qwen-plus
-RAG_OPENAI_COMPATIBLE_DRIVER=openrouter
-RAG_OPENAI_COMPATIBLE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
-RAG_OPENAI_COMPATIBLE_API_KEY=your-provider-key
+AGENTIC_CHATBOT_CHAT_PROVIDER=openai_compatible
+AGENTIC_CHATBOT_CHAT_MODEL=qwen-plus
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_DRIVER=openrouter
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_BASE_URL=https://dashscope-intl.aliyuncs.com/compatible-mode/v1
+AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY=your-provider-key
 ```
 
 ## Configure Per Bot
@@ -22,7 +22,7 @@ In **Agentic Chatbot > Bots**:
 2. Set **Model Source** to **Manual ID** if the model is not in the curated list.
 3. Enter the provider model ID, for example `qwen-plus`.
 4. Enter **Custom Base URL**.
-5. Enter the bot's chat provider API key, or rely on `RAG_OPENAI_COMPATIBLE_API_KEY`.
+5. Enter the bot's chat provider API key, or rely on `AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY`.
 
 The custom base URL is used for normal bot answers and workflow AI Agent nodes. If a bot uses `openai_compatible` and no base URL can be resolved from bot config or env, the runtime fails before making a provider call.
 
@@ -71,13 +71,13 @@ The usage dashboard can record provider-reported token usage for OpenAI-compatib
 ],
 ```
 
-If pricing is not configured, token budgets still work and cost events show as unpriced.
+If pricing is not configured, token budgets still work and cost events without cost budgets show as unpriced. Monthly cost budgets intentionally fail closed without pricing because the plugin cannot enforce a currency ceiling safely.
 
 ## Troubleshooting
 
 | Symptom | Check |
 | --- | --- |
-| `OpenAI-compatible chat providers require a custom base URL.` | Add **Custom Base URL** on the bot or set `RAG_OPENAI_COMPATIBLE_BASE_URL`. |
+| `OpenAI-compatible chat providers require a custom base URL.` | Add **Custom Base URL** on the bot or set `AGENTIC_CHATBOT_OPENAI_COMPATIBLE_BASE_URL`. |
 | 401/403 from provider | Confirm the API key belongs to the same region/account as the base URL. |
 | Model not found | Switch **Model Source** to **Manual ID** and use the exact provider model ID. |
 | Provider rejects `/v1` path | Use the vendor's documented base URL. Some providers expect `/v1`; others document the root host. |

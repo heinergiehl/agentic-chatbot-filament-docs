@@ -1,109 +1,99 @@
 # AgentGraph SDK Usage
 
-This page documents how Filament Agentic Chatbot uses the `heiner/agent-graph` SDK after the post-`v0.12.0` runtime refactor.
-
-It is mainly for maintainers, advanced implementers, and host-app teams debugging runtime or migration issues. Normal buyers should start with [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md), [Bots](BOTS.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md). Upgrade planners should also read [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md).
+This document records the AgentGraph SDK surface currently used by the plugin. It is a local SDK alignment note, not a release checklist. Do not tag, publish, or bump `heiner/agent-graph` from this document.
 
 ## Current Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current refactor branch constraint: `0.13.0-beta.1`
-- The SDK is a transitive runtime dependency of the plugin.
-- If the SDK is not available from Packagist or Private Packagist yet, the host app must add the SDK Git repository to its root Composer repositories before requiring the plugin from a VCS branch.
+- Current plugin constraint: `^0.13.0`
+- Sandbox resolution: `v0.13.0`
+- The sandbox tracks the stable 0.13 SDK line so local host-app validation exercises the same public SDK surface as the plugin.
 
-```bash
-composer config repositories.agent-graph vcs https://github.com/heinergiehl/agent-graph.git
-composer config repositories.filament-agentic-chatbot vcs https://github.com/heinergiehl/filament-agentic-chatbot.git
-composer require heiner/filament-agentic-chatbot:'*@dev'
-```
+## Runtime Entry Points
 
-## What The SDK Runs
+- `AgentGraphManager`
+  - Used for `define(...)`, fluent graph execution through `graph(...)->thread(...)->input(...)->meta(...)->run()`, direct `run(...)`, `resume(...)`, `inspect(...)`, and `timeline(...)`.
+  - Used by workflow runtime, assistant chat runtime, sub-workflows, projection, and run inspection.
+- `StateGraph`
+  - Used to compile plugin workflow JSON and the generic assistant chat turn graph.
+  - Required operations: `make(...)`, `state(...)`, `node(...)`, `edge(...)`, `conditional(...)`, `compile()`, `START`, and `END`.
+- `GraphDefinition`
+  - Returned by workflow compilation and passed into nested sub-workflow execution.
+- `AgentNode`
+  - Used for assistant chat turns and workflow AI nodes.
+  - Required operations: `make(...)`, `agent(...)`, `prompt(...)`, `stream(...)`, `provider(...)`, `model(...)`, `writeTextTo(...)`, `onTextDelta(...)`, and invokable node execution.
+- `SubgraphNode`
+  - Used for workflow `subWorkflow` nodes instead of the former plugin-local subworkflow runtime node.
+  - Required operations: `make(...)`, `isolated(...)`, child run parent metadata, interrupt bubbling, and child resume through `child_run_id`/`child_interrupt_id`.
+- `GraphTool` / `DurableGraphTool`
+  - Available as SDK-native graph tool helpers.
+  - The plugin deliberately keeps its product-specific `RunWorkflowTool` because chat message persistence, workflow-run routing, protected runtime variables, and resume/cancel semantics are plugin-owned.
 
-The SDK is now used for two runtime layers:
+## Node Runtime Contracts
 
-- **Assistant chat graph**: `AssistantChatGraphRuntime` wraps normal chat turns in an SDK `StateGraph` and runs `AssistantAgent` through an SDK `AgentNode`.
-- **Workflow runtime**: `WorkflowRunner` delegates workflow execution to the AgentGraph runtime. The legacy workflow runtime has been removed from normal execution.
+- `Node`
+  - Implemented by plugin bridge nodes such as workflow executor, loop controller, and entry nodes. SDK `SubgraphNode` handles sub-workflow execution.
+- `NodeContext`
+  - Used for state reads, run metadata, checkpoint identity, resume payloads, task idempotency, memory access, and trace context.
+  - Required accessors include `state(...)`, `runId()`, `threadId()`, `checkpointId()`, `nodeId()`, `hasResumePayload()`, `resumePayload()`, `tasks()`, memory store access, and trace access.
+- `NodeResult`
+  - Used for normal writes, interrupts, explicit goto, end, and fail states.
+  - Required operations: `write(...)`, `interrupt(...)`, `goto(...)`, `end(...)`, `fail(...)`, `withMeta(...)`, and `withNodeMeta(...)`.
+- `RunResult`
+  - Used to project SDK execution back into `workflow_runs`.
+  - Required accessors include `state(...)`, `status()`, `runId()`, `threadId()`, `interrupt()`, `resumeAt()`, `failed()`, and `error()`.
 
-This means the product model is now:
+## Persistence And Inspection
 
-```text
-Bot
-  -> AssistantChatGraphRuntime
-      -> AssistantAgent
-          -> optional KnowledgeSearchTool
-          -> optional RunWorkflowTool
-  -> AgentGraph workflow runtime
-      -> workflow nodes
-      -> SDK checkpoints, interrupts, tasks, memory, traces
-```
+- SDK tables are required in host apps when `agent-graph.store` is database-backed:
+  - `agent_graph_runs`
+  - `agent_graph_checkpoints`
+  - `agent_graph_writes`
+  - `agent_graph_tasks`
+  - `agent_graph_interrupts`
+  - `agent_graph_memories`
+  - `agent_graph_node_executions`
+  - `agent_graph_traces`
+- The plugin currently auto-loads SDK migrations so normal host-app `php artisan migrate` includes them.
+- The plugin now resolves the SDK migration directory through `AgentGraphManager::migrationsPath()` instead of reflecting SDK service-provider internals.
+- `DoctorCommand` checks these tables on the app default connection unless the SDK store is configured as memory.
+- `RunSnapshot` is used by the Workflow Run inspector through `run()`, `traces()`, `checkpoints()`, and `interrupt()`.
+- `RunTimelineStep` is used for replay/debug traces through `nodeId()`, `stateBefore()`, `stateAfter()`, `meta()`, and `error()`.
 
-`ParentAgent` and `RagAgent` remain as compatibility aliases only:
+## Stores, Memory, Tasks, And Delays
 
-- `ParentAgent` aliases `AssistantAgent`
-- `RagAgent` aliases `WorkflowLlmAgent`
+- `DelayScheduler`
+  - The plugin binds this contract to `AgentGraphWorkflowDelayScheduler`.
+  - The scheduler implements the SDK `schedule(string $runId, array $payload, DateTimeInterface $resumeAt): void` contract.
+  - The scheduler dispatches plugin `ResumeWorkflowRunJob` when the SDK payload or run meta includes `workflow_run_id`; otherwise it falls back to SDK `ContinueDelayedGraphJob`.
+- `RunStore`
+  - Used by the delay scheduler to resolve run metadata.
+- `InterruptStore`
+  - Used by the inspector to list interrupts for a run.
+- `EnumerableMemoryStore`
+  - Used by workflow memory bridging and run inspection.
+  - Required operations: `read(...)`, `write(...)`, `search(...)`, and `listNamespace(...)`.
+- `MemoryScope`
+  - Used for run, conversation/thread, session/thread, bot/application, and actor-scoped memory.
+- `TaskRunner`
+  - Reached through `NodeContext::tasks()` and used with `once(...)` to make HTTP/API/action side effects idempotent per checkpoint.
+- `TaskStore`, `CheckpointStore`, `TraceStore`, `MemoryStore`, and in-memory store implementations are used in tests and inspection coverage.
 
-## SDK Entry Points Used
+## Plugin-Specific State Mapping
 
-- `AgentGraphManager` for defining, running, resuming, inspecting, and reading timelines.
-- `StateGraph` for assistant chat turns and compiled workflow graphs.
-- `AgentNode` for assistant chat and workflow AI calls.
-- `SubgraphNode` for workflow `subWorkflow` nodes.
-- `NodeContext` for state, metadata, checkpoint identity, resume payloads, memory, tasks, and traces.
-- `NodeResult` for writes, interrupts, explicit routing, end states, and failures.
-- `RunResult` for projecting SDK execution back into plugin workflow runs.
+- Plugin workflow state is encoded as SDK graph state through `AgentGraphWorkflowStateCodec`.
+- Transient runtime variables such as bot, conversation, workflow run, callbacks, and AgentGraph context are stripped before persistence.
+- The plugin stores SDK linkage under `workflow_runs.meta.agent_graph`:
+  - `run_id`
+  - `status`
+  - `thread_id`
+  - `interrupt`
+- Workflow resumes put user input into `AgentGraphInteractiveResumeHandler::RESUME_PAYLOAD_STATE_KEY` and pass the SDK interrupt id when available.
+- Sub-workflow resumes keep the parent state patch on the parent run, but pass only the child resume payload into SDK child runs. This avoids accidentally overwriting child graph state with parent graph variables.
 
-The plugin still keeps its product-specific `RunWorkflowTool` because chat persistence, workflow-run routing, resume/cancel behavior, and user-visible messaging are product concerns.
+## Later SDK Alignment Items
 
-## Persistence And Migrations
-
-Host apps using the database-backed SDK store need the SDK tables:
-
-- `agent_graph_runs`
-- `agent_graph_checkpoints`
-- `agent_graph_writes`
-- `agent_graph_tasks`
-- `agent_graph_interrupts`
-- `agent_graph_memories`
-- `agent_graph_traces`
-
-The plugin auto-loads the SDK migration directory through `AgentGraphManager::migrationsPath()`. A normal host-app `php artisan migrate` should therefore create both plugin tables and SDK tables.
-
-`php artisan filament-agentic-chatbot:doctor` checks these tables on the app default connection unless the SDK store is configured as memory.
-
-The database cutover also affects existing `workflow_runs`: old open runs without `workflow_runs.meta.agent_graph.run_id` are cancelled because the removed legacy runtime cannot safely resume them. See [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md) for the exact migration behavior and audit queries.
-
-## Workflow State Mapping
-
-Plugin workflow state is encoded into SDK graph state through `AgentGraphWorkflowStateCodec`.
-
-The plugin strips transient runtime variables before persistence, including bot objects, conversation objects, callbacks, and AgentGraph context objects.
-
-SDK linkage is stored on workflow runs under:
-
-```text
-workflow_runs.meta.agent_graph
-```
-
-Important keys:
-
-- `run_id`
-- `status`
-- `thread_id`
-- `interrupt`
-
-Workflow resumes pass user input through the SDK resume payload. Sub-workflow resumes keep parent and child state separate by passing only child resume payload into the child graph.
-
-## Delays, Tasks, Memory, And Inspection
-
-- Delay nodes use the SDK delay scheduler contract and dispatch the plugin `ResumeWorkflowRunJob` when the delayed run belongs to a plugin workflow run.
-- Side-effect nodes use SDK task idempotency so repeated checkpoint execution does not duplicate external actions.
-- Workflow memory uses SDK memory stores for conversation, workflow-run, session, actor, and bot scopes.
-- Workflow run inspection reads SDK snapshots, traces, checkpoints, interrupts, timeline steps, tasks, and memory instead of depending on legacy `node_traces`.
-
-## Operational Notes
-
-- Keep the assistant graph enabled by default.
-- Run `php artisan migrate` after installing or upgrading the SDK-backed plugin.
-- Run `php artisan filament-agentic-chatbot:doctor` before release.
-- Do not rename `RagBot`, `RagSource`, or other persisted model/table names only to remove old terminology. Those names remain compatibility details.
-- Prefer `AGENTIC_CHATBOT_ASSISTANT_GRAPH_*` and `AGENTIC_WORKFLOW_*` env names in new docs/config. Legacy `RAG_PARENT_AGENT_*` and related variables are compatibility fallbacks.
+- Confirm whether database store connection configuration should be SDK-controlled beyond the app default connection.
+- Keep `AgentNode` streaming/write APIs stable because both public assistant chat and workflow AI nodes depend on them.
+- Keep inspection APIs stable enough for host UIs to render checkpoints, interrupts, traces, timeline, tasks, and memory without reading SDK tables directly.
+- Revisit `DurableGraphTool` only if the SDK later gains enough product-level extension points to preserve the plugin's chat/workflow-run lifecycle semantics without duplicating them outside `RunWorkflowTool`.

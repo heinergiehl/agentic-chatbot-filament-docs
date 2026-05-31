@@ -1,6 +1,6 @@
 # Workflow Prompt Templates
 
-Ready-to-use prompts you can paste into the **"Generate Workflow"** dialog. Each prompt produces a complete, production-quality workflow. Copy any prompt below and paste it — the generator will produce a valid, runnable workflow.
+Ready-to-use prompts you can paste into the workflow editor's **AI Draft** panel. Each prompt produces a complete, production-quality workflow draft. Copy any prompt below and paste it into the generation prompt - the generator will produce a valid, runnable workflow draft.
 
 > **Tip:** After generation, review the visual graph, adjust system prompts to match your tone, and wire up any API connectors / actions.
 
@@ -150,29 +150,70 @@ Create a FAQ bot with smart escalation:
 
 ---
 
-## 8. Feedback Collection & Analysis
+## 8. Early Access Feedback Triage
 
-**Use case:** Collect structured feedback, analyze sentiment, and respond accordingly.
+**Use case:** Collect actionable buyer feedback, branch by intent, try self-service for docs/setup issues, and create a structured submission the product team can actually work from.
 
 ```
-Create a feedback collection workflow:
+Create an early-access product feedback workflow for a demo bot.
 
-1. Send: "We'd love your feedback! It helps us improve. 💬"
-2. Collect their rating (variableName: "rating", prompt: "How would you rate your experience?", inputType: "choice", choices: "⭐ Poor,⭐⭐ Fair,⭐⭐⭐ Good,⭐⭐⭐⭐ Great,⭐⭐⭐⭐⭐ Excellent")
-3. Collect detailed feedback (variableName: "feedback_text", prompt: "Tell us more — what went well and what could be better?", inputType: "text")
-4. Collect which area the feedback is about (variableName: "feedback_area", prompt: "Which area does your feedback relate to?", inputType: "choice", choices: "Product quality,Customer service,Delivery/shipping,Website/app,Pricing,Other")
-5. Use an AI agent (streamToChat: false, outputVariable: "sentiment", temperature: 0, maxTokens: 10) with system prompt: "Analyze the sentiment of this feedback. Respond with exactly ONE word: positive, neutral, or negative. Nothing else." User prompt: "Rating: {{rating}}\nFeedback: {{feedback_text}}"
-6. Use a switchRouter on {{sentiment}} with cases:
-   - case "positive" (label "Positive")
-   - case "neutral" (label "Neutral")
-   - case "negative" (label "Negative")
-   - default label "Other"
-7. Branch responses (all using outputVariable: "response", streamToChat: true):
-   - Positive: AI agent system prompt: "The customer left positive feedback. Write a warm, appreciative thank-you message. Mention that their feedback about {{feedback_area}} is valuable and will be shared with the team. Keep it brief and genuine." User prompt: "Rating: {{rating}}\nFeedback: {{feedback_text}}\nArea: {{feedback_area}}"
-   - Neutral: AI agent system prompt: "The customer left neutral feedback. Thank them, acknowledge their points about {{feedback_area}}, and ask one specific follow-up question to understand how we could improve. Be friendly." User prompt: "Rating: {{rating}}\nFeedback: {{feedback_text}}\nArea: {{feedback_area}}"
-   - Negative: AI agent system prompt: "The customer left negative feedback. Respond with empathy and concern. Apologize for the poor experience with {{feedback_area}}, acknowledge their specific complaints, and assure them the feedback will be escalated. Offer to have someone follow up personally. Be sincere, not scripted." User prompt: "Rating: {{rating}}\nFeedback: {{feedback_text}}\nArea: {{feedback_area}}"
-   - Default: same as Neutral branch
-8. All branches converge to sendMessage: "{{response}}"
+Important: do NOT build a simple rating or sentiment collector. Lightweight helpful / not-helpful answer feedback already exists in the widget. This workflow should collect deep, actionable product feedback.
+
+1. Send an intro message explaining that the bot can capture bug reports, feature requests, docs/setup issues, or general product feedback in a structured way.
+2. Collect feedback type (variableName: "feedback_type", inputType: "choice", choices: "Bug report,Feature request,Docs/setup issue,General product feedback").
+3. Collect a short title (variableName: "feedback_title", inputType: "text").
+4. Collect a detailed description (variableName: "feedback_detail", inputType: "text").
+5. Collect impact level (variableName: "impact_level", inputType: "choice", choices: "Low - minor annoyance,Medium - slows me down,High - blocks a task,Critical - production risk").
+6. Use a switchRouter on {{feedback_type}} with cases:
+   - case "Bug report" (label "Bug")
+   - case "Feature request" (label "Feature")
+   - case "Docs/setup issue" (label "Docs")
+   - default label "General"
+7. Bug branch:
+   - Collect expected behavior (variableName: "expected_behavior")
+   - Collect actual behavior (variableName: "actual_behavior")
+   - Collect reproduction steps (variableName: "reproduce_steps")
+   - Collect environment (variableName: "bug_environment", inputType: "choice", choices: "Sandbox demo,Local install,Staging app,Production app")
+   - Use a setVariable node to build one shared variable named "case_details" from those answers
+   - Use a setVariable node to assign "submission_type" = "bug_report"
+8. Feature branch:
+   - Collect desired outcome (variableName: "desired_outcome")
+   - Collect current workaround (variableName: "current_workaround")
+   - Collect use-case context (variableName: "use_case_context")
+   - Use a setVariable node to build one shared variable named "case_details"
+   - Use a setVariable node to assign "submission_type" = "feature_request"
+9. Docs/setup branch:
+   - Search the knowledge base with "{{feedback_title}} {{feedback_detail}}" (outputVariable: "kb_docs_context")
+   - Use a hidden AI agent (streamToChat: false, temperature: 0, maxTokens: 10) to classify the docs coverage as exactly one word: covered or gap (outputVariable: "docs_coverage")
+   - Use a condition checking whether {{docs_coverage}} contains "covered"
+   - YES path: use a user-facing AI agent (streamToChat: true) to answer with the docs context, then collect whether it solved the issue (variableName: "docs_resolution_status", choices: "Solved,Partly solved,Still blocked") and build shared "case_details"
+   - NO path: send a message that no confident docs answer was found and build shared "case_details" explaining that it is still blocked
+   - Merge the docs paths with a join node
+   - Use a setVariable node to assign "submission_type" = "docs_setup_issue"
+10. General branch:
+   - Use a setVariable node to create a simple shared "case_details" summary
+   - Use a setVariable node to assign "submission_type" = "general_feedback"
+11. Merge all four branches with a join node.
+12. Collect follow-up permission (variableName: "follow_up_permission", inputType: "choice", choices: "Yes, you may follow up,No follow-up needed").
+13. Use a condition checking whether {{follow_up_permission}} contains "Yes":
+   - YES path: collect follow-up email (variableName: "contact_email", inputType: "email") and set a shared variable "followup_message" like "If we need more context, we can reach you at {{contact_email}}."
+   - NO path: use a setVariable node to assign "contact_email" = "not_provided" and another setVariable node for "followup_message" = "No follow-up contact was requested."
+14. Merge the follow-up paths with a join node.
+15. Use a hidden AI agent (streamToChat: false, temperature: 0, maxTokens: 120) to generate an internal triage note in exactly three lines and store it as "operator_triage":
+   - Line 1: "Priority: low | medium | high | critical"
+   - Line 2: "Area: workflow editor | runtime | widget | docs/setup | AI quality | integration | other"
+   - Line 3: "Summary: <concise actionable summary>"
+16. If the linked bot exposes write capability and a registered submission schema named "feedback_form", add a final store_submission action with:
+   - schema_key = "feedback_form"
+   - payload fields: feedback_type, title, detail, impact, case_details, follow_up_permission, contact_email, operator_triage
+   - meta.source = "workflow_template.early_access_feedback_triage"
+17. Send a confirmation message that references {{feedback_type}} and {{followup_message}}.
+
+Implementation notes:
+- Use join nodes for both docs-path convergence and final branch convergence.
+- Keep provider and model empty so the bot defaults are used.
+- Hidden classification / triage AI nodes must use streamToChat: false.
+- The docs answer node should use streamToChat: true because it is user-facing.
 ```
 
 ---

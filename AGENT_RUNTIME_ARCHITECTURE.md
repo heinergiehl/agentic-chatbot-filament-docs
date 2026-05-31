@@ -9,7 +9,7 @@ The important product distinction is:
 - **AssistantChatGraphRuntime** runs chat turns through the SDK graph.
 - **Knowledge search** is an optional source-grounding capability, not the default chatbot mode.
 - **Workflows** are executable playbooks exposed to the assistant as a tool.
-- **ParentAgent** and **RagAgent** remain deprecated compatibility aliases only.
+- **ParentAgent** and **KnowledgeAgent** remain deprecated compatibility aliases only.
 
 ## Default Runtime
 
@@ -36,8 +36,8 @@ The assistant decides whether to answer directly, search uploaded sources, run o
 Source-grounded retrieval remains a first-class capability. The source, document, chunk, embedding, and vector-store pipeline is still the grounding layer for factual answers when it is explicitly used.
 
 ```text
-AssistantAgent -> KnowledgeSearchTool -> RagService -> answer grounded in retrieved context
-Workflow -> knowledgeBase node -> RagService -> answer/contextBuilder/confidenceCheck
+AssistantAgent -> KnowledgeSearchTool -> KnowledgeRetrievalService -> answer grounded in retrieved context
+Workflow -> knowledgeBase node -> KnowledgeRetrievalService -> answer/contextBuilder/confidenceCheck
 ```
 
 This keeps normal chat conversational while preserving source-backed answers and citations for assistants and workflows that need them.
@@ -83,9 +83,9 @@ The assistant may use these for conversational continuity, follow-up references,
 
 `ParentAgent` is a deprecated alias of `AssistantAgent`.
 
-`RagAgent` is a deprecated alias of `WorkflowLlmAgent`.
+`KnowledgeAgent` is a deprecated alias of `WorkflowLlmAgent`.
 
-Do not rename database tables or model classes just to remove the word `Rag`; that would create unnecessary migration and API risk. Product copy should say "bot", "assistant", "knowledge", and "sources" instead of presenting RAG as the whole chatbot.
+Legacy `Rag*` database and model names have been renamed to the Bot/Knowledge domain. Product copy should say "bot", "assistant", "knowledge", and "sources" instead of presenting RAG as the whole chatbot.
 
 ## Naming Rules
 
@@ -101,7 +101,7 @@ Use these terms in product and documentation copy:
 | Retrieval | The bot knows this |
 | Workflow tool | Workflow takeover |
 
-`RagBot`, `RagSource`, `RagDocument`, and `RagChunk` remain internal storage names for backward compatibility.
+`Bot`, `KnowledgeSource`, `KnowledgeDocument`, and `KnowledgeChunk` are the canonical domain model names.
 
 ## Best Practices
 

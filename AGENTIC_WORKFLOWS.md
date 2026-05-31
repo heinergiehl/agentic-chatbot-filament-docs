@@ -135,7 +135,7 @@ Supported schema styles:
 
 ### Knowledge Base
 
-Runs source retrieval inside the workflow. This lets the assistant stay grounded in your documentation while still following a multi-step process. Configure it with the same `top_k` and `min_similarity` controls available on the bot.
+Runs knowledge retrieval inside the workflow. This lets the assistant stay grounded in your documentation while still following a multi-step process. Configure it with the same `top_k` and `min_similarity` controls available on the bot.
 
 ### Confidence Check
 
@@ -333,6 +333,10 @@ The important assignment rule is:
 - a bot may route chat to only one enabled workflow at a time
 - enabling a different linked workflow replaces the previous live chat assignment
 - if you need multiple distinct chatbot experiences, create multiple bots
+
+Activation uses a shared service in the edit page, list-page conflict repair action, and model-level safety net. If legacy data contains multiple active workflows for one bot, the Workflows list shows a routing conflict and **Fix routing conflicts** normalizes the bot back to one live workflow. The doctor command also warns about this state in production checks.
+
+Sources make direct bots useful; active workflows must explicitly search sources. The workflow editor warns when a source-backed bot is assigned but the draft has no reachable Knowledge Base node, and the empty-canvas starter recommends **Knowledge Assistant** as the default source-grounded flow.
 
 This is the intended UX model. Do not treat multiple workflows on one bot as multiple chatbot products. Treat them as alternate drafts or releases for one chatbot.
 

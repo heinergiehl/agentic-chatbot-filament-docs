@@ -10,7 +10,7 @@
             },
             "data": {
                 "label": "Gemini Imagen Fast",
-                "noteContent": "This workflow uses the generic generate_image action with Google Gemini API Imagen 4 Fast. Configure RAG_WORKFLOW_IMAGE_HTTP_HEADERS with your x-goog-api-key header and allow generativelanguage.googleapis.com. The sendMessage node passes both imageUrl and imageArtifact so Slack and Telegram can upload the stored file directly.",
+                "noteContent": "This workflow uses the generic generate_image action with Google Gemini API Imagen 4 Fast. Configure AGENTIC_CHATBOT_WORKFLOW_IMAGE_HTTP_HEADERS with your x-goog-api-key header and allow generativelanguage.googleapis.com. The sendMessage node passes both imageUrl and imageArtifact so Slack and Telegram can upload the stored file directly.",
                 "color": "#dbeafe"
             }
         },

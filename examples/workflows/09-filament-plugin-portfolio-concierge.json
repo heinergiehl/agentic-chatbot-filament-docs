@@ -227,7 +227,7 @@
                 "prompt": "Which plugin is your current favorite?",
                 "variableName": "favorite_plugin",
                 "inputType": "choice",
-                "choices": "[{\"label\":\"Filament RAG\",\"value\":\"Filament RAG\"},{\"label\":\"Filament Image Studio Pro\",\"value\":\"Filament Image Studio Pro\"},{\"label\":\"Filament Agentic Chatbot\",\"value\":\"Filament Agentic Chatbot\"}]",
+                "choices": "[{\"label\":\"Filament Knowledge Assistant\",\"value\":\"Filament Knowledge Assistant\"},{\"label\":\"Filament Image Studio Pro\",\"value\":\"Filament Image Studio Pro\"},{\"label\":\"Filament Agentic Chatbot\",\"value\":\"Filament Agentic Chatbot\"}]",
                 "required": true
             }
         },

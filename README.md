@@ -26,6 +26,18 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 ---
 
+## Versioned Documentation
+
+`main` tracks the latest documentation work. Frozen documentation snapshots are tagged to match plugin releases:
+
+- Current plugin release docs: [v0.13.0 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.0)
+- Current plugin release tag: [`v0.13.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.13.0)
+- Historical snapshots: [`v0.12.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.12.0), [`v0.9.8`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.9.8)
+
+When the plugin ships a new version, the docs repo should receive the same tag, for example plugin `v0.14.0` -> docs `v0.14.0`.
+
+---
+
 ## Start Here
 
 If you are evaluating the plugin, read these in order:
@@ -135,6 +147,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 - [Quickstart](QUICKSTART.md)
 - [Operations](OPERATIONS.md)
+- [Upgrading](UPGRADING.md)
 - [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
@@ -142,7 +155,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 - [Bots](BOTS.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
-- [Sources](RAG_SOURCES.md)
+- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md)
@@ -155,7 +168,8 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
-- [Release Notes v0.12.0](RELEASE_NOTES_v0.12.0.md)
+- [Release Notes v0.13.0](RELEASE_NOTES_v0.13.0.md)
+- [Changelog](CHANGELOG.md)
 - [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
@@ -169,6 +183,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Refund And License](REFUND_AND_LICENSE.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
 - [Data Retention Policy](DATA_RETENTION_POLICY.md)
+- [Privacy Policy Template](PRIVACY_POLICY_TEMPLATE.md)
 - [Known Limitations](KNOWN_LIMITATIONS.md)
 
 ## Common Questions
@@ -183,7 +198,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - How do I call a bot from a custom backend? → [API Integrations](API_INTEGRATIONS.md)
 - How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
 - How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
-- Can the bot use API-fed knowledge or database-backed resources? → [Sources](RAG_SOURCES.md), [API Source Roadmap](API_SOURCE_ROADMAP.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- Can the bot use API-fed knowledge or database-backed resources? → [Knowledge Sources](KNOWLEDGE_SOURCES.md), [API Source Roadmap](API_SOURCE_ROADMAP.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
@@ -191,9 +206,9 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 ## Versioning
 
-Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way where practical.
+Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current compatibility baseline is `v0.12.0`: PHP 8.3+, Laravel 12 or 13, and Filament 5.2+. The current docs also cover the post-`v0.12.0` AgentGraph SDK refactor where the assistant graph is the default runtime and old agent class names are compatibility aliases.
+The current public compatibility baseline is `v0.13.0`: PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0`. The `v0.12.0` tag was an early preview; new installs should target `^0.13.0`.
 
 ## Related Repositories
 
