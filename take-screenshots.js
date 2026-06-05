@@ -6,10 +6,13 @@
  */
 
 const { chromium } = require('playwright');
+const { spawnSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
 
-const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://127.0.0.1:8010';
+const DEFAULT_BASE_URL = 'http://filament-agentic-chatbot.localhost:8000';
+const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || DEFAULT_BASE_URL;
+const DEMO_APP_DIR = process.env.AGENTIC_DOCS_DEMO_APP_DIR || path.resolve(__dirname, '..', 'filament-demos');
 const OUT_DIR = path.join(__dirname, 'images', 'agentic-chatbot');
 
 const VIEWPORT = { width: 1600, height: 1200 };
@@ -39,10 +42,26 @@ const screenshots = {
   workflowDark: '18-workflow-editor-dark-mode.png',
 };
 
+function browserLaunchArgs() {
+  let hostname = '';
+
+  try {
+    hostname = new URL(BASE_URL).hostname;
+  } catch (error) {
+    return [];
+  }
+
+  if (!hostname.endsWith('.localhost')) {
+    return [];
+  }
+
+  return [`--host-resolver-rules=MAP ${hostname} 127.0.0.1`];
+}
+
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({ headless: true, args: browserLaunchArgs() });
   const context = await browser.newContext({ viewport: VIEWPORT });
   const page = await context.newPage();
 
@@ -89,21 +108,21 @@ async function main() {
       await activateControl(page.locator('#mode-debug'));
       await activateControl(page.locator('#tab-quality'));
       await page.locator('#panel-quality').waitFor({ state: 'visible' });
-      await page.getByText('Enterprise rollout answer stays grounded').first().waitFor({ state: 'visible' });
-    }, { zoomClicks: 7 });
+      await page.getByText(/Enterprise rollout answer stays grounded|Quality/i).first().waitFor({ state: 'visible' });
+    }, { clip: 'sidebar', zoomClicks: 0 });
 
     await captureWorkflowEditor(page, screenshots.workflowGenerate, async () => {
       await activateControl(page.locator('#mode-generate'));
       const workflowBrief = page.getByRole('textbox', { name: 'Workflow brief' });
       await workflowBrief.waitFor({ state: 'visible' });
       await workflowBrief.fill('Build a buyer support workflow that retrieves docs, routes by intent, and enriches enterprise leads via a CRM connector before replying.');
-    }, { zoomClicks: 7 });
+    }, { clip: 'sidebar', zoomClicks: 0 });
 
     await captureWorkflowEditor(page, screenshots.workflowRuns, async () => {
       await activateControl(page.locator('#mode-debug'));
       await activateControl(page.locator('#tab-executions'));
       await page.locator('#panel-executions .fi-wf-run-card').first().waitFor({ state: 'visible' });
-    }, { zoomClicks: 7 });
+    }, { clip: 'sidebar', zoomClicks: 0 });
 
     await captureWorkflowEditor(page, screenshots.workflowRunTrace, async () => {
       await activateControl(page.locator('#mode-debug'));
@@ -117,22 +136,19 @@ async function main() {
     }, { zoomClicks: 7 });
 
     await captureAdminPage(page, '/admin/bot-quality-scenarios', screenshots.qualityLab, /Quality Scenarios/i, async () => {
-      await searchAdminTable(page, 'Enterprise rollout');
-      await waitForRowText(page, 'Enterprise rollout answer stays grou');
+      await waitForFirstTableRow(page);
     });
 
     await captureAdminPage(page, '/admin/bot-handoff-requests', screenshots.handoffInbox, /Handoff Requests/i, async () => {
-      await searchAdminTable(page, 'Buyer escalation');
-      await waitForRowText(page, 'Buyer escalation needs operator');
+      await waitForFirstTableRow(page);
     });
 
     await captureWorkflowEditor(page, screenshots.workflowReleases, async () => {
       await activateControl(page.locator('#mode-release'));
       await page.locator('#panel-releases').getByText('Live').first().waitFor({ state: 'visible' });
-    }, { zoomClicks: 7 });
+    }, { clip: 'sidebar', zoomClicks: 0 });
 
     await captureAdminPage(page, '/admin/api-connectors', screenshots.apiConnectors, /Api Connectors/i, async () => {
-      await searchAdminTable(page, 'CRM Lead Qualification API');
       await waitForFirstTableRow(page);
     });
 
@@ -217,33 +233,7 @@ async function captureAdminPage(page, adminPath, fileName, heading, beforeShot, 
 async function captureNewSourcePage(page, fileName) {
   await goto(page, '/admin/knowledge-sources/create');
   await page.getByRole('heading', { level: 1, name: /New Source|Create Source|Create Knowledge Source|Sources/i }).first().waitFor({ state: 'visible', timeout: 30_000 });
-  await page.getByText(/Source Name|Source Type|Bot/i).first().waitFor({ state: 'visible', timeout: 30_000 });
-
-  const botField = page.locator('[wire\\:partial="schema-component::form.bot_id"]');
-
-  if (await isVisible(botField)) {
-    await botField.locator('button.fi-select-input-btn').click();
-    await botField.getByText(/Plugin Public Assistant|Admin Copilot/i).first().click();
-  }
-
-  const sourceName = page.locator('#form\\.name');
-
-  if (await isVisible(sourceName)) {
-    await sourceName.fill('Public launch FAQ');
-  }
-
-  const nextButton = page.getByRole('button', { name: /^Next$/i }).first();
-
-  if (await isVisible(nextButton)) {
-    await nextButton.click();
-  }
-
-  const textContent = page.locator('#form\\.meta\\.content');
-  await textContent.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
-
-  if (await isVisible(textContent)) {
-    await textContent.fill('Paste launch FAQs, product docs, support policies, or onboarding notes here. After creating the source, ingestion status, chunks, failures, and retry actions are visible in the Sources table.');
-  }
+  await page.getByText(/Choose the bot and source type|Source Type|Bot/i).first().waitFor({ state: 'visible', timeout: 30_000 });
 
   await page.waitForTimeout(900);
   await saveScreenshot(page, fileName, true);
@@ -280,6 +270,18 @@ async function captureBotEditPage(page, fileName) {
 }
 
 async function captureConversationReviewPage(page, fileName) {
+  const preparedPath = prepareDocsConversationPath();
+
+  if (preparedPath) {
+    await goto(page, preparedPath);
+    await page.getByRole('heading', { level: 1, name: /Conversation Review|Conversation:/i }).waitFor({ state: 'visible' });
+    await page.locator('.fi-convo-bubble-bot, .fi-convo-bubble-user').nth(3).waitFor({ state: 'visible', timeout: 30_000 });
+    await page.waitForTimeout(900);
+    await saveScreenshot(page, fileName, true);
+
+    return;
+  }
+
   await goto(page, '/admin/bot-conversations');
   await page.getByRole('heading', { level: 1, name: /Conversations/i }).waitFor({ state: 'visible' });
   await waitForFirstTableRow(page);
@@ -300,21 +302,264 @@ async function captureConversationReviewPage(page, fileName) {
   await saveScreenshot(page, fileName, true);
 }
 
+function prepareDocsConversationPath() {
+  if (!fs.existsSync(path.join(DEMO_APP_DIR, 'vendor', 'autoload.php')) || !fs.existsSync(path.join(DEMO_APP_DIR, 'bootstrap', 'app.php'))) {
+    return null;
+  }
+
+  const php = String.raw`
+require __DIR__.'/vendor/autoload.php';
+$app = require __DIR__.'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+$conn = class_exists(\App\Support\DemoAgenticConnection::class)
+    ? \App\Support\DemoAgenticConnection::resolve()
+    : config('filament-agentic-chatbot.database.connection', config('database.default'));
+
+$schema = \Illuminate\Support\Facades\DB::connection($conn)->getSchemaBuilder();
+if (! $schema->hasTable('agentic_bots') || ! $schema->hasTable('bot_conversations') || ! $schema->hasTable('bot_messages')) {
+    exit(0);
+}
+
+$bot = \Illuminate\Support\Facades\DB::connection($conn)->table('agentic_bots')
+    ->whereIn('public_id', ['feedback-loop', 'admin-copilot', 'portfolio-concierge'])
+    ->orderByRaw("case public_id when 'feedback-loop' then 0 when 'admin-copilot' then 1 else 2 end")
+    ->first();
+
+if (! $bot) {
+    exit(0);
+}
+
+$session = 'docs-tour-conversation-review';
+$now = now();
+$createdAt = $now->copy()->subMinutes(42);
+$updatedAt = $now->copy()->subMinutes(35);
+
+$conversation = \Illuminate\Support\Facades\DB::connection($conn)->table('bot_conversations')
+    ->where('bot_id', $bot->id)
+    ->where('session_id', $session)
+    ->first();
+
+$payload = [
+    'bot_id' => $bot->id,
+    'session_id' => $session,
+    'context_area' => 'public',
+    'meta' => json_encode([
+        'source' => 'docs-screenshot-tour',
+        'summary' => 'Curated review conversation for the public documentation tour.',
+    ], JSON_THROW_ON_ERROR),
+    'created_at' => $createdAt,
+    'updated_at' => $updatedAt,
+];
+
+if ($conversation) {
+    \Illuminate\Support\Facades\DB::connection($conn)->table('bot_conversations')->where('id', $conversation->id)->update($payload);
+    $conversationId = $conversation->id;
+} else {
+    $conversationId = \Illuminate\Support\Facades\DB::connection($conn)->table('bot_conversations')->insertGetId($payload);
+}
+
+\Illuminate\Support\Facades\DB::connection($conn)->table('bot_messages')->where('bot_conversation_id', $conversationId)->delete();
+
+$sourceDocs = [
+    [
+        'label' => 'Quickstart',
+        'locator' => 'Install',
+        'score' => 0.92,
+        'preview' => 'Install the package, publish config, run migrations, and register the Filament plugin.',
+    ],
+    [
+        'label' => 'Chat Widget',
+        'locator' => 'Embedding',
+        'score' => 0.88,
+        'preview' => 'Use the Blade component, JavaScript loader, or npm package to embed the widget.',
+    ],
+];
+
+$sourceWorkflow = [
+    [
+        'label' => 'Agentic Workflows',
+        'locator' => 'Runtime',
+        'score' => 0.9,
+        'preview' => 'Published workflows can collect input, call actions or API connectors, search knowledge, and return structured replies.',
+    ],
+];
+
+$messages = [
+    ['user', 'How fast can I install the plugin and get a branded support widget online?', null, null],
+    ['assistant', "Most teams can install it in under 15 minutes. The package ships with the Filament admin for bots, sources, conversations, and an embeddable widget you can brand with your own title, accent color, welcome copy, and allowed areas.", $sourceDocs, ['content_format' => 'plain_text', 'feedback' => 'positive']],
+    ['user', 'Can it route a lead through a workflow and still cite the docs it used?', null, null],
+    ['assistant', 'Yes. A published workflow can collect lead context, branch by intent, call API connectors, search knowledge sources, and return a cited answer. The admin can inspect the transcript and the workflow run afterward.', $sourceWorkflow, ['content_format' => 'plain_text']],
+    ['user', 'What should my team review before publishing the workflow?', null, null],
+    ['assistant', 'Check source freshness, run the linked quality scenarios, inspect the latest run trace, and publish a version note. Failed scenarios stay visible in the editor so fixes happen before the draft becomes live.', $sourceWorkflow, ['content_format' => 'plain_text', 'feedback' => 'positive']],
+];
+
+foreach ($messages as $index => [$role, $content, $sources, $meta]) {
+    \Illuminate\Support\Facades\DB::connection($conn)->table('bot_messages')->insert([
+        'bot_conversation_id' => $conversationId,
+        'role' => $role,
+        'content' => $content,
+        'sources' => $sources === null ? null : json_encode($sources, JSON_THROW_ON_ERROR),
+        'meta' => $meta === null ? null : json_encode($meta, JSON_THROW_ON_ERROR),
+        'created_at' => $createdAt->copy()->addMinutes($index * 2),
+        'updated_at' => $createdAt->copy()->addMinutes($index * 2),
+    ]);
+}
+
+if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scenarios') && $schema->hasTable('bot_quality_runs')) {
+    $workflowQuery = \Illuminate\Support\Facades\DB::connection($conn)->table('agent_workflows')
+        ->where('name', 'Agentic Showcase Command Center');
+
+    if ($schema->hasColumn('agent_workflows', 'deleted_at')) {
+        $workflowQuery->whereNull('deleted_at');
+    }
+
+    $workflow = $workflowQuery->orderByDesc('id')->first();
+
+    if ($workflow) {
+        $qualityBotId = $workflow->bot_id ?: $bot->id;
+        $qualityScenarios = [
+            [
+                'name' => 'Connector outage still escalates',
+                'description' => 'Docs screenshot scenario: failed gate with fix suggestions.',
+                'user_message' => 'A buyer asks for enterprise pricing after the CRM connector times out.',
+                'is_blocking' => true,
+                'expectations' => [
+                    'required_text' => ['human follow-up', 'fallback'],
+                    'requires_citation' => true,
+                    'expected_path' => ['lead_capture', 'crm_enrichment', 'fallback_reply'],
+                    'max_latency_ms' => 2500,
+                ],
+                'run' => [
+                    'status' => 'failed',
+                    'score' => 67,
+                    'latency_ms' => 3100,
+                    'cost_cents' => 4,
+                    'failure_summary' => 'Draft needs a fallback reply after CRM enrichment fails.',
+                    'response_excerpt' => 'I can collect your details and ask the team to follow up.',
+                    'checks' => [
+                        ['key' => 'required_text', 'status' => 'failed', 'message' => 'Expected fallback wording was missing.'],
+                        ['key' => 'citation', 'status' => 'failed', 'message' => 'Final answer did not cite a source.'],
+                        ['key' => 'path', 'status' => 'passed', 'message' => 'Scenario reached the CRM enrichment path.'],
+                    ],
+                ],
+            ],
+            [
+                'name' => 'Enterprise rollout answer stays grounded',
+                'description' => 'Docs screenshot scenario: passing grounded answer.',
+                'user_message' => 'We need SSO, audit logs, and rollout guidance for a client with strict procurement.',
+                'is_blocking' => false,
+                'expectations' => [
+                    'required_text' => ['rollout', 'staging', 'quality'],
+                    'requires_citation' => true,
+                    'max_latency_ms' => 2500,
+                ],
+                'run' => [
+                    'status' => 'passed',
+                    'score' => 96,
+                    'latency_ms' => 1240,
+                    'cost_cents' => 2,
+                    'failure_summary' => null,
+                    'response_excerpt' => 'Use staging, run workflow-linked quality checks, and publish version notes before rollout.',
+                    'checks' => [
+                        ['key' => 'required_text', 'status' => 'passed', 'message' => 'Required rollout terms found.'],
+                        ['key' => 'citation', 'status' => 'passed', 'message' => 'Answer cited knowledge sources.'],
+                    ],
+                ],
+            ],
+        ];
+
+        foreach ($qualityScenarios as $scenarioData) {
+            $scenario = \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_scenarios')
+                ->where('agent_workflow_id', $workflow->id)
+                ->where('name', $scenarioData['name'])
+                ->first();
+
+            $scenarioPayload = [
+                'bot_id' => $qualityBotId,
+                'agent_workflow_id' => $workflow->id,
+                'name' => $scenarioData['name'],
+                'description' => $scenarioData['description'],
+                'user_message' => $scenarioData['user_message'],
+                'context_messages' => null,
+                'expectations' => json_encode($scenarioData['expectations'], JSON_THROW_ON_ERROR),
+                'is_blocking' => $scenarioData['is_blocking'],
+                'is_active' => true,
+                'last_run_at' => $now->copy()->subMinutes($scenarioData['run']['status'] === 'failed' ? 9 : 53),
+                'source' => 'manual',
+                'source_bot_message_id' => null,
+                'created_at' => $now->copy()->subHours(3),
+                'updated_at' => $now->copy()->subMinutes(8),
+            ];
+
+            if ($scenario) {
+                \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_scenarios')->where('id', $scenario->id)->update($scenarioPayload);
+                $scenarioId = $scenario->id;
+            } else {
+                $scenarioId = \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_scenarios')->insertGetId($scenarioPayload);
+            }
+
+            \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_runs')->where('bot_quality_scenario_id', $scenarioId)->delete();
+
+            $run = $scenarioData['run'];
+            $runTime = $now->copy()->subMinutes($run['status'] === 'failed' ? 9 : 53);
+            \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_runs')->insert([
+                'bot_quality_scenario_id' => $scenarioId,
+                'bot_id' => $qualityBotId,
+                'agent_workflow_id' => $workflow->id,
+                'workflow_run_id' => null,
+                'status' => $run['status'],
+                'target' => 'workflow_draft',
+                'score' => $run['score'],
+                'checks' => json_encode($run['checks'], JSON_THROW_ON_ERROR),
+                'response_excerpt' => $run['response_excerpt'],
+                'failure_summary' => $run['failure_summary'],
+                'latency_ms' => $run['latency_ms'],
+                'prompt_tokens' => 740,
+                'completion_tokens' => 230,
+                'cost_cents' => $run['cost_cents'],
+                'started_at' => $runTime->copy()->subSeconds(2),
+                'finished_at' => $runTime,
+                'created_at' => $runTime,
+                'updated_at' => $runTime,
+            ]);
+        }
+    }
+}
+
+echo $conversationId;
+`;
+
+  const result = spawnSync('php', ['-r', php], {
+    cwd: DEMO_APP_DIR,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+
+  if (result.status !== 0) {
+    console.warn(`  could not prepare docs conversation: ${result.stderr || result.stdout}`);
+    return null;
+  }
+
+  const conversationId = (result.stdout || '').trim();
+
+  if (!/^\d+$/.test(conversationId)) {
+    return null;
+  }
+
+  return `/admin/bot-conversations/${conversationId}`;
+}
+
 async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   await goto(page, '/admin/agent-workflows');
   await page.getByRole('heading', { level: 1, name: /Workflows/i }).waitFor({ state: 'visible' });
   await resetWorkflowToolbarPlacement(page);
-  await searchAdminTable(page, 'Buyer Qualification');
+  await waitForFirstTableRow(page);
 
-  const workflowLink = page.getByRole('link', { name: /Buyer Qualification & Resolution/i }).first();
+  const workflowRow = await preferredWorkflowRow(page);
+  await workflowRow.getByRole('link').first().click();
 
-  if (await isVisible(workflowLink)) {
-    await workflowLink.click();
-  } else {
-    await page.locator('tbody tr').first().getByRole('link').first().click();
-  }
-
-  await page.getByRole('heading', { level: 1, name: /Buyer Qualification|Workflow/i }).waitFor({ state: 'visible' });
+  await page.getByRole('heading', { level: 1, name: /Agentic Showcase|Buyer Qualification|Workflow/i }).waitFor({ state: 'visible' });
   await page.locator('#workflow-editor-root').waitFor({ state: 'visible' });
   await page.waitForTimeout(1000);
   await exitFocusModeIfActive(page);
@@ -326,7 +571,31 @@ async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
 
   await zoomWorkflowCanvas(page, options.zoomClicks ?? 7);
   await page.waitForTimeout(500);
-  await saveScreenshot(page, fileName, false, { blur: options.blur ?? true });
+
+  if (options.clip === 'sidebar') {
+    await saveWorkflowSidebarScreenshot(page, fileName, { blur: options.blur ?? true });
+  } else {
+    await saveScreenshot(page, fileName, false, { blur: options.blur ?? true });
+  }
+}
+
+async function preferredWorkflowRow(page) {
+  const preferredNames = [
+    /Buyer Qualification & Resolution/i,
+    /Agentic Showcase Command Center/i,
+    /Plugin Feedback Collector/i,
+    /Agentic vs RAG Fit Advisor/i,
+  ];
+
+  for (const name of preferredNames) {
+    const row = page.locator('tbody tr').filter({ hasText: name }).first();
+
+    if (await isVisible(row)) {
+      return row;
+    }
+  }
+
+  return page.locator('tbody tr').first();
 }
 
 async function zoomWorkflowCanvas(page, clicks = 7) {
@@ -409,7 +678,7 @@ async function collapseSettingsPanel(page) {
     const button = collapseButtons.nth(index);
 
     if (await button.isVisible().catch(() => false)) {
-      await button.click();
+      await button.click({ force: true }).catch(() => {});
       await page.locator('.fi-wf-panel-settings--collapsed').first().waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
       await page.waitForTimeout(700);
 
@@ -490,9 +759,30 @@ async function exitFocusModeIfActive(page) {
 }
 
 async function captureWidget(page, fileName) {
-  await goto(page, '/bot-public-test');
-  await openWidget(page);
-  await fillWidgetPrompt(page, 'hi');
+  await goto(page, '/#widget');
+
+  const widgetSection = page.locator('#widget').first();
+  await widgetSection.waitFor({ state: 'visible', timeout: 30_000 });
+  await widgetSection.scrollIntoViewIfNeeded();
+
+  const widgetRoot = page.locator('.frw-root').first();
+  const widgetLauncher = page.locator('[data-frw-role="launcher"]').first();
+  const widgetWindow = page.locator('.frw-root.frw-open [data-frw-role="window"]').first();
+
+  const isOpen = await widgetRoot.evaluate((element) => element.classList.contains('frw-open')).catch(() => false);
+
+  if (!isOpen) {
+    if (await isVisible(widgetLauncher)) {
+      await widgetLauncher.click();
+    } else {
+      await widgetRoot.evaluate((element) => element.classList.add('frw-open'));
+    }
+  }
+
+  await widgetWindow.waitFor({ state: 'visible', timeout: 30_000 });
+  await page.waitForFunction(() => !document.querySelector('.frw-root.frw-open [data-frw-role="form"]')?.classList.contains('frw-input-busy'), null, { timeout: 15_000 }).catch(() => {});
+  await page.waitForTimeout(900);
+  await blurActiveElement(page);
   await saveScreenshot(page, fileName, false);
 }
 
@@ -516,28 +806,39 @@ async function captureMobileWidget(browser) {
 async function openWidget(page) {
   await waitForUi(page);
 
-  const launchers = [
-    page.locator('[data-frw-role="launcher"]').first(),
-    page.locator('[data-agentic-chatbot-widget] button').first(),
-    page.getByRole('button', { name: /Open chat|Chat|Ask/i }).first(),
-  ];
+  const widgetWindow = page.locator('[data-frw-role="window"]').first();
+  const composer = page.locator('[data-frw-role="input"]').first();
 
-  for (const launcher of launchers) {
-    if (await isVisible(launcher)) {
-      await launcher.click();
-      break;
+  if (await isVisible(widgetWindow) && await isVisible(composer)) {
+    return;
+  }
+
+  if (!await isVisible(widgetWindow)) {
+    const launchers = [
+      page.locator('[data-frw-role="launcher"]').first(),
+      page.locator('[data-agentic-chatbot-widget] button').first(),
+      page.getByRole('button', { name: /Open chat|Chat|Ask/i }).first(),
+    ];
+
+    for (const launcher of launchers) {
+      if (await isVisible(launcher)) {
+        await launcher.click();
+        break;
+      }
     }
   }
 
-  await page.locator('[data-frw-role="input"], textarea, input').first().waitFor({ state: 'visible', timeout: 30_000 });
+  await widgetWindow.waitFor({ state: 'visible', timeout: 30_000 });
+  await composer.waitFor({ state: 'visible', timeout: 30_000 });
   await page.waitForTimeout(500);
 }
 
 async function fillWidgetPrompt(page, message) {
-  const composer = page.locator('[data-frw-role="input"], textarea, input').first();
+  const composer = page.locator('[data-frw-role="input"]').first();
   await composer.fill(message);
   await composer.press('Enter');
   await page.waitForTimeout(2000);
+  await page.locator('[data-frw-role="window"]').first().waitFor({ state: 'visible', timeout: 30_000 });
 }
 
 async function activateControl(locator) {
@@ -577,6 +878,38 @@ async function goto(page, targetPath) {
 async function waitForUi(page, delay = 700) {
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(delay);
+}
+
+async function saveWorkflowSidebarScreenshot(page, fileName, options = {}) {
+  await dismissVisibleNotifications(page);
+
+  if (options.blur !== false) {
+    await blurActiveElement(page);
+  }
+
+  const sidebar = page.locator('.fi-wf-sidebar').first();
+  await sidebar.waitFor({ state: 'visible', timeout: 30_000 });
+
+  const box = await sidebar.boundingBox();
+  const viewport = page.viewportSize() || VIEWPORT;
+
+  if (!box) {
+    await saveScreenshot(page, fileName, false, options);
+    return;
+  }
+
+  const filePath = path.join(OUT_DIR, fileName);
+  await page.screenshot({
+    path: filePath,
+    animations: 'disabled',
+    clip: {
+      x: Math.max(0, Math.floor(box.x)),
+      y: Math.max(0, Math.floor(box.y)),
+      width: Math.min(viewport.width - Math.floor(box.x), Math.ceil(box.width) + 1),
+      height: Math.min(viewport.height - Math.floor(box.y), Math.ceil(box.height)),
+    },
+  });
+  console.log(`  saved ${fileName}`);
 }
 
 async function saveScreenshot(page, fileName, fullPage, options = {}) {

@@ -30,13 +30,13 @@ Add URL, file, raw-text, or API-fed JSON sources. Track ingestion status, source
 
 ![Source ingestion table](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03-source-ingestion-table.png)
 
-Create sources from the same Filament workflow. Each source can be assigned to a bot and can start as a simple URL or as a structured API feed.
+Create sources from a guided two-step form. The first step keeps bot assignment, source name, and source type visible before operators add URL, upload, manual text, or API-fed content.
 
 ![New knowledge source form](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03b-new-source-form.png)
 
 ### Conversation history
 
-Inspect conversation transcripts without leaving Filament. Review what users asked, what was retrieved, which citations backed each answer, and whether the conversation needs a handoff or review flag.
+Inspect full multi-turn transcripts without leaving Filament. Review what users asked, what was retrieved, which citations backed each answer, which messages were marked helpful, and whether the conversation needs a handoff or review flag.
 
 ![Conversation transcript](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/04-conversation-transcript.png)
 
@@ -50,7 +50,7 @@ Show the live embedded chat experience up close on desktop and mobile, including
 
 ### Visual workflow builder
 
-Use the buyer qualification workflow as a concrete example: the node library stays on the left, the zoomable canvas sits in the middle, and inline settings remain visible on the right while you build.
+Start from the workflow library, then open a real showcase workflow. The node library stays on the left, the zoomable canvas sits in the middle, and inline settings remain visible on the right while you build.
 
 ![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
 
@@ -78,19 +78,19 @@ The editor supports Filament light and dark mode. Dark mode keeps the canvas, to
 
 ### Workflow quality checks
 
-Run workflow-linked scenarios from the editor before publishing, then inspect pass/fail state, scores, blocking gates, latency, and fix suggestions in context.
+Run workflow-linked scenarios from the editor before publishing. The sidebar keeps pass/fail state, scores, blocking gates, latency, and fix suggestions beside the draft instead of sending QA work to a separate screen.
 
 ![Workflow quality panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-quality-panel.png)
 
 ### AI-assisted drafting
 
-Describe the flow you need in natural language, generate a draft workflow, then refine and publish.
+Describe the flow you need in natural language, generate a draft workflow from the sidebar, then refine the generated graph on the canvas.
 
 ![AI Draft tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/11-workflow-generate-tab.png)
 
 ### Run history and live tracing
 
-Inspect every execution with completed-path highlighting, step traces, variables, halt reasons, and timestamps.
+Use the Trace tab for recent executions, then open a selected run to inspect completed-path highlighting, step traces, variables, halt reasons, and timestamps.
 
 ![Workflow runs tab — completed run selected](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12-workflow-runs-tab.png)
 
@@ -110,7 +110,7 @@ Review low-confidence, blocked, or human-required conversations with priority, a
 
 ### Versions and releases
 
-Publish versioned releases with notes and roll back to any prior version in seconds.
+Publish versioned releases with notes, keep the live version visible, and roll back to any prior version in seconds.
 
 ![Workflow releases tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/15-workflow-releases-tab.png)
 

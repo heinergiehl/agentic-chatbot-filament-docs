@@ -99,13 +99,13 @@ Track ingestion status, chunk counts, source type, last ingest time, and source 
 
 ### New knowledge source
 
-Create sources from the same Filament panel. A source can belong to a specific bot and can start as a URL, uploaded file, raw text, or API-backed JSON feed. This keeps simple docs ingestion and structured external knowledge in one workflow.
+Create sources from a guided two-step form in the same Filament panel. The first step keeps bot assignment, source name, and source type visible before operators add URL, file, raw text, or API-backed JSON content, so ingestion setup is easy to validate before the source is created.
 
 ![New knowledge source form](./images/agentic-chatbot/03b-new-source-form.png)
 
 ### Conversation review
 
-Inspect transcripts and assistant answers from inside Filament. The review screen keeps the original user turns, assistant answers, citations, feedback state, and operator actions together so support teams can flag a response, create a handoff, or export the conversation for debugging.
+Review full multi-turn conversations from inside Filament. User questions, assistant replies, citations, feedback state, session metadata, and operator actions stay together, so support teams can audit quality, flag a response, create a handoff, or export the transcript without reconstructing the chat elsewhere.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
@@ -119,13 +119,13 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 ### Workflow library
 
-See which workflows are active, which bot they belong to, and which drafts are ready to ship.
+Start from the workflow library to see which workflows are active, which bot they belong to, and which drafts still differ from the live release.
 
 ![Workflow list](./images/agentic-chatbot/07-workflow-list.png)
 
 ### Visual workflow editor
 
-Open a real buyer qualification workflow with the node library on the left, the zoomable canvas in the center, and inline settings on the right. The editor is built for day-to-day workflow authoring: pick a node, tune the business fields, validate the draft, and keep the running graph visible while you work.
+Open a real showcase workflow with the node library on the left, the zoomable canvas in the center, and inline settings on the right. The editor is built for day-to-day workflow authoring: pick a node, tune the business fields, validate the draft, and keep the running graph visible while you work.
 
 ![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
@@ -151,19 +151,29 @@ The workflow editor follows Filament theme mode. Light mode stays clean for norm
 
 ### Workflow quality panel
 
-Run workflow-linked quality scenarios from the editor before publishing. The panel surfaces failed and passing scenarios next to the draft, including score, latency, blocking state, and compact fix suggestions, so quality checks stay part of authoring instead of becoming a separate QA spreadsheet.
+Use the editor sidebar for workflow-specific quality checks before publishing. The Quality tab shows linked scenarios, pass/fail state, scores, blocking gates, latency, and fix suggestions without losing the graph context.
 
 ![Workflow quality panel](./images/agentic-chatbot/10-workflow-quality-panel.png)
 
-### AI drafting, run traces, and releases
+### AI drafting
 
-Draft workflows from prompts, inspect completed execution paths, and publish changes with version notes.
+Use the Generate tab when the fastest starting point is a plain-language brief. Operators can choose draft or system-prompt mode, describe the business flow, generate a workflow, and then refine the result on the canvas.
 
 ![Workflow generate tab](./images/agentic-chatbot/11-workflow-generate-tab.png)
+
+### Run history and traces
+
+Use the Trace tab to inspect recent workflow runs without leaving the editor. Completed runs stay visible in the sidebar, and selecting a run opens the executed path on the canvas for deeper debugging.
 
 ![Workflow runs tab](./images/agentic-chatbot/12-workflow-runs-tab.png)
 
 ![Workflow run trace](./images/agentic-chatbot/12b-workflow-run-trace.png)
+
+### Versions and releases
+
+Publish versioned releases with notes, keep the live version visible, and roll back to prior versions when a draft should not stay live.
+
+![Workflow releases tab](./images/agentic-chatbot/15-workflow-releases-tab.png)
 
 ### Quality Lab
 
@@ -176,12 +186,6 @@ Create repeatable quality scenarios for direct bot answers or workflow drafts, t
 Review low-confidence, blocked, or human-required conversations with priority, assignment, transcript context, and workflow links in one queue.
 
 ![Handoff Inbox](./images/agentic-chatbot/14-handoff-inbox.png)
-
-### Versions and releases
-
-Publish versioned releases with notes and roll back to prior versions when a draft should not stay live.
-
-![Workflow releases tab](./images/agentic-chatbot/15-workflow-releases-tab.png)
 
 ### API connectors
 
