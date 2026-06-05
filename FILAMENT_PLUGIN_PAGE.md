@@ -26,13 +26,17 @@ Tune persona, tone, answer style, fallback behavior, model, retrieval settings, 
 
 ### Knowledge sources
 
-Add URL, file, raw-text, or API-fed JSON sources. Track ingestion status and refresh stale sources directly from the panel.
+Add URL, file, raw-text, or API-fed JSON sources. Track ingestion status, source type, chunk counts, last ingest time, stale jobs, and failed jobs directly from the panel.
 
 ![Source ingestion table](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03-source-ingestion-table.png)
 
+Create sources from the same Filament workflow. Each source can be assigned to a bot and can start as a simple URL or as a structured API feed.
+
+![New knowledge source form](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03b-new-source-form.png)
+
 ### Conversation history
 
-Inspect conversation transcripts without leaving Filament. Review what users asked, what was retrieved, and which citations backed each answer.
+Inspect conversation transcripts without leaving Filament. Review what users asked, what was retrieved, which citations backed each answer, and whether the conversation needs a handoff or review flag.
 
 ![Conversation transcript](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/04-conversation-transcript.png)
 
@@ -46,7 +50,7 @@ Show the live embedded chat experience up close on desktop and mobile, including
 
 ### Visual workflow builder
 
-Use the plugin feedback collector as a concrete example: the node library stays on the left, the canvas sits in the middle, and inline settings remain visible on the right while you build.
+Use the buyer qualification workflow as a concrete example: the node library stays on the left, the zoomable canvas sits in the middle, and inline settings remain visible on the right while you build.
 
 ![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
 
@@ -54,13 +58,23 @@ Use the plugin feedback collector as a concrete example: the node library stays 
 
 ### Full-viewport focus mode
 
-Expand the editor to the whole viewport when the canvas needs attention. Focus mode removes surrounding Filament chrome while keeping the build surface, inspector, and main editor actions available.
+Expand the editor to the whole viewport when the canvas needs attention. Focus mode removes surrounding Filament chrome while keeping the build surface, inspector, draggable toolbar, and main editor actions available.
 
 ![Workflow editor focus mode](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/09-workflow-editor-focus-mode.png)
 
+### Toolbar positioning and theme modes
+
+Drag and reposition the canvas toolbar while keeping zoom, fit-to-view, minimap, grouping, locking, validation, and shortcut controls close to the graph.
+
+![Workflow editor toolbar positioning](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/17-workflow-toolbar-positioning.png)
+
+The editor supports Filament light and dark mode. Dark mode keeps the canvas, toolbar, node states, and inspector readable during long authoring or debugging sessions.
+
+![Workflow editor dark mode](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/18-workflow-editor-dark-mode.png)
+
 ### Workflow quality checks
 
-Run workflow-linked scenarios from the editor before publishing, then inspect pass/fail state, scores, and fix suggestions in context.
+Run workflow-linked scenarios from the editor before publishing, then inspect pass/fail state, scores, blocking gates, latency, and fix suggestions in context.
 
 ![Workflow quality panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-quality-panel.png)
 
@@ -124,6 +138,8 @@ Define reusable external API connection profiles and reference them across workf
 - **Broad node catalog**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Answer, Switch/Router, Condition, Action, HTTP Request, API Connector, Memory Read/Write, Delay, Loop, Sub-Workflow, and more
 - **Multi-branch canvas** powered by Vue Flow — drag, connect, and organize nodes freely
 - **Focus mode** — expand the editor to the full viewport when complex graphs need more working space
+- **Draggable toolbar** — keep zoom, fit, validation, minimap, grouping, and lock controls where they are useful while authoring
+- **Light and dark mode** — editor chrome, canvas, nodes, toolbar, and inspector follow the Filament theme
 - **AI Agent node** — configurable Provider, Model, and System Prompt per node within the same workflow
 - **Knowledge Base node** — inline source retrieval mid-flow, configurable result count
 - **Switch/Router node** — N branches + default; route by intent, field value, or AI classification

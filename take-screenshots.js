@@ -19,6 +19,7 @@ const screenshots = {
   botList: '01-bot-list.png',
   botEdit: '02-bot-edit.png',
   sourceList: '03-source-ingestion-table.png',
+  sourceCreate: '03b-new-source-form.png',
   transcript: '04-conversation-transcript.png',
   widgetDesktop: '05-widget-desktop.png',
   widgetMobile: '06-widget-mobile.png',
@@ -33,6 +34,8 @@ const screenshots = {
   handoffInbox: '14-handoff-inbox.png',
   workflowReleases: '15-workflow-releases-tab.png',
   apiConnectors: '16-api-connectors-list.png',
+  workflowToolbar: '17-workflow-toolbar-positioning.png',
+  workflowDark: '18-workflow-editor-dark-mode.png',
 };
 
 async function main() {
@@ -52,14 +55,14 @@ async function main() {
     await captureBotEditPage(page, screenshots.botEdit);
 
     await captureAdminPage(page, '/admin/knowledge-sources', screenshots.sourceList, /Knowledge Sources/i, async () => {
-      await searchAdminTable(page, '01. Public Quickstart Guide');
-      await waitForRowText(page, '01. Public Quickstart Guide');
+      await waitForFirstTableRow(page);
     });
+
+    await captureNewSourcePage(page, screenshots.sourceCreate);
 
     await captureConversationReviewPage(page, screenshots.transcript);
 
     await captureAdminPage(page, '/admin/agent-workflows', screenshots.workflowList, /Workflows/i, async () => {
-      await searchAdminTable(page, 'Buyer Qualification');
       await waitForFirstTableRow(page);
     });
 
@@ -71,7 +74,7 @@ async function main() {
       if (await isVisible(classifyNode)) {
         await classifyNode.click();
       }
-    });
+    }, { zoomClicks: 7 });
 
     await captureWorkflowEditor(page, screenshots.workflowFocus, async () => {
       await activateControl(page.locator('#mode-build'));
@@ -79,27 +82,27 @@ async function main() {
       await page.getByRole('button', { name: focusModeAccessibleName }).first().click();
       await page.waitForFunction(() => document.body.classList.contains('fi-wf-focus-mode-active'));
       await page.waitForTimeout(700);
-    });
+    }, { zoomClicks: 8 });
 
     await captureWorkflowEditor(page, screenshots.workflowQuality, async () => {
       await activateControl(page.locator('#mode-debug'));
       await activateControl(page.locator('#tab-quality'));
       await page.locator('#panel-quality').waitFor({ state: 'visible' });
       await page.getByText('Enterprise rollout answer stays grounded').first().waitFor({ state: 'visible' });
-    });
+    }, { zoomClicks: 7 });
 
     await captureWorkflowEditor(page, screenshots.workflowGenerate, async () => {
       await activateControl(page.locator('#mode-generate'));
       const workflowBrief = page.getByRole('textbox', { name: 'Workflow brief' });
       await workflowBrief.waitFor({ state: 'visible' });
       await workflowBrief.fill('Build a buyer support workflow that retrieves docs, routes by intent, and enriches enterprise leads via a CRM connector before replying.');
-    });
+    }, { zoomClicks: 7 });
 
     await captureWorkflowEditor(page, screenshots.workflowRuns, async () => {
       await activateControl(page.locator('#mode-debug'));
       await activateControl(page.locator('#tab-executions'));
       await page.locator('#panel-executions .fi-wf-run-card').first().waitFor({ state: 'visible' });
-    });
+    }, { zoomClicks: 7 });
 
     await captureWorkflowEditor(page, screenshots.workflowRunTrace, async () => {
       await activateControl(page.locator('#mode-debug'));
@@ -110,7 +113,7 @@ async function main() {
       await waitForRunDetails(page);
       await collapseWorkflowSidebar(page);
       await waitForWorkflowCanvas(page);
-    });
+    }, { zoomClicks: 7 });
 
     await captureAdminPage(page, '/admin/bot-quality-scenarios', screenshots.qualityLab, /Quality Scenarios/i, async () => {
       await searchAdminTable(page, 'Enterprise rollout');
@@ -125,12 +128,28 @@ async function main() {
     await captureWorkflowEditor(page, screenshots.workflowReleases, async () => {
       await activateControl(page.locator('#mode-release'));
       await page.locator('#panel-releases').getByText('Live').first().waitFor({ state: 'visible' });
-    });
+    }, { zoomClicks: 7 });
 
     await captureAdminPage(page, '/admin/api-connectors', screenshots.apiConnectors, /Api Connectors/i, async () => {
       await searchAdminTable(page, 'CRM Lead Qualification API');
       await waitForFirstTableRow(page);
     });
+
+    await captureWorkflowEditor(page, screenshots.workflowToolbar, async () => {
+      await activateControl(page.locator('#mode-build'));
+      await waitForWorkflowCanvas(page);
+      await zoomWorkflowCanvas(page, 7);
+      await dragWorkflowToolbar(page);
+    }, { blur: false, zoomClicks: 0 });
+
+    await captureWorkflowEditor(page, screenshots.workflowDark, async () => {
+      await forceDarkMode(page);
+      await activateControl(page.locator('#mode-build'));
+      await waitForWorkflowCanvas(page);
+      await page.getByRole('button', { name: focusModeAccessibleName }).first().click();
+      await page.waitForFunction(() => document.body.classList.contains('fi-wf-focus-mode-active'));
+      await page.waitForTimeout(700);
+    }, { zoomClicks: 8 });
 
     await captureWidget(page, screenshots.widgetDesktop);
     await captureMobileWidget(browser);
@@ -163,8 +182,8 @@ async function loginToAdmin(page) {
     throw new Error('Could not find the Enter Demo button. Set AGENTIC_DOCS_ADMIN_EMAIL and AGENTIC_DOCS_ADMIN_PASSWORD for protected demos.');
   }
 
-  await page.getByLabel(/Email/i).fill(email);
-  await page.getByLabel(/Password/i).fill(password);
+  await page.getByRole('textbox', { name: /Email/i }).fill(email);
+  await page.getByRole('textbox', { name: /Password/i }).fill(password);
   await Promise.all([
     page.waitForURL(/\/admin(?:\/)?$/, { timeout: 30_000 }).catch(() => {}),
     page.getByRole('button', { name: /Sign in|Log in|Login/i }).click(),
@@ -181,6 +200,41 @@ async function captureAdminPage(page, adminPath, fileName, heading, beforeShot, 
   }
 
   await saveScreenshot(page, fileName, options.fullPage ?? true);
+}
+
+async function captureNewSourcePage(page, fileName) {
+  await goto(page, '/admin/knowledge-sources/create');
+  await page.getByRole('heading', { level: 1, name: /New Source|Create Source|Create Knowledge Source|Sources/i }).first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.getByText(/Source Name|Source Type|Bot/i).first().waitFor({ state: 'visible', timeout: 30_000 });
+
+  const botField = page.locator('[wire\\:partial="schema-component::form.bot_id"]');
+
+  if (await isVisible(botField)) {
+    await botField.locator('button.fi-select-input-btn').click();
+    await botField.getByText(/Plugin Public Assistant|Admin Copilot/i).first().click();
+  }
+
+  const sourceName = page.locator('#form\\.name');
+
+  if (await isVisible(sourceName)) {
+    await sourceName.fill('Public launch FAQ');
+  }
+
+  const nextButton = page.getByRole('button', { name: /^Next$/i }).first();
+
+  if (await isVisible(nextButton)) {
+    await nextButton.click();
+  }
+
+  const textContent = page.locator('#form\\.meta\\.content');
+  await textContent.waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
+
+  if (await isVisible(textContent)) {
+    await textContent.fill('Paste launch FAQs, product docs, support policies, or onboarding notes here. After creating the source, ingestion status, chunks, failures, and retry actions are visible in the Sources table.');
+  }
+
+  await page.waitForTimeout(900);
+  await saveScreenshot(page, fileName, true);
 }
 
 async function captureBotEditPage(page, fileName) {
@@ -228,13 +282,13 @@ async function captureConversationReviewPage(page, fileName) {
   }
 
   await page.waitForURL(/\/admin\/bot-conversations\/\d+$/, { timeout: 30_000 });
-  await page.getByRole('heading', { level: 1, name: /Conversation:/i }).waitFor({ state: 'visible' });
+  await page.getByRole('heading', { level: 1, name: /Conversation Review|Conversation:/i }).waitFor({ state: 'visible' });
   await page.locator('code, .fi-convo-bubble-bot, .fi-convo-bubble-user').first().waitFor({ state: 'visible' });
   await page.waitForTimeout(1200);
   await saveScreenshot(page, fileName, true);
 }
 
-async function captureWorkflowEditor(page, fileName, beforeShot) {
+async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   await goto(page, '/admin/agent-workflows');
   await page.getByRole('heading', { level: 1, name: /Workflows/i }).waitFor({ state: 'visible' });
   await searchAdminTable(page, 'Buyer Qualification');
@@ -257,12 +311,12 @@ async function captureWorkflowEditor(page, fileName, beforeShot) {
     await beforeShot();
   }
 
-  await zoomWorkflowCanvas(page);
+  await zoomWorkflowCanvas(page, options.zoomClicks ?? 7);
   await page.waitForTimeout(500);
-  await saveScreenshot(page, fileName, false);
+  await saveScreenshot(page, fileName, false, { blur: options.blur ?? true });
 }
 
-async function zoomWorkflowCanvas(page, clicks = 3) {
+async function zoomWorkflowCanvas(page, clicks = 7) {
   const zoomIn = page.getByRole('button', { name: 'Zoom in' }).first();
 
   if (!(await isVisible(zoomIn))) {
@@ -273,6 +327,40 @@ async function zoomWorkflowCanvas(page, clicks = 3) {
     await zoomIn.click();
     await page.waitForTimeout(120);
   }
+}
+
+async function dragWorkflowToolbar(page) {
+  const dragHandle = page.getByRole('button', { name: /Drag toolbar to float/i }).first();
+
+  if (!(await isVisible(dragHandle))) {
+    return;
+  }
+
+  const handleBox = await dragHandle.boundingBox();
+
+  if (!handleBox) {
+    return;
+  }
+
+  const startX = handleBox.x + handleBox.width / 2;
+  const startY = handleBox.y + handleBox.height / 2;
+
+  await page.mouse.move(startX, startY);
+  await page.mouse.down();
+  await page.mouse.move(startX + 210, startY + 120, { steps: 14 });
+  await page.mouse.up();
+  await page.waitForTimeout(500);
+}
+
+async function forceDarkMode(page) {
+  await page.emulateMedia({ colorScheme: 'dark' }).catch(() => {});
+  await page.evaluate(() => {
+    window.localStorage.setItem('theme', 'dark');
+    window.localStorage.setItem('color-theme', 'dark');
+    document.documentElement.classList.add('dark');
+    document.documentElement.style.colorScheme = 'dark';
+  });
+  await page.waitForTimeout(700);
 }
 
 async function waitForRunDetails(page) {
@@ -400,10 +488,38 @@ async function waitForUi(page, delay = 700) {
   await page.waitForTimeout(delay);
 }
 
-async function saveScreenshot(page, fileName, fullPage) {
+async function saveScreenshot(page, fileName, fullPage, options = {}) {
+  await dismissVisibleNotifications(page);
+
+  if (options.blur !== false) {
+    await blurActiveElement(page);
+  }
+
   const filePath = path.join(OUT_DIR, fileName);
   await page.screenshot({ path: filePath, fullPage, animations: 'disabled' });
   console.log(`  saved ${fileName}`);
+}
+
+async function dismissVisibleNotifications(page) {
+  const closeButtons = page.locator('.fi-no-notification-close-btn');
+  const count = await closeButtons.count().catch(() => 0);
+
+  for (let index = count - 1; index >= 0; index--) {
+    await closeButtons.nth(index).click().catch(() => {});
+  }
+
+  if (count > 0) {
+    await page.waitForTimeout(250);
+  }
+}
+
+async function blurActiveElement(page) {
+  await page.evaluate(() => {
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }).catch(() => {});
+  await page.waitForTimeout(150);
 }
 
 async function isVisible(locator) {

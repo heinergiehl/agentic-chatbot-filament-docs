@@ -93,13 +93,19 @@ Tune the assistant's persona, tone, answer style, fallback behavior, model, retr
 
 ### Source ingestion visibility
 
-Track ingestion status, chunk counts, and source health directly in the panel.
+Track ingestion status, chunk counts, source type, last ingest time, and source health directly in the panel. Operators can spot stale or failed jobs, re-run ingestion, and confirm that a bot has current knowledge before it is exposed in chat or workflow runs.
 
 ![Source ingestion table](./images/agentic-chatbot/03-source-ingestion-table.png)
 
+### New knowledge source
+
+Create sources from the same Filament panel. A source can belong to a specific bot and can start as a URL, uploaded file, raw text, or API-backed JSON feed. This keeps simple docs ingestion and structured external knowledge in one workflow.
+
+![New knowledge source form](./images/agentic-chatbot/03b-new-source-form.png)
+
 ### Conversation review
 
-Inspect transcripts and assistant answers from inside Filament.
+Inspect transcripts and assistant answers from inside Filament. The review screen keeps the original user turns, assistant answers, citations, feedback state, and operator actions together so support teams can flag a response, create a handoff, or export the conversation for debugging.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
@@ -119,19 +125,29 @@ See which workflows are active, which bot they belong to, and which drafts are r
 
 ### Visual workflow editor
 
-Open a real plugin feedback collector workflow with the node library on the left, the canvas in the center, and inline settings on the right.
+Open a real buyer qualification workflow with the node library on the left, the zoomable canvas in the center, and inline settings on the right. The editor is built for day-to-day workflow authoring: pick a node, tune the business fields, validate the draft, and keep the running graph visible while you work.
 
 ![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
 ### Workflow focus mode
 
-Expand the workflow editor to the full viewport when the canvas needs attention. Focus mode keeps the build surface, inspector, and primary editor actions visible while removing the surrounding Filament chrome.
+Expand the workflow editor to the full viewport when the canvas needs attention. Focus mode keeps the build surface, inspector, draggable toolbar, and primary editor actions visible while removing the surrounding Filament chrome.
 
 ![Workflow editor focus mode](./images/agentic-chatbot/09-workflow-editor-focus-mode.png)
 
+### Editor toolbar and themes
+
+The canvas toolbar is a real editor control, not a static header. It can be dragged, repositioned, and used for zoom, fit-to-view, minimap, grouping, locking, validation, and keyboard-shortcut access.
+
+![Workflow editor toolbar positioning](./images/agentic-chatbot/17-workflow-toolbar-positioning.png)
+
+The workflow editor follows Filament theme mode. Light mode stays clean for normal admin work, while dark mode gives the canvas and inspector a focused production-editor feel for long authoring sessions.
+
+![Workflow editor dark mode](./images/agentic-chatbot/18-workflow-editor-dark-mode.png)
+
 ### Workflow quality panel
 
-Run workflow-linked quality scenarios from the editor before publishing and inspect pass/fail state, scores, and fix suggestions in context.
+Run workflow-linked quality scenarios from the editor before publishing. The panel surfaces failed and passing scenarios next to the draft, including score, latency, blocking state, and compact fix suggestions, so quality checks stay part of authoring instead of becoming a separate QA spreadsheet.
 
 ![Workflow quality panel](./images/agentic-chatbot/10-workflow-quality-panel.png)
 

@@ -41,6 +41,8 @@ The editor is embedded inside Filament on the workflow edit page. It provides:
 - a sidebar with all available node types
 - per-node configuration panels for prompts, conditions, and data mappings
 - focus mode for a full-viewport canvas when complex graphs need more room
+- a draggable canvas toolbar for zoom, fit-to-view, minimap, grouping, lock, validation, and shortcut access
+- Filament light and dark mode support across editor chrome, canvas, node states, and the inspector
 - local validation plus a server-side **Validate workflow** action that runs the same validator used by save and publish
 - keyboard shortcuts for common operations
 
@@ -58,7 +60,9 @@ The workflow edit page combines five working areas:
 
 The editor also supports node mapping previews for action, HTTP Request, and API Connector nodes plus dry runs for HTTP Request and API Connector nodes. That means you can inspect mappings and live responses before you publish a release.
 
-Focus mode expands the editor to the full viewport and removes the surrounding Filament chrome. Use it when you are wiring larger graphs, reviewing branch layout, or presenting a workflow to another operator. The canvas, node library, inspector, mode switcher, save actions, and publish controls remain available.
+Focus mode expands the editor to the full viewport and removes the surrounding Filament chrome. Use it when you are wiring larger graphs, reviewing branch layout, or presenting a workflow to another operator. The canvas, node library, inspector, mode switcher, save actions, publish controls, and draggable toolbar remain available.
+
+The canvas toolbar can be moved while authoring. Keep it near the part of the graph you are editing, then use it for zoom, fit-to-view, minimap visibility, grouping, lock state, validation, and keyboard-shortcut access. The same editor surface supports Filament light and dark mode, so teams can keep the standard admin look or switch to a darker long-session editing environment.
 
 The editor also includes a **Quality** panel for workflow-linked scenarios. Save the draft, run the relevant checks, then review pass/fail status, score, failed checks, and fix suggestions without leaving the workflow you are about to publish. See [Quality Loop](QUALITY_LOOP.md) for the operating model.
 
