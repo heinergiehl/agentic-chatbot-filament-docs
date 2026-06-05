@@ -137,9 +137,13 @@ Expand the workflow editor to the full viewport when the canvas needs attention.
 
 ### Editor toolbar and themes
 
-The canvas toolbar is a real editor control, not a static header. It can be dragged, repositioned, and used for zoom, fit-to-view, minimap, grouping, locking, validation, and keyboard-shortcut access.
+The canvas toolbar is a real editor control, not a static header. It can be dragged, repositioned, and used for zoom, fit-to-view, minimap, grouping, locking, validation, and keyboard-shortcut access. When the inspector is collapsed, the toolbar keeps a small right-side gutter so it does not crowd the page action menu.
 
 ![Workflow editor toolbar positioning](./images/agentic-chatbot/17-workflow-toolbar-positioning.png)
+
+The same toolbar can be docked above the canvas when the graph needs more vertical space.
+
+![Workflow editor toolbar above canvas](./images/agentic-chatbot/17b-workflow-toolbar-above-canvas.png)
 
 The workflow editor follows Filament theme mode. Light mode stays clean for normal admin work, while dark mode gives the canvas and inspector a focused production-editor feel for long authoring sessions.
 

@@ -35,6 +35,7 @@ const screenshots = {
   workflowReleases: '15-workflow-releases-tab.png',
   apiConnectors: '16-api-connectors-list.png',
   workflowToolbar: '17-workflow-toolbar-positioning.png',
+  workflowToolbarHeader: '17b-workflow-toolbar-above-canvas.png',
   workflowDark: '18-workflow-editor-dark-mode.png',
 };
 
@@ -138,8 +139,19 @@ async function main() {
     await captureWorkflowEditor(page, screenshots.workflowToolbar, async () => {
       await activateControl(page.locator('#mode-build'));
       await waitForWorkflowCanvas(page);
+      await closeSettingsSelection(page);
+      await collapseSettingsPanel(page);
       await zoomWorkflowCanvas(page, 7);
-      await dragWorkflowToolbar(page);
+      await dockWorkflowToolbarOnCanvasRight(page);
+    }, { blur: false, zoomClicks: 0 });
+
+    await captureWorkflowEditor(page, screenshots.workflowToolbarHeader, async () => {
+      await activateControl(page.locator('#mode-build'));
+      await waitForWorkflowCanvas(page);
+      await closeSettingsSelection(page);
+      await collapseSettingsPanel(page);
+      await zoomWorkflowCanvas(page, 7);
+      await dockWorkflowToolbarAboveCanvasRight(page);
     }, { blur: false, zoomClicks: 0 });
 
     await captureWorkflowEditor(page, screenshots.workflowDark, async () => {
@@ -291,6 +303,7 @@ async function captureConversationReviewPage(page, fileName) {
 async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   await goto(page, '/admin/agent-workflows');
   await page.getByRole('heading', { level: 1, name: /Workflows/i }).waitFor({ state: 'visible' });
+  await resetWorkflowToolbarPlacement(page);
   await searchAdminTable(page, 'Buyer Qualification');
 
   const workflowLink = page.getByRole('link', { name: /Buyer Qualification & Resolution/i }).first();
@@ -329,8 +342,28 @@ async function zoomWorkflowCanvas(page, clicks = 7) {
   }
 }
 
-async function dragWorkflowToolbar(page) {
-  const dragHandle = page.getByRole('button', { name: /Drag toolbar to float/i }).first();
+async function dockWorkflowToolbarOnCanvasRight(page) {
+  const canvasBox = await getWorkflowCanvasBox(page);
+
+  if (!canvasBox) {
+    return;
+  }
+
+  await dragWorkflowToolbarTo(page, canvasBox.x + canvasBox.width - 36, canvasBox.y + 28);
+}
+
+async function dockWorkflowToolbarAboveCanvasRight(page) {
+  const canvasBox = await getWorkflowCanvasBox(page);
+
+  if (!canvasBox) {
+    return;
+  }
+
+  await dragWorkflowToolbarTo(page, canvasBox.x + canvasBox.width - 36, canvasBox.y - 24);
+}
+
+async function dragWorkflowToolbarTo(page, targetX, targetY) {
+  const dragHandle = page.getByRole('button', { name: /Drag toolbar/i }).first();
 
   if (!(await isVisible(dragHandle))) {
     return;
@@ -347,9 +380,67 @@ async function dragWorkflowToolbar(page) {
 
   await page.mouse.move(startX, startY);
   await page.mouse.down();
-  await page.mouse.move(startX + 210, startY + 120, { steps: 14 });
+  await page.mouse.move(targetX, targetY, { steps: 18 });
   await page.mouse.up();
-  await page.waitForTimeout(500);
+  await page.waitForTimeout(700);
+}
+
+async function getWorkflowCanvasBox(page) {
+  const canvas = page.locator('.fi-wf-canvas').first();
+  await canvas.waitFor({ state: 'visible', timeout: 30_000 });
+
+  return canvas.boundingBox();
+}
+
+async function closeSettingsSelection(page) {
+  const closeSettings = page.locator('button.fi-wf-settings-close').first();
+
+  if (await isVisible(closeSettings)) {
+    await closeSettings.click();
+    await page.waitForTimeout(500);
+  }
+}
+
+async function collapseSettingsPanel(page) {
+  const collapseButtons = page.locator('button.fi-wf-settings-collapse-btn');
+  const count = await collapseButtons.count().catch(() => 0);
+
+  for (let index = 0; index < count; index++) {
+    const button = collapseButtons.nth(index);
+
+    if (await button.isVisible().catch(() => false)) {
+      await button.click();
+      await page.locator('.fi-wf-panel-settings--collapsed').first().waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
+      await page.waitForTimeout(700);
+
+      if (await page.locator('.fi-wf-panel-settings--collapsed').first().isVisible().catch(() => false)) {
+        return;
+      }
+    }
+  }
+
+  await page.evaluate(() => {
+    const rawLayout = window.localStorage.getItem('fi-wf-editor-panel-layout');
+    const layout = rawLayout ? JSON.parse(rawLayout) : {};
+
+    window.localStorage.setItem('fi-wf-editor-panel-layout', JSON.stringify({
+      ...layout,
+      settingsWidth: 0,
+      lastExpandedSettingsWidth: layout.lastExpandedSettingsWidth || 320,
+    }));
+  }).catch(() => {});
+  await page.reload({ waitUntil: 'domcontentloaded' });
+  await waitForUi(page);
+  await page.locator('#workflow-editor-root').waitFor({ state: 'visible', timeout: 30_000 });
+  await waitForWorkflowCanvas(page);
+  await page.locator('.fi-wf-panel-settings--collapsed').first().waitFor({ state: 'visible', timeout: 30_000 }).catch(() => {});
+  await page.waitForTimeout(700);
+}
+
+async function resetWorkflowToolbarPlacement(page) {
+  await page.evaluate(() => {
+    window.localStorage.removeItem('fi-wf-floating-hud-placement-v1');
+  }).catch(() => {});
 }
 
 async function forceDarkMode(page) {

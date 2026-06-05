@@ -64,9 +64,13 @@ Expand the editor to the whole viewport when the canvas needs attention. Focus m
 
 ### Toolbar positioning and theme modes
 
-Drag and reposition the canvas toolbar while keeping zoom, fit-to-view, minimap, grouping, locking, validation, and shortcut controls close to the graph.
+Drag and reposition the canvas toolbar while keeping zoom, fit-to-view, minimap, grouping, locking, validation, and shortcut controls close to the graph. With the inspector collapsed, the right-aligned toolbar keeps a small gutter from the page action menu.
 
 ![Workflow editor toolbar positioning](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/17-workflow-toolbar-positioning.png)
+
+Dock the same toolbar above the canvas when you want the build surface itself to stay open.
+
+![Workflow editor toolbar above canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/17b-workflow-toolbar-above-canvas.png)
 
 The editor supports Filament light and dark mode. Dark mode keeps the canvas, toolbar, node states, and inspector readable during long authoring or debugging sessions.
 
