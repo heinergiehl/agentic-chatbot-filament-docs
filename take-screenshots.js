@@ -1,145 +1,39 @@
 /**
- * Screenshot capture script for Filament Agentic Chatbot documentation.
- * Run: node take-screenshots.js
+ * Screenshot capture script for the Filament Agentic Chatbot public docs.
+ *
+ * Default target: the local sandbox started by the plugin repo.
+ * Override with: AGENTIC_DOCS_BASE_URL=https://your-demo.example node take-screenshots.js
  */
 
 const { chromium } = require('playwright');
-const path = require('path');
 const fs = require('fs');
+const path = require('path');
 
-const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://filament-agentic-chatbot.localhost:8000';
+const BASE_URL = process.env.AGENTIC_DOCS_BASE_URL || 'http://127.0.0.1:8010';
 const OUT_DIR = path.join(__dirname, 'images', 'agentic-chatbot');
 
 const VIEWPORT = { width: 1600, height: 1200 };
-const BOT_EDIT_URL = `${BASE_URL}/admin/rag-bots/1/edit`;
-const WORKFLOW_EDITOR_URL = `${BASE_URL}/admin/agent-workflows/9/edit`;
-const WORKFLOW_RUNS_URL = `${BASE_URL}/admin/agent-workflows/2/edit`;
+const focusModeAccessibleName = 'Enter focus mode';
 
-async function screenshot(target, name, description, options = {}) {
-  const dest = path.join(OUT_DIR, name);
-  await target.screenshot({ path: dest, animations: 'disabled', ...options });
-  console.log(`  ✓ ${name}  – ${description}`);
-}
-
-async function waitForUi(page, delay = 1200) {
-  await page.waitForLoadState('networkidle');
-  await page.waitForTimeout(delay);
-}
-
-async function goto(page, url, delay = 1200) {
-  await page.goto(url, { waitUntil: 'domcontentloaded' });
-  await waitForUi(page, delay);
-}
-
-async function scrollPage(page, y = 0, delay = 600) {
-  await page.evaluate((offset) => window.scrollTo(0, offset), y);
-  await page.waitForTimeout(delay);
-}
-
-async function waitForBotEdit(page) {
-  await page.getByRole('tab', { name: 'Setup' }).waitFor({ state: 'attached' });
-  await page.getByRole('heading', { name: 'Identity & Model' }).waitFor({ state: 'attached' });
-  await page.getByRole('textbox', { name: 'Name*' }).waitFor({ state: 'visible' });
-  await page.getByRole('textbox', { name: 'System Prompt' }).waitFor({ state: 'visible' });
-  await page.waitForTimeout(1800);
-}
-
-async function waitForWorkflow(page) {
-  await page.waitForLoadState('networkidle');
-  await page.waitForSelector('.fi-wf-node');
-  await page.waitForTimeout(2800);
-}
-
-async function scrollWorkflowIntoView(page, y = 220) {
-  await page.evaluate((offset) => window.scrollTo(0, offset), y);
-  await page.waitForTimeout(500);
-}
-
-async function openConversationWithMessages(page) {
-  await goto(page, `${BASE_URL}/admin/rag-conversations`, 1200);
-
-  const href = await page.locator('table tbody tr').evaluateAll((rows) => {
-    for (const row of rows) {
-      const cells = Array.from(row.querySelectorAll('td'));
-      const rawMessages = (cells[3]?.textContent || '').replace(/[^\d]/g, '');
-      const messages = Number.parseInt(rawMessages, 10);
-      const link = row.querySelector('a[href]');
-
-      if (link && Number.isFinite(messages) && messages > 0) {
-        return link.href;
-      }
-    }
-
-    return rows[0]?.querySelector('a[href]')?.href || null;
-  });
-
-  if (!href) {
-    throw new Error('Could not find a conversation row to capture.');
-  }
-
-  await goto(page, href, 1500);
-  await page.locator('.fi-convo-transcript, .fi-convo-bubble-bot, .fi-convo-bubble-user').first().waitFor();
-  await page.waitForTimeout(1500);
-}
-
-async function dismissAnalyticsPrompt(page) {
-  const buttons = [
-    page.getByRole('button', { name: 'Essential only' }),
-    page.getByRole('button', { name: 'Accept analytics' }),
-  ];
-
-  for (const button of buttons) {
-    if ((await button.count()) > 0 && await button.first().isVisible().catch(() => false)) {
-      await button.first().click();
-      await page.waitForTimeout(700);
-      return;
-    }
-  }
-}
-
-async function captureWidgetCloseUp(page, name, description) {
-  const selectors = [
-    '#widget-demo [data-agentic-chatbot-widget]',
-    '#widget-demo .fi-acb-window',
-    '#widget-demo .fi-acb-widget',
-    '#widget-demo .fi-chat-widget',
-    '#widget-demo iframe',
-  ];
-
-  for (const selector of selectors) {
-    const locator = page.locator(selector).first();
-
-    if ((await locator.count()) > 0) {
-      await locator.scrollIntoViewIfNeeded().catch(() => {});
-      await page.waitForTimeout(700);
-      await screenshot(locator, name, description);
-      return;
-    }
-  }
-
-  const widgetSection = page.locator('#widget-demo').first();
-  await widgetSection.waitFor();
-  await widgetSection.scrollIntoViewIfNeeded();
-  await page.waitForTimeout(700);
-  await screenshot(widgetSection, name, description);
-}
-
-async function captureWorkflowSidebar(page, name, description) {
-  const sidebar = page.locator('.fi-wf-panel-sidebar').first();
-  await sidebar.waitFor();
-  await page.waitForTimeout(900);
-  await screenshot(sidebar, name, description);
-}
-
-async function waitForRunDetails(page) {
-  const loadingState = page.getByText('Loading run detail...').first();
-
-  if ((await loadingState.count()) > 0) {
-    await loadingState.waitFor({ state: 'hidden', timeout: 10000 }).catch(() => {});
-  }
-
-  await page.waitForTimeout(700);
-}
+const screenshots = {
+  botList: '01-bot-list.png',
+  botEdit: '02-bot-edit.png',
+  sourceList: '03-source-ingestion-table.png',
+  transcript: '04-conversation-transcript.png',
+  widgetDesktop: '05-widget-desktop.png',
+  widgetMobile: '06-widget-mobile.png',
+  workflowList: '07-workflow-list.png',
+  workflowCanvas: '08-workflow-editor-canvas.png',
+  workflowFocus: '09-workflow-editor-focus-mode.png',
+  workflowQuality: '10-workflow-quality-panel.png',
+  workflowGenerate: '11-workflow-generate-tab.png',
+  workflowRuns: '12-workflow-runs-tab.png',
+  workflowRunTrace: '12b-workflow-run-trace.png',
+  qualityLab: '13-quality-lab.png',
+  handoffInbox: '14-handoff-inbox.png',
+  workflowReleases: '15-workflow-releases-tab.png',
+  apiConnectors: '16-api-connectors-list.png',
+};
 
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -148,105 +42,375 @@ async function main() {
   const context = await browser.newContext({ viewport: VIEWPORT });
   const page = await context.newPage();
 
-  // -- Login ----------------------------------------------------------------
-  console.log('Logging in...');
-  await goto(page, `${BASE_URL}/admin/login`, 800);
-  await waitForUi(page, 800);
-  await Promise.all([
-    page.waitForURL(/\/admin(?:\/)?$/),
-    page.getByRole('button', { name: 'Enter Demo' }).click(),
-  ]);
-  await waitForUi(page, 1500);
-  console.log('Logged in. Starting screenshots...\n');
+  try {
+    await loginToAdmin(page);
 
-  // -- 01: Bot list ---------------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/rag-bots`);
-  await screenshot(page, '01-bot-list.png', 'Bot list with sidebar', { fullPage: false });
+    await captureAdminPage(page, '/admin/bots', screenshots.botList, /Bots/i, async () => {
+      await waitForFirstTableRow(page);
+    });
 
-  // -- 02: Bot edit ---------------------------------------------------------
-  await goto(page, BOT_EDIT_URL, 1500);
-  await waitForBotEdit(page);
-  await page.getByRole('tab', { name: 'Widget' }).click();
-  await page.getByText('Live Preview').first().waitFor({ state: 'visible' });
-  await page.waitForTimeout(1500);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(500);
-  await screenshot(page, '02-bot-edit.png', 'Bot widget customization with live preview', { fullPage: true });
+    await captureBotEditPage(page, screenshots.botEdit);
 
-  // -- 03: Source ingestion -------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/rag-sources`);
-  await screenshot(page, '03-source-ingestion-table.png', 'Knowledge sources table', { fullPage: false });
+    await captureAdminPage(page, '/admin/knowledge-sources', screenshots.sourceList, /Knowledge Sources/i, async () => {
+      await searchAdminTable(page, '01. Public Quickstart Guide');
+      await waitForRowText(page, '01. Public Quickstart Guide');
+    });
 
-  // -- 04: Conversations ----------------------------------------------------
-  await openConversationWithMessages(page);
-  await scrollPage(page, 120, 500);
-  await screenshot(page, '04-conversation-transcript.png', 'Conversation transcript', { fullPage: false });
+    await captureConversationReviewPage(page, screenshots.transcript);
 
-  // -- 05: Widget desktop ---------------------------------------------------
-  await goto(page, `${BASE_URL}/?demo=feature-showcase#widget-demo`, 1800);
-  await dismissAnalyticsPrompt(page);
-  await page.waitForTimeout(1200);
-  await captureWidgetCloseUp(
-    page,
-    '05-widget-desktop.png',
-    'Conversation-focused widget close-up'
-  );
+    await captureAdminPage(page, '/admin/agent-workflows', screenshots.workflowList, /Workflows/i, async () => {
+      await searchAdminTable(page, 'Buyer Qualification');
+      await waitForFirstTableRow(page);
+    });
 
-  // -- 07: Workflow list ----------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/agent-workflows`);
-  await screenshot(page, '07-workflow-list.png', 'Workflow list', { fullPage: false });
+    await captureWorkflowEditor(page, screenshots.workflowCanvas, async () => {
+      await activateControl(page.locator('#mode-build'));
+      await waitForWorkflowCanvas(page);
+      const classifyNode = page.locator('.react-flow__node').filter({ hasText: /Classify|Route/i }).first();
 
-  // -- 08: Workflow editor — plugin feedback collector ----------------------
-  await goto(page, WORKFLOW_EDITOR_URL, 1500);
-  await waitForWorkflow(page);
-  await page.getByRole('tab', { name: 'Nodes' }).click();
-  await page.waitForTimeout(1200);
-  const sendMessageNode = page.locator('.fi-wf-node').filter({ hasText: 'Set Expectations' }).first();
-  if (await sendMessageNode.count() > 0) {
-    await sendMessageNode.scrollIntoViewIfNeeded();
-    await sendMessageNode.click();
-    await page.waitForTimeout(1500);
+      if (await isVisible(classifyNode)) {
+        await classifyNode.click();
+      }
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowFocus, async () => {
+      await activateControl(page.locator('#mode-build'));
+      await waitForWorkflowCanvas(page);
+      await page.getByRole('button', { name: focusModeAccessibleName }).first().click();
+      await page.waitForFunction(() => document.body.classList.contains('fi-wf-focus-mode-active'));
+      await page.waitForTimeout(700);
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowQuality, async () => {
+      await activateControl(page.locator('#mode-debug'));
+      await activateControl(page.locator('#tab-quality'));
+      await page.locator('#panel-quality').waitFor({ state: 'visible' });
+      await page.getByText('Enterprise rollout answer stays grounded').first().waitFor({ state: 'visible' });
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowGenerate, async () => {
+      await activateControl(page.locator('#mode-generate'));
+      const workflowBrief = page.getByRole('textbox', { name: 'Workflow brief' });
+      await workflowBrief.waitFor({ state: 'visible' });
+      await workflowBrief.fill('Build a buyer support workflow that retrieves docs, routes by intent, and enriches enterprise leads via a CRM connector before replying.');
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowRuns, async () => {
+      await activateControl(page.locator('#mode-debug'));
+      await activateControl(page.locator('#tab-executions'));
+      await page.locator('#panel-executions .fi-wf-run-card').first().waitFor({ state: 'visible' });
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowRunTrace, async () => {
+      await activateControl(page.locator('#mode-debug'));
+      await activateControl(page.locator('#tab-executions'));
+      const completedRun = page.locator('#panel-executions .fi-wf-run-card').filter({ hasText: 'COMPLETED' }).first();
+      await completedRun.waitFor({ state: 'visible' });
+      await completedRun.click();
+      await waitForRunDetails(page);
+      await collapseWorkflowSidebar(page);
+      await waitForWorkflowCanvas(page);
+    });
+
+    await captureAdminPage(page, '/admin/bot-quality-scenarios', screenshots.qualityLab, /Quality Scenarios/i, async () => {
+      await searchAdminTable(page, 'Enterprise rollout');
+      await waitForRowText(page, 'Enterprise rollout answer stays grou');
+    });
+
+    await captureAdminPage(page, '/admin/bot-handoff-requests', screenshots.handoffInbox, /Handoff Requests/i, async () => {
+      await searchAdminTable(page, 'Buyer escalation');
+      await waitForRowText(page, 'Buyer escalation needs operator');
+    });
+
+    await captureWorkflowEditor(page, screenshots.workflowReleases, async () => {
+      await activateControl(page.locator('#mode-release'));
+      await page.locator('#panel-releases').getByText('Live').first().waitFor({ state: 'visible' });
+    });
+
+    await captureAdminPage(page, '/admin/api-connectors', screenshots.apiConnectors, /Api Connectors/i, async () => {
+      await searchAdminTable(page, 'CRM Lead Qualification API');
+      await waitForFirstTableRow(page);
+    });
+
+    await captureWidget(page, screenshots.widgetDesktop);
+    await captureMobileWidget(browser);
+  } finally {
+    await browser.close();
   }
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(700);
-  await screenshot(page, '08-workflow-editor-canvas.png', 'Workflow editor with node library and settings panel', { fullPage: false });
 
-  // Navigate to AI Draft tab.
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(600);
-  await page.getByRole('tab', { name: 'AI Draft' }).click();
-  await page.waitForTimeout(1500);
-  await captureWorkflowSidebar(page, '09-workflow-generate-tab.png', 'Workflow AI Draft sidebar');
-
-  // -- 10: Workflow runs with completed path highlighting -------------------
-  await goto(page, WORKFLOW_RUNS_URL, 1500);
-  await waitForWorkflow(page);
-  await page.getByRole('tab', { name: 'Runs' }).click();
-  await page.waitForTimeout(1200);
-  await waitForRunDetails(page);
-  await captureWorkflowSidebar(page, '10-workflow-runs-tab.png', 'Workflow runs sidebar with completed execution state');
-
-  await scrollWorkflowIntoView(page, 240);
-  await waitForRunDetails(page);
-  await screenshot(page, '10b-workflow-run-trace.png', 'Workflow run trace with executed path highlighted on the canvas', { fullPage: false });
-
-  // Navigate to Versions tab on the workflow with run history.
-  await page.keyboard.press('Escape');
-  await page.waitForTimeout(400);
-  await page.evaluate(() => window.scrollTo(0, 0));
-  await page.getByRole('tab', { name: 'Versions' }).click();
-  await page.waitForTimeout(1000);
-  await captureWorkflowSidebar(page, '11-workflow-releases-tab.png', 'Workflow versions sidebar');
-
-  // -- 12: API Connectors ---------------------------------------------------
-  await goto(page, `${BASE_URL}/admin/api-connectors`);
-  await screenshot(page, '12-api-connectors-list.png', 'API connectors list', { fullPage: false });
-
-  await browser.close();
-  console.log('\nAll screenshots saved to:', OUT_DIR);
+  console.log(`\nAll screenshots saved to: ${OUT_DIR}`);
 }
 
-main().catch(err => {
-  console.error(err);
+async function loginToAdmin(page) {
+  console.log(`Logging in at ${BASE_URL}...`);
+  await goto(page, '/admin/login');
+
+  const demoButton = page.getByRole('button', { name: /Enter Demo/i }).first();
+
+  if (await isVisible(demoButton)) {
+    await Promise.all([
+      page.waitForURL(/\/admin(?:\/)?$/, { timeout: 30_000 }).catch(() => {}),
+      demoButton.click(),
+    ]);
+    await waitForUi(page);
+    return;
+  }
+
+  const email = process.env.AGENTIC_DOCS_ADMIN_EMAIL;
+  const password = process.env.AGENTIC_DOCS_ADMIN_PASSWORD;
+
+  if (!email || !password) {
+    throw new Error('Could not find the Enter Demo button. Set AGENTIC_DOCS_ADMIN_EMAIL and AGENTIC_DOCS_ADMIN_PASSWORD for protected demos.');
+  }
+
+  await page.getByLabel(/Email/i).fill(email);
+  await page.getByLabel(/Password/i).fill(password);
+  await Promise.all([
+    page.waitForURL(/\/admin(?:\/)?$/, { timeout: 30_000 }).catch(() => {}),
+    page.getByRole('button', { name: /Sign in|Log in|Login/i }).click(),
+  ]);
+  await waitForUi(page);
+}
+
+async function captureAdminPage(page, adminPath, fileName, heading, beforeShot, options = {}) {
+  await goto(page, adminPath);
+  await page.getByRole('heading', { level: 1, name: heading }).waitFor({ state: 'visible', timeout: 30_000 });
+
+  if (beforeShot) {
+    await beforeShot();
+  }
+
+  await saveScreenshot(page, fileName, options.fullPage ?? true);
+}
+
+async function captureBotEditPage(page, fileName) {
+  await goto(page, '/admin/workflow-runs');
+  await page.getByRole('heading', { level: 1, name: /Workflow Runs/i }).waitFor({ state: 'visible' });
+  await searchAdminTable(page, 'Buyer Qualification');
+
+  const row = page.locator('tbody tr').filter({ hasText: 'Buyer Qualification & Resolution' }).filter({ hasText: 'completed' }).first();
+
+  if (await isVisible(row)) {
+    await row.getByRole('link', { name: /Inspect/i }).first().click();
+    await page.waitForURL(/\/admin\/workflow-runs\/\d+$/, { timeout: 30_000 });
+    await page.getByRole('link', { name: /Open Bot/i }).first().click();
+  } else {
+    await goto(page, '/admin/bots');
+    await waitForFirstTableRow(page);
+    await page.locator('tbody tr').first().getByRole('link').first().click();
+  }
+
+  await page.waitForURL(/\/admin\/bots\/\d+\/edit$/, { timeout: 30_000 });
+  const setupTab = page.getByRole('tab', { name: /AI Setup|Setup/i }).first();
+
+  if (await isVisible(setupTab)) {
+    await setupTab.click();
+  }
+
+  await page.getByRole('heading', { name: /Conversation Design|Chat Provider & Model|Identity & Model/i }).first().waitFor({ state: 'visible' });
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(700);
+  await saveScreenshot(page, fileName, true);
+}
+
+async function captureConversationReviewPage(page, fileName) {
+  await goto(page, '/admin/bot-conversations');
+  await page.getByRole('heading', { level: 1, name: /Conversations/i }).waitFor({ state: 'visible' });
+  await waitForFirstTableRow(page);
+
+  const row = page.locator('tbody tr').first();
+  const reviewLink = row.getByRole('link', { name: /Review|View|Inspect/i }).first();
+
+  if (await isVisible(reviewLink)) {
+    await reviewLink.click();
+  } else {
+    await row.getByRole('link').first().click();
+  }
+
+  await page.waitForURL(/\/admin\/bot-conversations\/\d+$/, { timeout: 30_000 });
+  await page.getByRole('heading', { level: 1, name: /Conversation:/i }).waitFor({ state: 'visible' });
+  await page.locator('code, .fi-convo-bubble-bot, .fi-convo-bubble-user').first().waitFor({ state: 'visible' });
+  await page.waitForTimeout(1200);
+  await saveScreenshot(page, fileName, true);
+}
+
+async function captureWorkflowEditor(page, fileName, beforeShot) {
+  await goto(page, '/admin/agent-workflows');
+  await page.getByRole('heading', { level: 1, name: /Workflows/i }).waitFor({ state: 'visible' });
+  await searchAdminTable(page, 'Buyer Qualification');
+
+  const workflowLink = page.getByRole('link', { name: /Buyer Qualification & Resolution/i }).first();
+
+  if (await isVisible(workflowLink)) {
+    await workflowLink.click();
+  } else {
+    await page.locator('tbody tr').first().getByRole('link').first().click();
+  }
+
+  await page.getByRole('heading', { level: 1, name: /Buyer Qualification|Workflow/i }).waitFor({ state: 'visible' });
+  await page.locator('#workflow-editor-root').waitFor({ state: 'visible' });
+  await page.waitForTimeout(1000);
+  await exitFocusModeIfActive(page);
+  await expandWorkflowSidebarIfCollapsed(page);
+
+  if (beforeShot) {
+    await beforeShot();
+  }
+
+  await zoomWorkflowCanvas(page);
+  await page.waitForTimeout(500);
+  await saveScreenshot(page, fileName, false);
+}
+
+async function zoomWorkflowCanvas(page, clicks = 3) {
+  const zoomIn = page.getByRole('button', { name: 'Zoom in' }).first();
+
+  if (!(await isVisible(zoomIn))) {
+    return;
+  }
+
+  for (let index = 0; index < clicks; index++) {
+    await zoomIn.click();
+    await page.waitForTimeout(120);
+  }
+}
+
+async function waitForRunDetails(page) {
+  const loadingState = page.getByText('Loading run detail...').first();
+
+  await page.waitForTimeout(700);
+  await loadingState.waitFor({ state: 'hidden', timeout: 30_000 });
+  await page.waitForTimeout(500);
+}
+
+async function collapseWorkflowSidebar(page) {
+  const collapseSidebar = page.getByRole('button', { name: 'Collapse sidebar' }).first();
+
+  if (await isVisible(collapseSidebar)) {
+    await collapseSidebar.click();
+    await page.waitForTimeout(500);
+  }
+}
+
+async function expandWorkflowSidebarIfCollapsed(page) {
+  const expandSidebar = page.getByRole('button', { name: 'Expand sidebar' }).first();
+
+  if (await isVisible(expandSidebar)) {
+    await expandSidebar.click();
+    await page.waitForTimeout(500);
+  }
+}
+
+async function exitFocusModeIfActive(page) {
+  const exitFocusMode = page.getByRole('button', { name: 'Exit focus mode' }).first();
+
+  if (await isVisible(exitFocusMode)) {
+    await exitFocusMode.click();
+    await page.waitForFunction(() => !document.body.classList.contains('fi-wf-focus-mode-active'));
+  }
+}
+
+async function captureWidget(page, fileName) {
+  await goto(page, '/bot-public-test');
+  await openWidget(page);
+  await fillWidgetPrompt(page, 'hi');
+  await saveScreenshot(page, fileName, false);
+}
+
+async function captureMobileWidget(browser) {
+  const context = await browser.newContext({
+    viewport: { width: 430, height: 932 },
+    isMobile: true,
+    hasTouch: true,
+    userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+  });
+
+  const page = await context.newPage();
+
+  try {
+    await captureWidget(page, screenshots.widgetMobile);
+  } finally {
+    await context.close();
+  }
+}
+
+async function openWidget(page) {
+  await waitForUi(page);
+
+  const launchers = [
+    page.locator('[data-frw-role="launcher"]').first(),
+    page.locator('[data-agentic-chatbot-widget] button').first(),
+    page.getByRole('button', { name: /Open chat|Chat|Ask/i }).first(),
+  ];
+
+  for (const launcher of launchers) {
+    if (await isVisible(launcher)) {
+      await launcher.click();
+      break;
+    }
+  }
+
+  await page.locator('[data-frw-role="input"], textarea, input').first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.waitForTimeout(500);
+}
+
+async function fillWidgetPrompt(page, message) {
+  const composer = page.locator('[data-frw-role="input"], textarea, input').first();
+  await composer.fill(message);
+  await composer.press('Enter');
+  await page.waitForTimeout(2000);
+}
+
+async function activateControl(locator) {
+  const target = locator.first();
+  await target.waitFor({ state: 'visible', timeout: 30_000 });
+  await target.click();
+  await new Promise((resolve) => setTimeout(resolve, 350));
+}
+
+async function searchAdminTable(page, value) {
+  const search = page.getByRole('searchbox', { name: 'Search', exact: true });
+
+  if (await isVisible(search)) {
+    await search.fill(value);
+    await page.waitForTimeout(900);
+  }
+}
+
+async function waitForFirstTableRow(page) {
+  await page.locator('tbody tr').first().waitFor({ state: 'visible', timeout: 30_000 });
+}
+
+async function waitForRowText(page, text) {
+  await page.locator('tbody tr').filter({ hasText: text }).first().waitFor({ state: 'visible', timeout: 30_000 });
+}
+
+async function waitForWorkflowCanvas(page) {
+  await page.locator('.react-flow__node').first().waitFor({ state: 'visible', timeout: 30_000 });
+}
+
+async function goto(page, targetPath) {
+  const url = targetPath.startsWith('http') ? targetPath : `${BASE_URL}${targetPath}`;
+  await page.goto(url, { waitUntil: 'domcontentloaded' });
+  await waitForUi(page);
+}
+
+async function waitForUi(page, delay = 700) {
+  await page.waitForLoadState('networkidle').catch(() => {});
+  await page.waitForTimeout(delay);
+}
+
+async function saveScreenshot(page, fileName, fullPage) {
+  const filePath = path.join(OUT_DIR, fileName);
+  await page.screenshot({ path: filePath, fullPage, animations: 'disabled' });
+  console.log(`  saved ${fileName}`);
+}
+
+async function isVisible(locator) {
+  return (await locator.count()) > 0 && await locator.first().isVisible().catch(() => false);
+}
+
+main().catch((error) => {
+  console.error(error);
   process.exit(1);
 });

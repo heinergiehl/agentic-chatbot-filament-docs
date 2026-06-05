@@ -14,15 +14,15 @@ Click **Enter Demo** on the login page. Pre-configured bots, ingested documentat
 
 ### Bot management
 
-Manage multiple assistants from a Filament-native control plane. Each bot has its own model, prompt, retrieval settings, and analytics.
+Manage multiple assistants from a Filament-native control plane. Each bot has its own model, prompt, retrieval settings, workflow assignment, and analytics.
 
 ![Bot list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/01-bot-list.png)
 
-### Bot customization
+### Assistant profile and bot setup
 
-Tune widget style, copy, quick prompts, area overrides, and live preview without leaving the bot editor.
+Tune persona, tone, answer style, fallback behavior, model, retrieval settings, and widget entry points from the same bot editor.
 
-![Bot widget customization](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
+![Assistant profile and bot setup](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
 
 ### Knowledge sources
 
@@ -38,9 +38,11 @@ Inspect conversation transcripts without leaving Filament. Review what users ask
 
 ### Chat widget
 
-Show the live embedded chat experience up close, including the branded header, structured replies, and quick prompts.
+Show the live embedded chat experience up close on desktop and mobile, including the branded header, structured replies, and quick prompts.
 
-![Widget close-up conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
+![Widget desktop conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
+
+![Widget mobile conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/06-widget-mobile.png)
 
 ### Visual workflow builder
 
@@ -50,31 +52,55 @@ Use the plugin feedback collector as a concrete example: the node library stays 
 
 ![Workflow editor with node library and settings panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
 
+### Full-viewport focus mode
+
+Expand the editor to the whole viewport when the canvas needs attention. Focus mode removes surrounding Filament chrome while keeping the build surface, inspector, and main editor actions available.
+
+![Workflow editor focus mode](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/09-workflow-editor-focus-mode.png)
+
+### Workflow quality checks
+
+Run workflow-linked scenarios from the editor before publishing, then inspect pass/fail state, scores, and fix suggestions in context.
+
+![Workflow quality panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-quality-panel.png)
+
 ### AI-assisted drafting
 
 Describe the flow you need in natural language, generate a draft workflow, then refine and publish.
 
-![AI Draft tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/09-workflow-generate-tab.png)
+![AI Draft tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/11-workflow-generate-tab.png)
 
 ### Run history and live tracing
 
 Inspect every execution with completed-path highlighting, step traces, variables, halt reasons, and timestamps.
 
-![Workflow runs tab — completed run selected](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-runs-tab.png)
+![Workflow runs tab — completed run selected](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12-workflow-runs-tab.png)
 
-![Workflow run trace — executed branch highlighted on canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10b-workflow-run-trace.png)
+![Workflow run trace — executed branch highlighted on canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12b-workflow-run-trace.png)
+
+### Quality Lab
+
+Create saved scenarios for direct bot answers or workflow drafts, rerun them after feedback, and keep release-blocking checks visible.
+
+![Quality Lab scenarios](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/13-quality-lab.png)
+
+### Handoff Inbox
+
+Review low-confidence, blocked, or human-required conversations with priority, assignment, transcript context, and workflow links in one queue.
+
+![Handoff Inbox](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/14-handoff-inbox.png)
 
 ### Versions and releases
 
 Publish versioned releases with notes and roll back to any prior version in seconds.
 
-![Workflow releases tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/11-workflow-releases-tab.png)
+![Workflow releases tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/15-workflow-releases-tab.png)
 
 ### API connectors
 
 Define reusable external API connection profiles and reference them across workflow nodes or API-fed knowledge sources.
 
-![API connectors list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12-api-connectors-list.png)
+![API connectors list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/16-api-connectors-list.png)
 
 ---
 
@@ -83,6 +109,7 @@ Define reusable external API connection profiles and reference them across workf
 ### Source-grounded knowledge
 
 - **Multi-bot management** — unlimited bots, each with its own identity, model, prompt, retrieval config, and access controls
+- **Assistant Profile Studio** — tune tone, persona, boundaries, answer style, and fallback behavior without editing workflow JSON
 - **Source types** — URL page, PDF / file upload, plain-text snippet, API-fed JSON records
 - **Queue-based ingestion** — async chunking, embedding, and upsert with per-source status tracking
 - **API knowledge sources** — sync records from authenticated `GET` JSON endpoints through reusable API Connectors
@@ -96,6 +123,7 @@ Define reusable external API connection profiles and reference them across workf
 
 - **Broad node catalog**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Answer, Switch/Router, Condition, Action, HTTP Request, API Connector, Memory Read/Write, Delay, Loop, Sub-Workflow, and more
 - **Multi-branch canvas** powered by Vue Flow — drag, connect, and organize nodes freely
+- **Focus mode** — expand the editor to the full viewport when complex graphs need more working space
 - **AI Agent node** — configurable Provider, Model, and System Prompt per node within the same workflow
 - **Knowledge Base node** — inline source retrieval mid-flow, configurable result count
 - **Switch/Router node** — N branches + default; route by intent, field value, or AI classification
@@ -104,6 +132,7 @@ Define reusable external API connection profiles and reference them across workf
 - **Variable interpolation** — `{{variable_name}}` syntax in system prompts, messages, and node configs
 - **AI Draft** — generate a complete workflow graph from a natural-language description in seconds
 - **Run history** with step-level traces, current node, variable snapshot, halt reason, and timestamps
+- **Workflow quality panel** — run linked quality scenarios from the editor before publishing
 - **Versioned releases** with release notes; rollback to any prior version without re-editing
 - **Import / Export** — share workflows as JSON between environments
 
@@ -130,6 +159,9 @@ Define reusable external API connection profiles and reference them across workf
 
 ### Production tooling
 
+- **Quality Lab** — replay saved quality scenarios against direct bots or workflow drafts and track pass/fail history
+- **Feedback-to-scenario loop** — convert negative conversation feedback into repeatable quality checks
+- **Human handoff inbox** — manage low-confidence, blocked, or operator-required conversations with priority and assignment fields
 - **`php artisan filament-agentic-chatbot:doctor`** — pre-flight checks for config, DB, vector store, queue worker, and AI provider
 - **Data retention policy** — scheduled pruning of old conversations with configurable age thresholds
 - **GDPR / privacy endpoints** — export and delete conversation data per user on demand
@@ -348,6 +380,8 @@ Import any JSON file via the workflow editor's **Import** button.
 - [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md)
 - [Agent runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
 - [Agentic workflows — all node types explained](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
+- [Quality loop and handoff inbox](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUALITY_LOOP.md)
+- [Smart workflow builder](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SMART_WORKFLOW_BUILDER.md)
 - [Knowledge sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWLEDGE_SOURCES.md)
 - [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
 - [Database and breaking changes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATABASE_AND_BREAKING_CHANGES.md)

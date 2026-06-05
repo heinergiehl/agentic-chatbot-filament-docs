@@ -61,6 +61,9 @@ It keeps the source-grounded answer capabilities of the earlier Filament RAG plu
 - API connectors for external services
 - Smart Data Queries for safe natural-language lookups against allowed internal resources
 - API-fed knowledge sources for JSON records
+- assistant profile controls for tone, boundaries, and fallback behavior
+- quality scenarios, workflow-linked quality runs, and feedback-to-scenario review loops
+- human handoff queues for low-confidence or operator-required conversations
 - package-owned Telegram and Slack channel integrations
 - guided intake, routing, and escalation flows
 
@@ -82,11 +85,11 @@ Manage multiple bots from inside Filament.
 
 ![Bot list](./images/agentic-chatbot/01-bot-list.png)
 
-### Bot customization
+### Assistant profile and bot setup
 
-Tune widget style, copy, quick prompts, area overrides, and live preview without leaving the bot editor.
+Tune the assistant's persona, tone, answer style, fallback behavior, model, retrieval settings, and widget entry points without leaving the bot editor.
 
-![Bot widget customization](./images/agentic-chatbot/02-bot-edit.png)
+![Assistant profile and bot setup](./images/agentic-chatbot/02-bot-edit.png)
 
 ### Source ingestion visibility
 
@@ -100,6 +103,14 @@ Inspect transcripts and assistant answers from inside Filament.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
+### Widget experience
+
+Show the embeddable chat experience up close, including the branded header, structured replies, and quick-prompt chips.
+
+![Widget desktop conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
+
+![Widget mobile conversation snapshot](./images/agentic-chatbot/06-widget-mobile.png)
+
 ### Workflow library
 
 See which workflows are active, which bot they belong to, and which drafts are ready to ship.
@@ -112,27 +123,51 @@ Open a real plugin feedback collector workflow with the node library on the left
 
 ![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
-### Workflow drafting, completed runs, and versions
+### Workflow focus mode
+
+Expand the workflow editor to the full viewport when the canvas needs attention. Focus mode keeps the build surface, inspector, and primary editor actions visible while removing the surrounding Filament chrome.
+
+![Workflow editor focus mode](./images/agentic-chatbot/09-workflow-editor-focus-mode.png)
+
+### Workflow quality panel
+
+Run workflow-linked quality scenarios from the editor before publishing and inspect pass/fail state, scores, and fix suggestions in context.
+
+![Workflow quality panel](./images/agentic-chatbot/10-workflow-quality-panel.png)
+
+### AI drafting, run traces, and releases
 
 Draft workflows from prompts, inspect completed execution paths, and publish changes with version notes.
 
-![Workflow generate tab](./images/agentic-chatbot/09-workflow-generate-tab.png)
+![Workflow generate tab](./images/agentic-chatbot/11-workflow-generate-tab.png)
 
-![Workflow runs tab](./images/agentic-chatbot/10-workflow-runs-tab.png)
+![Workflow runs tab](./images/agentic-chatbot/12-workflow-runs-tab.png)
 
-![Workflow releases tab](./images/agentic-chatbot/11-workflow-releases-tab.png)
+![Workflow run trace](./images/agentic-chatbot/12b-workflow-run-trace.png)
+
+### Quality Lab
+
+Create repeatable quality scenarios for direct bot answers or workflow drafts, then use run history to track regressions before they reach users.
+
+![Quality Lab scenarios](./images/agentic-chatbot/13-quality-lab.png)
+
+### Handoff Inbox
+
+Review low-confidence, blocked, or human-required conversations with priority, assignment, transcript context, and workflow links in one queue.
+
+![Handoff Inbox](./images/agentic-chatbot/14-handoff-inbox.png)
+
+### Versions and releases
+
+Publish versioned releases with notes and roll back to prior versions when a draft should not stay live.
+
+![Workflow releases tab](./images/agentic-chatbot/15-workflow-releases-tab.png)
 
 ### API connectors
 
 Manage reusable external API profiles for workflow nodes and API-fed knowledge sources.
 
-![API connectors list](./images/agentic-chatbot/12-api-connectors-list.png)
-
-### Widget experience
-
-Show the embeddable chat experience up close, including the branded header, structured replies, and quick-prompt chips.
-
-![Widget close-up conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
+![API connectors list](./images/agentic-chatbot/16-api-connectors-list.png)
 
 ## Documentation Map
 
@@ -158,6 +193,8 @@ Show the embeddable chat experience up close, including the branded header, stru
 - [Knowledge Sources](KNOWLEDGE_SOURCES.md)
 - [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- [Quality Loop](QUALITY_LOOP.md)
+- [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md)
 - [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md)
 - [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - [API Connectors](API_CONNECTORS.md)
@@ -192,6 +229,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - How is it different from the older RAG plugin? → [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
 - Can I use it as a simple source-grounded chatbot first? → [Quickstart](QUICKSTART.md)
 - How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- How do I improve assistant quality after feedback? → [Quality Loop](QUALITY_LOOP.md)
 - What changed in the database after the AgentGraph SDK refactor? → [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
 - How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
 - How do I connect Telegram or Slack? → [Channel Integrations](CHANNELS.md)
@@ -199,7 +237,7 @@ Show the embeddable chat experience up close, including the branded header, stru
 - How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
 - How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
 - Can the bot use API-fed knowledge or database-backed resources? → [Knowledge Sources](KNOWLEDGE_SOURCES.md), [API Source Roadmap](API_SOURCE_ROADMAP.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md)
-- How do workflow releases, traces, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
+- How do workflow focus mode, releases, traces, quality checks, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md) and [Quality Loop](QUALITY_LOOP.md)
 - How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
 - How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
 - How do I translate the package UI? → [Localization](LOCALIZATION.md)

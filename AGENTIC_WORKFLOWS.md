@@ -40,6 +40,7 @@ The editor is embedded inside Filament on the workflow edit page. It provides:
 - a drag-and-drop canvas for placing and connecting nodes
 - a sidebar with all available node types
 - per-node configuration panels for prompts, conditions, and data mappings
+- focus mode for a full-viewport canvas when complex graphs need more room
 - local validation plus a server-side **Validate workflow** action that runs the same validator used by save and publish
 - keyboard shortcuts for common operations
 
@@ -56,6 +57,10 @@ The workflow edit page combines five working areas:
 | **Test**     | Run the saved draft in a sandbox conversation before publishing     |
 
 The editor also supports node mapping previews for action, HTTP Request, and API Connector nodes plus dry runs for HTTP Request and API Connector nodes. That means you can inspect mappings and live responses before you publish a release.
+
+Focus mode expands the editor to the full viewport and removes the surrounding Filament chrome. Use it when you are wiring larger graphs, reviewing branch layout, or presenting a workflow to another operator. The canvas, node library, inspector, mode switcher, save actions, and publish controls remain available.
+
+The editor also includes a **Quality** panel for workflow-linked scenarios. Save the draft, run the relevant checks, then review pass/fail status, score, failed checks, and fix suggestions without leaving the workflow you are about to publish. See [Quality Loop](QUALITY_LOOP.md) for the operating model.
 
 To keep the catalog usable as it grows, the sidebar now exposes nodes in three tiers:
 
@@ -312,6 +317,7 @@ The editor also includes draft-only confidence tools before you create a release
 
 - **Mapping Preview** for action, HTTP Request, and API Connector nodes
 - **Dry Run** for HTTP Request and API Connector nodes using current mapped inputs
+- **Quality panel** for workflow-linked scenarios and fix suggestions
 - **Test chat** against the saved draft workflow instead of the live release
 - **Replay / rerun** from recorded trace state when you need to debug a specific failure or regression
 
@@ -373,6 +379,8 @@ Do not start by making every bot fully agentic. A cleaner path:
 ## Related Docs
 
 - [API Connectors](API_CONNECTORS.md) — reusable external API profiles
+- [Quality Loop](QUALITY_LOOP.md) — quality scenarios, workflow checks, and handoff operations
+- [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md) — simplified authoring principles and Smart Step metadata
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md) — full node schema reference
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md) — ready-to-paste generation prompts
 - [Bots](BOTS.md) — how bots connect to workflows
