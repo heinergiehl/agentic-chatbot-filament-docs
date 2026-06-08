@@ -67,16 +67,13 @@ async function main() {
 
   try {
     await loginToAdmin(page);
+    prepareDocsConversationPath();
 
     await captureAdminPage(page, '/admin/bots', screenshots.botList, /Bots/i, async () => {
       await waitForFirstTableRow(page);
-    });
+    }, { clip: 'main' });
 
-    await captureBotEditPage(page, screenshots.botEdit);
-
-    await captureAdminPage(page, '/admin/knowledge-sources', screenshots.sourceList, /Knowledge Sources/i, async () => {
-      await waitForFirstTableRow(page);
-    });
+    await captureBotWidgetPreviewPage(page, screenshots.botEdit);
 
     await captureNewSourcePage(page, screenshots.sourceCreate);
 
@@ -84,100 +81,60 @@ async function main() {
 
     await captureAdminPage(page, '/admin/agent-workflows', screenshots.workflowList, /Workflows/i, async () => {
       await waitForFirstTableRow(page);
-    });
+    }, { clip: 'main' });
 
     await captureWorkflowEditor(page, screenshots.workflowCanvas, async () => {
       await activateControl(page.locator('#mode-build'));
       await waitForWorkflowCanvas(page);
-      const classifyNode = page.locator('.react-flow__node').filter({ hasText: /Classify|Route/i }).first();
+      const fitBriefNode = page.locator('.react-flow__node').filter({ hasText: /Build fit brief|Route intent/i }).first();
 
-      if (await isVisible(classifyNode)) {
-        await classifyNode.click();
+      if (await isVisible(fitBriefNode)) {
+        await fitBriefNode.click();
       }
-    }, { zoomClicks: 7 });
+    }, { zoomClicks: -2 });
 
     await captureWorkflowEditor(page, screenshots.workflowFocus, async () => {
       await activateControl(page.locator('#mode-build'));
       await waitForWorkflowCanvas(page);
+      await closeSettingsSelection(page);
+      await collapseWorkflowSidebar(page);
+      await collapseSettingsPanel(page);
       await page.getByRole('button', { name: focusModeAccessibleName }).first().click();
       await page.waitForFunction(() => document.body.classList.contains('fi-wf-focus-mode-active'));
       await page.waitForTimeout(700);
-    }, { zoomClicks: 8 });
+    }, { clip: 'canvas-tight', zoomClicks: -1 });
 
     await captureWorkflowEditor(page, screenshots.workflowQuality, async () => {
       await activateControl(page.locator('#mode-debug'));
       await activateControl(page.locator('#tab-quality'));
       await page.locator('#panel-quality').waitFor({ state: 'visible' });
-      await page.getByText(/Enterprise rollout answer stays grounded|Quality/i).first().waitFor({ state: 'visible' });
+      await page.getByText(/Fit recommendation stays grounded|Public widget fit check|Quality/i).first().waitFor({ state: 'visible' });
     }, { clip: 'sidebar', zoomClicks: 0 });
 
     await captureWorkflowEditor(page, screenshots.workflowGenerate, async () => {
       await activateControl(page.locator('#mode-generate'));
       const workflowBrief = page.getByRole('textbox', { name: 'Workflow brief' });
       await workflowBrief.waitFor({ state: 'visible' });
-      await workflowBrief.fill('Build a buyer support workflow that retrieves docs, routes by intent, and enriches enterprise leads via a CRM connector before replying.');
+      await workflowBrief.fill('Build a guided fit-assessment workflow that asks the visitor about widget, retrieval, and workflow needs, then returns a concise recommendation.');
     }, { clip: 'sidebar', zoomClicks: 0 });
 
-    await captureWorkflowEditor(page, screenshots.workflowRuns, async () => {
-      await activateControl(page.locator('#mode-debug'));
-      await activateControl(page.locator('#tab-executions'));
-      await page.locator('#panel-executions .fi-wf-run-card').first().waitFor({ state: 'visible' });
-    }, { clip: 'sidebar', zoomClicks: 0 });
-
-    await captureWorkflowEditor(page, screenshots.workflowRunTrace, async () => {
-      await activateControl(page.locator('#mode-debug'));
-      await activateControl(page.locator('#tab-executions'));
-      const completedRun = page.locator('#panel-executions .fi-wf-run-card').filter({ hasText: 'COMPLETED' }).first();
-      await completedRun.waitFor({ state: 'visible' });
-      await completedRun.click();
-      await waitForRunDetails(page);
-      await collapseWorkflowSidebar(page);
-      await waitForWorkflowCanvas(page);
-    }, { zoomClicks: 7 });
-
-    await captureAdminPage(page, '/admin/bot-quality-scenarios', screenshots.qualityLab, /Quality Scenarios/i, async () => {
-      await waitForFirstTableRow(page);
-    });
-
-    await captureAdminPage(page, '/admin/bot-handoff-requests', screenshots.handoffInbox, /Handoff Requests/i, async () => {
-      await waitForFirstTableRow(page);
-    });
-
-    await captureWorkflowEditor(page, screenshots.workflowReleases, async () => {
-      await activateControl(page.locator('#mode-release'));
-      await page.locator('#panel-releases').getByText('Live').first().waitFor({ state: 'visible' });
-    }, { clip: 'sidebar', zoomClicks: 0 });
+    await captureQualityScenarioCreatePage(page, screenshots.qualityLab);
 
     await captureAdminPage(page, '/admin/api-connectors', screenshots.apiConnectors, /Api Connectors/i, async () => {
       await waitForFirstTableRow(page);
-    });
-
-    await captureWorkflowEditor(page, screenshots.workflowToolbar, async () => {
-      await activateControl(page.locator('#mode-build'));
-      await waitForWorkflowCanvas(page);
-      await closeSettingsSelection(page);
-      await collapseSettingsPanel(page);
-      await zoomWorkflowCanvas(page, 7);
-      await dockWorkflowToolbarOnCanvasRight(page);
-    }, { blur: false, zoomClicks: 0 });
-
-    await captureWorkflowEditor(page, screenshots.workflowToolbarHeader, async () => {
-      await activateControl(page.locator('#mode-build'));
-      await waitForWorkflowCanvas(page);
-      await closeSettingsSelection(page);
-      await collapseSettingsPanel(page);
-      await zoomWorkflowCanvas(page, 7);
-      await dockWorkflowToolbarAboveCanvasRight(page);
-    }, { blur: false, zoomClicks: 0 });
+    }, { clip: 'main' });
 
     await captureWorkflowEditor(page, screenshots.workflowDark, async () => {
       await forceDarkMode(page);
       await activateControl(page.locator('#mode-build'));
       await waitForWorkflowCanvas(page);
+      await closeSettingsSelection(page);
+      await collapseWorkflowSidebar(page);
+      await collapseSettingsPanel(page);
       await page.getByRole('button', { name: focusModeAccessibleName }).first().click();
       await page.waitForFunction(() => document.body.classList.contains('fi-wf-focus-mode-active'));
       await page.waitForTimeout(700);
-    }, { zoomClicks: 8 });
+    }, { clip: 'canvas-tight', zoomClicks: -1 });
 
     await captureWidget(page, screenshots.widgetDesktop);
     await captureMobileWidget(browser);
@@ -227,6 +184,18 @@ async function captureAdminPage(page, adminPath, fileName, heading, beforeShot, 
     await beforeShot();
   }
 
+  if (options.clip === 'main') {
+    await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
+
+    return;
+  }
+
+  if (options.clip === 'table') {
+    await saveLocatorScreenshot(page, page.locator('.fi-ta, table').first(), fileName, { padding: 18 });
+
+    return;
+  }
+
   await saveScreenshot(page, fileName, options.fullPage ?? true);
 }
 
@@ -236,37 +205,28 @@ async function captureNewSourcePage(page, fileName) {
   await page.getByText(/Choose the bot and source type|Source Type|Bot/i).first().waitFor({ state: 'visible', timeout: 30_000 });
 
   await page.waitForTimeout(900);
-  await saveScreenshot(page, fileName, true);
+  await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
 }
 
-async function captureBotEditPage(page, fileName) {
-  await goto(page, '/admin/workflow-runs');
-  await page.getByRole('heading', { level: 1, name: /Workflow Runs/i }).waitFor({ state: 'visible' });
-  await searchAdminTable(page, 'Buyer Qualification');
-
-  const row = page.locator('tbody tr').filter({ hasText: 'Buyer Qualification & Resolution' }).filter({ hasText: 'completed' }).first();
-
-  if (await isVisible(row)) {
-    await row.getByRole('link', { name: /Inspect/i }).first().click();
-    await page.waitForURL(/\/admin\/workflow-runs\/\d+$/, { timeout: 30_000 });
-    await page.getByRole('link', { name: /Open Bot/i }).first().click();
-  } else {
-    await goto(page, '/admin/bots');
-    await waitForFirstTableRow(page);
-    await page.locator('tbody tr').first().getByRole('link').first().click();
-  }
-
+async function captureBotWidgetPreviewPage(page, fileName) {
+  await goto(page, '/admin/bots');
+  await page.getByRole('heading', { level: 1, name: /Bots/i }).waitFor({ state: 'visible', timeout: 30_000 });
+  await waitForFirstTableRow(page);
+  await page.locator('tbody tr').filter({ hasText: /Filament Agentic Demo Assistant|Agentic Internal Ops Assistant|Portfolio Concierge/i }).first().getByRole('link').first().click();
   await page.waitForURL(/\/admin\/bots\/\d+\/edit$/, { timeout: 30_000 });
-  const setupTab = page.getByRole('tab', { name: /AI Setup|Setup/i }).first();
 
-  if (await isVisible(setupTab)) {
-    await setupTab.click();
+  const widgetTab = page.getByRole('tab', { name: /Widget/i }).first();
+
+  if (await isVisible(widgetTab)) {
+    await widgetTab.click();
   }
 
-  await page.getByRole('heading', { name: /Conversation Design|Chat Provider & Model|Identity & Model/i }).first().waitFor({ state: 'visible' });
+  await page.getByRole('heading', { name: /Appearance/i }).first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.getByText(/Preview Area|Use the floating widget preview/i).first().waitFor({ state: 'visible', timeout: 30_000 });
+  await page.locator('[data-widget-preview-frame]').first().waitFor({ state: 'visible', timeout: 30_000 });
   await page.evaluate(() => window.scrollTo(0, 0));
-  await page.waitForTimeout(700);
-  await saveScreenshot(page, fileName, true);
+  await page.waitForTimeout(1500);
+  await saveScreenshot(page, fileName, false);
 }
 
 async function captureConversationReviewPage(page, fileName) {
@@ -277,7 +237,7 @@ async function captureConversationReviewPage(page, fileName) {
     await page.getByRole('heading', { level: 1, name: /Conversation Review|Conversation:/i }).waitFor({ state: 'visible' });
     await page.locator('.fi-convo-bubble-bot, .fi-convo-bubble-user').nth(3).waitFor({ state: 'visible', timeout: 30_000 });
     await page.waitForTimeout(900);
-    await saveScreenshot(page, fileName, true);
+    await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
 
     return;
   }
@@ -299,7 +259,22 @@ async function captureConversationReviewPage(page, fileName) {
   await page.getByRole('heading', { level: 1, name: /Conversation Review|Conversation:/i }).waitFor({ state: 'visible' });
   await page.locator('code, .fi-convo-bubble-bot, .fi-convo-bubble-user').first().waitFor({ state: 'visible' });
   await page.waitForTimeout(1200);
-  await saveScreenshot(page, fileName, true);
+  await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
+}
+
+async function captureQualityScenarioCreatePage(page, fileName) {
+  await goto(page, '/admin/bot-quality-scenarios/create');
+  await page.getByRole('heading', { level: 1, name: /Create|New|Quality/i }).first().waitFor({ state: 'visible', timeout: 30_000 });
+
+  await selectFilamentSelectByIndex(page, 0, 'Filament Agentic Demo Assistant');
+  await selectFilamentSelectByIndex(page, 1, 'Agentic vs RAG Fit Advisor');
+  await fillFirstVisibleTextbox(page, /Name/i, 'Public widget fit check');
+  await fillFirstVisibleTextbox(page, /Description/i, 'Checks that the assistant recommends the right product path without overpromising.');
+  await fillFirstVisibleTextbox(page, /User Message|Message/i, 'We need a branded widget, grounded answers, and workflow routing for a customer portal. Is this a fit?');
+  await fillFirstVisibleTextarea(page, /Expectations|Expected|Checks/i, 'Answer mentions widget branding, retrieval, workflow routing, and a review-before-publish step.');
+
+  await page.waitForTimeout(900);
+  await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
 }
 
 function prepareDocsConversationPath() {
@@ -330,8 +305,53 @@ if (! $bot) {
     exit(0);
 }
 
-$session = 'docs-tour-conversation-review';
 $now = now();
+$runtimeConfig = json_decode((string) ($bot->runtime_config ?? '{}'), true);
+$runtimeConfig = is_array($runtimeConfig) ? $runtimeConfig : [];
+$runtimeConfig['widget'] = array_merge(
+    is_array($runtimeConfig['widget'] ?? null) ? $runtimeConfig['widget'] : [],
+    [
+        'style_template' => 'clean',
+        'font_preset' => 'inter',
+        'size_preset' => 'comfortable',
+        'accent_color' => '#2563eb',
+        'title' => 'Agentic Demo Assistant',
+        'subtitle' => 'Grounded answers and guided workflows',
+        'welcome_message' => 'Ask about setup, widget embedding, workflow routing, or quality checks.',
+        'input_placeholder' => 'Ask about workflows, sources, or widget setup...',
+        'quick_prompts' => [
+            'Show setup steps',
+            'Explain workflow routing',
+            'Review quality gates',
+        ],
+        'preview_area' => 'public',
+        'area_overrides' => [
+            [
+                'area' => 'public',
+                'style_template' => 'clean',
+                'font_preset' => 'inter',
+                'size_preset' => 'comfortable',
+                'accent_color' => '#2563eb',
+                'title' => 'Agentic Demo Assistant',
+                'subtitle' => 'Grounded answers and guided workflows',
+                'welcome_message' => 'Ask about setup, widget embedding, workflow routing, or quality checks.',
+                'input_placeholder' => 'Ask about workflows, sources, or widget setup...',
+                'quick_prompts' => [
+                    'Show setup steps',
+                    'Explain workflow routing',
+                    'Review quality gates',
+                ],
+            ],
+        ],
+    ]
+);
+
+\Illuminate\Support\Facades\DB::connection($conn)->table('agentic_bots')->where('id', $bot->id)->update([
+    'runtime_config' => json_encode($runtimeConfig, JSON_THROW_ON_ERROR),
+    'updated_at' => $now,
+]);
+
+$session = 'docs-tour-conversation-review';
 $createdAt = $now->copy()->subMinutes(42);
 $updatedAt = $now->copy()->subMinutes(35);
 
@@ -408,7 +428,7 @@ foreach ($messages as $index => [$role, $content, $sources, $meta]) {
 
 if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scenarios') && $schema->hasTable('bot_quality_runs')) {
     $workflowQuery = \Illuminate\Support\Facades\DB::connection($conn)->table('agent_workflows')
-        ->where('name', 'Agentic Showcase Command Center');
+        ->where('name', 'Agentic vs RAG Fit Advisor');
 
     if ($schema->hasColumn('agent_workflows', 'deleted_at')) {
         $workflowQuery->whereNull('deleted_at');
@@ -420,37 +440,37 @@ if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scena
         $qualityBotId = $workflow->bot_id ?: $bot->id;
         $qualityScenarios = [
             [
-                'name' => 'Connector outage still escalates',
-                'description' => 'Docs screenshot scenario: failed gate with fix suggestions.',
-                'user_message' => 'A buyer asks for enterprise pricing after the CRM connector times out.',
+                'name' => 'Public widget fit check',
+                'description' => 'Docs screenshot scenario: validates a practical buyer fit answer.',
+                'user_message' => 'We need a branded widget, grounded answers, and workflow routing for a customer portal. Is this a fit?',
                 'is_blocking' => true,
                 'expectations' => [
-                    'required_text' => ['human follow-up', 'fallback'],
+                    'required_text' => ['widget', 'grounded', 'workflow'],
                     'requires_citation' => true,
-                    'expected_path' => ['lead_capture', 'crm_enrichment', 'fallback_reply'],
+                    'expected_path' => ['public_widget', 'retrieval', 'fit_brief'],
                     'max_latency_ms' => 2500,
                 ],
                 'run' => [
-                    'status' => 'failed',
-                    'score' => 67,
-                    'latency_ms' => 3100,
-                    'cost_cents' => 4,
-                    'failure_summary' => 'Draft needs a fallback reply after CRM enrichment fails.',
-                    'response_excerpt' => 'I can collect your details and ask the team to follow up.',
+                    'status' => 'passed',
+                    'score' => 94,
+                    'latency_ms' => 1180,
+                    'cost_cents' => 2,
+                    'failure_summary' => null,
+                    'response_excerpt' => 'Yes. Start with the branded widget, keep answers grounded in approved sources, and route complex requests through a workflow draft before publishing.',
                     'checks' => [
-                        ['key' => 'required_text', 'status' => 'failed', 'message' => 'Expected fallback wording was missing.'],
-                        ['key' => 'citation', 'status' => 'failed', 'message' => 'Final answer did not cite a source.'],
-                        ['key' => 'path', 'status' => 'passed', 'message' => 'Scenario reached the CRM enrichment path.'],
+                        ['key' => 'required_text', 'status' => 'passed', 'message' => 'Widget, grounded answer, and workflow routing were all mentioned.'],
+                        ['key' => 'citation', 'status' => 'passed', 'message' => 'Answer cited approved setup documentation.'],
+                        ['key' => 'path', 'status' => 'passed', 'message' => 'Scenario reached the fit brief path.'],
                     ],
                 ],
             ],
             [
-                'name' => 'Enterprise rollout answer stays grounded',
-                'description' => 'Docs screenshot scenario: passing grounded answer.',
-                'user_message' => 'We need SSO, audit logs, and rollout guidance for a client with strict procurement.',
+                'name' => 'Fit recommendation stays grounded',
+                'description' => 'Docs screenshot scenario: keeps the recommendation clear without overpromising.',
+                'user_message' => 'Should we use a simple RAG bot or the agentic workflow plugin for onboarding and support triage?',
                 'is_blocking' => false,
                 'expectations' => [
-                    'required_text' => ['rollout', 'staging', 'quality'],
+                    'required_text' => ['RAG', 'workflow', 'triage'],
                     'requires_citation' => true,
                     'max_latency_ms' => 2500,
                 ],
@@ -460,9 +480,9 @@ if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scena
                     'latency_ms' => 1240,
                     'cost_cents' => 2,
                     'failure_summary' => null,
-                    'response_excerpt' => 'Use staging, run workflow-linked quality checks, and publish version notes before rollout.',
+                    'response_excerpt' => 'Use a simple grounded bot for documentation Q&A; choose the agentic plugin when onboarding or support triage needs branching, data capture, or API steps.',
                     'checks' => [
-                        ['key' => 'required_text', 'status' => 'passed', 'message' => 'Required rollout terms found.'],
+                        ['key' => 'required_text', 'status' => 'passed', 'message' => 'Recommendation compared simple RAG and workflow triage clearly.'],
                         ['key' => 'citation', 'status' => 'passed', 'message' => 'Answer cited knowledge sources.'],
                     ],
                 ],
@@ -499,6 +519,23 @@ if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scena
                 $scenarioId = \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_scenarios')->insertGetId($scenarioPayload);
             }
 
+            $scenarioModel = new \Heiner\FilamentAgenticChatbot\Models\BotQualityScenario();
+            $scenarioModel->forceFill([
+                'bot_id' => $qualityBotId,
+                'agent_workflow_id' => $workflow->id,
+                'user_message' => $scenarioData['user_message'],
+                'context_messages' => [],
+                'expectations' => $scenarioData['expectations'],
+            ]);
+
+            $workflowDraftData = json_decode((string) ($workflow->draft_workflow_data ?: $workflow->workflow_data ?: '{}'), true);
+            $workflowDraftData = is_array($workflowDraftData) ? $workflowDraftData : [];
+            $workflowDraftFingerprint = \Heiner\FilamentAgenticChatbot\Models\AgentWorkflow::payloadFingerprint(
+                $workflowDraftData,
+                (int) ($workflow->draft_schema_version ?? $workflow->schema_version ?? \Heiner\FilamentAgenticChatbot\Models\AgentWorkflow::SCHEMA_VERSION)
+            );
+            $scenarioFingerprint = $scenarioModel->qualityFingerprint();
+
             \Illuminate\Support\Facades\DB::connection($conn)->table('bot_quality_runs')->where('bot_quality_scenario_id', $scenarioId)->delete();
 
             $run = $scenarioData['run'];
@@ -510,6 +547,8 @@ if ($schema->hasTable('agent_workflows') && $schema->hasTable('bot_quality_scena
                 'workflow_run_id' => null,
                 'status' => $run['status'],
                 'target' => 'workflow_draft',
+                'workflow_draft_fingerprint' => $workflowDraftFingerprint,
+                'scenario_fingerprint' => $scenarioFingerprint,
                 'score' => $run['score'],
                 'checks' => json_encode($run['checks'], JSON_THROW_ON_ERROR),
                 'response_excerpt' => $run['response_excerpt'],
@@ -559,32 +598,45 @@ async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   const workflowRow = await preferredWorkflowRow(page);
   await workflowRow.getByRole('link').first().click();
 
-  await page.getByRole('heading', { level: 1, name: /Agentic Showcase|Buyer Qualification|Workflow/i }).waitFor({ state: 'visible' });
+  await page.getByRole('heading', { level: 1, name: /Agentic vs RAG|Setup|Agentic Showcase|Buyer Qualification|Workflow/i }).waitFor({ state: 'visible' });
   await page.locator('#workflow-editor-root').waitFor({ state: 'visible' });
   await page.waitForTimeout(1000);
   await exitFocusModeIfActive(page);
   await expandWorkflowSidebarIfCollapsed(page);
 
+  if (options.clip !== 'sidebar' && options.fitCanvas !== false) {
+    await fitWorkflowCanvas(page);
+  }
+
   if (beforeShot) {
     await beforeShot();
   }
 
-  await zoomWorkflowCanvas(page, options.zoomClicks ?? 7);
+  if (options.clip !== 'sidebar' && options.fitCanvas !== false) {
+    await fitWorkflowCanvas(page);
+  }
+
+  await zoomWorkflowCanvas(page, options.zoomClicks ?? -1);
   await page.waitForTimeout(500);
 
   if (options.clip === 'sidebar') {
     await saveWorkflowSidebarScreenshot(page, fileName, { blur: options.blur ?? true });
+  } else if (options.clip === 'canvas-tight') {
+    await saveWorkflowCanvasTightScreenshot(page, fileName, { blur: options.blur ?? true });
   } else {
-    await saveScreenshot(page, fileName, false, { blur: options.blur ?? true });
+    await saveLocatorScreenshot(page, page.locator('#workflow-editor-root').first(), fileName, {
+      blur: options.blur ?? true,
+      padding: 0,
+    });
   }
 }
 
 async function preferredWorkflowRow(page) {
   const preferredNames = [
-    /Buyer Qualification & Resolution/i,
-    /Agentic Showcase Command Center/i,
-    /Plugin Feedback Collector/i,
     /Agentic vs RAG Fit Advisor/i,
+    /Setup & Support Navigator/i,
+    /Plugin Feedback Collector/i,
+    /Agentic Showcase Command Center/i,
   ];
 
   for (const name of preferredNames) {
@@ -599,15 +651,34 @@ async function preferredWorkflowRow(page) {
 }
 
 async function zoomWorkflowCanvas(page, clicks = 7) {
-  const zoomIn = page.getByRole('button', { name: 'Zoom in' }).first();
-
-  if (!(await isVisible(zoomIn))) {
+  if (clicks === 0) {
     return;
   }
 
-  for (let index = 0; index < clicks; index++) {
-    await zoomIn.click();
+  const zoomButton = page.getByRole('button', { name: clicks > 0 ? 'Zoom in' : 'Zoom out' }).first();
+
+  if (!(await isVisible(zoomButton))) {
+    return;
+  }
+
+  for (let index = 0; index < Math.abs(clicks); index++) {
+    await zoomButton.click();
     await page.waitForTimeout(120);
+  }
+}
+
+async function fitWorkflowCanvas(page) {
+  const candidates = [
+    page.getByRole('button', { name: /Fit view|Fit to view|Fit graph|Center graph/i }).first(),
+    page.locator('button[title*="Fit" i], button[aria-label*="Fit" i]').first(),
+  ];
+
+  for (const candidate of candidates) {
+    if (await isVisible(candidate)) {
+      await candidate.click();
+      await page.waitForTimeout(500);
+      return;
+    }
   }
 }
 
@@ -869,6 +940,67 @@ async function waitForWorkflowCanvas(page) {
   await page.locator('.react-flow__node').first().waitFor({ state: 'visible', timeout: 30_000 });
 }
 
+async function fillFirstVisibleTextbox(page, name, value) {
+  const textbox = page.getByRole('textbox', { name }).first();
+
+  if (await isVisible(textbox)) {
+    await textbox.fill(value);
+    await page.waitForTimeout(250);
+  }
+}
+
+async function fillFirstVisibleTextarea(page, name, value) {
+  await fillFirstVisibleTextbox(page, name, value);
+}
+
+async function selectFilamentOption(page, fieldName, optionName) {
+  const controls = [
+    page.getByRole('combobox', { name: fieldName }).first(),
+    page.getByLabel(fieldName).first(),
+  ];
+
+  for (const control of controls) {
+    if (!(await isVisible(control))) {
+      continue;
+    }
+
+    await control.click();
+    await page.waitForTimeout(500);
+
+    const option = page.getByRole('option', { name: optionName }).first();
+    await option.waitFor({ state: 'visible', timeout: 5_000 }).catch(() => {});
+
+    if (await isVisible(option)) {
+      await option.click();
+      await page.waitForTimeout(500);
+      return;
+    }
+
+    await page.keyboard.press('Escape').catch(() => {});
+  }
+}
+
+async function selectFilamentSelectByIndex(page, index, optionText) {
+  const button = page.locator('.fi-select-input-btn').nth(index);
+
+  if (!(await isVisible(button))) {
+    return;
+  }
+
+  await button.click();
+  await page.waitForTimeout(700);
+
+  const option = page.getByText(optionText, { exact: true }).first();
+  await option.waitFor({ state: 'visible', timeout: 10_000 }).catch(() => {});
+
+  if (await isVisible(option)) {
+    await option.click();
+    await page.waitForTimeout(700);
+  } else {
+    await page.keyboard.press('Escape').catch(() => {});
+  }
+}
+
 async function goto(page, targetPath) {
   const url = targetPath.startsWith('http') ? targetPath : `${BASE_URL}${targetPath}`;
   await page.goto(url, { waitUntil: 'domcontentloaded' });
@@ -878,6 +1010,42 @@ async function goto(page, targetPath) {
 async function waitForUi(page, delay = 700) {
   await page.waitForLoadState('networkidle').catch(() => {});
   await page.waitForTimeout(delay);
+}
+
+async function saveLocatorScreenshot(page, locator, fileName, options = {}) {
+  await dismissVisibleNotifications(page);
+
+  if (options.blur !== false) {
+    await blurActiveElement(page);
+  }
+
+  await locator.waitFor({ state: 'visible', timeout: 30_000 });
+  await locator.scrollIntoViewIfNeeded().catch(() => {});
+  await page.waitForTimeout(300);
+
+  const box = await locator.boundingBox();
+  const viewport = page.viewportSize() || VIEWPORT;
+
+  if (!box) {
+    await saveScreenshot(page, fileName, false, options);
+    return;
+  }
+
+  const padding = options.padding ?? 16;
+  const x = Math.max(0, Math.floor(box.x - padding));
+  const y = Math.max(0, Math.floor(box.y - padding));
+  const maxWidth = Math.max(1, viewport.width - x);
+  const maxHeight = Math.max(1, viewport.height - y);
+  const width = Math.min(maxWidth, Math.ceil(box.width + padding * 2));
+  const height = Math.min(maxHeight, Math.ceil(box.height + padding * 2));
+  const filePath = path.join(OUT_DIR, fileName);
+
+  await page.screenshot({
+    path: filePath,
+    animations: 'disabled',
+    clip: { x, y, width, height },
+  });
+  console.log(`  saved ${fileName}`);
 }
 
 async function saveWorkflowSidebarScreenshot(page, fileName, options = {}) {
@@ -908,6 +1076,57 @@ async function saveWorkflowSidebarScreenshot(page, fileName, options = {}) {
       width: Math.min(viewport.width - Math.floor(box.x), Math.ceil(box.width) + 1),
       height: Math.min(viewport.height - Math.floor(box.y), Math.ceil(box.height)),
     },
+  });
+  console.log(`  saved ${fileName}`);
+}
+
+async function saveWorkflowCanvasTightScreenshot(page, fileName, options = {}) {
+  await dismissVisibleNotifications(page);
+
+  if (options.blur !== false) {
+    await blurActiveElement(page);
+  }
+
+  await waitForWorkflowCanvas(page);
+  const filePath = path.join(OUT_DIR, fileName);
+  const viewport = page.viewportSize() || VIEWPORT;
+  const clip = await page.evaluate((fallbackViewport) => {
+    const root = document.querySelector('#workflow-editor-root');
+    const nodes = Array.from(document.querySelectorAll('.react-flow__node'));
+
+    if (!root || nodes.length === 0) {
+      return null;
+    }
+
+    const rootBox = root.getBoundingClientRect();
+    const nodeBoxes = nodes.map((node) => node.getBoundingClientRect());
+    const left = Math.min(...nodeBoxes.map((box) => box.left));
+    const right = Math.max(...nodeBoxes.map((box) => box.right));
+    const top = Math.min(...nodeBoxes.map((box) => box.top));
+    const bottom = Math.max(...nodeBoxes.map((box) => box.bottom));
+    const centerX = (left + right) / 2;
+    const targetWidth = Math.min(fallbackViewport.width - rootBox.left, 1120);
+    const paddedHeight = Math.min(fallbackViewport.height - rootBox.top, Math.max(860, bottom - rootBox.top + 96));
+    const x = Math.max(rootBox.left, Math.min(centerX - targetWidth / 2, fallbackViewport.width - targetWidth));
+    const y = Math.max(0, rootBox.top);
+
+    return {
+      x: Math.floor(x),
+      y: Math.floor(y),
+      width: Math.floor(Math.min(targetWidth, fallbackViewport.width - x)),
+      height: Math.floor(Math.min(paddedHeight, fallbackViewport.height - y)),
+    };
+  }, viewport);
+
+  if (!clip) {
+    await saveLocatorScreenshot(page, page.locator('#workflow-editor-root').first(), fileName, options);
+    return;
+  }
+
+  await page.screenshot({
+    path: filePath,
+    animations: 'disabled',
+    clip,
   });
   console.log(`  saved ${fileName}`);
 }

@@ -1,224 +1,147 @@
 # Agentic Chatbot
 
-Build, manage, and embed production-ready **AI assistants** directly in your Filament panel — from a simple grounded Q&A bot to guided agentic workflows with branching logic, AI nodes, backend actions, external API calls, and package-owned Telegram/Slack channels.
+A native Filament control plane for grounded AI assistants, embeddable chat widgets, and visual agentic workflows.
+
+Filament Agentic Chatbot helps Laravel teams build assistants inside the admin panel they already use. Start with a source-grounded support bot, then add guided workflows when you need branching intake, lead qualification, API calls, data capture, quality checks, and human handoff.
+
+This is a young commercial product that is being developed actively. The current public docs snapshot is `v0.13.1`; the installable runtime line is `^0.13.0` or newer. Purchases and commercial support directly fund maintenance, documentation, and new product updates.
 
 ## Live Demo
 
-Try every feature before you buy:
+Try the public demo before buying:
 
 **[filament-agentic-chatbot.heinerdevelops.tech](https://filament-agentic-chatbot.heinerdevelops.tech/)**
 
-Click **Enter Demo** on the login page. Pre-configured bots, ingested documentation sources, sample workflows, and a live chat widget are all ready.
+Use **Enter Demo** on the login page. The demo includes configured bots, sources, workflows, API connectors, quality tests, and the public widget.
 
-## Screenshots
+## What It Is
 
-### Bot management
+- A Filament-native admin surface for bots, prompts, model settings, widget styling, sources, conversations, workflows, connectors, and quality checks
+- A source-grounded chatbot runtime with citations, conversation history, feedback, and optional workflow execution
+- A visual workflow editor for multi-step assistant behavior: ask, branch, search knowledge, call APIs, run backend actions, remember values, and reply
+- A public embeddable widget that can be styled from the bot editor and reused across websites or authenticated Laravel areas
+- Production-minded tooling for release gates, saved quality tests, handoff queues, usage tracking, provider diagnostics, and privacy workflows
 
-Manage multiple assistants from a Filament-native control plane. Each bot has its own model, prompt, retrieval settings, workflow assignment, and analytics.
+## Product Tour
 
-![Bot list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/01-bot-list.png)
+### Live Widget Preview
 
-### Assistant profile and bot setup
+Style the embedded widget inside the bot editor and see the result immediately. Teams can tune template, font, accent color, size, copy, starter prompts, source visibility, and context-area overrides without leaving Filament.
 
-Tune persona, tone, answer style, fallback behavior, model, retrieval settings, and widget entry points from the same bot editor.
+![Widget live preview](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
 
-![Assistant profile and bot setup](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/02-bot-edit.png)
+### Workflow Editor With Context
 
-### Knowledge sources
+The workflow editor keeps the node catalog, canvas, floating toolbar, selected-node settings, minimap, draft status, and release readiness in one workspace. This screenshot uses a compact 15-node fit-advisor workflow so the structure stays readable instead of turning the page into a noisy node wall.
 
-Add URL, file, raw-text, or API-fed JSON sources. Track ingestion status, source type, chunk counts, last ingest time, stale jobs, and failed jobs directly from the panel.
+![Workflow editor with sidebar and inspector](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
 
-![Source ingestion table](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03-source-ingestion-table.png)
+### Focus Mode
 
-Create sources from a guided two-step form. The first step keeps bot assignment, source name, and source type visible before operators add URL, upload, manual text, or API-fed content.
-
-![New knowledge source form](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/03b-new-source-form.png)
-
-### Conversation history
-
-Inspect full multi-turn transcripts without leaving Filament. Review what users asked, what was retrieved, which citations backed each answer, which messages were marked helpful, and whether the conversation needs a handoff or review flag.
-
-![Conversation transcript](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/04-conversation-transcript.png)
-
-### Chat widget
-
-Show the live embedded chat experience up close on desktop and mobile, including the branded header, structured replies, and quick prompts.
-
-![Widget desktop conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
-
-![Widget mobile conversation snapshot](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/06-widget-mobile.png)
-
-### Visual workflow builder
-
-Start from the workflow library, then open a real showcase workflow. The node library stays on the left, the zoomable canvas sits in the middle, and inline settings remain visible on the right while you build.
-
-![Workflow list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/07-workflow-list.png)
-
-![Workflow editor with node library and settings panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/08-workflow-editor-canvas.png)
-
-### Full-viewport focus mode
-
-Expand the editor to the whole viewport when the canvas needs attention. Focus mode removes surrounding Filament chrome while keeping the build surface, inspector, draggable toolbar, and main editor actions available.
+When the graph needs attention, focus mode removes the surrounding Filament chrome and both side panels. The canvas stays zoomable and the graph remains small enough to understand the flow instead of showing oversized nodes.
 
 ![Workflow editor focus mode](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/09-workflow-editor-focus-mode.png)
 
-### Toolbar positioning and theme modes
+### Dark Mode
 
-Drag and reposition the canvas toolbar while keeping zoom, fit-to-view, minimap, grouping, locking, validation, and shortcut controls close to the graph. With the inspector collapsed, the right-aligned toolbar keeps a small gutter from the page action menu.
-
-![Workflow editor toolbar positioning](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/17-workflow-toolbar-positioning.png)
-
-Dock the same toolbar above the canvas when you want the build surface itself to stay open.
-
-![Workflow editor toolbar above canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/17b-workflow-toolbar-above-canvas.png)
-
-The editor supports Filament light and dark mode. Dark mode keeps the canvas, toolbar, node states, and inspector readable during long authoring or debugging sessions.
+The workflow editor follows Filament theme mode. Dark mode keeps nodes, handles, branches, toolbar controls, and labels readable for longer authoring or debugging sessions.
 
 ![Workflow editor dark mode](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/18-workflow-editor-dark-mode.png)
 
-### Workflow quality checks
+### Workflow Quality Checks
 
-Run workflow-linked scenarios from the editor before publishing. The sidebar keeps pass/fail state, scores, blocking gates, latency, and fix suggestions beside the draft instead of sending QA work to a separate screen.
+Saved workflow tests sit beside the draft. The Quality panel shows current pass state, release-gate status, expected checks, and publish readiness without sending operators to a separate QA tool.
 
 ![Workflow quality panel](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/10-workflow-quality-panel.png)
 
-### AI-assisted drafting
+### Quality Test Creation
 
-Describe the flow you need in natural language, generate a draft workflow from the sidebar, then refine the generated graph on the canvas.
+Create repeatable tests for a direct bot answer or a workflow draft. Quality tests can check required wording, expected paths, citations, latency, and release-blocking behavior.
 
-![AI Draft tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/11-workflow-generate-tab.png)
+![Create quality test](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/13-quality-lab.png)
 
-### Run history and live tracing
+### Conversation Review
 
-Use the Trace tab for recent executions, then open a selected run to inspect completed-path highlighting, step traces, variables, halt reasons, and timestamps.
+Review full transcripts with citations, message feedback, session metadata, handoff actions, flags, and export controls. This makes the feedback-to-quality loop practical: inspect a real conversation, then turn important failures into saved tests.
 
-![Workflow runs tab — completed run selected](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12-workflow-runs-tab.png)
+![Conversation review](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/04-conversation-transcript.png)
 
-![Workflow run trace — executed branch highlighted on canvas](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/12b-workflow-run-trace.png)
+### Public Widget Experience
 
-### Quality Lab
+The same bot configuration can power the Filament panel, public landing pages, product docs, authenticated Laravel areas, and API-backed channels. The widget supports signed tokens, context areas, per-bot styling, starter prompts, citations, and mobile layouts.
 
-Create saved scenarios for direct bot answers or workflow drafts, rerun them after feedback, and keep release-blocking checks visible.
+![Public widget experience](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/05-widget-desktop.png)
 
-![Quality Lab scenarios](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/13-quality-lab.png)
+## What Ships
 
-### Handoff Inbox
+### Bots And Grounded Answers
 
-Review low-confidence, blocked, or human-required conversations with priority, assignment, transcript context, and workflow links in one queue.
+- Multi-bot management with per-bot identity, model, prompt, retrieval settings, widget settings, access controls, and analytics
+- Source types for URLs, files, text snippets, and API-fed JSON records
+- PostgreSQL + `pgvector` vector storage by default, with Chroma available for teams that prefer it
+- Source-grounded answers with citations, conversation history, feedback controls, and review screens
+- Assistant profile controls for persona, tone, boundaries, fallback behavior, and answer style
 
-![Handoff Inbox](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/14-handoff-inbox.png)
+### Visual Agentic Workflows
 
-### Versions and releases
+- Node catalog for triggers, replies, questions, branches, conditions, AI nodes, knowledge search, API connectors, HTTP requests, actions, memory, loops, delays, sub-workflows, and finish steps
+- Canvas authoring with zoom, fit-to-view, minimap, grouping, locking, validation, import/export, focus mode, and light/dark theme support
+- Workflow generation from a natural-language brief for teams that want a faster starting point
+- Versioned releases with notes and rollback support
+- Run tracing and draft debugging for workflow execution paths
 
-Publish versioned releases with notes, keep the live version visible, and roll back to any prior version in seconds.
+### Quality, Operations, And Channels
 
-![Workflow releases tab](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/15-workflow-releases-tab.png)
+- Saved quality tests for bots and workflow drafts
+- Workflow-linked release gates so important checks can block publishing
+- Feedback-to-test review loop for turning user feedback into repeatable checks
+- Human handoff inbox for low-confidence, blocked, or operator-required conversations
+- Reusable API connectors for external systems and API-backed knowledge sources
+- Package-owned Telegram and Slack drivers that run through the same bot, workflow, usage, and budget runtime
+- `php artisan filament-agentic-chatbot:doctor` for configuration, provider, vector store, queue, widget signing, and commercial-profile diagnostics
 
-### API connectors
+## Best Fit
 
-Define reusable external API connection profiles and reference them across workflow nodes or API-fed knowledge sources.
+This plugin is a good fit when you want AI assistants inside a Laravel/Filament product and you care about admin control, grounded answers, workflow logic, reviewability, and operator tooling.
 
-![API connectors list](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/16-api-connectors-list.png)
+It is especially useful for:
 
----
+- product support assistants
+- onboarding and setup guidance
+- documentation assistants with citations
+- lead qualification and guided intake
+- internal ops assistants
+- support triage with handoff
+- workflow-driven demos, concierge flows, and feedback capture
 
-## Features
+## Not The Best Fit
 
-### Source-grounded knowledge
-
-- **Multi-bot management** — unlimited bots, each with its own identity, model, prompt, retrieval config, and access controls
-- **Assistant Profile Studio** — tune tone, persona, boundaries, answer style, and fallback behavior without editing workflow JSON
-- **Source types** — URL page, PDF / file upload, plain-text snippet, API-fed JSON records
-- **Queue-based ingestion** — async chunking, embedding, and upsert with per-source status tracking
-- **API knowledge sources** — sync records from authenticated `GET` JSON endpoints through reusable API Connectors
-- **Vector backends** — PostgreSQL + `pgvector` (recommended) or ChromaDB; configurable dimensions
-- **Provider support** — Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, and Azure OpenAI for chat; Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI for embeddings
-- **Streaming chat** with optional grounded retrieval, inline source citations, and citation coverage metrics
-- **Conversation history** — full transcripts with per-message retrieval context and citation links
-- **Per-bot analytics** — conversation count, message volume, source health score, citation coverage chart
-
-### Visual agentic workflows
-
-- **Broad node catalog**: Trigger, Send Message, Collect Input, AI Agent, Knowledge Base, Answer, Switch/Router, Condition, Action, HTTP Request, API Connector, Memory Read/Write, Delay, Loop, Sub-Workflow, and more
-- **Multi-branch canvas** powered by Vue Flow — drag, connect, and organize nodes freely
-- **Focus mode** — expand the editor to the full viewport when complex graphs need more working space
-- **Draggable toolbar** — keep zoom, fit, validation, minimap, grouping, and lock controls where they are useful while authoring
-- **Light and dark mode** — editor chrome, canvas, nodes, toolbar, and inspector follow the Filament theme
-- **AI Agent node** — configurable Provider, Model, and System Prompt per node within the same workflow
-- **Knowledge Base node** — inline source retrieval mid-flow, configurable result count
-- **Switch/Router node** — N branches + default; route by intent, field value, or AI classification
-- **HTTP Request node** — call external APIs with variable interpolation in body and headers
-- **Scoped workflow memory** — keep normal chat state in the conversation scope and one-run scratch state in workflow-run scope
-- **Variable interpolation** — `{{variable_name}}` syntax in system prompts, messages, and node configs
-- **AI Draft** — generate a complete workflow graph from a natural-language description in seconds
-- **Run history** with step-level traces, current node, variable snapshot, halt reason, and timestamps
-- **Workflow quality panel** — run linked quality scenarios from the editor before publishing
-- **Versioned releases** with release notes; rollback to any prior version without re-editing
-- **Import / Export** — share workflows as JSON between environments
-
-### API connectors
-
-- **Reusable connection profiles** — URL, auth method (Bearer, API Key, Basic Auth, Custom Header), default headers, SSL, and timeout
-- **Referenced by name** in workflow API nodes and API knowledge sources; update credentials in one place
-
-### Chat widget
-
-- **Blade component** for Laravel views — authenticated or guest access
-- **JavaScript loader** — single `<script>` tag embed for any external site (no npm required)
-- **NPM package** for React, Vue, or any bundled frontend
-- **Signed widget tokens** for access-controlled deployments (`RAG_WIDGET_SIGNING_ENABLED`)
-- **Mobile-polished** — responsive layout, keyboard-safe positioning, iOS safe-area support
-- **Customizable** — colors, placeholder text, greeting, launcher position, and z-index
-
-### Channel integrations
-
-- **Telegram and Slack drivers** — provider webhooks run through the same bot, workflow, conversation, usage, and budget runtime as the widget
-- **Channel admin resource** — manage credentials, webhook URLs, linked Bot Access Tokens, diagnostics, test sends, and Telegram setup actions from Filament
-- **Text-first rich rendering** — buttons, cards, sources, and images degrade cleanly to channel-safe text, with optional native Telegram buttons and Slack Block Kit
-- **Production delivery safeguards** — webhook verification, inbound event deduplication, retry-aware outbound delivery, long-message splitting, raw payload redaction, and queue-based processing
-
-### Production tooling
-
-- **Quality Lab** — replay saved quality scenarios against direct bots or workflow drafts and track pass/fail history
-- **Feedback-to-scenario loop** — convert negative conversation feedback into repeatable quality checks
-- **Human handoff inbox** — manage low-confidence, blocked, or operator-required conversations with priority and assignment fields
-- **`php artisan filament-agentic-chatbot:doctor`** — pre-flight checks for config, DB, vector store, queue worker, and AI provider
-- **Data retention policy** — scheduled pruning of old conversations with configurable age thresholds
-- **GDPR / privacy endpoints** — export and delete conversation data per user on demand
-- **Queue isolation** — ingestion jobs run on a configurable queue separate from your default queue
-- **Scheduled API source sync** — periodically re-ingest API-backed knowledge sources with safety limits
-
----
+Be cautious if you need a mature no-code enterprise chatbot platform with years of marketplace hardening, non-Laravel hosting, or a fully managed SaaS vendor. This is a Laravel package for teams that want ownership inside their app. It is actively improving, but it is still early enough that careful staging, quality tests, queue monitoring, and normal production review matter.
 
 ## Requirements
 
 - PHP `8.3+`
-- Laravel `12 or 13`
+- Laravel `12` or `13`
 - Filament `5.2+`
-- PostgreSQL with `pgvector` extension (recommended) **or** a running ChromaDB instance
-- AI provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, or `AZURE_OPENAI_API_KEY`
-- A Laravel queue worker
+- `laravel/ai` `^0.7 || ^1.0`
+- PostgreSQL with `pgvector` recommended, or ChromaDB
+- A Laravel queue worker for ingestion, workflow generation, and production background work
+- At least one supported AI provider key
 
----
+Supported chat providers include Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible gateways. Embedding provider support includes Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI.
 
 ## Installation
 
 ```bash
-composer require heiner/filament-agentic-chatbot
+composer require heiner/filament-agentic-chatbot:^0.13.0
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 php artisan migrate
 php artisan queue:work
 ```
 
-For the current public release line, install `v0.13.0` or newer:
+Composer installs `heiner/agent-graph` transitively for the `0.13` release line.
 
-```bash
-composer require heiner/filament-agentic-chatbot:^0.13.0
-```
-
-Composer installs `heiner/agent-graph` transitively. Production host apps should not need a custom AgentGraph repository entry for the `0.13` release line.
-
-Register the plugin in your panel provider:
+Register the plugin in your Filament panel provider:
 
 ```php
 use Heiner\FilamentAgenticChatbot\FilamentAgenticChatbotPlugin;
@@ -232,203 +155,108 @@ public function panel(Panel $panel): Panel
 }
 ```
 
-Include the plugin views in your custom Filament theme:
+Include the package views in your custom Filament theme:
 
 ```css
 /* resources/css/filament/admin/theme.css */
 @source '../../../../vendor/heiner/filament-agentic-chatbot/resources';
 ```
 
-```bash
-npm run build && php artisan filament:upgrade
-```
+Then rebuild your assets:
 
----
+```bash
+npm run build
+php artisan filament:upgrade
+```
 
 ## Configuration
 
-`.env` reference — all values have sensible defaults, override only what you need:
+New installs should use the `AGENTIC_CHATBOT_*` env namespace. The older `RAG_*` namespace remains as a temporary compatibility fallback for one upgrade window.
 
 ```env
 # Vector backend
-RAG_VECTOR_BACKEND=pgvector          # pgvector | chromadb
+AGENTIC_CHATBOT_VECTOR_BACKEND=pgvector
 
-# Dedicated DB connection for vector data (pgvector only)
-RAG_DB_CONNECTION=rag_pgsql
-RAG_DB_HOST=127.0.0.1
-RAG_DB_PORT=5432
-RAG_DB_DATABASE=filament_agentic_chatbot
-RAG_DB_USERNAME=postgres
-RAG_DB_PASSWORD=secret
+# Dedicated pgvector connection
+AGENTIC_CHATBOT_DB_CONNECTION=agentic_pgsql
+AGENTIC_CHATBOT_DB_HOST=127.0.0.1
+AGENTIC_CHATBOT_DB_PORT=5432
+AGENTIC_CHATBOT_DB_DATABASE=filament_agentic_chatbot
+AGENTIC_CHATBOT_DB_USERNAME=postgres
+AGENTIC_CHATBOT_DB_PASSWORD=secret
 
-# AI provider and models
-RAG_CHAT_PROVIDER=gemini             # gemini | openai | anthropic | xai | openrouter | deepseek | groq | mistral | ollama | azure
-RAG_CHAT_MODEL=gemini-2.5-flash-lite
-RAG_EMBEDDING_PROVIDER=gemini
-RAG_EMBEDDING_MODEL=gemini-embedding-001
-RAG_VECTOR_DIMENSIONS=1536           # must match embedding model output
+# Providers and models
+AGENTIC_CHATBOT_CHAT_PROVIDER=gemini
+AGENTIC_CHATBOT_CHAT_MODEL=gemini-2.5-flash-lite
+AGENTIC_CHATBOT_EMBEDDING_PROVIDER=gemini
+AGENTIC_CHATBOT_EMBEDDING_MODEL=gemini-embedding-001
+AGENTIC_CHATBOT_VECTOR_DIMENSIONS=1536
 
 # Widget authentication
-RAG_WIDGET_SIGNING_ENABLED=true
-RAG_WIDGET_SIGNING_KEY=replace-with-a-long-random-secret
+AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true
+AGENTIC_CHATBOT_WIDGET_SIGNING_KEY=replace-with-a-long-random-secret
 
 # Provider API key
 GEMINI_API_KEY=your-key-here
 ```
 
-Verify your configuration at any time:
+Run the doctor command after configuration:
 
 ```bash
 php artisan filament-agentic-chatbot:doctor
 ```
 
----
+## Embedding The Widget
 
-## Usage
-
-### Fastest path to a working bot
-
-1. Create a bot in **Chatbots → Bots**
-2. Add knowledge sources in **Knowledge → Sources** using text, file, URL, or API source types
-3. Wait for ingestion to complete
-4. Test from the bot edit screen using the **Test Widget** button
-5. Embed the widget (see below)
-6. Add workflows only when you need guided multi-step behavior
-
-### Navigation customization
-
-```php
-FilamentAgenticChatbotPlugin::make()
-    ->navigationGroup('AI')   // move all resources under a custom nav group
-    ->navigationSort(80)      // control position in the sidebar
-```
-
----
-
-## Embedding the Chat Widget
-
-### Option 1 — Blade component (Laravel views)
-
-```blade
-<x-filament-agentic-chatbot::widget
-    bot-id="{{ $bot->id }}"
-    :token="$widgetToken"
-/>
-```
-
-Generate a signed token (when `RAG_WIDGET_SIGNING_ENABLED=true`):
-
-```php
-use Heiner\FilamentAgenticChatbot\Support\WidgetToken;
-
-$token = WidgetToken::for(botId: $bot->id, userId: auth()->id());
-```
-
-### Option 2 — Script tag embed (any site)
+For a public site, add the package script:
 
 ```html
 <script
-  src="https://your-app.com/filament-agentic-chatbot/widget"
-  data-bot="YOUR_BOT_PUBLIC_ID"
-  data-token="YOUR_SIGNED_TOKEN"
-  defer
+    src="https://your-app.com/filament-agentic-chatbot/widget"
+    data-bot="YOUR_BOT_PUBLIC_ID"
+    data-token="SIGNED_TOKEN"
+    data-area="public"
+    defer
 ></script>
 ```
 
-The legacy `/filament-agentic-chatbot/widget.js` script URL remains supported for existing snippets.
+Generate signed tokens server-side when widget signing is enabled:
 
-### Option 3 — NPM package
+```php
+use Heiner\FilamentAgenticChatbot\Support\WidgetEmbedToken;
+
+$token = WidgetEmbedToken::make(
+    botPublicId: $bot->public_id,
+    host: 'docs.example.com',
+);
+```
+
+React, Vue, and other bundled frontends can also use the NPM helper:
 
 ```bash
 npm install @heiner/filament-agentic-chatbot-widget
 ```
 
-```jsx
-import { ChatWidget } from "@heiner/filament-agentic-chatbot-widget";
-
-<ChatWidget botId="YOUR_BOT_ID" token="YOUR_SIGNED_TOKEN" />;
-```
-
----
-
-## Workflow Node Types
-
-| Node                  | Purpose                                                                    |
-| --------------------- | -------------------------------------------------------------------------- |
-| **Trigger**           | Entry point — fires when a new user message starts the conversation        |
-| **Send Message**      | Send a text or formatted card message to the user                          |
-| **Collect Input**     | Prompt the user for a value; store the reply in a named variable           |
-| **AI Agent**          | Generate a response using a configurable LLM and system prompt             |
-| **Knowledge Base**    | Run a vector search; inject top-N results into the AI context              |
-| **Switch / Router**   | Route to N branches + default based on variable value or AI classification |
-| **Join**              | Merge multiple parallel branches back into a single path                   |
-| **Condition**         | Boolean if/else branch based on variable or expression                     |
-| **Action**            | Run registered backend actions such as writes, data lookups, or image generation |
-| **HTTP Request**      | Call an external API directly from the workflow                            |
-| **API Connector**     | Reuse a saved external API profile with credentials and defaults           |
-| **Memory Read/Write** | Store and retrieve small scoped workflow facts across turns or a single run |
-| **Delay / Loop**      | Pause execution or iterate over a bounded collection                       |
-
----
-
-## Importable Example Workflows
-
-Fifteen ready-to-import examples covering common agentic patterns:
-
-| Workflow                   | What it demonstrates                                   |
-| -------------------------- | ------------------------------------------------------ |
-| SaaS Onboarding            | Progressive intake + enterprise lead routing           |
-| Support Ticket Router      | AI intent classification → 4-branch switch             |
-| E-Commerce Order Status    | External API lookup + status-based responses           |
-| Lead Qualification         | Multi-step data collection + CRM write action          |
-| Early Access Feedback Triage | Structured feedback intake and submission capture     |
-| FAQ with Confidence Check    | Two-stage AI confidence evaluation before answering    |
-| Content Research Assistant   | KB search → outline → full draft generation            |
-| Memory Labs                  | Conversation-scoped preference and correction memory   |
-| Reliability Lab              | Interruptions, guardrails, confirmations, and recall   |
-
-**[Browse workflow examples](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/examples/README.md)**
-
-Import any JSON file via the workflow editor's **Import** button.
-
----
-
 ## Documentation
 
 - [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
-- [Quick start guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
+- [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
 - [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md)
-- [Agent runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
-- [Agentic workflows — all node types explained](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
-- [Quality loop and handoff inbox](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUALITY_LOOP.md)
-- [Smart workflow builder](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SMART_WORKFLOW_BUILDER.md)
-- [Knowledge sources and ingestion](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWLEDGE_SOURCES.md)
-- [Bots](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md)
-- [Database and breaking changes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATABASE_AND_BREAKING_CHANGES.md)
+- [Agentic workflows](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
+- [Quality loop](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUALITY_LOOP.md)
+- [Chat widget](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
 - [Channel integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md)
-- [API source roadmap](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_SOURCE_ROADMAP.md)
-- [Chat widget embedding](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
-- [Conversations and messages](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CONVERSATIONS_AND_MESSAGES.md)
-- [Workflow JSON schema reference](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/WORKFLOW_JSON_SCHEMA.md)
-- [Workflow prompt templates](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/WORKFLOW_PROMPT_TEMPLATES.md)
-- [Operations and production readiness](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md)
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
-- [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md)
-- [How it differs from Filament RAG](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- [Release notes v0.13.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.13.0.md)
-- [AgentGraph SDK refactor notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
-
----
+- [Release notes v0.13.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.13.0.md)
+- [Docs snapshot v0.13.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.1)
 
 ## Support
 
 Open an issue in the [public issue tracker](https://github.com/heinergiehl/filament-agentic-chatbot-issues). Response target: 2 business days.
 
 See the full [Support Policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md).
-
----
 
 ## License
 

@@ -30,8 +30,8 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 `main` tracks the latest documentation work. Frozen documentation snapshots are tagged to match plugin releases:
 
-- Current plugin release docs: [v0.13.0 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.0)
-- Current plugin release tag: [`v0.13.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.13.0)
+- Current docs snapshot: [v0.13.1 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.1)
+- Current docs tag: [`v0.13.1`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.13.1)
 - Historical snapshots: [`v0.12.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.12.0), [`v0.9.8`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.9.8)
 
 When the plugin ships a new version, the docs repo should receive the same tag, for example plugin `v0.14.0` -> docs `v0.14.0`.
@@ -77,41 +77,35 @@ That means it can work as:
 
 ## Product Tour
 
-These are real screenshots from the current product surface.
+These are real screenshots from the current product surface. The main plugin page intentionally uses a smaller set of higher-signal screenshots; this README keeps a few extra supporting views for implementers.
 
-### Bot management
+### Control plane
 
-Manage multiple bots from inside Filament.
+Manage bots from a Filament-native admin area with clear navigation for build, connect, observe, improve, and buyer-signal workflows.
 
 ![Bot list](./images/agentic-chatbot/01-bot-list.png)
 
-### Assistant profile and bot setup
+### Widget live preview
 
-Tune the assistant's persona, tone, answer style, fallback behavior, model, retrieval settings, and widget entry points without leaving the bot editor.
+Tune widget template, font, accent color, size, copy, starter prompts, and source visibility while the floating preview updates beside the form.
 
-![Assistant profile and bot setup](./images/agentic-chatbot/02-bot-edit.png)
+![Widget live preview](./images/agentic-chatbot/02-bot-edit.png)
 
-### Source ingestion visibility
+### Knowledge source setup
 
-Track ingestion status, chunk counts, source type, last ingest time, and source health directly in the panel. Operators can spot stale or failed jobs, re-run ingestion, and confirm that a bot has current knowledge before it is exposed in chat or workflow runs.
-
-![Source ingestion table](./images/agentic-chatbot/03-source-ingestion-table.png)
-
-### New knowledge source
-
-Create sources from a guided two-step form in the same Filament panel. The first step keeps bot assignment, source name, and source type visible before operators add URL, file, raw text, or API-backed JSON content, so ingestion setup is easy to validate before the source is created.
+Create URL, file, text, or API-backed sources from a guided form. Detailed ingestion tables live in the product, but the docs avoid leading with status-heavy table screenshots.
 
 ![New knowledge source form](./images/agentic-chatbot/03b-new-source-form.png)
 
 ### Conversation review
 
-Review full multi-turn conversations from inside Filament. User questions, assistant replies, citations, feedback state, session metadata, and operator actions stay together, so support teams can audit quality, flag a response, create a handoff, or export the transcript without reconstructing the chat elsewhere.
+Review transcripts, citations, feedback, session metadata, handoff actions, flags, and export controls in one Filament screen.
 
 ![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
 
-### Widget experience
+### Public widget
 
-Show the embeddable chat experience up close, including the branded header, structured replies, and quick-prompt chips.
+The public widget can reuse the same bot configuration across landing pages, documentation sites, product surfaces, and authenticated Laravel areas.
 
 ![Widget desktop conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
 
@@ -119,77 +113,39 @@ Show the embeddable chat experience up close, including the branded header, stru
 
 ### Workflow library
 
-Start from the workflow library to see which workflows are active, which bot they belong to, and which drafts still differ from the live release.
+Start from the workflow list to see active workflows, assigned bots, and available drafts before opening the editor.
 
 ![Workflow list](./images/agentic-chatbot/07-workflow-list.png)
 
 ### Visual workflow editor
 
-Open a real showcase workflow with the node library on the left, the zoomable canvas in the center, and inline settings on the right. The editor is built for day-to-day workflow authoring: pick a node, tune the business fields, validate the draft, and keep the running graph visible while you work.
+The workflow editor keeps the node catalog, graph, selected-node inspector, toolbar, minimap, and publish readiness visible together. The screenshot uses a compact 15-node fit-advisor workflow so the graph is readable.
 
 ![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
 
-### Workflow focus mode
+### Focus and dark mode
 
-Expand the workflow editor to the full viewport when the canvas needs attention. Focus mode keeps the build surface, inspector, draggable toolbar, and primary editor actions visible while removing the surrounding Filament chrome.
+Focus mode removes surrounding chrome and side panels when the canvas needs attention. Dark mode keeps the same graph readable for longer authoring and debugging sessions.
 
 ![Workflow editor focus mode](./images/agentic-chatbot/09-workflow-editor-focus-mode.png)
 
-### Editor toolbar and themes
-
-The canvas toolbar is a real editor control, not a static header. It can be dragged, repositioned, and used for zoom, fit-to-view, minimap, grouping, locking, validation, and keyboard-shortcut access. When the inspector is collapsed, the toolbar keeps a small right-side gutter so it does not crowd the page action menu.
-
-![Workflow editor toolbar positioning](./images/agentic-chatbot/17-workflow-toolbar-positioning.png)
-
-The same toolbar can be docked above the canvas when the graph needs more vertical space.
-
-![Workflow editor toolbar above canvas](./images/agentic-chatbot/17b-workflow-toolbar-above-canvas.png)
-
-The workflow editor follows Filament theme mode. Light mode stays clean for normal admin work, while dark mode gives the canvas and inspector a focused production-editor feel for long authoring sessions.
-
 ![Workflow editor dark mode](./images/agentic-chatbot/18-workflow-editor-dark-mode.png)
 
-### Workflow quality panel
+### Workflow quality loop
 
-Use the editor sidebar for workflow-specific quality checks before publishing. The Quality tab shows linked scenarios, pass/fail state, scores, blocking gates, latency, and fix suggestions without losing the graph context.
+Saved tests sit beside the draft, show current pass state, and can participate in release gates.
 
 ![Workflow quality panel](./images/agentic-chatbot/10-workflow-quality-panel.png)
 
-### AI drafting
+Create repeatable quality tests for direct bot answers or workflow drafts.
 
-Use the Generate tab when the fastest starting point is a plain-language brief. Operators can choose draft or system-prompt mode, describe the business flow, generate a workflow, and then refine the result on the canvas.
+![Create quality test](./images/agentic-chatbot/13-quality-lab.png)
+
+### AI drafting and connectors
+
+Use the Generate tab for a first workflow draft from a plain-language brief, then wire reusable API connector profiles into workflow nodes or API-backed sources.
 
 ![Workflow generate tab](./images/agentic-chatbot/11-workflow-generate-tab.png)
-
-### Run history and traces
-
-Use the Trace tab to inspect recent workflow runs without leaving the editor. Completed runs stay visible in the sidebar, and selecting a run opens the executed path on the canvas for deeper debugging.
-
-![Workflow runs tab](./images/agentic-chatbot/12-workflow-runs-tab.png)
-
-![Workflow run trace](./images/agentic-chatbot/12b-workflow-run-trace.png)
-
-### Versions and releases
-
-Publish versioned releases with notes, keep the live version visible, and roll back to prior versions when a draft should not stay live.
-
-![Workflow releases tab](./images/agentic-chatbot/15-workflow-releases-tab.png)
-
-### Quality Lab
-
-Create repeatable quality scenarios for direct bot answers or workflow drafts, then use run history to track regressions before they reach users.
-
-![Quality Lab scenarios](./images/agentic-chatbot/13-quality-lab.png)
-
-### Handoff Inbox
-
-Review low-confidence, blocked, or human-required conversations with priority, assignment, transcript context, and workflow links in one queue.
-
-![Handoff Inbox](./images/agentic-chatbot/14-handoff-inbox.png)
-
-### API connectors
-
-Manage reusable external API profiles for workflow nodes and API-fed knowledge sources.
 
 ![API connectors list](./images/agentic-chatbot/16-api-connectors-list.png)
 
@@ -230,6 +186,7 @@ Manage reusable external API profiles for workflow nodes and API-fed knowledge s
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
 - [Release Notes v0.13.0](RELEASE_NOTES_v0.13.0.md)
+- [Docs Snapshot v0.13.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.1)
 - [Changelog](CHANGELOG.md)
 - [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
@@ -270,7 +227,7 @@ Manage reusable external API profiles for workflow nodes and API-fed knowledge s
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current public compatibility baseline is `v0.13.0`: PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0`. The `v0.12.0` tag was an early preview; new installs should target `^0.13.0`.
+The current public docs snapshot is `v0.13.1`. The current runtime compatibility baseline remains the `0.13` line: PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0`. The `v0.12.0` tag was an early preview; new installs should target `^0.13.0`.
 
 ## Related Repositories
 
