@@ -72,7 +72,7 @@ async function main() {
 
     await captureAdminPage(page, '/admin/bots', screenshots.botList, /Bots/i, async () => {
       await waitForFirstTableRow(page);
-    }, { clip: 'main' });
+    }, { clip: 'main-top', height: 560 });
 
     await captureBotWidgetPreviewPage(page, screenshots.botEdit);
 
@@ -84,7 +84,7 @@ async function main() {
 
     await captureAdminPage(page, '/admin/agent-workflows', screenshots.workflowList, /Workflows/i, async () => {
       await waitForFirstTableRow(page);
-    }, { clip: 'main' });
+    }, { clip: 'main-top', height: 760 });
 
     await captureWorkflowEditor(page, screenshots.workflowCanvas, async () => {
       await activateControl(page.locator('#mode-build'));
@@ -116,13 +116,13 @@ async function main() {
       const workflowBrief = page.getByRole('textbox', { name: 'Workflow brief' });
       await workflowBrief.waitFor({ state: 'visible' });
       await workflowBrief.fill('Build a guided fit-assessment workflow that asks the visitor about widget, retrieval, and workflow needs, then returns a concise recommendation.');
-    }, { clip: 'sidebar', zoomClicks: 0 });
+    }, { clip: 'sidebar', zoomClicks: 0, height: 430 });
 
     await captureQualityScenarioCreatePage(page, screenshots.qualityLab);
 
     await captureAdminPage(page, '/admin/api-connectors', screenshots.apiConnectors, /Api Connectors/i, async () => {
       await waitForFirstTableRow(page);
-    }, { clip: 'main' });
+    }, { clip: 'main-top', height: 540 });
 
     await captureWorkflowEditor(page, screenshots.workflowDark, async () => {
       await forceDarkMode(page);
@@ -190,6 +190,12 @@ async function captureAdminPage(page, adminPath, fileName, heading, beforeShot, 
     return;
   }
 
+  if (options.clip === 'main-top') {
+    await saveMainTopScreenshot(page, fileName, options.height ?? 720);
+
+    return;
+  }
+
   if (options.clip === 'table') {
     await saveLocatorScreenshot(page, page.locator('.fi-ta, table').first(), fileName, { padding: 18 });
 
@@ -205,7 +211,7 @@ async function captureNewSourcePage(page, fileName) {
   await page.getByText(/Choose the bot and source type|Source Type|Bot/i).first().waitFor({ state: 'visible', timeout: 30_000 });
 
   await page.waitForTimeout(900);
-  await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
+  await saveMainTopScreenshot(page, fileName, 560);
 }
 
 async function captureDataResourceReadinessPage(page, fileName) {
@@ -227,11 +233,17 @@ async function captureDataResourceReadinessPage(page, fileName) {
 }
 
 async function captureBotWidgetPreviewPage(page, fileName) {
-  await goto(page, '/admin/bots');
-  await page.getByRole('heading', { level: 1, name: /Bots/i }).waitFor({ state: 'visible', timeout: 30_000 });
-  await waitForFirstTableRow(page);
-  await page.locator('tbody tr').filter({ hasText: /Filament Agentic Demo Assistant|Agentic Internal Ops Assistant|Portfolio Concierge/i }).first().getByRole('link').first().click();
-  await page.waitForURL(/\/admin\/bots\/\d+\/edit$/, { timeout: 30_000 });
+  const botEditPath = prepareDocsBotEditPath();
+
+  if (botEditPath) {
+    await goto(page, botEditPath);
+  } else {
+    await goto(page, '/admin/bots');
+    await page.getByRole('heading', { level: 1, name: /Bots/i }).waitFor({ state: 'visible', timeout: 30_000 });
+    await waitForFirstTableRow(page);
+    await page.locator('tbody tr').filter({ hasText: /Filament Agentic Demo Assistant|Agentic Internal Ops Assistant|Portfolio Concierge/i }).first().getByRole('link').first().click();
+    await page.waitForURL(/\/admin\/bots\/\d+\/edit$/, { timeout: 30_000 });
+  }
 
   const widgetTab = page.getByRole('tab', { name: /Widget/i }).first();
 
@@ -292,7 +304,7 @@ async function captureQualityScenarioCreatePage(page, fileName) {
   await fillFirstVisibleTextarea(page, /Expectations|Expected|Checks/i, 'Answer mentions widget branding, retrieval, workflow routing, and a review-before-publish step.');
 
   await page.waitForTimeout(900);
-  await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
+  await saveMainTopScreenshot(page, fileName, 880);
 }
 
 function prepareDocsConversationPath() {
@@ -605,6 +617,57 @@ echo $conversationId;
   }
 
   return `/admin/bot-conversations/${conversationId}`;
+}
+
+function prepareDocsBotEditPath() {
+  if (!fs.existsSync(path.join(DEMO_APP_DIR, 'vendor', 'autoload.php')) || !fs.existsSync(path.join(DEMO_APP_DIR, 'bootstrap', 'app.php'))) {
+    return null;
+  }
+
+  const php = String.raw`
+require __DIR__.'/vendor/autoload.php';
+$app = require __DIR__.'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+$conn = class_exists(\App\Support\DemoAgenticConnection::class)
+    ? \App\Support\DemoAgenticConnection::resolve()
+    : config('filament-agentic-chatbot.database.connection', config('database.default'));
+
+$schema = \Illuminate\Support\Facades\DB::connection($conn)->getSchemaBuilder();
+if (! $schema->hasTable('agentic_bots')) {
+    exit(0);
+}
+
+$bot = \Illuminate\Support\Facades\DB::connection($conn)->table('agentic_bots')
+    ->whereIn('public_id', ['feedback-loop', 'portfolio-concierge', 'admin-copilot'])
+    ->orderByRaw("case public_id when 'feedback-loop' then 0 when 'portfolio-concierge' then 1 else 2 end")
+    ->first();
+
+if (! $bot) {
+    exit(0);
+}
+
+echo $bot->id;
+`;
+
+  const result = spawnSync('php', ['-r', php], {
+    cwd: DEMO_APP_DIR,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+
+  if (result.status !== 0) {
+    console.warn(`  could not resolve docs bot edit path: ${result.stderr || result.stdout}`);
+    return null;
+  }
+
+  const botId = (result.stdout || '').trim();
+
+  if (!/^\d+$/.test(botId)) {
+    return null;
+  }
+
+  return `/admin/bots/${botId}/edit`;
 }
 
 function prepareDocsDataResourceReadinessPath() {
