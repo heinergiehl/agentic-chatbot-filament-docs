@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.13.0<br>
-> **Last updated**: 2026-05-31
+> **Version**: 0.15.0<br>
+> **Last updated**: 2026-06-09
 
 This page documents known constraints, upstream limitations, and workarounds.
 
@@ -73,7 +73,17 @@ API knowledge sources support authenticated `GET` JSON endpoints, field mapping,
 
 ---
 
-## 7. Delay nodes require a queue worker
+## 7. Data Resources are allow-listed live reads, not open database access
+
+`v0.15.0` adds a Filament-managed setup flow for Data Resources. They are intentionally constrained: admins choose models, fields, filters, sorting, limits, aliases, and optional safety scopes before workflows can use them.
+
+**Impact**: This is not a free-form SQL or arbitrary database browsing feature. Workflows that need live records must use approved resources and per-bot approvals.
+
+**Workaround**: Create narrow Data Resources for each use case, keep returned fields answer-ready, and use API connectors for provider-specific live systems that do not fit an Eloquent read model.
+
+---
+
+## 8. Delay nodes require a queue worker
 
 Delay/timer nodes dispatch a `ResumeWorkflowRunJob` to the queue. If your queue driver is `sync`, delay nodes will block the HTTP request. The `filament-agentic-chatbot:doctor` command warns about this.
 

@@ -30,8 +30,8 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 `main` tracks the latest documentation work. Frozen documentation snapshots are tagged to match plugin releases:
 
-- Current docs snapshot: [v0.13.1 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.1)
-- Current docs tag: [`v0.13.1`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.13.1)
+- Current docs snapshot: [v0.15.0 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.15.0)
+- Current docs tag: [`v0.15.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.15.0)
 - Historical snapshots: [`v0.12.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.12.0), [`v0.9.8`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.9.8)
 
 When the plugin ships a new version, the docs repo should receive the same tag, for example plugin `v0.14.0` -> docs `v0.14.0`.
@@ -60,6 +60,7 @@ It keeps the source-grounded answer capabilities of the earlier Filament RAG plu
 - action and HTTP nodes
 - API connectors for external services
 - Smart Data Queries for safe natural-language lookups against allowed internal resources
+- guided Data Resources for UI-managed live Eloquent reads with field policies, result caps, safety scopes, and per-bot narrowing
 - API-fed knowledge sources for JSON records
 - assistant profile controls for tone, boundaries, and fallback behavior
 - quality scenarios, workflow-linked quality runs, and feedback-to-scenario review loops
@@ -96,6 +97,12 @@ Tune widget template, font, accent color, size, copy, starter prompts, and sourc
 Create URL, file, text, or API-backed sources from a guided form. Detailed ingestion tables live in the product, but the docs avoid leading with status-heavy table screenshots.
 
 ![New knowledge source form](./images/agentic-chatbot/03b-new-source-form.png)
+
+### Data Resource readiness
+
+`v0.15.0` adds a Filament-managed Data Resources workflow for safe live database answers. Admins approve the model, allowed fields, answer-ready defaults, filtering, sorting, limits, and safety scope before a bot or workflow can query live records.
+
+![Data Resource readiness](./images/agentic-chatbot/19-data-resources-readiness.png)
 
 ### Conversation review
 
@@ -185,8 +192,9 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 - [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
+- [Release Notes v0.15.0](RELEASE_NOTES_v0.15.0.md)
 - [Release Notes v0.13.0](RELEASE_NOTES_v0.13.0.md)
-- [Docs Snapshot v0.13.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.13.1)
+- [Docs Snapshot v0.15.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.15.0)
 - [Changelog](CHANGELOG.md)
 - [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
@@ -227,7 +235,7 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current public docs snapshot is `v0.13.1`. The current runtime compatibility baseline remains the `0.13` line: PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0`. The `v0.12.0` tag was an early preview; new installs should target `^0.13.0`.
+The current public docs snapshot is `v0.15.0`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.15.0`.
 
 ## Related Repositories
 

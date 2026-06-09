@@ -23,6 +23,7 @@ const screenshots = {
   botEdit: '02-bot-edit.png',
   sourceList: '03-source-ingestion-table.png',
   sourceCreate: '03b-new-source-form.png',
+  dataResourcesReadiness: '19-data-resources-readiness.png',
   transcript: '04-conversation-transcript.png',
   widgetDesktop: '05-widget-desktop.png',
   widgetMobile: '06-widget-mobile.png',
@@ -77,6 +78,8 @@ async function main() {
 
     await captureNewSourcePage(page, screenshots.sourceCreate);
 
+    await captureDataResourceReadinessPage(page, screenshots.dataResourcesReadiness);
+
     await captureConversationReviewPage(page, screenshots.transcript);
 
     await captureAdminPage(page, '/admin/agent-workflows', screenshots.workflowList, /Workflows/i, async () => {
@@ -86,12 +89,9 @@ async function main() {
     await captureWorkflowEditor(page, screenshots.workflowCanvas, async () => {
       await activateControl(page.locator('#mode-build'));
       await waitForWorkflowCanvas(page);
-      const fitBriefNode = page.locator('.react-flow__node').filter({ hasText: /Build fit brief|Route intent/i }).first();
-
-      if (await isVisible(fitBriefNode)) {
-        await fitBriefNode.click();
-      }
-    }, { zoomClicks: -2 });
+      await closeSettingsSelection(page);
+      await collapseSettingsPanel(page);
+    }, { zoomClicks: -3 });
 
     await captureWorkflowEditor(page, screenshots.workflowFocus, async () => {
       await activateControl(page.locator('#mode-build'));
@@ -109,7 +109,7 @@ async function main() {
       await activateControl(page.locator('#tab-quality'));
       await page.locator('#panel-quality').waitFor({ state: 'visible' });
       await page.getByText(/Fit recommendation stays grounded|Public widget fit check|Quality/i).first().waitFor({ state: 'visible' });
-    }, { clip: 'sidebar', zoomClicks: 0 });
+    }, { clip: 'sidebar', zoomClicks: 0, height: 460 });
 
     await captureWorkflowEditor(page, screenshots.workflowGenerate, async () => {
       await activateControl(page.locator('#mode-generate'));
@@ -206,6 +206,24 @@ async function captureNewSourcePage(page, fileName) {
 
   await page.waitForTimeout(900);
   await saveLocatorScreenshot(page, page.locator('main').first(), fileName, { padding: 18 });
+}
+
+async function captureDataResourceReadinessPage(page, fileName) {
+  const dataResourcePath = prepareDocsDataResourceReadinessPath();
+
+  if (dataResourcePath) {
+    await goto(page, dataResourcePath);
+    await page.getByRole('heading', { level: 1, name: /Edit Data Resource/i }).first().waitFor({ state: 'visible', timeout: 30_000 });
+    await page.getByText(/Workflow readiness|Ready for bot approval|What the workflow editor receives/i).first().waitFor({ state: 'visible', timeout: 30_000 });
+    await page.waitForTimeout(900);
+    await saveMainTopScreenshot(page, fileName, 710);
+
+    return;
+  }
+
+  await captureAdminPage(page, '/admin/data-resources', fileName, /Data Resources/i, async () => {
+    await waitForFirstTableRow(page);
+  }, { clip: 'main' });
 }
 
 async function captureBotWidgetPreviewPage(page, fileName) {
@@ -589,6 +607,80 @@ echo $conversationId;
   return `/admin/bot-conversations/${conversationId}`;
 }
 
+function prepareDocsDataResourceReadinessPath() {
+  if (!fs.existsSync(path.join(DEMO_APP_DIR, 'vendor', 'autoload.php')) || !fs.existsSync(path.join(DEMO_APP_DIR, 'bootstrap', 'app.php'))) {
+    return null;
+  }
+
+  const php = String.raw`
+require __DIR__.'/vendor/autoload.php';
+$app = require __DIR__.'/bootstrap/app.php';
+$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+
+$conn = class_exists(\App\Support\DemoAgenticConnection::class)
+    ? \App\Support\DemoAgenticConnection::resolve()
+    : config('filament-agentic-chatbot.database.connection', config('database.default'));
+
+$schema = \Illuminate\Support\Facades\DB::connection($conn)->getSchemaBuilder();
+if (! $schema->hasTable('agentic_data_resources')) {
+    exit(0);
+}
+
+$resource = \Illuminate\Support\Facades\DB::connection($conn)->table('agentic_data_resources')
+    ->where('key', 'filament_plugins')
+    ->first();
+
+if (! $resource) {
+    exit(0);
+}
+
+$fields = json_decode((string) ($resource->fields ?? '[]'), true);
+$fields = is_array($fields) ? $fields : [];
+
+foreach ($fields as &$field) {
+    $name = (string) ($field['name'] ?? '');
+
+    if (in_array($name, ['name', 'category', 'tagline', 'summary', 'price', 'price_label', 'is_featured'], true)) {
+        $field['answer_ready'] = true;
+    }
+
+    if (in_array($name, ['id', 'metadata'], true)) {
+        $field['default_returned'] = false;
+    }
+}
+unset($field);
+
+\Illuminate\Support\Facades\DB::connection($conn)->table('agentic_data_resources')
+    ->where('id', $resource->id)
+    ->update([
+        'fields' => json_encode($fields, JSON_THROW_ON_ERROR),
+        'is_active' => true,
+        'updated_at' => now(),
+    ]);
+
+echo $resource->id;
+`;
+
+  const result = spawnSync('php', ['-r', php], {
+    cwd: DEMO_APP_DIR,
+    encoding: 'utf8',
+    timeout: 30_000,
+  });
+
+  if (result.status !== 0) {
+    console.warn(`  could not prepare docs data resource: ${result.stderr || result.stdout}`);
+    return null;
+  }
+
+  const dataResourceId = (result.stdout || '').trim();
+
+  if (!/^\d+$/.test(dataResourceId)) {
+    return null;
+  }
+
+  return `/admin/data-resources/${dataResourceId}/edit`;
+}
+
 async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   await goto(page, '/admin/agent-workflows');
   await page.getByRole('heading', { level: 1, name: /Workflows/i }).waitFor({ state: 'visible' });
@@ -620,7 +712,7 @@ async function captureWorkflowEditor(page, fileName, beforeShot, options = {}) {
   await page.waitForTimeout(500);
 
   if (options.clip === 'sidebar') {
-    await saveWorkflowSidebarScreenshot(page, fileName, { blur: options.blur ?? true });
+    await saveWorkflowSidebarScreenshot(page, fileName, { blur: options.blur ?? true, height: options.height });
   } else if (options.clip === 'canvas-tight') {
     await saveWorkflowCanvasTightScreenshot(page, fileName, { blur: options.blur ?? true });
   } else {
@@ -1048,6 +1140,39 @@ async function saveLocatorScreenshot(page, locator, fileName, options = {}) {
   console.log(`  saved ${fileName}`);
 }
 
+async function saveMainTopScreenshot(page, fileName, height = 720) {
+  await dismissVisibleNotifications(page);
+  await blurActiveElement(page);
+
+  const main = page.locator('main').first();
+  await main.waitFor({ state: 'visible', timeout: 30_000 });
+  await page.waitForTimeout(300);
+
+  const box = await main.boundingBox();
+
+  if (!box) {
+    await saveScreenshot(page, fileName, false);
+    return;
+  }
+
+  const viewport = page.viewportSize() || VIEWPORT;
+  const x = Math.max(0, Math.floor(box.x));
+  const y = Math.max(0, Math.floor(box.y));
+  const filePath = path.join(OUT_DIR, fileName);
+
+  await page.screenshot({
+    path: filePath,
+    animations: 'disabled',
+    clip: {
+      x,
+      y,
+      width: Math.min(viewport.width - x, Math.ceil(box.width)),
+      height: Math.min(viewport.height - y, height),
+    },
+  });
+  console.log(`  saved ${fileName}`);
+}
+
 async function saveWorkflowSidebarScreenshot(page, fileName, options = {}) {
   await dismissVisibleNotifications(page);
 
@@ -1074,7 +1199,7 @@ async function saveWorkflowSidebarScreenshot(page, fileName, options = {}) {
       x: Math.max(0, Math.floor(box.x)),
       y: Math.max(0, Math.floor(box.y)),
       width: Math.min(viewport.width - Math.floor(box.x), Math.ceil(box.width) + 1),
-      height: Math.min(viewport.height - Math.floor(box.y), Math.ceil(box.height)),
+      height: Math.min(viewport.height - Math.floor(box.y), options.height ?? Math.ceil(box.height)),
     },
   });
   console.log(`  saved ${fileName}`);

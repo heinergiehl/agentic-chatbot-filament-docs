@@ -4,11 +4,11 @@ This document covers required steps when upgrading between public releases.
 
 ## Current release status
 
-The current recommended Commercial Early Access release is **`v0.13.0`**.
+The current recommended Commercial Early Access release is **`v0.15.0`**.
 
-The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.13.0.md](RELEASE_NOTES_v0.13.0.md) before upgrading.
+The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.15.0.md](RELEASE_NOTES_v0.15.0.md) before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.13.0` instead.
+> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.15.0` instead.
 
 When upgrading, always:
 
@@ -17,6 +17,34 @@ When upgrading, always:
 3. Run `php artisan migrate` to apply any new migrations.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Upgrading to v0.15.0
+
+Update the package constraint to `^0.15.0` or to the exact marketplace version you receive:
+
+```bash
+composer update heiner/filament-agentic-chatbot --with-dependencies
+php artisan migrate
+php artisan filament:assets
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan filament-agentic-chatbot:doctor
+```
+
+`v0.15.0` focuses on commercial polish, safer live database answers, and release-hardening after `v0.14.0`.
+
+Review these areas before public rollout:
+
+1. **Data Resources**: create or sync approved live Eloquent resources in Filament, then verify returned fields, answer-ready fields, filters, sorting, result limits, and safety scopes.
+2. **Bot approvals**: make sure each bot only approves the Data Resources it is allowed to use. Bot policy can narrow the global resource contract, but it should not be treated as a way to widen it.
+3. **Workflow Query data steps**: test workflows that use `query_data_resource`, especially generated Smart Data Query workflows.
+4. **Widget preview and launch readiness**: review theme, copy, context-area overrides, launcher behavior, Markdown-style answer rendering, signing, domain allowlists, and one real widget answer.
+5. **Quality and release gates**: run saved quality scenarios, inspect workflow draft readiness, and check one API/channel answer if those surfaces are enabled.
+
+No special destructive migration step is required for this release, but production installs that expose live data answers should verify Data Resources in staging before public traffic.
 
 ---
 
@@ -101,7 +129,7 @@ For marketplace production hosts with `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, al
 
 ## Upgrading to v0.12.0
 
-Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.13.0](#upgrading-to-v0130) instead.
+Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.15.0](#upgrading-to-v0150) for the current line, or [Upgrading to v0.13.0](#upgrading-to-v0130) only when you intentionally need that historical release.
 
 The `v0.12.0` documentation below is kept for historical context on features that shipped in the `0.13.0` line:
 
