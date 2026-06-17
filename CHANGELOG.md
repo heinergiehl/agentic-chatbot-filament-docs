@@ -2,6 +2,12 @@
 
 All notable changes to this package will be documented in this file.
 
+## [0.16.1] - 2026-06-17
+
+### Fixed
+
+- Fixed default/plain `sendMessage` workflow responses after internal action/tool steps so inherited `internal` visibility no longer hides the final user-facing reply in legacy and schema-v1 workflows.
+
 ## [0.16.0] - 2026-06-17
 
 ### Added

@@ -30,8 +30,8 @@ Log in with the demo credentials on the login page. The demo includes pre-config
 
 `main` tracks the latest documentation work. Frozen documentation snapshots are tagged to match plugin releases:
 
-- Current docs snapshot: [v0.16.0 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.0)
-- Current docs tag: [`v0.16.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.16.0)
+- Current docs snapshot: [v0.16.1 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.1)
+- Current docs tag: [`v0.16.1`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.16.1)
 - Historical snapshots: [`v0.12.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.12.0), [`v0.9.8`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.9.8)
 
 When the plugin ships a new version, the docs repo should receive the same tag, for example plugin `v0.14.0` -> docs `v0.14.0`.
@@ -106,7 +106,7 @@ Create URL, file, text, or API-backed sources from a guided form. Detailed inges
 
 ### Compound Requests and turn ownership
 
-`v0.16.0` adds bot-level Compound Request engine modes, structured capability execution, workflow turn-understanding hardening, AgentGraph confirmation/execution metadata, and stronger pending-turn ownership before session-memory recall or assistant fallback.
+`v0.16.1` includes the v0.16 Compound Request engine modes, structured capability execution, workflow turn-understanding hardening, AgentGraph confirmation/execution metadata, stronger pending-turn ownership, and a patch for default workflow replies after internal action/tool steps.
 
 ### Conversation review
 
@@ -200,10 +200,11 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 - [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
 - [Incident Management Example](examples/incident-management/README.md)
 - [Localization](LOCALIZATION.md)
+- [Release Notes v0.16.1](RELEASE_NOTES_v0.16.1.md)
 - [Release Notes v0.16.0](RELEASE_NOTES_v0.16.0.md)
 - [Release Notes v0.15.0](RELEASE_NOTES_v0.15.0.md)
 - [Release Notes v0.13.0](RELEASE_NOTES_v0.13.0.md)
-- [Docs Snapshot v0.16.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.0)
+- [Docs Snapshot v0.16.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.1)
 - [Changelog](CHANGELOG.md)
 - [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
@@ -244,7 +245,7 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current public docs snapshot is `v0.16.0`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.0`.
+The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
 
 ## Related Repositories
 
