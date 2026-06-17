@@ -4,11 +4,11 @@ This document covers required steps when upgrading between public releases.
 
 ## Current release status
 
-The current recommended Commercial Early Access release is **`v0.15.0`**.
+The current recommended Commercial Early Access release is **`v0.16.0`**.
 
-The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.15.0.md](RELEASE_NOTES_v0.15.0.md) before upgrading.
+The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.16.0.md](RELEASE_NOTES_v0.16.0.md) before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.15.0` instead.
+> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.16.0` instead.
 
 When upgrading, always:
 
@@ -17,6 +17,35 @@ When upgrading, always:
 3. Run `php artisan migrate` to apply any new migrations.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Upgrading to v0.16.0
+
+Update the package constraint to `^0.16.0` or to the exact marketplace version you receive:
+
+```bash
+composer update heiner/filament-agentic-chatbot --with-dependencies
+php artisan migrate
+php artisan filament:assets
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan filament-agentic-chatbot:doctor
+```
+
+`v0.16.0` focuses on structured Compound Requests, workflow turn ownership, schema-v2 structured form preservation, and pending-state database hardening after `v0.15.0`.
+
+Review these areas before public rollout:
+
+1. **Compound Requests**: keep production bots on `Legacy fallback` until registered capabilities are verified. Use `Shadow audit` before `Structured execution`.
+2. **Capability contracts**: review action, tool, and API Connector schemas, side-effect metadata, and per-bot allow-lists.
+3. **Workflow turns**: verify one pending workflow answer, one invalid pending answer, one side question or interruption, and one replacement request.
+4. **Write confirmations**: verify write and mixed compound plans ask for confirmation and preserve AgentGraph metadata.
+5. **Schema-v2 forms**: validate workflows with structured Ask fields and `collectForm` output before publishing.
+6. **Provider evals**: run the compound and workflow-turn eval scripts in staging when structured planning is enabled.
+
+MySQL/MariaDB installs receive generated-column unique guards for one pending interaction/request per conversation. PostgreSQL and SQLite keep partial unique indexes.
 
 ---
 
@@ -129,7 +158,7 @@ For marketplace production hosts with `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, al
 
 ## Upgrading to v0.12.0
 
-Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.15.0](#upgrading-to-v0150) for the current line, or [Upgrading to v0.13.0](#upgrading-to-v0130) only when you intentionally need that historical release.
+Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.16.0](#upgrading-to-v0160) for the current line, or [Upgrading to v0.13.0](#upgrading-to-v0130) only when you intentionally need that historical release.
 
 The `v0.12.0` documentation below is kept for historical context on features that shipped in the `0.13.0` line:
 

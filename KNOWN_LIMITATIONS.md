@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.15.0<br>
-> **Last updated**: 2026-06-09
+> **Version**: 0.16.0<br>
+> **Last updated**: 2026-06-17
 
 This page documents known constraints, upstream limitations, and workarounds.
 
@@ -73,18 +73,48 @@ API knowledge sources support authenticated `GET` JSON endpoints, field mapping,
 
 ---
 
-## 7. Data Resources are allow-listed live reads, not open database access
-
-`v0.15.0` adds a Filament-managed setup flow for Data Resources. They are intentionally constrained: admins choose models, fields, filters, sorting, limits, aliases, and optional safety scopes before workflows can use them.
-
-**Impact**: This is not a free-form SQL or arbitrary database browsing feature. Workflows that need live records must use approved resources and per-bot approvals.
-
-**Workaround**: Create narrow Data Resources for each use case, keep returned fields answer-ready, and use API connectors for provider-specific live systems that do not fit an Eloquent read model.
-
----
-
-## 8. Delay nodes require a queue worker
+## 7. Delay nodes require a queue worker
 
 Delay/timer nodes dispatch a `ResumeWorkflowRunJob` to the queue. If your queue driver is `sync`, delay nodes will block the HTTP request. The `filament-agentic-chatbot:doctor` command warns about this.
 
 **Workaround**: Use `database`, `redis`, or `sqs` queue driver in production and ensure `php artisan queue:work` is running.
+
+---
+
+## 8. Structured Compound Requests need explicit capability contracts
+
+`legacy` remains the default compound engine. `shadow` and `structured` depend on registered action, tool, or API Connector capabilities with schemas, side-effect metadata, and bot-level approval.
+
+**Impact**: Ambiguous, dependent, unsafe alternative, or incomplete single-item plans may stay on the normal assistant/workflow path instead of executing as compound requests. Write and mixed read/write plans still require confirmation by default.
+
+**Workaround**: Roll out per bot: start with `shadow`, inspect audit records, add schemas for allowed capabilities, then switch selected bots to `structured`.
+
+---
+
+## 9. Turn understanding is provider-sensitive
+
+Workflow turn understanding can classify pending answers, corrections, side questions, cancellations, and compound follow-ups. Provider JSON behavior and confidence calibration still vary by model.
+
+**Impact**: Low-confidence or malformed classifications intentionally fall back to deterministic pending-input behavior. This can ask a clarifying question or keep the workflow halted instead of guessing.
+
+**Workaround**: Run `composer run-script eval:workflow-turns` and `composer run-script eval:workflow-understanding` with your staging provider/model before enabling aggressive routing in production.
+
+---
+
+## 10. AgentGraph confirmation and execution runs are separate
+
+Compound write confirmation and compound execution may create distinct AgentGraph runs. Workflow waitpoints also project pending interactions from SDK interrupts.
+
+**Impact**: Admin/debug views can show a confirmation run, an execution run, and a workflow run for one visitor turn. This is intentional so confirmations, cancellations, and replacements keep independent durable state.
+
+**Workaround**: Use the stored `agent_graph_run_id`, `agent_graph_thread_id`, `agent_graph_interrupt_id`, and pending-interaction records when debugging a turn.
+
+---
+
+## 11. Schema-v2 collectForm authoring has a runtime boundary
+
+Schema-v2 Ask steps can compile structured fields into `collectForm` runtime nodes, including fields authored as JSON text. The runtime still validates the compiled workflow contract, not arbitrary UI-only draft data.
+
+**Impact**: Invalid JSON or non-list structured field payloads are ignored by the compiler and will not become form fields.
+
+**Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing.

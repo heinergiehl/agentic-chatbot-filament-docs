@@ -2,25 +2,50 @@
 
 All notable changes to this package will be documented in this file.
 
-## [Unreleased]
+## [0.16.0] - 2026-06-17
 
 ### Added
 
-- Added commercial hardening controls for widget token transports, domain allowlist compatibility, Chroma threshold bypass, hybrid lexical retrieval strategy, safe URL ingestion limits, and Bot Access Token `last_used_at` throttling.
-- Added knowledge readiness reporting to the public chat config payload and to the bot setup surface.
-- Added safe HTTP fetching for URL ingestion, asynchronous Chroma vector cleanup on source deletion, workflow activation normalization, encrypted credential diagnostics, and chat service boundaries.
-- Added CI gates for marketplace readiness, a PostgreSQL/pgvector smoke job, and an opt-in widget E2E smoke job.
+- Added explicit Compound Request engine modes: `legacy`, `shadow`, and `structured`.
+- Added shadow-mode audit records for evaluating structured plans without changing visitor-facing behavior.
+- Added Laravel AI structured-output planning, capability schema validation, action/tool/API Connector-backed compound capabilities, and safe execution for read/write plans.
+- Added bot-level Admin UI controls for compound engine mode and per-bot compound capability allow-lists.
+- Added schema-v2 structured Ask/`collectForm` authoring docs and workflow turn-understanding docs.
 
 ### Changed
 
-- Scoped the built-in `bots` data resource to the current bot by default.
-- Moved chat access checks, conversation persistence, and payload/config presentation out of the API controller into dedicated services.
-- Hardened production doctor checks for widget token transport, domain allowlists, workflow routing conflicts, trace privacy, and encrypted credential decryption.
+- Kept `legacy` as the default-safe compound engine while documenting `shadow` and `structured` rollout paths.
+- Routed small read-only structured compound plans synchronously unless they cross `COMPOUND_GRAPH_SYNC_ITEM_THRESHOLD`, use async capabilities, or include writes.
+- Kept workflow waiting, interruption, delay, resume, and human-in-the-loop behavior authoritative over compound execution and conversation recall.
 
 ### Fixed
 
-- Replaced dynamic assistant-message persistence state with an explicit DTO so streamed `message_complete.message_id` remains static-analysis safe.
-- Sanitized external knowledge-search failures while keeping structured internal logs.
+- Fixed AgentGraph-backed workflow interrupt replacements so the SDK run is cancelled before a new run starts.
+- Fixed AgentGraph interrupt reconciliation when SDK interrupts do not include an `interrupt_id`.
+- Fixed schema-v2 structured fields authored as JSON text so frontend and backend compilers preserve them as `collectForm` runtime fields.
+- Fixed conversation recall ordering so pending workflow/interaction owners are resolved first.
+- Added task-frame source uniqueness plus MySQL/MariaDB one-pending database guards for pending interactions and compound confirmations.
+
+## [0.15.0] - 2026-06-08
+
+### Added
+
+- Added a Filament-managed Data Resources setup flow for live `query_data_resource` reads.
+- Added optional strict Gate mode for Data Resource administration.
+- Added bot launch-readiness and workflow-readiness copy coverage to the localization fallback catalog.
+
+### Changed
+
+- Renamed the admin-facing live database access surface from Data Sources to Data Resources.
+- Reworked the Data Resources form into a guided setup flow with safer labels, result guardrails, safety scope copy, and no bulk delete action.
+- Polished the chatbot widget setup and preview experience before public embedding.
+- Expanded the marketplace-readiness script into a stricter release gate.
+
+### Fixed
+
+- Fixed UI-managed Data Resources so missing default-returned fields fall back to answer-ready fields or one safe returnable field.
+- Fixed runtime safety scope filters so ownership columns do not have to be exposed as visitor-filterable fields.
+- Fixed PHPStan, localization, and Windows full-suite release blockers.
 
 ## [0.13.0] - 2026-05-28
 

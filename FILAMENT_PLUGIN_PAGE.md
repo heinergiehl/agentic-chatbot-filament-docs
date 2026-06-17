@@ -4,7 +4,7 @@ A native Filament control plane for grounded AI assistants, embeddable chat widg
 
 Filament Agentic Chatbot helps Laravel teams build assistants inside the admin panel they already use. Start with a source-grounded support bot, then add guided workflows when you need branching intake, lead qualification, API calls, data capture, quality checks, and human handoff.
 
-This is a young commercial product that is being developed actively. The current public docs snapshot is `v0.15.0`; the installable runtime line is `^0.15.0`. Purchases and commercial support directly fund maintenance, documentation, and new product updates.
+This is a young commercial product that is being developed actively. The current public docs snapshot is `v0.16.0`; the installable runtime line is `^0.16.0`. Purchases and commercial support directly fund maintenance, documentation, and new product updates.
 
 ## Live Demo
 
@@ -35,6 +35,10 @@ Style the embedded widget inside the bot editor and see the result immediately. 
 `v0.15.0` adds a guided Data Resources workflow for safe live Eloquent reads. Admins approve the model, returned fields, answer-ready defaults, filters, ranking, result limits, and safety scope before a bot or workflow can query live records.
 
 ![Data Resource readiness](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/19-data-resources-readiness.png)
+
+### Compound Requests
+
+`v0.16.0` adds bot-level Compound Request modes for `legacy`, `shadow`, and `structured` execution. Structured mode can safely plan multi-item read/write operations against registered actions, Laravel AI tools, and API Connector capabilities while pending workflow turns and confirmations remain authoritative.
 
 ### Workflow Focus Canvas
 
@@ -135,7 +139,7 @@ Supported chat providers include Gemini, OpenAI, Anthropic, xAI, OpenRouter, Dee
 ## Installation
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.15.0
+composer require heiner/filament-agentic-chatbot:^0.16.0
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 php artisan migrate
 php artisan queue:work
@@ -248,11 +252,14 @@ npm install @heiner/filament-agentic-chatbot-widget
 - [Quality loop](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUALITY_LOOP.md)
 - [Chat widget](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
 - [API connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
+- [Compound Requests](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/compound-requests.md)
+- [Workflow Turn Understanding](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/workflow-turn-understanding.md)
+- [Workflow Semantic Authoring](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/workflow-editor-semantic-authoring.md)
 - [Channel integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md)
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
-- [Release notes v0.15.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.15.0.md)
-- [Docs snapshot v0.15.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.15.0)
+- [Release notes v0.16.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.16.0.md)
+- [Docs snapshot v0.16.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.0)
 
 ## Support
 

@@ -1,14 +1,14 @@
 # Workflow JSON Schema Reference
 
-This document describes the exact JSON format used by the **Filament Agentic Chatbot** workflow engine. Use this as a reference when generating workflow JSON with an AI assistant, or when building workflows programmatically.
+This document describes the executable `schemaVersion: 1` JSON format used by the **Filament Agentic Chatbot** workflow engine. The visual editor stores `schemaVersion: 2` semantic workflows as the authoring source of truth and compiles them to this runtime shape at validation, preview, publish, activation, and execution boundaries.
+
+Use this reference for runtime fixtures, diagnostics, low-level imports, or programmatic engine payloads. For normal editor authoring, prefer the semantic workflow editor and its AI Draft flow.
 
 ## How to Use
 
-1. **Ask an AI** (ChatGPT, Claude, etc.) to generate a workflow JSON using this schema.
-2. **Copy the JSON** output from the AI.
-3. In the workflow editor, click **📥 Import** in the sidebar.
-4. **Paste** the JSON (or upload a `.json` file) and click **✅ Import**.
-5. The workflow loads into the visual editor — tweak as needed, then **💾 Save**.
+1. Ask an AI or backend process to generate runtime workflow JSON using this schema only when you need an executable graph.
+2. In the workflow editor, use Import for low-level JSON payloads or AI Draft for semantic authoring.
+3. Validate the workflow before publishing. Validation runs against the same compiled runtime graph used by execution.
 
 ---
 
@@ -19,6 +19,7 @@ This document describes the exact JSON format used by the **Filament Agentic Cha
   "schemaVersion": 1,
   "nodes": [ ... ],
   "edges": [ ... ],
+  "policies": { ... },
   "viewport": { "x": 0, "y": 0, "zoom": 1 }
 }
 ```
@@ -28,6 +29,7 @@ This document describes the exact JSON format used by the **Filament Agentic Cha
 | `schemaVersion` | `integer` | No (defaults to 1) | Schema version for forward compatibility.    |
 | `nodes`         | `array`   | **Yes**            | Array of node objects (min 1).               |
 | `edges`         | `array`   | No                 | Array of edge objects connecting nodes.      |
+| `policies`      | `object`  | No                 | Compiled workflow-level policy settings from schema v2 authoring payloads. |
 | `viewport`      | `object`  | No                 | Canvas viewport position (`x`, `y`, `zoom`). |
 
 ---
@@ -57,11 +59,25 @@ Every node in the `nodes` array must have this shape:
 
 ---
 
+## Common Node Runtime Controls
+
+Most node types may include these optional fields inside `data`:
+
+| Data Field          | Type      | Required | Description |
+| ------------------- | --------- | -------- | ----------- |
+| `nodeRetryAttempts` | `integer` | No       | 0-5 retries after the first failed node execution. Use only for transient technical executor exceptions. |
+| `nodeRetryDelayMs`  | `integer` | No       | 0-5000 ms before the first node retry. |
+| `nodeRetryBackoff`  | `boolean` | No       | Default `true`. Doubles the node retry delay between attempts. |
+
+Node retry is executed by the AgentGraph runtime for thrown node exceptions. It does not retry user clarification, invalid workflow input, validation branches, human interrupts, delays, or API business errors. HTTP Request and API Connector nodes also have request-level `retryAttempts`, `retryDelayMs`, `retryBackoff`, and `retryUnsafeMethods`; those fields apply to outbound HTTP calls, not to the whole workflow node.
+
+---
+
 ## Node Types & Data Fields
 
 Current supported node types:
 
-`trigger`, `sendMessage`, `collectInput`, `condition`, `aiAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `loop`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
+`trigger`, `sendMessage`, `collectInput`, `collectForm`, `condition`, `aiAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `loop`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
 
 The visual editor also exposes a `Data Retrieval` palette item. Persisted JSON stores it as an `action` node with `actionKey: "query_data_resource"`.
 
@@ -147,6 +163,14 @@ For `messageType: "image"`, provide `imageUrl`, `imageArtifact`, or both. A gene
 | `choices`      | `string`  | No       | Comma-separated or JSON array (for `"choice"` type)   |
 | `validation`   | `string`  | No       | Validation rule                                       |
 | `required`     | `boolean` | **Yes**  | Whether an answer is required                         |
+
+---
+
+### 3b. `collectForm` — Collect Structured Fields
+
+`collectForm` is the runtime node used for schema v2 Ask steps with `inputType: "form"`, form/wizard presentation, or `structuredFields`. It stores a structured object in `variableName` and keeps the semantic slot metadata in `structuredFields`, `slotContract`, `constraints`, `parsing`, `normalization`, `policy`, `examples`, and `canonicalization`.
+
+Use schema v2 authoring for new form workflows. Low-level runtime JSON may still use `collectForm` directly for test fixtures or engine diagnostics.
 
 ---
 
@@ -254,7 +278,7 @@ These nodes are available in addition to the core message, logic, AI, and integr
 | `confidenceCheck` | Branch when retrieved context/data is strong enough | `sourceVariable`, `countVariable`, `errorVariable`, `minCount`, `minTextLength`, `outputVariable` |
 | `guardrail` | Deterministically route unsafe/missing-content input | `inputTemplate`, `bannedTerms`, `requiredTerms`, `detectEmail`, `detectPhone`, `detectUrl`, `maxLength`, `outputVariable` |
 | `contextBuilder` | Combine variables, retrieved records, and user input into one context string | `sources`, `includeInput`, `separator`, `outputVariable` |
-| `rerank` | Reorder retrieved records by query overlap and limit result count | `sourceVariable`, `queryTemplate`, `textFields`, `limit`, `outputVariable` |
+| `rerank` | Reorder retrieved records or resolve API candidates by query and field preferences | `sourceVariable`, `recordsPath`, `queryTemplate`, `textFields`, `scoringMode`, `provider`, `model`, `preferredValues`, `limit`, `outputVariable` |
 | `errorHandler` | Route based on an upstream error variable and write a fallback message | `errorVariable`, `fallbackMessage`, `outputVariable` |
 | `confirmation` | Ask the user to confirm or cancel before sensitive work continues | `prompt`, `variableName`, `confirmLabel`, `cancelLabel` |
 | `entityExtractor` | Extract emails, phones, URLs, numbers, dates, or regex matches | `inputTemplate`, `fields`, `outputVariable`, `writeIndividualVariables` |
@@ -328,7 +352,11 @@ Custom actions may also declare `capability: query` or `capability: write` in co
         "headers": "{}",
         "body": "{}",
         "outputVariable": "weather_data",
-        "timeout": 30
+        "timeout": 30,
+        "retryAttempts": 1,
+        "retryDelayMs": 250,
+        "retryBackoff": true,
+        "retryUnsafeMethods": false
     }
 }
 ```
@@ -343,6 +371,10 @@ Custom actions may also declare `capability: query` or `capability: write` in co
 | `outputVariable` | `string`  | **Yes**  | Variable to store the response                    |
 | `timeout`        | `integer` | **Yes**  | Timeout in seconds (default: 30)                  |
 | `continueOnFail` | `boolean` | No       | Default `false`. When false, missing URLs, request errors, blocked URLs, and non-2xx responses stop execution. |
+| `retryAttempts`  | `integer` | No       | 0-5 retries after the first failed request        |
+| `retryDelayMs`   | `integer` | No       | 0-5000 ms before the first retry                  |
+| `retryBackoff`   | `boolean` | No       | Default `true`. Doubles the delay between retries |
+| `retryUnsafeMethods` | `boolean` | No    | Default `false`. Allows retries for POST/PATCH only when the target API is idempotent |
 
 Runtime variables:
 
@@ -350,7 +382,7 @@ Runtime variables:
 - `{{outputVariable_status}}`: HTTP status code, `blocked`, or `error`
 - `{{outputVariable_error}}`: failure message when the request fails
 
-Non-2xx responses stop execution unless `continueOnFail` is true.
+Non-2xx responses stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Retries apply to `GET`, `PUT`, and `DELETE` by default; `POST` and `PATCH` retry only when `retryUnsafeMethods` is true.
 
 ---
 
@@ -370,7 +402,11 @@ Non-2xx responses stop execution unless `continueOnFail` is true.
         "body": "{\"name\": \"{{user_name}}\"}",
         "responseJsonPath": "data.id",
         "outputVariable": "contact_id",
-        "timeout": 30
+        "timeout": 30,
+        "retryAttempts": 1,
+        "retryDelayMs": 250,
+        "retryBackoff": true,
+        "retryUnsafeMethods": false
     }
 }
 ```
@@ -387,6 +423,10 @@ Non-2xx responses stop execution unless `continueOnFail` is true.
 | `outputVariable`   | `string`  | **Yes**  | Variable to store the result                           |
 | `timeout`          | `integer` | No       | Timeout override in seconds                            |
 | `continueOnFail`   | `boolean` | No       | Default `false`. When false, connector errors, blocked URLs, mapping errors, and non-2xx responses stop execution. |
+| `retryAttempts`    | `integer` | No       | 0-5 retries after the first failed request             |
+| `retryDelayMs`     | `integer` | No       | 0-5000 ms before the first retry                       |
+| `retryBackoff`     | `boolean` | No       | Default `true`. Doubles the delay between retries      |
+| `retryUnsafeMethods` | `boolean` | No     | Default `false`. Allows retries for POST/PATCH only when the target API is idempotent |
 
 Runtime variables:
 
@@ -395,7 +435,7 @@ Runtime variables:
 - `{{outputVariable_raw}}`: raw response body when a request was sent
 - `{{outputVariable_error}}`: failure message when the connector fails or returns a non-2xx response
 
-Non-2xx responses preserve the decoded response and raw body, then stop execution unless `continueOnFail` is true.
+Non-2xx responses preserve the decoded response and raw body, then stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Retries apply to `GET`, `PUT`, and `DELETE` by default; `POST` and `PATCH` retry only when `retryUnsafeMethods` is true.
 
 ---
 
@@ -798,6 +838,7 @@ Generate a workflow JSON for the Filament Agentic Chatbot plugin.
 The JSON must follow this structure:
 - Top level: { schemaVersion: 1, nodes: [...], edges: [...] }
 - Each node needs: id (string), type (string), position: {x, y}, data: {label, ...type-specific fields}
+- Optional common node runtime retry fields live inside data: nodeRetryAttempts (0-5), nodeRetryDelayMs (0-5000), nodeRetryBackoff (boolean). Use them only for transient technical node exceptions, not for user clarification, validation branches, or HTTP status handling.
 - Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, loop, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
 - Every workflow must have at least one "trigger" node
 - Edges connect nodes: { id, source, target, sourceHandle? }

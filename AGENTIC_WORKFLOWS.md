@@ -38,11 +38,9 @@ Workflows are useful when the assistant must:
 The editor is embedded inside Filament on the workflow edit page. It provides:
 
 - a drag-and-drop canvas for placing and connecting nodes
-- a sidebar with all available node types
-- per-node configuration panels for prompts, conditions, and data mappings
-- focus mode for a full-viewport canvas when complex graphs need more room
-- a draggable canvas toolbar for zoom, fit-to-view, minimap, grouping, lock, validation, and shortcut access
-- Filament light and dark mode support across editor chrome, canvas, node states, and the inspector
+- one visual editor for the semantic workflow that is saved, versioned, and published
+- simplified node names, canvas summaries, and setup fields for common workflow steps
+- per-node configuration panels where advanced controls live inside each node inspector
 - local validation plus a server-side **Validate workflow** action that runs the same validator used by save and publish
 - keyboard shortcuts for common operations
 
@@ -60,30 +58,26 @@ The workflow edit page combines five working areas:
 
 The editor also supports node mapping previews for action, HTTP Request, and API Connector nodes plus dry runs for HTTP Request and API Connector nodes. That means you can inspect mappings and live responses before you publish a release.
 
-Focus mode expands the editor to the full viewport and removes the surrounding Filament chrome. Use it when you are wiring larger graphs, reviewing branch layout, or presenting a workflow to another operator. The canvas, node library, inspector, mode switcher, save actions, publish controls, and draggable toolbar remain available.
+The editor uses one canvas and stores `schemaVersion: 2` semantic workflows as the authoring source of truth. The runtime graph is compiled from that semantic workflow at validation, preview, publish, activation, and execution boundaries. Structured Ask steps, including form and wizard presentations, compile to `collectForm` runtime nodes with the field contract, normalization, parsing, validation policy, examples, and canonicalization metadata preserved for execution.
 
-The canvas toolbar can be moved while authoring. Keep it near the part of the graph you are editing, then use it for zoom, fit-to-view, minimap visibility, grouping, lock state, validation, and keyboard-shortcut access. The same editor surface supports Filament light and dark mode, so teams can keep the standard admin look or switch to a darker long-session editing environment.
+To keep the catalog usable as it grows, the sidebar exposes authoring choices in product tiers:
 
-The editor also includes a **Quality** panel for workflow-linked scenarios. Save the draft, run the relevant checks, then review pass/fail status, score, failed checks, and fix suggestions without leaving the workflow you are about to publish. See [Quality Loop](QUALITY_LOOP.md) for the operating model.
+- **Builder** for the semantic steps most authors should use first
+- **Expert** for common power features such as confidence checks, structured output, connectors, joins, and delay steps
+- **Internal runtime** only for compiled-graph diagnostics and engine-level investigation
 
-To keep the catalog usable as it grows, the sidebar now exposes nodes in three tiers:
-
-- **Essential** for the smallest reliable set used in most production workflows
-- **Advanced** for common power features such as confidence checks, structured output, connectors, joins, and delay steps
-- **Expert** for specialist nodes such as loops, sub-workflows, random splits, expressions, and other higher-complexity building blocks
-
-Start in **Advanced** unless you have a reason to hide complexity further. Move to **Expert** only when the flow genuinely needs those capabilities.
+The UX goal is to keep Builder and Expert focused on chatbot behavior, with technical controls moved into contextual advanced sections inside each node inspector. Normal authors should not need to place raw runtime nodes. The engine compiles schema v2 semantic steps into the executable graph internally.
 
 ## Node Types
 
-Every workflow is built from these building blocks. The editor exposes a broad catalog, so a good practice is to start with the smallest useful set, then add advanced nodes only when the flow needs them:
+Every workflow is built from semantic behavior steps. A good practice is to start with the smallest useful set, then add expert features only when the flow needs them:
 
-- **Core conversation nodes**: Trigger, Send Message, Collect Input, Condition, Switch Router, Set Variable, End
-- **Grounding and AI nodes**: Knowledge Base, Answer, AI Agent, Query Rewrite, Summarize, Structured Output, Confidence Check, Guardrail, Intent Classifier, Sentiment
-- **Integration and data nodes**: Action, HTTP Request, API Connector, Entity Extractor, Transform, Rerank, Context Builder
-- **Control and operations nodes**: Validation, Confirmation, Error Handler, Memory Read/Write, Log, Random Split, Expression, Sub-Workflow, Join, Loop, Delay, Note
+- **Core conversation steps**: Start, Ask, Respond, Route, Finish, Note
+- **Grounding and answer steps**: Knowledge Answer, Data Answer, Respond
+- **Integration and action steps**: API Connector, HTTP Request, Action, Approval
+- **Expert processing steps**: Structured Output, Confidence Check, Guardrail, Query Rewrite, Summarize, Context Builder, Rerank, Delay, Join
 
-The editor also exposes a dedicated **Data Retrieval** preset for safe internal reads. That preset still uses the **Action** node under the hood with the built-in `query_data_resource` action key, rather than a separate runtime node type.
+The editor also exposes a dedicated **Data Retrieval** preset for safe internal reads. That preset compiles to the built-in `query_data_resource` action path under the hood, rather than asking authors to configure a separate runtime node type.
 
 ### Trigger
 
@@ -160,11 +154,19 @@ Combines selected variables, retrieved records, and optional user input into one
 
 ### Rerank
 
-Orders retrieved records by query overlap and stores the trimmed result set plus scores. This is a deterministic relevance pass, not an embedding or cross-encoder reranker.
+Orders retrieved records and stores the trimmed result set plus scores. It can also act as a generic candidate resolver for API responses by reading a nested `recordsPath` such as `results` or `data.items`, scoring selected `textFields`, and adding structured `preferredValues` boosts such as `source = trusted_catalog`.
+
+`scoringMode` defaults to `deterministic`, which is explainable and does not call an AI provider. Use `semantic` to rank fuzzy language, typos, and translated labels through Laravel AI SDK reranking. Use `hybrid` when the semantic score should still respect structured workflow preferences such as trusted sources or matching resource types. Optional `provider` and `model` fields override the Laravel AI SDK reranking defaults for this node. The node applies `limit` after scoring and ambiguity checks so hybrid preferences are not dropped before they can influence the result.
+
+Runtime variables include `{{outputVariable}}`, `{{outputVariable_scores}}`, `{{outputVariable_top}}`, `{{outputVariable_top_score}}`, `{{outputVariable_top_match_count}}`, and `{{outputVariable_ambiguous}}`. Use the ambiguity flag to route to a clarification question instead of guessing when multiple candidates have the same top score.
 
 ### Error Handler
 
 Converts an upstream `*_error` variable into a clear success/failure branch. Use it after API, action, or retrieval nodes.
+
+### Runtime Retry
+
+AgentGraph can retry a workflow node when that node throws a transient technical exception. Configure this with the common `nodeRetryAttempts`, `nodeRetryDelayMs`, and `nodeRetryBackoff` fields in the node data. This is for infrastructure-level failures such as temporary provider or network errors; it does not replace request-level HTTP/API retries, validation branches, `errorHandler` fallbacks, confirmation steps, or clarification questions.
 
 ### Confirmation
 
@@ -194,7 +196,7 @@ Built-in action keys include:
 
 For generic catalog questions such as newest, oldest, highest, lowest, cheapest, or filtered records, use a `structuredOutput` step to extract a query plan, then pass exact `{{planned_query.*}}` templates into `query_data_resource` via `filter_clauses`, `sort`, `mode`, and `limit`. Resource `field_metadata` should describe date, numeric, enum, and text fields so generated workflows can map natural language to safe allow-listed fields.
 
-For no-code setup, use the bot Behavior tab's **Smart Data Queries** settings plus the workflow editor's **Smart Data Query** starter. The admin only selects allowed data sources and chat-sized result limits; the generated workflow handles the query-plan JSON and the data-retrieval mapping.
+For no-code setup, define safe live reads in **Data Resources**, approve the minimum resources on the bot's **Database Answers** section, then use the workflow editor's **Smart Data Query** starter. The generated workflow handles the query-plan JSON and the data-retrieval mapping.
 
 For request-style nodes, `GET` is treated as query behavior, while `POST`, `PUT`, `PATCH`, and `DELETE` are treated as write behavior when capability mode is enforced for the linked bot.
 
@@ -204,11 +206,15 @@ Calls an external URL directly from the workflow. Configure method, URL, headers
 
 Non-2xx responses and missing URLs stop the workflow by default. Enable `continueOnFail` only when a downstream fallback branch reads the `*_status` or `*_error` variables and handles the failure intentionally.
 
+Supported methods are `GET`, `POST`, `PUT`, `PATCH`, and `DELETE`. Temporary failures can be retried, but write-like `POST` and `PATCH` calls are not retried unless `retryUnsafeMethods` is explicitly enabled for an idempotent target API.
+
 ### API Connector
 
 Calls a saved API connector profile. Connectors store base URL, authentication, default headers, and timeout so you can reuse them across multiple workflows without duplicating credentials. See [API Connectors](API_CONNECTORS.md).
 
 API Connector nodes follow the same failure model as raw HTTP Request nodes: non-2xx responses preserve response/status/raw/error variables, but stop the workflow unless `continueOnFail` is enabled.
+
+Connector nodes use the same method whitelist and retry rules as raw HTTP nodes, plus connector-level bot scope, allowed-method, allowed-path, authentication, and SSRF checks.
 
 ### Set Variable
 
@@ -278,14 +284,19 @@ A non-executable annotation node. Use notes to document intent, leave reminders,
 
 ## Drafts, Publishing, And Releases
 
-Workflows follow a draft → publish lifecycle:
+Workflows follow a save → validate → publish → enable lifecycle:
 
 1. **Draft** — edit nodes, connections, and settings freely without affecting live behavior
-2. **Publish** — snapshot the current draft as a new version with release notes
-3. **Live** — the published version is what the bot actually executes
-4. **Rollback** — revert to any previous published version if a new release causes issues
+2. **Validate** — run local canvas checks and server-side publish checks before release
+3. **Publish** — snapshot the current draft as a new version with release notes
+4. **Enable** — route chat to the published workflow for the assigned bot
+5. **Rollback** — revert to any previous published version if a new release causes issues
 
 This means you can iterate on a workflow safely. Draft changes never affect users until you explicitly publish.
+
+New workflows start with a server-saved starter draft, not hidden browser-only default nodes. Empty payloads are treated as intentionally empty. Importing JSON, loading a preset, clearing the canvas, reconnecting edges, or replacing a draft resets the editor test session and run selection so old execution state does not point at a different graph.
+
+Unpublished workflows cannot be enabled as normal chat routing. If the workflow has only a draft, publish it first, then enable it. The Workflows list shows assignment, release, and routing states directly: assigned/unassigned, live/standby, draft/published, and conflict.
 
 This is not extra ceremony. The draft/release split protects the live bot from half-finished edits, gives your team an audit trail with release notes, and makes rollback practical when a new automation path behaves unexpectedly.
 
@@ -305,11 +316,17 @@ Always review generated workflows before publishing. The AI draft is a starting 
 
 Generated workflows are saved as drafts and still pass through the same structural validator, semantic linter, capability checks, and publish guards as hand-built workflows.
 
+## Follow-Up Clarification
+
+When a completed workflow result is followed by an ambiguous message, the runtime may ask a clarification question instead of guessing. That pending clarification is tied to the conversation, active workflow, and previous run, then included in the next LLM continuation plan. If the user answers the clarification, the workflow receives a rewritten standalone input; if the next message is unrelated, the pending clarification is cleared so the bot does not stay trapped in the old workflow.
+
+The continuation planner sees a safe summary of workflow capabilities, including labels, descriptions, action keys, connector paths, HTTP methods, response paths, schema keys, output variables, and input mapping keys. It does not receive headers, request bodies, extra headers, URL query strings, credentials, or protected runtime variables.
+
 ## Execution Traces And Debugging
 
-The **Runs** tab shows every execution of the workflow:
+The **Trace** tab shows the latest workflow executions:
 
-- **Status** — completed, failed, or halted
+- **Status** — completed, failed, waiting, running, or delayed
 - **Node trace** — which nodes ran, in what order, with what inputs and outputs
 - **Variables** — the full workflow state at each step
 - **Timing** — how long each node took
@@ -321,11 +338,10 @@ The editor also includes draft-only confidence tools before you create a release
 
 - **Mapping Preview** for action, HTTP Request, and API Connector nodes
 - **Dry Run** for HTTP Request and API Connector nodes using current mapped inputs
-- **Quality panel** for workflow-linked scenarios and fix suggestions
 - **Test chat** against the saved draft workflow instead of the live release
 - **Replay / rerun** from recorded trace state when you need to debug a specific failure or regression
 
-Use the per-workflow **Runs** tab when you are iterating on one workflow. Use the standalone **Workflow Runs** resource when you need a global operational view across all workflows, exports, and related submission outcomes.
+Use the per-workflow **Trace** tab when you are iterating on one workflow. Use the standalone **Workflow Runs** resource when you need a global operational view across all workflows, exports, and related submission outcomes.
 
 If a run stores structured data through `store_submission`, review the resulting record in **Submissions** and jump back to the originating workflow or conversation from there.
 
@@ -340,8 +356,9 @@ A workflow is linked to a bot from the workflow's settings. Once linked:
 The important assignment rule is:
 
 - a bot may store many workflow records for drafts, experiments, and release history
-- a bot may route chat to only one enabled workflow at a time
-- enabling a different linked workflow replaces the previous live chat assignment
+- a bot may route chat to only one published and enabled workflow at a time
+- enabling a different linked published workflow replaces the previous live chat assignment
+- draft-only workflows are visible in lists and bot overviews, but cannot receive live chat until published
 - if you need multiple distinct chatbot experiences, create multiple bots
 
 Activation uses a shared service in the edit page, list-page conflict repair action, and model-level safety net. If legacy data contains multiple active workflows for one bot, the Workflows list shows a routing conflict and **Fix routing conflicts** normalizes the bot back to one live workflow. The doctor command also warns about this state in production checks.
@@ -383,8 +400,6 @@ Do not start by making every bot fully agentic. A cleaner path:
 ## Related Docs
 
 - [API Connectors](API_CONNECTORS.md) — reusable external API profiles
-- [Quality Loop](QUALITY_LOOP.md) — quality scenarios, workflow checks, and handoff operations
-- [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md) — simplified authoring principles and Smart Step metadata
 - [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md) — full node schema reference
 - [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md) — ready-to-paste generation prompts
 - [Bots](BOTS.md) — how bots connect to workflows
