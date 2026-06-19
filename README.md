@@ -108,6 +108,10 @@ Create URL, file, text, or API-backed sources from a guided form. Detailed inges
 
 `v0.16.1` includes the v0.16 Compound Request engine modes, structured capability execution, workflow turn-understanding hardening, AgentGraph confirmation/execution metadata, stronger pending-turn ownership, and a patch for default workflow replies after internal action/tool steps.
 
+### Workflow runtime resilience
+
+Workflow chat turns now fail closed instead of leaving users in silent waiting states. Direct workflow streams emit safe structured error events and close with `[DONE]`; JSON `/complete` requests return safe error payloads and roll back prepared runs when execution fails. Pending AgentGraph waitpoints are treated as projections and stale `resolving` claims are recovered after the configured timeout.
+
 ### Conversation review
 
 Review transcripts, citations, feedback, session metadata, handoff actions, flags, and export controls in one Filament screen.
@@ -192,6 +196,7 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 - [Compound Requests](compound-requests.md)
 - [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md)
 - [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
+- [Data Resources](DATA_RESOURCES.md)
 - [API Connectors](API_CONNECTORS.md)
 - [API Integrations](API_INTEGRATIONS.md)
 - [Channel Integrations](CHANNELS.md)
@@ -245,7 +250,7 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.13.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
+The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.15.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
 
 ## Related Repositories
 

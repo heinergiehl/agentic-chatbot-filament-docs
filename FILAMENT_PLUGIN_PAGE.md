@@ -4,7 +4,7 @@ A native Filament control plane for grounded AI assistants, embeddable chat widg
 
 Filament Agentic Chatbot helps Laravel teams build assistants inside the admin panel they already use. Start with a source-grounded support bot, then add guided workflows when you need branching intake, lead qualification, API calls, data capture, quality checks, and human handoff.
 
-This is a young commercial product that is being developed actively. The current public docs snapshot is `v0.16.0`; the installable runtime line is `^0.16.0`. Purchases and commercial support directly fund maintenance, documentation, and new product updates.
+This is a young commercial product that is being developed actively. The current public docs snapshot is `v0.16.1`; the installable runtime line is `^0.16.1`. Purchases and commercial support directly fund maintenance, documentation, and new product updates.
 
 ## Live Demo
 
@@ -38,7 +38,11 @@ Style the embedded widget inside the bot editor and see the result immediately. 
 
 ### Compound Requests
 
-`v0.16.0` adds bot-level Compound Request modes for `legacy`, `shadow`, and `structured` execution. Structured mode can safely plan multi-item read/write operations against registered actions, Laravel AI tools, and API Connector capabilities while pending workflow turns and confirmations remain authoritative.
+`v0.16.1` includes the v0.16 Compound Request modes for `legacy`, `shadow`, and `structured` execution. Structured mode can safely plan multi-item read/write operations against registered actions, Laravel AI tools, and API Connector capabilities while pending workflow turns and confirmations remain authoritative.
+
+### Workflow Runtime Resilience
+
+The workflow chat runtime is designed to fail closed. Stream failures are mapped to safe widget error events and end with `[DONE]`; JSON complete failures return safe error payloads and roll back prepared runs. Pending AgentGraph waitpoints are treated as projections, so stale `resolving` claims can recover instead of blocking a conversation indefinitely.
 
 ### Workflow Focus Canvas
 
@@ -139,13 +143,13 @@ Supported chat providers include Gemini, OpenAI, Anthropic, xAI, OpenRouter, Dee
 ## Installation
 
 ```bash
-composer require heiner/filament-agentic-chatbot:^0.16.0
+composer require heiner/filament-agentic-chatbot:^0.16.1
 php artisan vendor:publish --tag=filament-agentic-chatbot-config
 php artisan migrate
 php artisan queue:work
 ```
 
-Composer installs `heiner/agent-graph` transitively for the workflow runtime.
+Composer installs `heiner/agent-graph` `^0.15.0` transitively for the workflow runtime.
 
 Register the plugin in your Filament panel provider:
 
@@ -258,8 +262,8 @@ npm install @heiner/filament-agentic-chatbot-widget
 - [Channel integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md)
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
-- [Release notes v0.16.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.16.0.md)
-- [Docs snapshot v0.16.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.0)
+- [Release notes v0.16.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.16.1.md)
+- [Docs snapshot v0.16.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.1)
 
 ## Support
 

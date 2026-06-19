@@ -2,13 +2,15 @@
 
 This document describes the executable `schemaVersion: 1` JSON format used by the **Filament Agentic Chatbot** workflow engine. The visual editor stores `schemaVersion: 2` semantic workflows as the authoring source of truth and compiles them to this runtime shape at validation, preview, publish, activation, and execution boundaries.
 
-Use this reference for runtime fixtures, diagnostics, low-level imports, or programmatic engine payloads. For normal editor authoring, prefer the semantic workflow editor and its AI Draft flow.
+Use this reference for runtime fixtures, diagnostics, archived runtime exports, or programmatic engine payloads. For normal editor authoring, use schema v2 semantic payloads through the workflow editor and its AI Draft flow.
+
+The current editor save, validate, publish, and import paths require schema v2 authoring payloads. Schema v1 remains the executable runtime shape, but it is not the canonical editable format for new workflows.
 
 ## How to Use
 
-1. Ask an AI or backend process to generate runtime workflow JSON using this schema only when you need an executable graph.
-2. In the workflow editor, use Import for low-level JSON payloads or AI Draft for semantic authoring.
-3. Validate the workflow before publishing. Validation runs against the same compiled runtime graph used by execution.
+1. Ask an AI or backend process to generate runtime workflow JSON using this schema only when you need an executable graph, fixture, or diagnostic payload.
+2. For editor workflows, generate or import schema v2 semantic authoring payloads instead of raw runtime nodes.
+3. Validate the workflow before publishing. Validation compiles schema v2 to the same runtime graph used by execution and blocks publish on compiler or runtime errors.
 
 ---
 
@@ -83,7 +85,7 @@ The visual editor also exposes a `Data Retrieval` palette item. Persisted JSON s
 
 ### 1. `trigger` — Starts the Workflow
 
-Every workflow **must** have at least one trigger node.
+Every executable workflow **must** have exactly one trigger node.
 
 ```json
 {
@@ -628,14 +630,16 @@ Variables are created by nodes that have `outputVariable`, `variableName`, `item
 
 ## Validation Rules
 
-The import validator enforces these rules:
+The runtime validator enforces these rules:
 
-- **At least one `trigger` node** is required.
+- **Exactly one `trigger` node** is required.
 - **All edge sources and targets** must reference existing node IDs.
 - **No self-loop edges** (source ≠ target on same edge).
 - **No duplicate node IDs**.
 - **Max 200 nodes** and **500 edges** per workflow.
 - All nodes must have a valid `type`, `position`, and `data.label`.
+
+The schema v2 compiler adds additional authoring checks before runtime validation, including reserved start identifiers, annotation shape validation, runtime node-id collision detection, and publish-blocking compiler diagnostics.
 
 ---
 
@@ -840,7 +844,7 @@ The JSON must follow this structure:
 - Each node needs: id (string), type (string), position: {x, y}, data: {label, ...type-specific fields}
 - Optional common node runtime retry fields live inside data: nodeRetryAttempts (0-5), nodeRetryDelayMs (0-5000), nodeRetryBackoff (boolean). Use them only for transient technical node exceptions, not for user clarification, validation branches, or HTTP status handling.
 - Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, loop, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
-- Every workflow must have at least one "trigger" node
+- Every executable workflow must have exactly one "trigger" node
 - Edges connect nodes: { id, source, target, sourceHandle? }
 - For condition nodes, use sourceHandle "yes" or "no"
 - For validation-style nodes (`validation`, `confirmation`, `structuredOutput`, `confidenceCheck`, `guardrail`, `errorHandler`), use sourceHandle "valid" or "invalid"

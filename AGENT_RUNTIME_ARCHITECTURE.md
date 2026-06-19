@@ -13,23 +13,20 @@ The important product distinction is:
 
 ## Default Runtime
 
-Every normal chat request runs through the assistant chat graph unless a live workflow is explicitly configured to use the direct workflow handler for compatibility.
+Every chat request first resolves the endpoint context and then passes through deterministic turn ownership before any model or workflow execution runs.
 
 ```text
-Bot configuration
-  -> AssistantChatGraphRuntime
-      -> prepare turn state
-      -> AssistantAgent
-          -> conversation memory
-          -> session state memory
-          -> KnowledgeSearchTool only when uploaded sources exist
-          -> RunWorkflowTool when a live workflow exists
-          -> registered tools
-          -> direct natural-language answer when no tool is needed
-      -> finalize and persist
+ChatEndpointContextResolver
+  -> ConversationTurnGateway
+      -> pending interaction / active workflow / compound request / static response / assistant fallback
+  -> ChatTurnCoordinator
+      -> direct workflow handler or AssistantChatGraphRuntime
+  -> persistence, usage, events, and response presentation
 ```
 
-The assistant decides whether to answer directly, search uploaded sources, run or resume a workflow, or ask a clarifying question. Default chat no longer performs a hidden retrieval call before the assistant runs.
+The assistant still decides how to answer once it owns the turn, but it does not get first chance to override active waitpoints, pending confirmations, or deterministic static/runtime outcomes.
+
+The gateway records the last ownership decision in `conversation_turn_arbitration` metadata. This makes support review and regression tests easier because a turn can be traced to `pending_interaction`, `workflow_start`, `workflow_resume`, `compound`, `static`, or assistant fallback ownership.
 
 ## Knowledge Retrieval
 
@@ -44,7 +41,7 @@ This keeps normal chat conversational while preserving source-backed answers and
 
 ## Workflow Execution
 
-The assistant sees the active workflow as `run_workflow`.
+When the assistant graph owns a turn, it sees the active workflow as `run_workflow`. When a bot is configured for direct workflow routing, the workflow handler runs without asking the assistant to call a tool.
 
 The workflow tool:
 
@@ -54,7 +51,9 @@ The workflow tool:
 - protects application-owned runtime variables such as `session_id`, `area`, `__bot`, actor context, and channel context
 - plans run/resume execution under a conversation lock before executing the workflow
 
-The direct workflow handler still exists for compatibility when the assistant graph is disabled for a bot.
+Both transports use the same planning boundary before execution. If execution fails after a run has been prepared, the runtime marks that run failed instead of leaving it `running`.
+
+Stream responses emit structured error events and close with `data: [DONE]`. JSON `/complete` responses return a safe error payload and status code. Raw stack traces and provider secrets should stay in server logs, not in widget output.
 
 ## Pending Workflow Turn Routing
 
@@ -69,6 +68,23 @@ The turn router combines deterministic validation with a semantic LLM classifier
 - `clarify` means the message is ambiguous enough that the assistant should ask whether to continue, cancel, or switch tasks.
 
 This routing happens inside the workflow tool and in an assistant preflight step, so correctness does not depend on the model voluntarily calling the workflow tool for every cancellation or topic switch.
+
+AgentGraph checkpoints and interrupts are the authority for SDK-backed waitpoints. `bot_pending_interactions` rows are projections used for chat routing, admin visibility, audit, TTL, draft persistence, and diagnostics.
+
+Projection recovery is intentionally conservative:
+
+- fresh `pending` and `resolving` rows are treated as active
+- expired projections are closed before reuse
+- stale `resolving` claims are released after `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS` only when the AgentGraph interrupt still matches
+- changed or missing interrupts mark projections stale instead of executing against outdated state
+
+This prevents a browser refresh, abandoned request, or failed resolver attempt from blocking the next valid user answer forever.
+
+## Result-Set Follow-Up Context
+
+`query_data_resource` stores sanitized result-set context on the conversation after successful lookups. Follow-up turns such as "latest one", "only the first", "details", or "the second" can then resolve against the previous result set deterministically before an LLM continuation planner is used.
+
+The resolver reuses only controlled resource metadata, selected fields, capped scalar records, and closed-vocabulary operation synonyms. It does not infer database follow-ups from free-form assistant prose.
 
 ## Memory
 

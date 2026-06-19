@@ -234,6 +234,23 @@ If you embed the widget on pages served by the same Laravel monolith, CORS is us
 
 Use it for custom widget empty states such as "sources are still indexing" without guessing from source records.
 
+## Streaming And Failure Behavior
+
+The widget consumes server-sent events for streaming chat responses. Workflow streams use structured events such as `init`, `text_delta`, `workflow_node`, `message_complete`, and `error`, then close with `data: [DONE]`.
+
+If workflow execution fails after a run has been prepared, the server logs the failure, marks the run failed, emits a safe error event, and closes the stream. JSON `/complete` integrations receive the same safe error code/message shape as a normal chat failure. Stack traces, provider secrets, and raw technical exception messages should stay out of widget responses.
+
+Streaming-related configuration:
+
+| Env Variable | Purpose |
+| --- | --- |
+| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_LLM_DEFAULT` | Default for whether supported LLM workflow nodes stream tokens. |
+| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_SIMULATE_DETERMINISTIC` | Simulate token-like deltas for deterministic workflow messages so UI behavior stays smooth. |
+| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_DETERMINISTIC_DELAY_MS` | Delay between deterministic chunks. |
+| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_DETERMINISTIC_CHUNK_SIZE` | Chunk size for deterministic simulated streaming. |
+
+SSE payloads substitute invalid UTF-8 before encoding JSON, so malformed provider/tool output should not produce empty browser events.
+
 ## Content Security Policy
 
 Same-origin embedding avoids cross-origin complexity, but it does not automatically bypass CSP.

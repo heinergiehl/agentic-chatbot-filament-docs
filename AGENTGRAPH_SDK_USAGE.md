@@ -5,9 +5,9 @@ This document records the AgentGraph SDK surface currently used by the plugin. I
 ## Current Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `^0.13.0`
-- Sandbox resolution: `v0.13.0`
-- The sandbox tracks the stable 0.13 SDK line so local host-app validation exercises the same public SDK surface as the plugin.
+- Current plugin constraint: `^0.15.0`
+- Sandbox resolution: `v0.15.x`
+- The sandbox tracks the stable 0.15 SDK line so local host-app validation exercises the same public SDK surface as the plugin.
 
 ## Runtime Entry Points
 

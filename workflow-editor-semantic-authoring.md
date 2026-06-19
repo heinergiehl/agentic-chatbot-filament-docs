@@ -54,6 +54,7 @@ Save and publish should preserve the authoring payload.
 - Publish stores schema v2 in `workflow_data` and records the schema version.
 - Runtime access compiles schema v2 at the boundary.
 - Activation validates the published payload before making the workflow active.
+- Editor import, server validation, save, publish, and activation require schema v2 authoring payloads for normal workflows.
 
 This prevents invalid published workflows from becoming live through list actions, model actions, or edit-page actions.
 
@@ -76,17 +77,16 @@ Use these when behavior should be generic across the workflow. For example, a wo
 
 ## Legacy v1 Workflows
 
-Schema v1 workflows are runtime graphs. They are not silently converted when an author edits the semantic canvas.
+Schema v1 workflows are runtime graphs. They are not silently converted into editable semantic authoring payloads.
 
-When the editor opens a v1 payload:
+When legacy or diagnostic tooling exposes a v1 payload:
 
 - The graph remains inspectable as runtime nodes and edges.
 - The original v1 JSON is retained for archive export.
-- The sidebar footer shows a compact schema v1 archive state.
-- Adding semantic steps or annotations is blocked until the author explicitly converts the graph.
-- Conversion runs the v1-to-v2 importer and reports warnings in Checks.
+- It should be treated as inspect/archive/diagnostic data, not as the source of truth for editor save or publish.
+- Adding semantic steps, annotations, or publishing through the current editor requires a schema v2 authoring payload.
 
-If conversion fails because transitions are ambiguous or runtime-only nodes cannot be mapped, the author should export the archive and rebuild the workflow in schema v2.
+If a legacy runtime graph cannot be converted without ambiguity, export the archive and rebuild the workflow in schema v2 semantic steps.
 
 ## Developer Rules
 

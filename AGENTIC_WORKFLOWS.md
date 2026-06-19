@@ -60,6 +60,8 @@ The editor also supports node mapping previews for action, HTTP Request, and API
 
 The editor uses one canvas and stores `schemaVersion: 2` semantic workflows as the authoring source of truth. The runtime graph is compiled from that semantic workflow at validation, preview, publish, activation, and execution boundaries. Structured Ask steps, including form and wizard presentations, compile to `collectForm` runtime nodes with the field contract, normalization, parsing, validation policy, examples, and canonicalization metadata preserved for execution.
 
+Schema v1 JSON is still the runtime/API/diagnostic graph format, but it is not the normal editable authoring format. Editor save, validate, publish, and import paths expect schema v2 semantic payloads. If you have old runtime JSON, convert it to schema v2 or rebuild the workflow as semantic steps before treating it as an editable draft.
+
 To keep the catalog usable as it grows, the sidebar exposes authoring choices in product tiers:
 
 - **Builder** for the semantic steps most authors should use first
@@ -344,6 +346,10 @@ The editor also includes draft-only confidence tools before you create a release
 Use the per-workflow **Trace** tab when you are iterating on one workflow. Use the standalone **Workflow Runs** resource when you need a global operational view across all workflows, exports, and related submission outcomes.
 
 If a run stores structured data through `store_submission`, review the resulting record in **Submissions** and jump back to the originating workflow or conversation from there.
+
+Workflow chat failures are surfaced as safe user-facing errors instead of hanging conversations. Streaming responses emit a structured error event and close the stream with `[DONE]`; JSON complete responses return a safe error payload and mark the prepared run failed. Server logs and run details carry the operational context for support review.
+
+Pending waitpoints are projected from AgentGraph interrupts. If a resolver attempt is abandoned and a pending interaction stays in `resolving`, the runtime can release that stale claim after `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS` when the underlying interrupt still matches. This keeps the next valid answer from being blocked by stale projection state.
 
 ## Linking A Workflow To A Bot
 

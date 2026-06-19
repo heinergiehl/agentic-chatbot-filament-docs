@@ -19,15 +19,16 @@
 - Optional signed embed tokens (`AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true`)
 - Header-first widget token transport with query/body compatibility flags
 - Request throttling by bot/session/IP
-- Friendly provider errors without stacktrace leaks in widget output
+- Friendly provider and workflow errors without stacktrace leaks in widget output
 - URL ingestion safety checks (blocks localhost/private networks by default, revalidates redirects, enforces size and content-type limits)
 - Workflow HTTP Request and API Connector safety checks for localhost/private-network targets by default
 - Workflow trace capture controls with key-based redaction for sensitive values
 - Production doctor warnings for unsafe widget transport, empty domain allowlists, workflow routing conflicts, trace capture posture, and credential decrypt failures
 - Assistant-message feedback capture for analytics and quality review
-- Secure-default Bot Access Token admin authorization through explicit Laravel Gate abilities
+- Gate-aware Bot Access Token admin authorization with optional strict Gate mode
+- Gate-aware Data Resource admin authorization with optional strict Gate mode
 - Hard monthly token/cost budget checks with in-flight request reservations
-- Bot-scoped built-in internal data resources for `query_data_resource`
+- Bot-scoped built-in internal data resources and hidden runtime safety scopes for `query_data_resource`
 
 ## Public Runtime Deprecations
 
@@ -68,18 +69,41 @@ Knowledge search failures return a generic user-facing error. Internal logs incl
 
 The built-in `bots` data resource is scoped to the current bot by default. Only override that resource in the host app when you intentionally want a global bot catalog exposed to workflow data queries.
 
+Data Resource safety scope filters are always applied at runtime and do not have to be exposed as normal workflow filters. Use them for ownership boundaries such as bot, tenant, team, or customer IDs. If no default returned field is selected, UI-managed resources fall back to one safe returnable field instead of returning every allowed field by default.
+
 `AGENTIC_CHATBOT_CHROMA_ALLOW_THRESHOLD_BYPASS=false` keeps Chroma retrieval from returning below-threshold chunks. If you enable the bypass for compatibility, treat `threshold_bypassed=true` chunks as lower-confidence output and monitor the logs.
 
 ## Bot Access Token Admin Authorization
 
-Bot Access Token administration is locked down by default. Define Laravel Gates for the Filament users that should read or manage tokens:
+Authenticated Filament panel users can manage Bot Access Tokens by default so new installs are immediately usable. Define Laravel Gates when the host app needs role separation:
 
 ```php
 Gate::define('filament-agentic-chatbot.view-bot-access-tokens', fn ($user) => $user->canReviewIntegrations());
 Gate::define('filament-agentic-chatbot.manage-bot-access-tokens', fn ($user) => $user->canManageIntegrations());
 ```
 
-Without these Gates, the token resource and mutation actions deny access. You can override the ability names under `filament-agentic-chatbot.bot_access_tokens.authorization`.
+Once either Bot Access Token Gate is defined, token administration becomes explicitly gated. The view Gate controls navigation/read access, an allowed manage Gate also grants read access, and the manage Gate controls create/edit/rotate/revoke/delete actions. You can override the ability names under `filament-agentic-chatbot.bot_access_tokens.authorization`.
+
+For locked-down production panels that should hide the resource until Gates exist, set:
+
+```env
+AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_AUTHORIZATION_REQUIRE_GATES=true
+```
+
+## Data Resource Admin Authorization
+
+Authenticated Filament panel users can manage Data Resources by default so new installs are immediately usable. Define Laravel Gates when the host app needs role separation:
+
+```php
+Gate::define('filament-agentic-chatbot.view-data-resources', fn ($user) => $user->canReviewDataResources());
+Gate::define('filament-agentic-chatbot.manage-data-resources', fn ($user) => $user->canManageDataResources());
+```
+
+For locked-down production panels that should hide the resource until Gates exist, set:
+
+```env
+AGENTIC_CHATBOT_DATA_RESOURCE_AUTHORIZATION_REQUIRE_GATES=true
+```
 
 ## Hard Budget Guard
 

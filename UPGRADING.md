@@ -4,11 +4,11 @@ This document covers required steps when upgrading between public releases.
 
 ## Current release status
 
-The current recommended Commercial Early Access release is **`v0.16.0`**.
+The current recommended Commercial Early Access release is **`v0.16.1`**.
 
-The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.16.0.md](RELEASE_NOTES_v0.16.0.md) before upgrading.
+The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and [RELEASE_NOTES_v0.16.1.md](RELEASE_NOTES_v0.16.1.md) before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.16.0` instead.
+> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; install `^0.16.1` instead.
 
 When upgrading, always:
 
@@ -17,6 +17,34 @@ When upgrading, always:
 3. Run `php artisan migrate` to apply any new migrations.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Upgrading to v0.16.1
+
+Update the package constraint to `^0.16.1` or to the exact marketplace version you receive:
+
+```bash
+composer update heiner/filament-agentic-chatbot --with-dependencies
+php artisan migrate
+php artisan filament:assets
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+php artisan filament-agentic-chatbot:doctor
+```
+
+`v0.16.1` is a hardening patch on top of `v0.16.0`. It improves workflow chat failure handling, stale pending-interaction recovery, schema-v2 validation strictness, Data Resource docs, and release checks.
+
+Review these areas before public rollout:
+
+1. **Workflow chat failure handling**: verify one streaming workflow and one JSON `/complete` workflow. Failures should return safe errors and must not leave prepared runs `running`.
+2. **Pending interactions**: if you published config, merge `workflow.pending_interactions.resolving_timeout_seconds` or set `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS`.
+3. **Delayed workflow recovery**: if delay nodes are used, merge `workflow.concurrency.delayed_timeout_seconds` or set `AGENTIC_CHATBOT_WORKFLOW_DELAYED_TIMEOUT_SECONDS`.
+4. **Schema v2 editor payloads**: editor import, save, validate, publish, and activation expect schema v2 authoring payloads. Runtime schema v1 remains for execution, diagnostics, and archives.
+5. **Docs and support runbooks**: update internal runbooks to include safe stream errors, AgentGraph interrupt consistency doctor warnings, and Data Resource safety scopes.
+
+No destructive migration step is required for this patch release.
 
 ---
 
@@ -118,7 +146,7 @@ Run `php artisan filament-agentic-chatbot:doctor` after deploying. New warnings 
 
 ## Bot Access Token hardening
 
-Releases that include Bot Access Token hardening change the Filament admin default to secure-by-default. After upgrading, define Gates for panel users that may view or manage tokens, otherwise the Bot Access Token resource and mutation actions are intentionally unavailable:
+Authenticated Filament panel users can manage Bot Access Tokens by default so new installs stay usable. Production panels that need role separation should define Gates for panel users that may view or manage tokens:
 
 ```php
 use Illuminate\Support\Facades\Gate;
@@ -127,7 +155,7 @@ Gate::define('filament-agentic-chatbot.view-bot-access-tokens', fn ($user) => $u
 Gate::define('filament-agentic-chatbot.manage-bot-access-tokens', fn ($user) => $user->canManageIntegrations());
 ```
 
-The ability names can be changed in `filament-agentic-chatbot.bot_access_tokens.authorization`. Disabling this authorization block is supported for legacy apps, but production hosts should keep it enabled and define explicit Gates.
+Once either token Gate exists, token administration becomes explicitly gated. The ability names can be changed in `filament-agentic-chatbot.bot_access_tokens.authorization`. To hide token administration until Gates exist, set `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_AUTHORIZATION_REQUIRE_GATES=true`.
 
 Run migrations after updating. Budget columns are widened for large UI values and a new reservation table is added for hard monthly budget checks. Cost budgets now require matching `usage.pricing` entries for the resolved provider/model; missing pricing blocks the request with `ai_cost_budget_pricing_missing` instead of allowing an unenforceable cost budget.
 
@@ -158,7 +186,7 @@ For marketplace production hosts with `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, al
 
 ## Upgrading to v0.12.0
 
-Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.16.0](#upgrading-to-v0160) for the current line, or [Upgrading to v0.13.0](#upgrading-to-v0130) only when you intentionally need that historical release.
+Do **not** target `v0.12.0` for new installs. Use [Upgrading to v0.16.1](#upgrading-to-v0161) for the current line, or [Upgrading to v0.13.0](#upgrading-to-v0130) only when you intentionally need that historical release.
 
 The `v0.12.0` documentation below is kept for historical context on features that shipped in the `0.13.0` line:
 

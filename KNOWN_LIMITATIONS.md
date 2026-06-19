@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.16.0<br>
-> **Last updated**: 2026-06-17
+> **Version**: 0.16.1<br>
+> **Last updated**: 2026-06-19
 
 This page documents known constraints, upstream limitations, and workarounds.
 
@@ -111,10 +111,32 @@ Compound write confirmation and compound execution may create distinct AgentGrap
 
 ---
 
-## 11. Schema-v2 collectForm authoring has a runtime boundary
+## 11. Schema-v2 editor authoring is required
 
 Schema-v2 Ask steps can compile structured fields into `collectForm` runtime nodes, including fields authored as JSON text. The runtime still validates the compiled workflow contract, not arbitrary UI-only draft data.
 
-**Impact**: Invalid JSON or non-list structured field payloads are ignored by the compiler and will not become form fields.
+The editor save, validate, publish, and import paths require schema v2 authoring payloads. Schema v1 remains the executable runtime graph for diagnostics, archives, and low-level integrations, but it is not the canonical editable workflow format.
 
-**Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing.
+**Impact**: Old runtime JSON may need conversion or a manual rebuild as semantic steps before it can be edited and published through the current editor.
+
+**Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing. Rebuild ambiguous schema v1 workflows in schema v2.
+
+---
+
+## 12. Pending interaction projections can be repaired, not guessed
+
+AgentGraph checkpoints and interrupts are the source of truth for SDK-backed workflow waitpoints. `bot_pending_interactions` rows are projections used for chat routing and admin visibility.
+
+**Impact**: If a pending interaction is expired, stale, or points at a changed interrupt, the runtime closes or reprojects it instead of guessing. A stale `resolving` claim is released only after the configured timeout and only when the underlying interrupt still matches.
+
+**Workaround**: Tune `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS`, run `php artisan filament-agentic-chatbot:doctor`, and inspect AgentGraph interrupt metadata when a conversation appears stuck.
+
+---
+
+## 13. Streaming fallback depends on transport and provider support
+
+LLM token streaming still depends on provider and SDK support. Deterministic workflow messages can simulate small `text_delta` chunks so the widget behaves consistently, but this is not the same as provider-native token streaming.
+
+**Impact**: Some workflow nodes may emit complete messages instead of provider token deltas. If execution fails mid-stream, the widget receives a safe structured error event and `[DONE]`, not raw stack traces.
+
+**Workaround**: Configure `AGENTIC_CHATBOT_WORKFLOW_STREAMING_LLM_DEFAULT`, `AGENTIC_CHATBOT_WORKFLOW_STREAMING_SIMULATE_DETERMINISTIC`, deterministic delay, and chunk size for your UX target.

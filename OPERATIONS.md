@@ -111,9 +111,13 @@ Use a public documentation URL for `AGENTIC_CHATBOT_DOCS_URL`, not an internal a
 
 - `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks workflow HTTP Request and API Connector nodes from targeting localhost, RFC1918, or other reserved/private destinations.
 - `AGENTIC_CHATBOT_WORKFLOW_RUNNING_TIMEOUT_SECONDS` lets abandoned `running` workflow executions be reclaimed so future conversations are not blocked forever.
+- `AGENTIC_CHATBOT_WORKFLOW_DELAYED_TIMEOUT_SECONDS` lets abandoned `delayed` workflow executions be reclaimed when a queued resume never arrives. It defaults to the running timeout when unset.
+- `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS` releases abandoned pending-interaction resolver claims when the AgentGraph interrupt still matches. This prevents stale `resolving` rows from blocking the next valid user answer.
 - `AGENTIC_CHATBOT_WORKFLOW_TRACE_CAPTURE_*`, `AGENTIC_CHATBOT_WORKFLOW_TRACE_MAX_STRING_LENGTH`, and `AGENTIC_CHATBOT_WORKFLOW_TRACE_REDACT_*` control how much trace data is stored and how sensitive values are scrubbed.
 
 If all trace capture flags are left enabled in production, doctor reports a warning. That keeps this release compatible while making privacy review explicit.
+
+Workflow stream failures are mapped to safe `error` events and closed with `[DONE]`. JSON `/complete` failures use the same safe error mapper and roll back prepared runs. Treat repeated `chat_failed` errors as an operational signal: inspect workflow run details, server logs, provider credentials, and queue health rather than asking users to retry indefinitely.
 
 ## Ingestion Fetch Limits
 
@@ -175,6 +179,7 @@ Track:
 - If you changed vector backend/model settings: use `Re-Ingest Bot Sources` (bot page) or `Re-Ingest All Sources` (sources list).
 - If bot setup still feels unclear: use `Test Retrieval`, `Test Bot Answer`, and `Setup Check` before you debug deeper infrastructure.
 - If chat rate-limited: reduce traffic burst and add retry backoff in clients.
+- If a workflow answer appears stuck: run `filament-agentic-chatbot:doctor`, inspect active `workflow_runs` and `bot_pending_interactions`, and verify the running/delayed/resolving timeout settings above.
 - If retrieval quality drops: tune `top_k`, `min_similarity`, and source quality.
 
 ## Data Resources (query_data_resource)
