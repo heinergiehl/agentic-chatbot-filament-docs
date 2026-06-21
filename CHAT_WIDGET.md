@@ -87,6 +87,8 @@ Add a single `<script>` tag to any HTML page:
     data-title="Support Assistant"
     data-subtitle="Always here to help"
     data-compact="false"
+    data-size="comfortable"
+    data-font="modern-sans"
     data-show-sources="true"
     data-lang="en"
     defer
@@ -102,7 +104,25 @@ Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that 
 | `data-bot`   | The bot's public ID (found in the bot edit page in Filament)           |
 | `data-token` | A signed embed token (required when `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true`) |
 
-All other `data-*` attributes are optional and override the bot's default settings.
+Common optional attributes:
+
+| Attribute | Description |
+| --------- | ----------- |
+| `data-api-base` | Laravel app base URL when the API is not inferred from the script origin |
+| `data-area` | Context area such as `public`, `member`, or `admin` |
+| `data-position` | `left` or `right` |
+| `data-template` | Style template such as `clean`, `aurora`, `control-plane`, `openai`, or `solar` |
+| `data-accent` | Hex accent color |
+| `data-title` | Chat panel title |
+| `data-subtitle` | Chat panel subtitle |
+| `data-welcome` | Welcome message |
+| `data-compact` | `true` or `false` |
+| `data-size` | `compact`, `comfortable`, or `spacious` |
+| `data-font` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |
+| `data-show-sources` | `true` or `false` |
+| `data-lang` | UI language code such as `en`, `de`, `fr`, or `es` |
+
+All optional `data-*` attributes override the bot's default settings.
 
 ### Option 2: NPM Package (for SPAs)
 
@@ -187,11 +207,11 @@ $token = WidgetEmbedToken::make(
 | ---------------------------- | ----------------------------- | ----------------------- |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED` | Require signed tokens         | `true`                  |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`     | HMAC signing secret           | falls back to `APP_KEY` |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES` | Signed token lifetime. Production default: `60` minutes; local/non-production default: `43200` minutes. | env-specific |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS` | Accept `?token=` on API requests | `true`                  |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS`  | Accept `token` in JSON/form bodies | `true`                  |
-| Token TTL                    | Configured in the config file | 30 days                 |
 
-Production embeds should send tokens with the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens remain enabled by default for compatibility, but `php artisan filament-agentic-chatbot:doctor` warns in production so you can migrate toward header-only transport.
+Production embeds should send tokens with the `X-filament-agentic-chatbot-Token` header. Script snippets may include `data-token` for the loader to forward, but generated tokens still expire according to `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES`. Query-string and body tokens remain enabled by default for compatibility, but `php artisan filament-agentic-chatbot:doctor` warns in production so you can migrate toward header-only transport.
 
 ### Domain Allowlists
 

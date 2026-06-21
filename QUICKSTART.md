@@ -109,6 +109,7 @@ AGENTIC_CHATBOT_CONTEXT_DEFAULT_AREA=public
 AGENTIC_CHATBOT_CONTEXT_ALLOWED_AREAS=public,member,admin
 AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true
 AGENTIC_CHATBOT_WIDGET_SIGNING_KEY=replace-with-a-long-random-secret
+AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=60
 GEMINI_API_KEY=
 ```
 
@@ -214,13 +215,14 @@ Example:
 <script
     src="https://your-app.com/filament-agentic-chatbot/widget"
     data-bot="YOUR_BOT_PUBLIC_ID"
+    data-token="SIGNED_TOKEN"
     defer
 ></script>
 ```
 
 Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
 
-If signing is enabled, include `data-token` from generated snippet.
+If signing is enabled, include `data-token` from the generated snippet and refresh that signed token before `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES` expires.
 
 After the first real conversations land, open the bot `Analytics` page to review feedback, citation coverage, and potential knowledge gaps.
 

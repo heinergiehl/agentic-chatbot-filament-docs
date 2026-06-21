@@ -122,6 +122,15 @@ Review transcripts, citations, feedback, session metadata, handoff actions, flag
 
 The public widget can reuse the same bot configuration across landing pages, documentation sites, product surfaces, and authenticated Laravel areas.
 
+Embed snippets support signed tokens and runtime presentation overrides. Production installs should set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=60` and refresh generated tokens before they expire. Common script attributes include:
+
+| Attribute | Values |
+| --------- | ------ |
+| `data-token` | Signed widget token when signing is enabled |
+| `data-size` | `compact` \| `comfortable` \| `spacious` |
+| `data-font` | `modern-sans` \| `humanist-sans` \| `friendly-rounded` \| `editorial-serif` \| `technical-mono` |
+| `data-show-sources` | `true` \| `false` |
+
 ![Widget desktop conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
 
 ![Widget mobile conversation snapshot](./images/agentic-chatbot/06-widget-mobile.png)
