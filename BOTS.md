@@ -28,12 +28,12 @@ By default, a bot runs through the assistant chat graph. The assistant keeps the
 
 - answering directly from the bot prompt and conversation memory
 - calling `KnowledgeSearchTool` to retrieve source-backed context
-- calling `run_workflow` to start or resume the active workflow
+- requesting the active workflow through the `run_workflow` adapter when deterministic turn ownership allows workflow execution
 - using any other registered tool available to that bot
 
 Source-grounded retrieval is still important, but it is not the whole chatbot. It is the knowledge capability behind `KnowledgeSearchTool` and workflow Knowledge Base nodes.
 
-The UI now makes this split explicit with **Chat behavior** on the bot edit page and **Chat Mode** in the bots table. Sources make direct bots useful; active workflows must explicitly search sources. If a bot has sources and no active workflow, direct chat can retrieve from those sources. If an active workflow is live, the workflow controls the conversation and must include a reachable Knowledge Base node for source-grounded answers.
+The UI now makes this split explicit with **Routing & knowledge** on the bot edit page and **Chat Mode** in the bots table. Sources make direct bots useful; active workflows must explicitly search sources. If a bot has sources and no active workflow, direct chat can retrieve from those sources. If an active workflow is live, the workflow controls the conversation and must include a reachable Knowledge Base node for source-grounded answers.
 
 The legacy `ParentAgent` and `KnowledgeAgent` classes remain as compatibility aliases. Do not treat them as the default product architecture.
 
@@ -325,7 +325,7 @@ Use when you need:
 - Give the widget title and subtitle a clear user-facing purpose.
 - Add quick prompts that reflect real user intent.
 - Test retrieval after adding or changing sources.
-- Keep the assistant graph enabled unless you explicitly need the direct workflow compatibility path.
+- Keep the deterministic turn gateway enabled. Use assistant graph mode for mixed chat/tool behavior and assistant-graph-off mode only when the bot should be strictly workflow-bound.
 - Use workflows for task execution and guided flows, not for every simple factual answer.
 
 ## Related Docs

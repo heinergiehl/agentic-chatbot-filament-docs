@@ -355,7 +355,7 @@ Pending waitpoints are projected from AgentGraph interrupts. If a resolver attem
 
 A workflow is linked to a bot from the workflow's settings. Once linked:
 
-- the bot uses the workflow for all new conversations
+- the published and enabled workflow becomes eligible for chat routing
 - the workflow's trigger node receives user messages
 - the bot's knowledge base is available to Knowledge Base nodes in the workflow
 

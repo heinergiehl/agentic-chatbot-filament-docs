@@ -98,7 +98,7 @@ This keeps semantic flexibility without allowing the model to bypass the workflo
 
 Modes:
 
-- `legacy`: disables Turn Understanding routing.
+- `legacy`: disables the Turn Understanding interpreter only. It does not restore the removed workflow turn-router kill switch or the old direct workflow runtime.
 - `shadow`: calls Turn Understanding and records safe diagnostics in run meta, but preserves the legacy/current routing result.
 - `structured`: uses Turn Understanding plus deterministic policy to route the paused workflow.
 

@@ -110,7 +110,7 @@ Create URL, file, text, or API-backed sources from a guided form. Detailed inges
 
 ### Workflow runtime resilience
 
-Workflow chat turns now fail closed instead of leaving users in silent waiting states. Direct workflow streams emit safe structured error events and close with `[DONE]`; JSON `/complete` requests return safe error payloads and roll back prepared runs when execution fails. Pending AgentGraph waitpoints are treated as projections and stale `resolving` claims are recovered after the configured timeout.
+Workflow chat turns now fail closed instead of leaving users in silent waiting states. Workflow streams emit safe structured error events and close with `[DONE]`; JSON `/complete` requests return safe error payloads and roll back prepared runs when execution fails. Pending AgentGraph waitpoints are treated as projections and stale `resolving` claims are recovered after the configured timeout.
 
 ### Conversation review
 

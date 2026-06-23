@@ -8,7 +8,7 @@ The important product distinction is:
 - **AssistantAgent** is the default conversational agent.
 - **AssistantChatGraphRuntime** runs chat turns through the SDK graph.
 - **Knowledge search** is an optional source-grounding capability, not the default chatbot mode.
-- **Workflows** are executable playbooks exposed to the assistant as a tool.
+- **Workflows** are executable playbooks exposed through the deterministic turn coordinator and, when assistant fallback is reached, as a tool.
 - **ParentAgent** and **KnowledgeAgent** remain deprecated compatibility aliases only.
 
 ## Default Runtime
@@ -20,7 +20,7 @@ ChatEndpointContextResolver
   -> ConversationTurnGateway
       -> pending interaction / active workflow / compound request / static response / assistant fallback
   -> ChatTurnCoordinator
-      -> direct workflow handler or AssistantChatGraphRuntime
+      -> static response / compound executor / WorkflowTurnExecutor / AssistantChatGraphRuntime
   -> persistence, usage, events, and response presentation
 ```
 
@@ -41,17 +41,21 @@ This keeps normal chat conversational while preserving source-backed answers and
 
 ## Workflow Execution
 
-When the assistant graph owns a turn, it sees the active workflow as `run_workflow`. When a bot is configured for direct workflow routing, the workflow handler runs without asking the assistant to call a tool.
+After the turn gateway assigns assistant fallback, the assistant can see the active workflow as `run_workflow`. The tool is an adapter back into `ChatTurnCoordinator`; it is not an independent execution authority.
 
 The workflow tool:
 
-- runs the active workflow when the user requests task execution
-- resumes an existing halted workflow when the user answers its last question
+- adapts Laravel-AI tool input into the canonical chat turn request
+- enters `ChatTurnCoordinator` instead of calling workflow planning directly
+- runs the active workflow only when the coordinator assigns workflow ownership
+- resumes an existing halted workflow only when deterministic workflow policy allows it
 - refuses duplicate starts when a workflow is already waiting for input
 - protects application-owned runtime variables such as `session_id`, `area`, `__bot`, actor context, and channel context
 - plans run/resume execution under a conversation lock before executing the workflow
 
-Both transports use the same planning boundary before execution. If execution fails after a run has been prepared, the runtime marks that run failed instead of leaving it `running`.
+The direct workflow handler and tool-shaped internal runtime have been removed. HTTP, channel, and AI-tool entry points all route through the same coordinator/executor pipeline. Bots that disable the assistant graph still run as workflow-bound bots, but that path is a coordinator-owned `workflow_bound_direct_runtime` fallback, not the old workflow handler.
+
+If execution fails after a run has been prepared, the runtime marks that run failed instead of leaving it `running`.
 
 Stream responses emit structured error events and close with `data: [DONE]`. JSON `/complete` responses return a safe error payload and status code. Raw stack traces and provider secrets should stay in server logs, not in widget output.
 
@@ -68,6 +72,8 @@ The turn router combines deterministic validation with a semantic LLM classifier
 - `clarify` means the message is ambiguous enough that the assistant should ask whether to continue, cancel, or switch tasks.
 
 This routing happens inside the workflow tool and in an assistant preflight step, so correctness does not depend on the model voluntarily calling the workflow tool for every cancellation or topic switch.
+
+Workflow execution grants are represented as typed request fields, not model- or request-controlled runtime variables. Internal adapters may execute only through the canonical coordinator. If the gateway returns `owner=none`, assistant-graph transports fall back to assistant handling without creating a workflow run. Workflow-bound bots with the assistant graph disabled use the canonical workflow executor as their fallback, while AI, answer, knowledge, connector, action, HTTP, memory-write, and sub-workflow nodes remain workflow-bound so usage limits, approvals, and side-effect policy cannot be bypassed by an information-shaped prompt.
 
 AgentGraph checkpoints and interrupts are the authority for SDK-backed waitpoints. `bot_pending_interactions` rows are projections used for chat routing, admin visibility, audit, TTL, draft persistence, and diagnostics.
 
