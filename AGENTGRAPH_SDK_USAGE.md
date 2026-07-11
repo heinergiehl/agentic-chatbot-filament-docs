@@ -5,14 +5,14 @@ This document records the AgentGraph SDK surface currently used by the plugin. I
 ## Current Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `^0.15.0`
-- Sandbox resolution: `v0.15.0`
+- Current plugin constraint: `^0.15.1`
+- Sandbox resolution: `v0.15.1`
 - The package tracks the stable 0.15 SDK line so local host-app validation exercises the same public SDK surface as the plugin.
 
 ## Runtime Entry Points
 
 - `AgentGraphManager`
-  - Used for `define(...)`, fluent graph execution through `graph(...)->thread(...)->input(...)->meta(...)->run()`, direct `run(...)`, `resume(...)`, `inspect(...)`, and `timeline(...)`.
+  - Used for `define(...)`, fluent graph execution through `graph(...)->thread(...)->input(...)->meta(...)->run()`, direct `run(...)`, `resume(...)`, `inspect(...)`, and `timeline(...)`; `recover(...)` is required for durable running-run recovery.
   - Used by workflow runtime, assistant chat runtime, sub-workflows, projection, and run inspection.
 - `StateGraph`
   - Used to compile plugin workflow JSON and the generic assistant chat turn graph.
@@ -120,7 +120,7 @@ For completed result-set follow-ups, the conversation shell starts a new workflo
 - `RunStore`
   - Used by the delay scheduler to resolve run metadata.
 - `InterruptStore`
-  - Used by the inspector to list interrupts for a run.
+  - Used by resume preflight and the inspector to read interrupts. AgentGraph v0.15.1 atomically finalizes pending interrupts during cancel; applications must not resolve them again after `cancel()`.
 - `EnumerableMemoryStore`
   - Used by workflow memory bridging and run inspection.
   - Required operations: `read(...)`, `write(...)`, `search(...)`, and `listNamespace(...)`.

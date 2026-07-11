@@ -259,7 +259,7 @@ Use the Generate tab for a first workflow draft from a plain-language brief, the
 
 Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
 
-The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.15.0` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
+The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.15.1` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
 
 ## Related Repositories
 
