@@ -39,6 +39,7 @@ No changes have been recorded after the `0.17.0` release candidate.
 ### Changed
 
 - Multi-objective read turns now use one AgentGraph-owned workflow run and the same `CapabilityExecutionGateway` as every other external call. The weather-plus-Pokémon flow no longer depends on API-specific or Compound Request code.
+- Kept the audited Guzzle 7/PSR-7 2 security floors while admitting the native Guzzle 8/PSR-7 3 dependency line used by Laravel 13, avoiding a needless framework dependency downgrade.
 
 - Reworked bot readiness, overview, quality scenarios, and launch guidance around the single live-workflow path. Bots without a verified live deployment now remain explicitly blocked, including bots that already have indexed knowledge.
 - Removed reflection-based retrieval dispatch, implicit lexical fallback, and Chroma threshold bypass. Retrieval now fails closed on incompatible index identity or insufficient evidence, uses G19 token budgets, and keeps raw queries out of retrieval diagnostics and terminal workflow traces.

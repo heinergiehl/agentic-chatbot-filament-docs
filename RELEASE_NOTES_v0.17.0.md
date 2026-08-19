@@ -16,7 +16,7 @@ Do not publish or install this candidate as a production release until `scripts/
 - Durable turn idempotency and serialization, explicit unknown-outcome reconciliation, immutable deployment/capability pins, and bounded external-call handling.
 - A safer editor: raw HTTP inspection is read-only (`GET`/`HEAD`), host-policy checked, DNS pinned, and response-size bounded; connector writes remain behind the productive execution gateway.
 - Fail-closed sensitive Filament surfaces and a shared privacy lifecycle for conversation inspection, export, and deletion.
-- Bounded ingestion downloads, secret-aware operational logging, and dependency floors that exclude the audited vulnerable Guzzle/PSR-7/CommonMark versions.
+- Bounded ingestion downloads, secret-aware operational logging, and dependency constraints that exclude audited vulnerable Guzzle/PSR-7/CommonMark versions while supporting Laravel 13's native Guzzle 8/PSR-7 3 line.
 - Exact commercial artifact evidence: deterministic ZIP, whole-file SHA-256, per-entry sidecar, embedded release manifest, and CycloneDX 1.6 production-dependency SBOM.
 
 ## Breaking runtime and authoring changes

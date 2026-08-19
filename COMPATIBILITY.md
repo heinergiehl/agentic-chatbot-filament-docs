@@ -10,6 +10,7 @@ Target release: `0.17.0` (`candidate`). This matrix separates installable suppor
 | Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The same byte-verified ZIP is installed into separate Laravel 12 and 13 hosts. |
 | Filament | `5.2+` within Composer's resolved 5.x line | Package UI and assets are tested without requiring buyers to compile package source. |
 | AgentGraph | `^0.15.1` | Installed transitively and used as the sole productive workflow-state authority. |
+| HTTP stack | Guzzle `^7.15.2` / PSR-7 `^2.13` or Guzzle `^8.0.2` / PSR-7 `^3.0` | Security floors reject the audited vulnerable line; Laravel 13 can retain its native current major. |
 | Database | PostgreSQL 16 + `pgvector` is the certified Golden Path | Fresh install, migration, upgrade, rollback, re-apply, and retrieval checks use real PostgreSQL/pgvector. |
 | Alternative vector store | ChromaDB | Supported adapter; not part of the exact-artifact PostgreSQL certification and must be staged by the buyer. |
 | Queue | Laravel database, Redis, or SQS-style asynchronous worker | A supervised asynchronous worker is required for production delays, ingestion, and background work. `sync` is not a production Golden Path. |
