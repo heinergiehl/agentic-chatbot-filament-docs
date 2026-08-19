@@ -2,9 +2,11 @@
 
 Use Bot Access Tokens when a trusted server-side API client, widget bridge, Telegram bot, or Slack app needs to call a configured chatbot.
 
+Bot Access Tokens are server-side secrets. Do not embed them in browser JavaScript, public widgets, mobile apps, screenshots, logs, or customer-visible configuration. Browser widgets should use the signed widget token flow; server integrations should send Bot Access Tokens from a trusted backend via `Authorization: Bearer fac_...` or `X-filament-agentic-chatbot-Access-Token`.
+
 ## Create A Bot Access Token
 
-1. Open **Agentic Chatbot > Bot Access Tokens** in Filament.
+1. Open **Agentic Chatbot > Connect > Bot Access Tokens** in Filament.
 2. Select the bot.
 3. Give the token a clear name such as `Telegram production`.
 4. Set **Channel** to classify where the token is used, for example `API`, `Web Widget Bridge`, `Telegram`, or `Slack`.
@@ -16,7 +18,9 @@ Use Bot Access Tokens when a trusted server-side API client, widget bridge, Tele
 
 Bot Access Tokens are credentials for your Laravel chatbot API. They are not Telegram or Slack provider tokens. External platforms keep their own credentials in your app config or secret manager, and your webhook/controller uses the Bot Access Token only when it calls the chatbot endpoint.
 
-`last_used_at` writes are throttled to reduce write pressure on busy integrations. Configure the window with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES` (default `5`). Per-token rate limits remain enforced on every request.
+`last_used_at` writes are throttled to reduce write pressure on busy integrations. Configure the window with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES` (default `5`). Per-token rate limits remain enforced on every request. Invalid token attempts are separately throttled with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_INVALID_ATTEMPTS_PER_MINUTE` (default `10`).
+
+The dedicated `X-filament-agentic-chatbot-Access-Token` header always takes precedence. `Authorization: Bearer ...` is accepted only for tokens using the `fac_` prefix by default, so host-app Sanctum, Passport, or API guard Bearer tokens are not misclassified as chatbot API credentials.
 
 ## Optional Ownership Metadata
 
@@ -34,6 +38,10 @@ If your host app wants to assign tokens to users, teams, tenants, customers, or 
 
 The package stores `owner_type` and `owner_id` only. It does not create a user system, tenant system, or authorization policy. Use this metadata for reporting, filtering, support, and cleanup workflows; keep real access control in your application.
 
+Conversation history, export, deletion, and feedback requests enforce this runtime scope. A token can access only conversations explicitly bound to that exact token with the same bot, owner, and channel. Unbound or partially bound conversations are never authorizable through a Bot Access Token.
+
+Bot Access Tokens use HMAC-SHA256 hash version 2 with your app key or `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_HASH_KEY`. The G25 migration revokes older hash versions because their plaintext cannot be recovered; rotate them before deploying the breaking release.
+
 ## Complete Chat Endpoint
 
 ```http
@@ -49,6 +57,7 @@ Content-Type: application/json
 {
   "message": "What is the current incident status?",
   "session_id": "telegram-123456789",
+  "client_turn_id": "telegram-update-987654321",
   "area": "manager"
 }
 ```
@@ -57,7 +66,12 @@ Content-Type: application/json
 | --- | --- | --- |
 | `message` | Yes | User message passed to the bot or active workflow. |
 | `session_id` | Yes | Stable conversation key controlled by the integration. Use one per external chat/user/thread. |
+| `client_turn_id` | Recommended | Stable ID for this one user turn. Reuse it only when retrying the identical request. Alternatively send the same value as an `Idempotency-Key` header. |
 | `area` | No | Context area, for example `public`, `member`, `admin`, or a custom area such as `manager`. |
+
+Every accepted response includes `X-Chat-Turn-Id`. The server generates an ID when the request omits one, but integrations should provide their own stable delivery/event ID so a timeout retry cannot run the same workflow or external action twice. Reusing an ID with different message, resolution, area, or transport returns `409 chat_turn_input_mismatch`. A completed, waiting, failed, or cancelled turn returns its stored response without re-running the model or workflow; `X-Chat-Turn-Replayed: true` identifies that path.
+
+Only one executing turn is allowed per conversation. A duplicate request for the currently executing ID returns `202 chat_turn_in_progress` with `Retry-After`. A different ID sent while that turn is active returns `409 conversation_turn_in_progress`. If the server cannot prove whether an interrupted turn completed, it records `unknown` and returns `409 chat_turn_outcome_unknown` instead of risking duplicate side effects. An operator must verify the external outcome and use the audited reconciliation command documented in the Operations guide; clients must not work around the lock with another ID.
 
 ### Success Response
 
@@ -99,7 +113,10 @@ The endpoint returns the final assistant message in a stable JSON shape. If an a
 | `403` | `bot_access_token_forbidden` | Token is for another bot, area, or ability. |
 | `422` | `area_not_allowed` | The bot itself does not allow the requested area. |
 | `422` | `ai_input_token_limit_exceeded` | Prompt was blocked before the provider call. |
-| `429` | `bot_access_token_rate_limited` | Token-specific per-minute throttle was exceeded. |
+| `409` | `chat_turn_input_mismatch` | The supplied turn ID was already used for a different request. |
+| `409` | `conversation_turn_in_progress` | Another turn currently owns this conversation. Retry after it finishes. |
+| `409` | `chat_turn_outcome_unknown` | The previous outcome cannot be proven; the server refuses unsafe automatic re-execution. |
+| `429` | `bot_access_token_rate_limited` | Token-specific throttle was exceeded, or too many invalid token attempts came from the same bot/IP. |
 | `429` | `ai_bot_monthly_token_budget_exceeded` | Bot monthly token budget is exhausted. |
 | `429` | `ai_access_token_monthly_token_budget_exceeded` | Access token monthly token budget is exhausted. |
 | `429` | `ai_bot_monthly_cost_budget_exceeded` | Bot monthly cost budget is exhausted. |
@@ -113,6 +130,7 @@ use Illuminate\Support\Facades\Http;
 
 $response = Http::withToken(config('services.incident_chatbot.token'))
     ->acceptJson()
+    ->withHeader('Idempotency-Key', $externalEventId)
     ->post(config('services.incident_chatbot.url').'/api/filament-agentic-chatbot/chat/incident-manager/complete', [
         'message' => $message,
         'session_id' => 'ops-'.$operatorId,
@@ -201,4 +219,4 @@ After migrations and token setup, run:
 php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 ```
 
-Use **Agentic Chatbot > AI Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.
+Use **Agentic Chatbot > Observe > AI Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.

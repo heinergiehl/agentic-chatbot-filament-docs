@@ -16,7 +16,7 @@ AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY=your-provider-key
 
 ## Configure Per Bot
 
-In **Agentic Chatbot > Bots**:
+In **Agentic Chatbot > Build > Bots**:
 
 1. Set **Chat Provider** to **OpenAI-Compatible**.
 2. Set **Model Source** to **Manual ID** if the model is not in the curated list.
@@ -57,21 +57,28 @@ Use `openai_compatible` when the base URL itself is part of the integration requ
 
 ## Cost And Budget Notes
 
-The usage dashboard can record provider-reported token usage for OpenAI-compatible responses. Estimated cost needs pricing configuration:
+The usage ledger records provider-reported token usage for OpenAI-compatible responses. Cost settlement needs an effective, versioned integer price:
 
 ```php
 // config/filament-agentic-chatbot.php
 'usage' => [
     'pricing' => [
         'openai_compatible:qwen-plus' => [
-            'input_cents_per_million' => 10,
-            'output_cents_per_million' => 30,
+            [
+                'version' => 'vendor-2026-07-01',
+                'effective_from' => '2026-07-01T00:00:00Z',
+                'input_micro_minor_units_per_million' => 10_000_000,
+                'output_micro_minor_units_per_million' => 30_000_000,
+                'reasoning_micro_minor_units_per_million' => 30_000_000,
+                'cache_read_micro_minor_units_per_million' => 2_500_000,
+                'cache_write_micro_minor_units_per_million' => 10_000_000,
+            ],
         ],
     ],
 ],
 ```
 
-If pricing is not configured, token budgets still work and cost events without cost budgets show as unpriced. Monthly cost budgets intentionally fail closed without pricing because the plugin cannot enforce a currency ceiling safely.
+Rates are micro-minor-units per million tokens, so `10_000_000` is 10 minor currency units. If pricing is not configured, token budgets still work and calls without cost budgets remain unpriced. Monthly cost budgets intentionally fail closed without an effective version because the plugin cannot enforce a currency ceiling safely.
 
 ## Troubleshooting
 

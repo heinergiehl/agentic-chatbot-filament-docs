@@ -1,112 +1,27 @@
-# Compound Requests
+# Compound Requests: 0.17 Migration Notice
 
-Compound requests let a bot handle one visitor message that contains multiple independent items or safe multi-action intent, such as checking several records, querying multiple locations, or preparing several confirmed writes.
+The productive Compound Request subsystem was removed in `v0.17.0`. Its bot modes, planner/executor, confirmation records, configuration, and runtime entry path no longer exist. This page remains at the old URL so bookmarks fail safely instead of teaching an unsupported configuration.
 
-The runtime is capability-driven:
+## Use the workflow runtime instead
 
-- The LLM planner performs the semantic interpretation across languages.
-- Registered capabilities define what can be executed.
-- Deterministic policy enforces limits, schemas, bot permissions, confirmations, dedupe, and workflow fallbacks.
-- Existing workflow collect-input, interruption, delay, resume, and human-in-the-loop behavior stays authoritative for ordinary single-item flows.
+| Former intent | Current supported design |
+| --- | --- |
+| Several independent read requests in one visitor turn | Publish typed workflow entry routes. The Authorized Entry Turn Plan admits only fully covered independent reads and runs them inside one AgentGraph workflow. |
+| Sequential or dependent work | Model the sequence explicitly with workflow nodes and typed variables. |
+| Bounded processing of a collection | Use `batchMap`, with a maximum of 100 items and the global workflow step budget. |
+| External API read/write | Publish an API Connector v3 operation and bind its exact revision/schema/environment in the workflow. |
+| Write or mixed operation | Add an explicit confirmation waitpoint and let the capability gateway own payload binding, idempotency, outcome, and reconciliation. |
+| Ambiguous multi-intent request | Ask a typed clarification; do not execute the apparently safe subset. |
 
-## Engine Modes
+## Upgrade steps
 
-Set globally in `config/filament-agentic-chatbot.php` or per bot in `runtime_config.compound_requests.engine`.
+1. Back up the database and use a maintenance window.
+2. Run the 0.17 migrations; they intentionally retire live pointers containing removed `compoundRequest`, `apiConnector`, or `loop` runtime nodes.
+3. Open every retired workflow and model the intent through current schema-v2 authoring and connector v3 contracts.
+4. Replace collection loops with bounded `batchMap`.
+5. Validate, run saved quality scenarios, publish a new immutable deployment, and make it live explicitly.
+6. Run Doctor and verify a real chat plus the resulting workflow run/trace before reopening traffic.
 
-```php
-'compound_requests' => [
-    'enabled' => true,
-    'engine' => 'legacy', // legacy, shadow, structured
-    'max_items' => 5,
-    'max_operations' => 6,
-    'read_only_auto_execute' => true,
-    'write_requires_confirmation' => true,
-    'mixed_mode' => 'confirm',
-],
-```
+Do not copy old configuration keys or restore retired database rows. Historical 0.16 behavior remains documented only in its versioned release notes and changelog.
 
-- `legacy`: bypasses compound planning and uses the normal chat/workflow path.
-- `shadow`: records planner and policy decisions without changing the response path.
-- `structured`: executes approved compound plans or asks for confirmation/clarification.
-
-The package default is `legacy` for upgrade safety. Use `shadow` first when introducing a new capability in production, then switch specific bots to `structured` after the planner manifest, policy limits, and runtime smoke tests are known-good.
-
-Write confirmations are AgentGraph interrupts. The active confirmation is projected to `bot_pending_interactions`, and replies are routed through the same pending-interaction resolver used by workflow waits before the SDK run is resumed with the exact `interrupt_id`.
-
-Structured compound execution is graph-native by default. After policy allows execution, the orchestrator routes the approved plan through the AgentGraph compound execution graph; `CompoundRequestExecutor` remains the adapter used inside the graph node to call registered capabilities. Set `COMPOUND_GRAPH_ENABLED=false` only as a rollout escape hatch for a host app that must temporarily fall back to direct execution.
-
-Write confirmation and execution currently run as separate AgentGraph runs: one interrupting confirmation graph, then one execution graph after approval. A future parent graph may compose both phases, but the current split keeps confirmation idempotency and write side-effect gating explicit.
-
-## Capability Sources
-
-### Actions
-
-```php
-'compound_requests' => [
-    'capabilities' => [
-        'lookup_weather' => [
-            'type' => 'action',
-            'action' => 'lookup_weather',
-            'label' => 'Look up weather',
-            'description' => 'Read weather for one or more locations.',
-            'side_effect' => 'read',
-            'required_capability' => 'query',
-            'supports_batch' => true,
-            'schema' => [
-                'type' => 'object',
-                'required' => ['city'],
-                'additionalProperties' => false,
-                'properties' => [
-                    'city' => ['type' => 'string'],
-                ],
-            ],
-        ],
-    ],
-],
-```
-
-### Laravel AI Tools
-
-Expose already registered tools under `compound_requests.tools.capabilities`. The package reads the tool schema and adds it to the planner manifest.
-
-### API Connectors
-
-API connector capabilities reuse the existing `ApiConnectorExecutor`, including stored auth, method/path allow-lists, bot visibility, SSRF checks, retries, and response JSON-path extraction.
-
-```php
-'compound_requests' => [
-    'api_connectors' => [
-        'enabled' => true,
-        'capabilities' => [
-            'lookup_weather' => [
-                'connector' => 'Weather API', // connector ID, exact name, or base URL
-                'method' => 'GET',
-                'path_template' => '/weather?city={{city}}',
-                'response_json_path' => 'current',
-                'label' => 'Look up weather',
-                'description' => 'Read weather by city.',
-                'schema' => [
-                    'type' => 'object',
-                    'required' => ['city'],
-                    'additionalProperties' => false,
-                    'properties' => [
-                        'city' => ['type' => 'string'],
-                    ],
-                ],
-            ],
-        ],
-    ],
-],
-```
-
-Template placeholders are applied only to structured item inputs that the planner produced and schema validation accepted. They are not used to semantically split user text.
-
-## Safety Rules
-
-- Compound execution works only for registered capabilities. A workflow does not automatically become a compound capability.
-- Read-only multi-item requests may auto-run when policy limits, schemas, dedupe, and bot permissions pass.
-- Write and mixed read/write plans require confirmation by default.
-- Duplicate items are deduped before execution and recorded in the audit metadata.
-- Alternative, ambiguous, dependent, sequential, and unsupported plans clarify instead of executing.
-- Single-item or incomplete plans fall back to the normal workflow path so workflow collect-input and HITL resume behavior still works.
-- If the planner fails or times out, the bot falls back to the normal chat/workflow path.
+See [Upgrade Guide](UPGRADING.md), [Agentic Workflows](AGENTIC_WORKFLOWS.md), [API Connectors](API_CONNECTORS.md), and [Release Notes v0.17.0](RELEASE_NOTES_v0.17.0.md).

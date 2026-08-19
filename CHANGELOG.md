@@ -2,56 +2,164 @@
 
 All notable changes to this package will be documented in this file.
 
+## [Unreleased]
+
+No changes have been recorded after the `0.17.0` release candidate.
+
+## [0.17.0] - 2026-08-19
+
+### Breaking
+
+- Completed the workflow-only runtime cutover. Every chat now requires one immutable, hash-verified live workflow deployment; direct Assistant, Knowledge-only answer, compound top-level planning, and recursive workflow escape paths are no longer productive runtime options.
+- Removed runtime product-mode aliases, `RAG_*` environment fallbacks, fine-grained runtime enable/engine switches, compound shadow execution, duplicate AgentGraph workflow-node metadata, legacy Bot Access Token hash lookup, conversation-meta workflow memory, workflow-snapshot metadata reads, and compound-specific answer interpreter/composer aliases. See `UPGRADING.md` for the required Before/After migration.
+- Removed API Connector V1/legacy field execution, mutable-draft fallback, workflow/deployment operation snapshots as execution authority, raw `compound_requests.api_connectors.capabilities`, the Google Calendar compound feature flag, and alternate connector result projections. Existing workflows must publish exact immutable revision, full-contract, input-schema, and environment pins after the irreversible cutover described in `UPGRADING.md`.
+- Removed the PHPStan baseline and all temporary architecture exceptions after fixing the underlying findings.
+- Replaced the monolithic published configuration with an executable host-key allowlist. Internal runtime defaults and built-in action schemas are no longer host configuration; removed keys and `AGENTIC_WORKFLOW_*` aliases are ignored and reported by Doctor with exact upgrade instructions.
+- Made action result schemas mandatory and part of every immutable action contract. Custom `CapabilityProvider` actions without an explicit result schema now fail registration.
+- Removed the Compound Request model, persistence, policy, planner, executor, confirmation graph, node, bot configuration, and the old `loop` node. Existing deployments containing `compoundRequest`, `apiConnector`, or `loop` are retired by the irreversible cutover and must be republished with pinned connector v3 contracts and `batchMap`.
+- Replaced API Connector operation contract version 2 with version 3. Productive execution has no v2 adapter; the migration creates new immutable v3 revisions and intentionally removes the old runtime path.
+
+### Added
+
+- Added a rate-limited, origin-checked widget access bootstrap with short-lived versioned tokens, exact origin binding, memory-only single-flight renewal, machine-readable expiry/rotation responses, and safe-read-only retry. Browser and Blade snippets are now tokenless at rest.
+- Added explicit `vector`, `hybrid`, and `lexical_only` retrieval strategies; typed retrieval status/evidence contracts; versioned index stamps; calibrated DE/EN lexical evaluation; PostgreSQL FTS indexing; and an optional capability- and budget-gated reranker.
+- Added a durable chat-turn ledger with client idempotency keys, per-conversation execution serialization, monotonic turn sequences, workflow/deployment/run pinning, explicit lifecycle states, stale-turn `unknown` handling, and exact JSON/SSE response replay. Channel messages now derive stable turn IDs from provider delivery identities.
+- Added `filament-agentic-chatbot:reconcile-chat-turn` for audited, force-and-reason-gated abandonment of unknown or expired active turns after external operator verification. Reconciliation never retries the turn.
+- Added `filament-agentic-chatbot:reconcile-side-effect` plus doctor visibility for unknown external write outcomes. Operators must verify the provider result out of band and record `succeeded` or `failed`; the command never repeats the write.
+- Added canonical `filament-agentic-chatbot.connector-operation` version `2` drafts and immutable revisions, closed chatbot input schemas, distinct materialized-request schemas, publisher-derived `metadata.capability`, strategy IDs, and bounded operation-test evidence.
+- Closed every server-owned nested operation-contract object and runtime payload schema, made direct revision persistence use the full executable-contract validator, and rejected static credentials from serialized templates, schema values/annotations, capability presentation, and extensible outcome, pagination, async-completion, and write-integrity policies.
+- Added one `filament-agentic-chatbot.connector-result` version `2` envelope across workflow, chatbot, workbench, and compound consumers with explicit `succeeded`, `replayed`, `partial`, `failed`, `blocked`, and `unknown` outcomes.
+- Added bounded canonical capability-result projection, durable workflow-state budgets, and terminal AgentGraph chat-turn recovery that finalizes a crashed turn without redispatching workflow nodes or external capabilities.
+- Added an encrypted, leased continuation journal for bounded pagination and async polling. Connector invocations own continuation progress; the journal is not a scheduler and AgentGraph remains workflow checkpoint/wait authority.
+- Added `filament-agentic-chatbot:setup-google-calendar-connector` to create or update the OAuth connector and publish the canonical confirmation-required `create_google_calendar_event` operation.
+- Added Authorized Entry Turn Plan version 2 with ordered tasks/items, exact workflow and capability release hashes, deterministic preclassified AgentGraph dispatch, isolated item state, typed per-item outcomes, and complete ordered answer composition.
+- Added generic connector input policies for literal/enum admission, normalization, aliases, ambiguity, semantic/entity types, bounded batch modes, and optional requested-versus-observed result-identity verification.
+- Added the `batchMap` workflow node as the one bounded collection traversal primitive.
+
+### Changed
+
+- Multi-objective read turns now use one AgentGraph-owned workflow run and the same `CapabilityExecutionGateway` as every other external call. The weather-plus-Pokémon flow no longer depends on API-specific or Compound Request code.
+
+- Reworked bot readiness, overview, quality scenarios, and launch guidance around the single live-workflow path. Bots without a verified live deployment now remain explicitly blocked, including bots that already have indexed knowledge.
+- Removed reflection-based retrieval dispatch, implicit lexical fallback, and Chroma threshold bypass. Retrieval now fails closed on incompatible index identity or insufficient evidence, uses G19 token budgets, and keeps raw queries out of retrieval diagnostics and terminal workflow traces.
+- Hardened workflow turn routing so negated or exploratory cancel mentions no longer cancel active runs, while explicit replacement turns can still interrupt and replace an open workflow.
+- Restricted semantic continuation to usable task frames, preserved structured clarification prompts and options through the runtime target boundary, and removed stale task-frame ownership of fresh requests.
+- Tightened deterministic workflow input validation for canonical dates, money rules, explicit pending interaction submissions, and runtime payload schemas.
+- Prevented unrecognized semantic workflow-start classifier decisions from falling back to metadata token overlap as execution authority.
+- Replaced model/workflow-controlled Data Resource identity scopes with a transient server-attested runtime authority context, fail-closed tenant/actor/token/conversation scopes, and exact allow-list record serialization that cannot leak Eloquent `$appends`.
+- Replaced API Connector runtime snapshots with exact immutable revision ID, full-contract hash, input-schema hash, and server-generated environment pins that are re-resolved, scope-checked, and materialized at dispatch; executable node overrides and legacy `__operationSnapshot` payloads are ignored.
+- Made published API Connector operations the single source for chatbot tools and compound capabilities. Compound confirmation now binds connector, revision/hash, schema/effect, environment, and materialized input fingerprints and fails closed when any binding changes.
+- Extended transient server-attested runtime authority to owner-scoped API Connector discovery and execution; owner identity from model output, inputs, workflow variables, plans, or checkpoints is never accepted.
+- Hardened writes with typed canonical `input.*` business identities, server-owned provider idempotency, encrypted ledger payload/result/metadata, hashed lease-token fencing, `unknown` on lost ownership, and operator-only reconciliation without redispatch.
+- Made connector base URLs structurally secret-free at persistence/cutover and attested provider idempotency headers after custom authentication, at retries, and across continuations so case-variant or non-empty replacements cannot authorize duplicate unsafe writes.
+
+### Migration
+
+- Added the irreversible `2026_07_15_000002_migrate_breaking_runtime_cleanup_data.php` cutover. Rotate pre-HMAC Bot Access Tokens before deployment; the migration canonicalizes runtime modes and persisted memory/snapshots, revokes unsupported token hashes, and cancels obsolete shadow compound records.
+- Added the irreversible `2026_07_15_000003_cut_over_api_connector_operation_contracts.php` cutover. It canonicalizes legacy operations, publishes exact revisions, upgrades compatible conflict references, verifies hashes, drops the legacy execution columns, and aborts on ambiguous or invalid source data.
+- Added `2026_07_15_000004_create_api_connector_continuations_table.php`, `2026_07_15_000005_create_api_connector_operation_test_runs_table.php`, and `2026_07_15_000006_harden_side_effect_execution_journal.php` for encrypted/fenced continuations, bounded test evidence, and encrypted/fenced side-effect storage.
+- Added `2026_07_13_000002_add_knowledge_retrieval_fts_index.php`. Run migrations and re-ingest sources before enabling G21 retrieval because legacy unstamped chunks are intentionally incompatible.
+- Added the `2026_07_09_000001` through `2026_07_09_000004` runtime migrations for durable chat turns, chat reconciliation fields, encrypted connector default headers, and side-effect reconciliation fields. Production upgrades must run `php artisan migrate` before serving chat requests.
+
 ## [0.16.1] - 2026-06-17
 
 ### Fixed
 
-- Fixed default/plain `sendMessage` workflow responses after internal action/tool steps so inherited `internal` visibility no longer hides the final user-facing reply in legacy and schema-v1 workflows.
+- Fixed legacy/default `sendMessage` workflow nodes after internal action/tool nodes so inherited `internal` message visibility no longer hides the final user-facing workflow response.
 
 ## [0.16.0] - 2026-06-17
 
-### Added
+### Compound Requests
 
-- Added explicit Compound Request engine modes: `legacy`, `shadow`, and `structured`.
-- Added shadow-mode audit records for evaluating structured plans without changing visitor-facing behavior.
-- Added Laravel AI structured-output planning, capability schema validation, action/tool/API Connector-backed compound capabilities, and safe execution for read/write plans.
-- Added bot-level Admin UI controls for compound engine mode and per-bot compound capability allow-lists.
-- Added schema-v2 structured Ask/`collectForm` authoring docs and workflow turn-understanding docs.
+- Added explicit compound request engine modes: `legacy`, `shadow`, and `structured`.
+- Added shadow-mode audit records so new planner behavior can be observed without changing the user-facing workflow path.
+- Switched compound planning to Laravel AI structured output and added schema-driven repair for single required string item inputs.
+- Added Laravel AI tool capabilities, capability schema validation, and safe execution for action and tool-backed compound plans.
+- Added API Connector-backed compound capabilities so configured connectors can be exposed as schema-driven read/write actions while reusing connector auth, method/path policy, bot scope, SSRF protection, retries, and response mapping.
+- Added planner relationship metadata (`all`, `alternative`, `duplicate`, `dependent`, `ambiguous`) plus deterministic deduping and clarification gates for unsafe alternatives or dependent plans.
+- Added semantic pending-confirmation classification for write/mixed compound requests, with direct shortcuts kept as a cheap fast path.
+- Persisted auto-executed read-only compound requests for audit, while write and mixed read/write plans continue to require confirmation.
+- Added an optional AgentGraph execution path for long-running, write, mixed, or async compound requests.
+- Added bot-level Admin UI controls for compound engine mode and included configured actions, tools, and API connectors in the per-bot capability allow-list.
+- Changed AgentGraph compound execution so small read-only structured batches stay synchronous unless they cross `COMPOUND_GRAPH_SYNC_ITEM_THRESHOLD`, use async capabilities, or include writes.
+- Kept workflow waiting, interruption, delay, resume, and human-in-the-loop behavior authoritative over compound execution.
+- Kept incomplete single-item plans on the normal workflow path so collect-input and human-in-the-loop nodes can pause and resume instead of being intercepted by compound clarification.
 
-### Changed
+### Workflow Turns and Authoring
 
-- Kept `legacy` as the default-safe compound engine while documenting `shadow` and `structured` rollout paths.
-- Routed small read-only structured compound plans synchronously unless they cross `COMPOUND_GRAPH_SYNC_ITEM_THRESHOLD`, use async capabilities, or include writes.
-- Kept workflow waiting, interruption, delay, resume, and human-in-the-loop behavior authoritative over compound execution and conversation recall.
-
-### Fixed
-
-- Fixed AgentGraph-backed workflow interrupt replacements so the SDK run is cancelled before a new run starts.
-- Fixed AgentGraph interrupt reconciliation when SDK interrupts do not include an `interrupt_id`.
-- Fixed schema-v2 structured fields authored as JSON text so frontend and backend compilers preserve them as `collectForm` runtime fields.
-- Fixed conversation recall ordering so pending workflow/interaction owners are resolved first.
+- Added schema-v2 `collectForm` preservation for structured fields authored as JSON text in the semantic Ask inspector and backend compiler.
+- Fixed AgentGraph-backed workflow interrupts so replacing an open run cancels the SDK run before the Laravel projection starts the replacement.
+- Fixed AgentGraph interrupt reconciliation for SDK interrupts that do not carry an `interrupt_id` by matching the same synthetic identity used by pending-interaction projection.
+- Fixed conversation recall ordering so pending workflow, pending interaction, compound, and continuation owners are resolved before session-memory recall can answer.
 - Added task-frame source uniqueness plus MySQL/MariaDB one-pending database guards for pending interactions and compound confirmations.
 
 ## [0.15.0] - 2026-06-08
 
 ### Added
 
-- Added a Filament-managed Data Resources setup flow for live `query_data_resource` reads.
-- Added optional strict Gate mode for Data Resource administration.
+- Added a Filament-managed Data Resources setup flow for live `query_data_resource` reads, including searchable Eloquent model and database-column dropdowns, field policy flags, runtime scopes, config sync, and per-bot narrowing.
+- Added optional strict Gate mode for Data Resource administration via `data_resources.authorization.require_gates`.
 - Added bot launch-readiness and workflow-readiness copy coverage to the localization fallback catalog.
 
 ### Changed
 
-- Renamed the admin-facing live database access surface from Data Sources to Data Resources.
-- Reworked the Data Resources form into a guided setup flow with safer labels, result guardrails, safety scope copy, and no bulk delete action.
-- Polished the chatbot widget setup and preview experience before public embedding.
-- Expanded the marketplace-readiness script into a stricter release gate.
+- Renamed the admin-facing live database access surface from Data Sources to Data Resources to distinguish it from indexed Knowledge Sources.
+- Reworked the Data Resources form into a guided setup flow with safer labels, chat-sized result guardrails, hidden safety scope copy, and no bulk delete action.
+- Polished the chatbot widget setup and preview experience so admins can review theme, copy, area overrides, launcher behavior, and Markdown-style answers before embedding publicly.
+- Improved dashboard and bot-page preview surfaces around runtime readiness, usage, feedback, citation coverage, and knowledge gaps so release decisions are easier to make from Filament.
+- Expanded the marketplace-readiness script so it now runs platform checks, full dead-code coverage, workflow-editor lint/build, workflow-editor contract tests, PHPStan, Pint, PHPUnit, and Composer audit from one release gate.
 
 ### Fixed
 
-- Fixed UI-managed Data Resources so missing default-returned fields fall back to answer-ready fields or one safe returnable field.
+- Fixed UI-managed Data Resources so missing default-returned fields fall back to answer-ready fields or one safe returnable field instead of exposing every returnable field by default.
 - Fixed runtime safety scope filters so ownership columns do not have to be exposed as visitor-filterable fields.
-- Fixed PHPStan, localization, and Windows full-suite release blockers.
+- Fixed PHPStan and LocalizationCoverage release blockers in the bot setup, channel setup, and Data Resource readiness surfaces.
+- Fixed quality-domain enum dead-code reporting by marking the serialized quality contracts as public API for static analysis.
+- Fixed Windows full-suite release runs by removing PHP's execution-time ceiling from the Composer test command and marketplace PHPUnit runner.
+
+## [0.14.0] - 2026-06-05
+
+### Added
+
+- Added the Chatbot Quality Loop with saved quality scenarios, workflow quality runs, citation checks, latency/cost budgets, failure summaries, and fix suggestions.
+- Added the Quality Lab Filament resource, workflow Quality panel, and feedback-to-scenario actions so negative conversation feedback can become a repeatable regression check.
+- Added the Human Handoff Inbox for conversations that need operator review, including handoff creation from conversation review pages and workflow quality failures.
+- Added the Assistant Profile Studio for tone, behavior, target audience, escalation, and operating constraints on each bot.
+- Added the simple workflow builder and authoring compiler, with recipes and guided Smart Steps for common support, lead capture, data-answer, and handoff flows.
+- Added a shadcn-based workflow editor component foundation, extended UI primitives, lucide icon usage, dockable HUD controls, focus mode, lane semantics, richer debug/release panels, and responsive viewport checks.
+- Added workflow node definition schemas, shared node catalogs, runtime contracts, validator reports, issue recovery guidance, and build-artifact coverage for the editor bundle.
+- Added commercial hardening controls for widget token transports, domain allowlist compatibility, Chroma threshold bypass, hybrid lexical retrieval strategy, safe URL ingestion limits, workflow trace privacy, and Bot Access Token `last_used_at` throttling.
+- Added knowledge readiness reporting to the public chat config payload and to the bot setup surface.
+- Added safe HTTP fetching for URL ingestion, asynchronous Chroma vector cleanup on source deletion, workflow activation normalization, encrypted credential diagnostics, and clearer chat service boundaries.
+- Added CI and release gates for marketplace readiness, a PostgreSQL/pgvector smoke job, workflow-editor build artifact checks, dead-code checks, and an opt-in widget E2E smoke job.
+
+### Changed
+
+- Completed the public naming move from legacy RAG language toward the Bot/Knowledge domain across models, migrations, runtime services, docs, and admin copy while keeping compatibility where required.
+- Refactored workflow validation, workflow execution, and editor contract code into shared services so backend runtime rules and React editor validation stay aligned.
+- Reworked the workflow editor settings surface around shadcn controls, compact panels, clearer node setup, stable sidebars, better variable picking, richer test/debug views, and less technical default copy.
+- Scoped the built-in `bots` data resource to the current bot by default.
+- Moved chat access checks, conversation persistence, and payload/config presentation out of the API controller into dedicated services.
+- Hardened production doctor checks for widget token transport, domain allowlists, workflow routing conflicts, trace privacy, encrypted credential decryption, API connector readiness, and commercial profile completeness.
+- Hardened API connector execution, auth/access scope validation, test feedback, safety warnings, and paginated knowledge-source ingestion behavior.
+- Hardened Bot Access Tokens with HMAC hash-version support, access scope columns, budget reservations, widened budget columns, rate-limit posture, scoped conversation access, and clearer admin authorization hooks.
+- Improved bot setup, bot edit, conversation review, submission detail, quality scenario review, workflow run debug, and workflow status panels for a more operator-friendly Filament experience.
+
+### Fixed
+
+- Fixed localization coverage for the new quality, handoff, workflow debug, and release-readiness UI strings.
+- Fixed static-analysis issues in quality scenario forms, workflow editor memoization, workflow validation contracts, and editor dead-code coverage.
+- Fixed workflow release readiness drift, validation state synchronization, runtime failure classification, trace count display, action/test submission handling, and workflow activation normalization.
+- Fixed handoff request linking, citation quality checks, workflow handoff behavior, and conversation-review handoff creation.
+- Fixed workflow editor layout regressions around toolbar gutters, compact sidebars, footer overflow, debug panel responsiveness, HUD popovers, passive scrolling, stale tooltips, dock zones, and narrow viewport catalog controls.
+- Replaced dynamic assistant-message persistence state with an explicit DTO so streamed `message_complete.message_id` remains static-analysis safe.
+- Sanitized external knowledge-search failures while keeping structured internal logs.
+
+### Migration
+
+- Added bot quality scenario/run tables, assistant profile fields, handoff request tables, feedback-source links, Bot Access Token budget reservation and access-scope fields, API connector hardening fields, and HMAC hash-version support.
+- Added migrations that normalize legacy `rag_*` database object names and workflow variable names toward Bot/Knowledge naming. Existing compatibility paths remain where the package still needs them.
+- Production upgrades should run `php artisan migrate`, then `php artisan filament-agentic-chatbot:doctor`, and should verify bot setup, workflow draft/publish, quality scenarios, handoff review, and widget/API access in staging before public rollout.
 
 ## [0.13.0] - 2026-05-28
 
@@ -90,7 +198,7 @@ All notable changes to this package will be documented in this file.
 
 - Added `2026_05_26_000001_cancel_legacy_workflow_runs_for_agentgraph_cutover`, which cancels in-flight legacy workflow runs that never received an AgentGraph `run_id` (irreversible).
 
-> **Note:** The `v0.12.0` git tag marked an early preview commit. `v0.13.0` is the first recommended release that ships the documented agent-first runtime together with the AgentGraph workflow platform. See [RELEASE_NOTES_v0.13.0.md](RELEASE_NOTES_v0.13.0.md).
+> **Note:** The `v0.12.0` git tag marked an early preview commit. `v0.13.0` is the first recommended release that ships the documented agent-first runtime together with the AgentGraph workflow platform. See [docs/RELEASE_NOTES_v0.13.0.md](docs/RELEASE_NOTES_v0.13.0.md).
 
 ## [0.12.0] - 2026-05-18
 
@@ -203,6 +311,10 @@ All notable changes to this package will be documented in this file.
 - Updated the Laravel AI SDK constraint to `^0.6.7`.
 - Expanded CI coverage so Laravel 12 and Laravel 13 dependency sets are validated separately.
 
+### Fixed
+
+- Removed PHPStan issues exposed by the Laravel 13 dependency graph around workflow generation metadata and embedding dimension checks.
+
 ## [0.9.6] - 2026-04-16
 
 ### Added
@@ -210,7 +322,7 @@ All notable changes to this package will be documented in this file.
 - Expanded workflow node catalog coverage in the visual editor and docs, including AI utility nodes, retrieval/data shaping nodes, guardrails, memory nodes, structured output, sentiment/intent routing, random split, expression, sub-workflow, and canvas notes.
 - Dedicated `Data Retrieval` workflow node preset for the built-in `query_data_resource` action, so safe internal Eloquent lookups are easier to configure without hand-writing the action key.
 - Focused regression tests for AI streaming fallback, API Connector non-2xx handling, missing HTTP URL failures, sentiment fallback routing, and base64 transform edge cases.
-- `RELEASE_NOTES_v0.9.6.md` for the current commercial early-access release.
+- `docs/RELEASE_NOTES_v0.9.6.md` for the current commercial early-access release.
 
 ### Changed
 
@@ -242,7 +354,7 @@ All notable changes to this package will be documented in this file.
 - Clearer Commercial Early Access messaging across buyer-facing docs and the local plugin listing.
 - Empty-state guidance actions on the Conversations, Workflow Runs, and Submissions tables now link first-time operators to the next productive step with icons and navigation buttons.
 - Knowledge-gap rows in bot analytics (Potential Knowledge Gaps widget) now link directly to the full conversation thread for immediate review.
-- `RELEASE_NOTES_v0.9.4.md` for the current commercial early-access release.
+- `docs/RELEASE_NOTES_v0.9.4.md` for the current commercial early-access release.
 
 ### Changed
 
@@ -256,7 +368,7 @@ All notable changes to this package will be documented in this file.
 
 - Publish-before-live workflow activation guards, release-state labels, and regression coverage so unpublished drafts cannot become the active chat runtime accidentally.
 - Submission schema metadata now exposes normalized payload-relative dedupe paths plus validation feedback for invalid `meta.*` configurations.
-- `RELEASE_NOTES_v0.9.3.md` for the 0.9.3 commercial early-access release.
+- `docs/RELEASE_NOTES_v0.9.3.md` for the 0.9.3 commercial early-access release.
 
 ### Changed
 
@@ -296,7 +408,7 @@ All notable changes to this package will be documented in this file.
 - Twelve buyer-facing docs screenshots replacing the original six — adds workflow canvas, AI Draft tab, Runs tab, Releases tab, and API Connectors list screenshots.
 - `SandboxBotSeeder` now seeds showcase API connectors, multi-version workflow with run history, and a richer conversation transcript for screenshot quality.
 - Sandbox `AdminPanelProvider` displays a non-generic brand name to improve screenshot realism.
-- `OPERATIONS.md` — buyer-facing operational guide covering queue health, doctor command, cache recovery, and go-live checklist.
+- `docs/OPERATIONS.md` — buyer-facing operational guide covering queue health, doctor command, cache recovery, and go-live checklist.
 
 ### Fixed
 

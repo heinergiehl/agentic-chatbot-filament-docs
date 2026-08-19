@@ -16,26 +16,19 @@ Think of it as the persisted product definition for one assistant experience. A 
 - what the assistant is for
 - which knowledge sources it can use
 - how retrieval should behave
-- whether the assistant may use tools and workflows
+- which capabilities its live workflow may use
 - who can access it
 - how the widget should look
 
 This is why one Laravel + Filament app can run multiple assistants with different behavior from one panel.
 
-## Runtime Model
+## One Live Workflow
 
-By default, a bot runs through the assistant chat graph. The assistant keeps the conversation natural and chooses between:
+Every bot answers chat through exactly one verified live workflow deployment. **Simple Assistant** and **Knowledge Assistant** are starter workflows for the common cases, not separate runtime modes.
 
-- answering directly from the bot prompt and conversation memory
-- calling `KnowledgeSearchTool` to retrieve source-backed context
-- requesting the active workflow through the `run_workflow` adapter when deterministic turn ownership allows workflow execution
-- using any other registered tool available to that bot
+A bot may keep draft and standby workflows, but drafts never receive chat traffic. Knowledge Sources are available only through a reachable Knowledge step in the live workflow; Data Resources, API Operations, writes, and subworkflows must likewise be present in its published contract.
 
-Source-grounded retrieval is still important, but it is not the whole chatbot. It is the knowledge capability behind `KnowledgeSearchTool` and workflow Knowledge Base nodes.
-
-The UI now makes this split explicit with **Routing & knowledge** on the bot edit page and **Chat Mode** in the bots table. Sources make direct bots useful; active workflows must explicitly search sources. If a bot has sources and no active workflow, direct chat can retrieve from those sources. If an active workflow is live, the workflow controls the conversation and must include a reachable Knowledge Base node for source-grounded answers.
-
-The legacy `ParentAgent` and `KnowledgeAgent` classes remain as compatibility aliases. Do not treat them as the default product architecture.
+The bot Overview shows the live deployment, version/hash, capabilities, possible writes, confirmation policy, and Knowledge/Data/API health without exposing engine diagnostics as normal configuration.
 
 ## What You Can Customize Per Bot
 
@@ -61,29 +54,24 @@ In practice, this means you can create:
 
 ## How To Create A Bot
 
-1. Open **Agentic Chatbot > Bots** in your Filament panel.
+1. Open **Agentic Chatbot > Build > Bots** in your Filament panel.
 2. Click **Create**.
-3. Enter a clear **name** and stable **public ID**.
-4. Write the **system prompt** that defines the bot's job.
-5. Select the **provider** and **model**.
-6. Configure **retrieval** settings.
-7. Configure **allowed domains** and **context areas**.
-8. Customize the **widget** title, subtitle, welcome message, and quick prompts.
-9. Save the bot.
-10. Add one or more [Knowledge Sources](KNOWLEDGE_SOURCES.md) and test retrieval.
+3. Follow the guided setup steps: identity, provider/model, capabilities, widget basics, then review.
+4. Save the bot.
+5. Follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-bot-to-live-deployment) to assign, test, publish, and activate the main workflow.
 
-Creating the bot is only the first step. A bot becomes useful when it has the right sources and retrieval settings behind it.
+Creating the bot is only the first step. It can answer after its verified main workflow deployment is live.
 
-## Confidence Checks On The Bot Page
+## Bot Control Center
 
 After saving a bot, use the edit page as your rollout checklist before you publish or embed it widely.
 
+- **Overview** is the first stop. It summarizes bot readiness, the active workflow, draft/publish warnings, knowledge coverage, and the most useful next actions.
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the bot.
 - **Production readiness** also surfaces widget signing/domain posture and knowledge chunk readiness so public rollout issues are visible before you copy the embed snippet.
 - **Live Preview** renders the current widget theme, copy, and area-specific styling choices directly inside the bot form.
-- **Test Retrieval** checks whether the bot is grounding on the right source material.
-- **Test Bot Answer** runs the full answer path so you can spot provider, prompt, or retrieval issues early.
-- **Setup Check** gives you a quick vector-backend and queue-readiness signal. Use the doctor command for the fuller release blocker.
+- **Test behavior** runs the live answer path so you can spot provider, workflow, prompt, or retrieval issues early.
+- **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker.
 - **Embed Snippet** gives you a ready-to-paste script tag for the bot's default area and signing mode.
 - **Analytics** becomes the next stop once you have live conversations, because it surfaces feedback, citation coverage, traffic, and knowledge gaps.
 
@@ -132,6 +120,8 @@ This lets you optimize different bots for:
 
 The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible gateways. Each provider includes a small curated model list, and the **Manual ID** option lets you enter exact model identifiers from your provider.
 
+Manual IDs are safe by default: they do not implicitly receive tool-calling or native JSON-schema support from their name. For a private or self-hosted model whose capabilities you have verified, declare a profile under `filament-agentic-chatbot.models.capabilities`; the doctor command then validates the configured chat model against the required assistant profile.
+
 Use OpenRouter for routed models such as Qwen or DeepSeek variants without adding a provider-specific integration for each model family. Use **OpenAI-Compatible** when the provider exposes a chat-completions-style API with a custom base URL, such as Qwen DashScope compatible mode or a private gateway. Enter the base URL on the bot, or configure it globally with:
 
 ```env
@@ -167,7 +157,8 @@ This matters most once a bot is linked to workflows.
 - `query_data_resource` and knowledge search require query capability.
 - `store_submission` requires write capability.
 - `httpRequest` and `apiConnector` treat `GET` as query behavior and `POST` / `PUT` / `PATCH` / `DELETE` as write behavior.
-- Custom workflow actions can opt into capability enforcement by declaring `capability: query` or `capability: write` in `filament-agentic-chatbot.workflow.actions`.
+- Request retries are conservative: `POST` and `PATCH` are not retried unless the workflow explicitly opts in with an idempotent external API.
+- Host workflow actions are declared by a tagged `CapabilityProvider` as immutable `CapabilityActionDefinition` objects, including their side effect, request/result schemas, confirmation policy, idempotency policy, and required secret-free `CapabilitySemanticProfile`.
 - Untagged custom actions are not auto-classified, so treat them as application-level responsibility.
 
 ### Allowed Internal Data Resources
@@ -176,16 +167,21 @@ Bots can opt into specific internal data resources that workflows may read throu
 
 Each enabled resource is:
 
-- defined globally in config
-- allow-listed per bot
+- defined globally in **Data Resources**
+- optionally seeded from `filament-agentic-chatbot.data_resources.resources`
+- allow-listed and optionally narrowed per bot
 - read-only at runtime
 - limited to the declared fields, filters, sort options, and max limit
 
 Use this when a workflow needs safe access to internal business records such as customers, cases, or orders without exposing arbitrary database access.
 
-If you need tenant-aware or actor-aware row filtering, add that through your model scopes or resource design. The registry controls which model fields are exposed, but it does not invent your business-specific authorization rules for you.
+If records belong to a bot, tenant, team, or customer, add that boundary as a Data Resource safety scope or through your model design. Safety scope filters are always applied by the runtime and do not need to appear as normal workflow filters.
 
-The built-in `bots` resource is scoped to the current bot by default. Expose a global bot catalog only by overriding that resource in your host app configuration.
+In the Filament panel, use **Agentic Chatbot > Connect > Data Resources** to follow the guided setup: choose records, approve information, set result guardrails, and add safety scope. The bot edit page can only approve or narrow those global rules.
+
+The package config remains useful for install-time seeds and code-reviewed defaults, but normal admin changes should happen in **Data Resources**. Use **Sync from config** only when you intentionally want to create or overwrite UI-managed resources from published config.
+
+The built-in `bots` resource is scoped to the current bot by default. Expose a global bot catalog only by changing that resource in **Data Resources** or by syncing an intentional config override.
 
 ### Smart Data Queries
 
@@ -193,14 +189,14 @@ The Behavior tab also includes **Smart Data Queries**. This is the admin-friendl
 
 Admins choose:
 
-- which data sources the bot may read
+- which data resources the bot may read
 - whether generated workflows should accept natural data questions
 - the default and maximum number of records for smart generated query flows
-- a preview of each selected resource's sortable fields, filterable fields, returned fields, runtime scope, and resource limits
+- a preview of each selected resource's sorting, filters, returned fields, hidden safety scope, and result limits
 
 The workflow generator then handles phrases such as "newest workflow", "active products", "cheapest plan", or "highest priced item" by creating a structured query plan and passing it into `query_data_resource`. The runtime still validates all fields, filters, sorting, and limits against the allow-listed resource definition.
 
-For product catalogs, define useful `field_metadata` for columns such as price, created date, availability, and name. Natural requests like "cheapest product" or "two newest products" work best when numeric and date fields have clear labels, types, aliases, and descriptions.
+For product catalogs, give important values friendly labels, types, visitor phrases, and usage notes, such as price, created date, availability, and name. Natural requests like "cheapest product" or "two newest products" work best when those fields are clearly marked as sortable or filterable.
 
 ### Allowed Domains
 
@@ -236,13 +232,15 @@ This matters because the widget is what the end user actually sees. The title an
 
 ### Bot To Workflow Assignment
 
-One bot can store multiple workflow records, but only one enabled workflow can own chat traffic at a time.
+One bot can store multiple workflow records, but only one verified workflow deployment can own live chat traffic at a time.
 
 Use that model like this:
 
 - keep extra workflows as drafts, alternates, or release history for the same bot
-- enable the one workflow that should be exposed to the assistant as the live workflow tool
+- publish an immutable deployment, then make that deployment live when it should become the bot's main workflow
 - create a separate bot when you need a genuinely different chatbot experience
+
+The bot edit page includes a workflow overview so operators can see assignment, draft, published-deployment, and live-routing status without hunting through the workflow list. A saved draft cannot receive traffic: publish an immutable deployment first, then make that verified deployment live in a separate action.
 
 This keeps routing, analytics, sessions, and UX understandable.
 
@@ -325,14 +323,16 @@ Use when you need:
 - Give the widget title and subtitle a clear user-facing purpose.
 - Add quick prompts that reflect real user intent.
 - Test retrieval after adding or changing sources.
-- Keep the deterministic turn gateway enabled. Use assistant graph mode for mixed chat/tool behavior and assistant-graph-off mode only when the bot should be strictly workflow-bound.
-- Use workflows for task execution and guided flows, not for every simple factual answer.
+- Keep every answer and capability inside the live workflow contract.
+- Start with Simple Assistant for general help and Knowledge Assistant for source-grounded replies.
+- Use Knowledge steps for every source-grounded reply.
 
 ## Related Docs
 
 - [Core Concepts](CORE_CONCEPTS.md)
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
 - [Knowledge Sources](KNOWLEDGE_SOURCES.md)
+- [Data Resources](DATA_RESOURCES.md)
 - [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Context Areas](CONTEXT_AREAS.md)
 - [Chat Widget](CHAT_WIDGET.md)

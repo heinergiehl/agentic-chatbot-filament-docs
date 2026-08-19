@@ -2,15 +2,15 @@
 
 This document describes the executable `schemaVersion: 1` JSON format used by the **Filament Agentic Chatbot** workflow engine. The visual editor stores `schemaVersion: 2` semantic workflows as the authoring source of truth and compiles them to this runtime shape at validation, preview, publish, activation, and execution boundaries.
 
-Use this reference for runtime fixtures, diagnostics, archived runtime exports, or programmatic engine payloads. For normal editor authoring, use schema v2 semantic payloads through the workflow editor and its AI Draft flow.
+Use this reference for runtime fixtures, diagnostics, low-level imports, or programmatic engine payloads. For normal editor authoring, prefer the semantic workflow editor and its AI Draft flow.
 
-The current editor save, validate, publish, and import paths require schema v2 authoring payloads. Schema v1 remains the executable runtime shape, but it is not the canonical editable format for new workflows.
+Runtime `schemaVersion: 1` payloads are not a lossless visual-editor authoring format. The current editor persists `schemaVersion: 2` semantic workflows; existing runtime JSON should be treated as execution/API-oriented unless it is converted into schema v2 first.
 
 ## How to Use
 
-1. Ask an AI or backend process to generate runtime workflow JSON using this schema only when you need an executable graph, fixture, or diagnostic payload.
-2. For editor workflows, generate or import schema v2 semantic authoring payloads instead of raw runtime nodes.
-3. Validate the workflow before publishing. Validation compiles schema v2 to the same runtime graph used by execution and blocks publish on compiler or runtime errors.
+1. Ask an AI or backend process to generate runtime workflow JSON using this schema only when you need an executable graph.
+2. In the workflow editor, use AI Draft or schema v2 JSON for editable semantic authoring. Low-level schema v1 JSON is suitable for runtime fixtures, diagnostics, and programmatic execution paths.
+3. Validate the workflow before publishing. Validation runs against the same compiled runtime graph used by execution.
 
 ---
 
@@ -79,7 +79,7 @@ Node retry is executed by the AgentGraph runtime for thrown node exceptions. It 
 
 Current supported node types:
 
-`trigger`, `sendMessage`, `collectInput`, `collectForm`, `condition`, `aiAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `loop`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
+`trigger`, `sendMessage`, `collectInput`, `collectForm`, `condition`, `aiAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `batchMap`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
 
 The visual editor also exposes a `Data Retrieval` palette item. Persisted JSON stores it as an `action` node with `actionKey: "query_data_resource"`.
 
@@ -161,10 +161,12 @@ For `messageType: "image"`, provide `imageUrl`, `imageArtifact`, or both. A gene
 | `label`        | `string`  | **Yes**  |                                                       |
 | `prompt`       | `string`  | **Yes**  | Question to ask the user                              |
 | `variableName` | `string`  | **Yes**  | Variable to store the answer in                       |
-| `inputType`    | `string`  | **Yes**  | `"text"`, `"email"`, `"number"`, `"date"`, `"choice"` |
+| `inputType`    | `string`  | **Yes**  | `"text"`, `"email"`, `"number"`, `"date"`, `"time"`, `"choice"` |
 | `choices`      | `string`  | No       | Comma-separated or JSON array (for `"choice"` type)   |
 | `validation`   | `string`  | No       | Validation rule                                       |
 | `required`     | `boolean` | **Yes**  | Whether an answer is required                         |
+
+Input validation stays deterministic at workflow boundaries. `inputType: "date"` and the `date` validation rule accept canonical `YYYY-MM-DD` values only; use semantic extraction or a transform step before validation when users may say "tomorrow" or use locale-specific formats. `inputType: "time"` and the `time` rule accept 24-hour `HH:MM`. `validation` can combine pipe-separated rules such as `email`, `number`, `date`, `time`, `url`, `min:n`, `max:n`, `money`, `money:EUR`, `money:USD`, `money:GBP`, and `regex:/.../`.
 
 ---
 
@@ -235,8 +237,11 @@ Has **two outputs**: `"yes"` and `"no"` handles.
 | `temperature`        | `number`  | **Yes**  | 0.0 – 2.0 (default: 0.7)                        |
 | `maxTokens`          | `integer` | **Yes**  | Max response tokens (default: 2048)             |
 | `outputVariable`     | `string`  | **Yes**  | Variable name to store the AI response          |
+| `emitProviderDeltas` | `boolean` | No       | Forward ephemeral model deltas to an explicit `WorkflowRunner` callback (default: `true`) |
 
-> **Runtime note:** `temperature` and `maxTokens` are stored, validated, preserved in workflow JSON, and passed through the Laravel AI SDK generation options where the selected provider supports them.
+> **Runtime note:** `emitProviderDeltas` does not publish or hide a chat message. Durable replies are committed first and rendered from the canonical outcome. Schema-v2 authoring derives this flag from the typed step kind.
+
+> `temperature` and `maxTokens` are validated, preserved in workflow JSON, and passed to the Laravel AI SDK where the selected provider supports them.
 
 ---
 
@@ -274,7 +279,7 @@ These nodes are available in addition to the core message, logic, AI, and integr
 | Node Type | Purpose | Important Data Fields |
 | --- | --- | --- |
 | `answer` | Final grounded LLM response from knowledge/data variables | `contextVariable`, `dataVariable`, `questionTemplate`, `fallbackMessage`, `requireContext`, `outputVariable` |
-| `queryRewrite` | Rewrite user input into an internal search or lookup query | `inputTemplate`, `instructions`, `provider`, `model`, `outputVariable`, `streamToChat` |
+| `queryRewrite` | Rewrite user input into an internal search or lookup query | `inputTemplate`, `instructions`, `provider`, `model`, `outputVariable` |
 | `summarize` | Summarize long context or API results before a later step | `sourceTemplate`, `instructions`, `maxLength`, `provider`, `model`, `outputVariable` |
 | `structuredOutput` | Extract JSON and validate it against a compact schema or JSON Schema-style object | `sourceTemplate`, `schema`, `instructions`, `outputVariable`, `rawOutputVariable` |
 | `confidenceCheck` | Branch when retrieved context/data is strong enough | `sourceVariable`, `countVariable`, `errorVariable`, `minCount`, `minTextLength`, `outputVariable` |
@@ -292,7 +297,7 @@ These nodes are available in addition to the core message, logic, AI, and integr
 
 Per-node `temperature` and `maxTokens` values on AI-backed nodes are passed through the Laravel AI SDK generation options where the selected provider gateway supports them.
 
-For simple workflows, use `scope: "conversation"` for chat state and `scope: "workflow_run"` for one-run scratch state. The runtime also accepts `session`, `actor`, and `bot` for advanced API/import use cases where broader reuse is intentional. `memoryType: "semantic"` is accepted as metadata, but it does not create vector-search memory by itself.
+For simple workflows, use `scope: "conversation"` for chat state and `scope: "workflow_run"` for one-run scratch state. The runtime also accepts `session`, `actor`, and `bot` for advanced API/import use cases where broader reuse is intentional. Actor- and bot-scoped memory is long-term memory and requires `longTermMemoryKind`, `longTermMemoryProvenance`, and `longTermMemoryRetentionDays`; valid kinds are `explicit_preference`, `stable_fact`, and `recurring_task_pattern`. `memoryType: "semantic"` is accepted as metadata, but it does not create vector-search memory by itself and long-term semantic recalls are not proof for active workflow routing.
 
 ---
 
@@ -330,7 +335,7 @@ In the visual workflow editor, `query_data_resource` is also exposed as the dedi
 
 For Telegram and Slack, `generate_image.image_artifact` lets the channel drivers upload the stored image directly from Laravel storage. `generate_image.image_url` is still returned for web clients and for providers that prefer public URLs. When the image provider returns bytes or base64, the action stores the file and builds both the storage artifact and a URL from the storage disk URL or `AGENTIC_CHATBOT_WORKFLOW_IMAGE_PUBLIC_BASE_URL`.
 
-`query_data_resource` is validated against the linked bot at publish time. The bot must allow queries and the chosen `resource_key` must be enabled for that bot.
+`query_data_resource` is validated against the linked bot and immutable deployment binding at publish time and runtime. `inputMapping.allowed_resource_keys` is required and must contain at least one literal resource key; missing or empty means no access. A static `resource_key` must appear in that list. Publish pins each listed key plus its versioned Data Resource contract hash into the deployment artifact. Runtime requires the bot policy, the pinned workflow binding/current contract hash, and server-attested row scope to agree.
 
 Use `filters` when filter field names are known while authoring the workflow. Use `filter_clauses` for generic user-driven query plans where a previous `structuredOutput` step extracts safe field/operator/value clauses. Dynamic `mode`, `filter_clauses.*.field`, `filter_clauses.*.operator`, `sort.column`, `sort.direction`, and `limit` values must be exact `{{variable}}` templates; the action still validates resolved fields and sort columns against the resource allowlists at runtime.
 
@@ -376,7 +381,7 @@ Custom actions may also declare `capability: query` or `capability: write` in co
 | `retryAttempts`  | `integer` | No       | 0-5 retries after the first failed request        |
 | `retryDelayMs`   | `integer` | No       | 0-5000 ms before the first retry                  |
 | `retryBackoff`   | `boolean` | No       | Default `true`. Doubles the delay between retries |
-| `retryUnsafeMethods` | `boolean` | No    | Default `false`. Allows retries for POST/PATCH only when the target API is idempotent |
+| `retryUnsafeMethods` | `boolean` | No    | Default `false`. Allows retries for POST/PUT/PATCH/DELETE only when the target API is idempotent |
 
 Runtime variables:
 
@@ -384,11 +389,11 @@ Runtime variables:
 - `{{outputVariable_status}}`: HTTP status code, `blocked`, or `error`
 - `{{outputVariable_error}}`: failure message when the request fails
 
-Non-2xx responses stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Retries apply to `GET`, `PUT`, and `DELETE` by default; `POST` and `PATCH` retry only when `retryUnsafeMethods` is true.
+Non-2xx responses stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Only `GET` requests are retried by default. `POST`, `PUT`, `PATCH`, and `DELETE` retry only when `retryUnsafeMethods` is enabled.
 
 ---
 
-### 9. `apiConnector` — Saved API Profile
+### 9. `apiConnector` — Versioned Saved API Capability
 
 ```json
 {
@@ -397,38 +402,29 @@ Non-2xx responses stop execution unless `continueOnFail` is true. Unsupported me
     "position": { "x": 400, "y": 400 },
     "data": {
         "label": "Call CRM",
-        "connectorId": "",
-        "method": "POST",
-        "pathSuffix": "/contacts",
-        "extraHeaders": "{}",
-        "body": "{\"name\": \"{{user_name}}\"}",
-        "responseJsonPath": "data.id",
+        "connectorId": "12",
+        "apiOperationRevisionId": "47",
+        "apiOperationContractHash": "<sha256>",
+        "inputMapping": "{\"name\": \"{{user_name}}\"}",
         "outputVariable": "contact_id",
-        "timeout": 30,
-        "retryAttempts": 1,
-        "retryDelayMs": 250,
-        "retryBackoff": true,
-        "retryUnsafeMethods": false
+        "continueOnFail": false
     }
 }
 ```
 
-| Data Field         | Type      | Required | Values                                                 |
-| ------------------ | --------- | -------- | ------------------------------------------------------ |
-| `label`            | `string`  | **Yes**  |                                                        |
-| `connectorId`      | `string`  | **Yes**  | ID of a saved API Connector profile (select in editor) |
-| `method`           | `string`  | **Yes**  | `"GET"`, `"POST"`, `"PUT"`, `"PATCH"`, `"DELETE"`      |
-| `pathSuffix`       | `string`  | No       | Path appended to connector's base URL                  |
-| `extraHeaders`     | `string`  | No       | JSON object of additional headers                      |
-| `body`             | `string`  | No       | JSON body for POST/PUT/PATCH                           |
-| `responseJsonPath` | `string`  | No       | Dot-notation path to extract from response             |
-| `outputVariable`   | `string`  | **Yes**  | Variable to store the result                           |
-| `timeout`          | `integer` | No       | Timeout override in seconds                            |
-| `continueOnFail`   | `boolean` | No       | Default `false`. When false, connector errors, blocked URLs, mapping errors, and non-2xx responses stop execution. |
-| `retryAttempts`    | `integer` | No       | 0-5 retries after the first failed request             |
-| `retryDelayMs`     | `integer` | No       | 0-5000 ms before the first retry                       |
-| `retryBackoff`     | `boolean` | No       | Default `true`. Doubles the delay between retries      |
-| `retryUnsafeMethods` | `boolean` | No     | Default `false`. Allows retries for POST/PATCH only when the target API is idempotent |
+| Data Field                    | Type      | Required | Values |
+| ----------------------------- | --------- | -------- | ------ |
+| `label`                       | `string`  | **Yes**  | Presentation label |
+| `connectorId`                 | `string`  | **Yes**  | Saved connector identity |
+| `apiOperationRevisionId`      | `string`  | **Yes**  | Immutable operation revision selected in the editor |
+| `apiOperationContractHash`    | `string`  | **Yes**  | SHA-256 contract identity for that revision |
+| `inputMapping`                | `object|string` | No | Declared capability input names mapped from workflow values |
+| `outputVariable`              | `string`  | **Yes**  | Variable to store the mapped operation result |
+| `continueOnFail`              | `boolean` | No       | Presentation/routing policy; default `false` |
+| `allowEmptyResponse`          | `boolean` | No       | Presentation policy for an empty mapped result |
+| `missingResponseMessage`      | `string`  | No       | Optional fallback presentation |
+
+Published runtime snapshots additionally contain the revision's locked method, path template, header/request mappings, request/response schemas, output mapping, side-effect/confirmation declaration, timeout/retry/idempotency policy, and named environment binding. Authoring nodes cannot override those fields. Runtime never falls back from a missing revision to a mutable operation key.
 
 Runtime variables:
 
@@ -437,7 +433,7 @@ Runtime variables:
 - `{{outputVariable_raw}}`: raw response body when a request was sent
 - `{{outputVariable_error}}`: failure message when the connector fails or returns a non-2xx response
 
-Non-2xx responses preserve the decoded response and raw body, then stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Retries apply to `GET`, `PUT`, and `DELETE` by default; `POST` and `PATCH` retry only when `retryUnsafeMethods` is true.
+Non-2xx responses preserve the decoded response and raw body, then stop execution unless `continueOnFail` is true. Unsupported methods are blocked before a request is sent. Only `GET` requests are retried by default. `POST`, `PUT`, `PATCH`, and `DELETE` retry only when `retryUnsafeMethods` is enabled.
 
 ---
 
@@ -464,19 +460,19 @@ Non-2xx responses preserve the decoded response and raw body, then stop executio
 
 ---
 
-### 11. `loop` — Iterate Over a Collection
+### 11. `batchMap` — Map a Bounded Collection
 
 ```json
 {
-    "id": "loop_1",
-    "type": "loop",
+    "id": "batch_map_1",
+    "type": "batchMap",
     "position": { "x": 400, "y": 400 },
     "data": {
         "label": "Process Items",
         "collectionVariable": "items",
         "itemVariable": "item",
         "indexVariable": "index",
-        "maxIterations": 20
+        "maxItems": 20
     }
 }
 ```
@@ -487,7 +483,13 @@ Non-2xx responses preserve the decoded response and raw body, then stop executio
 | `collectionVariable` | `string`  | **Yes**  | Variable holding the array to iterate                    |
 | `itemVariable`       | `string`  | **Yes**  | Variable name for the current item (default: `"item"`)   |
 | `indexVariable`      | `string`  | **Yes**  | Variable name for the current index (default: `"index"`) |
-| `maxIterations`      | `integer` | **Yes**  | Safety limit (default: 20)                               |
+| `maxItems`           | `integer` | **Yes**  | Hard item limit (default: 20, maximum: 100)              |
+
+Connect the per-item body from the `batchMap` handle and the post-collection
+path from `done`. The body returns to the controller automatically. Every
+iteration receives isolated `itemVariable` and `indexVariable` values; outputs
+are combined in collection order. External capabilities in the body keep their
+normal gateway and side-effect rules.
 
 ---
 
@@ -630,7 +632,7 @@ Variables are created by nodes that have `outputVariable`, `variableName`, `item
 
 ## Validation Rules
 
-The runtime validator enforces these rules:
+The import validator enforces these rules:
 
 - **Exactly one `trigger` node** is required.
 - **All edge sources and targets** must reference existing node IDs.
@@ -639,7 +641,7 @@ The runtime validator enforces these rules:
 - **Max 200 nodes** and **500 edges** per workflow.
 - All nodes must have a valid `type`, `position`, and `data.label`.
 
-The schema v2 compiler adds additional authoring checks before runtime validation, including reserved start identifiers, annotation shape validation, runtime node-id collision detection, and publish-blocking compiler diagnostics.
+Runtime payload schema validation for structured output and action payload contracts supports JSON Schema-style `type`, `properties`, `required`, `items`, `enum`, `additionalProperties`, `minLength`, `maxLength`, string `format` (`email`, `url`, `uri`, `date`, `date-time`), string `pattern`, and numeric `minimum` / `maximum`. This validator is intentionally deterministic; semantic normalization should happen before values cross into these contracts.
 
 ---
 
@@ -843,8 +845,8 @@ The JSON must follow this structure:
 - Top level: { schemaVersion: 1, nodes: [...], edges: [...] }
 - Each node needs: id (string), type (string), position: {x, y}, data: {label, ...type-specific fields}
 - Optional common node runtime retry fields live inside data: nodeRetryAttempts (0-5), nodeRetryDelayMs (0-5000), nodeRetryBackoff (boolean). Use them only for transient technical node exceptions, not for user clarification, validation branches, or HTTP status handling.
-- Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, loop, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
-- Every executable workflow must have exactly one "trigger" node
+- Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, batchMap, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
+- Every workflow must have exactly one "trigger" node
 - Edges connect nodes: { id, source, target, sourceHandle? }
 - For condition nodes, use sourceHandle "yes" or "no"
 - For validation-style nodes (`validation`, `confirmation`, `structuredOutput`, `confidenceCheck`, `guardrail`, `errorHandler`), use sourceHandle "valid" or "invalid"

@@ -4,6 +4,8 @@ Filament Agentic Chatbot adds a Commercial Early Access grounded assistant layer
 
 > Commercial Early Access means the `0.x` line is already sold and usable in real host apps, but still pre-`1.0`. Core install, widget embeds, workflows, analytics, privacy endpoints, server API access, and operator tooling ship today. Expect a few rough edges while the package hardens, validate in staging, and treat buyer feedback as part of rollout. Early-access pricing reflects that stage.
 
+For a first rollout, follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-bot-to-live-deployment): create one bot, build its main workflow, connect approved modules, test, publish, and make exactly one deployment live.
+
 ## What This Plugin Adds
 
 - A Filament-native control plane for managing bots, sources, workflows, ingestion, retrieval, and conversations
@@ -91,6 +93,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - Read [Core Concepts](CORE_CONCEPTS.md) for the product model and terminology
 - Read [Bots](BOTS.md) for assistant configuration
 - Read [Knowledge Sources](KNOWLEDGE_SOURCES.md) for source types and creation flow
+- Read [Data Resources](DATA_RESOURCES.md) for live database reads, approved columns, and per-bot narrowing
 - Read [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md) for how grounding works
 - Read [Chat Widget](CHAT_WIDGET.md) for embedding and UX
 - Read [Quickstart](QUICKSTART.md) for installation and first setup

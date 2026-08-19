@@ -36,7 +36,7 @@ URL sources are fetched through a safe HTTP fetcher before extraction:
 
 | Setting | Env / Config | Default | Description |
 | ------- | ------------ | ------- | ----------- |
-| Max bytes | `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` | 5 MiB | Stops oversized responses before extraction |
+| Max bytes | `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` | 5 MiB | Caps cumulative response bytes for one URL redirect chain or API pagination fetch; headers and transfer progress are checked before mapping |
 | Max redirects | `AGENTIC_CHATBOT_INGESTION_MAX_REDIRECTS` | 3 | Follows a small redirect chain and revalidates every hop |
 | Private network guard | `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS` | `false` | Blocks localhost, RFC1918, reserved, and private IP targets |
 | Content types | `ingestion.allowed_content_types` | HTML, text, Markdown, PDF | Rejects unsupported response bodies for URL ingestion |
@@ -57,7 +57,7 @@ API sources let an existing **API Connector** feed structured JSON records into 
 Price: {{price}} EUR
 ```
 
-Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. Auto sync can periodically queue API sources through `php artisan filament-agentic-chatbot:sync-knowledge-sources`. After a successful re-ingest, previous API documents for that source are replaced, which removes records that no longer appear in the API response while preserving the old index if the new sync fails. Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
+Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. The same `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` budget applies across all pages in one fetch, so a chunked or misleadingly declared response cannot grow without bound before JSON mapping. Auto sync can periodically queue API sources through `php artisan filament-agentic-chatbot:sync-knowledge-sources`. After a successful re-ingest, previous API documents for that source are replaced, which removes records that no longer appear in the API response while preserving the old index if the new sync fails. Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
 
 ### Chunking Strategy
 
@@ -129,7 +129,7 @@ AGENTIC_CHATBOT_CHROMA_TOKEN=your-token
 AGENTIC_CHATBOT_CHROMA_COLLECTION=filament-agentic-chatbot
 ```
 
-Chroma filtering is strict by default. If all nearest-neighbor results fall below the configured threshold, retrieval returns no chunks. `AGENTIC_CHATBOT_CHROMA_ALLOW_THRESHOLD_BYPASS=true` restores the old lenient behavior, marks returned chunks with `threshold_bypassed=true`, and logs the bypass for diagnosis.
+Chroma filtering is strict. If all nearest-neighbor results fall below the configured threshold, retrieval returns no chunks. There is no threshold-bypass compatibility path.
 
 ## Retrieval
 
@@ -137,11 +137,12 @@ Retrieval is the runtime step that finds relevant chunks when the assistant uses
 
 ### What Happens During Retrieval
 
-1. The user message is embedded using the same model that embedded the chunks
-2. The vector backend finds the nearest chunks by cosine similarity
-3. Chunk filtering applies `top_k` and `min_similarity` thresholds
-4. The selected chunks are formatted as context with metadata
-5. The assistant or workflow AI step generates an answer grounded in that context
+1. The bot resolves one explicit strategy: `vector`, `hybrid`, or `lexical_only`.
+2. Vector search embeds the message and applies `top_k` plus `min_similarity`; lexical search uses its configured engine, candidate limit, timeout, and named calibration profile.
+3. Candidates must match the configured index version. Vector candidates must also match the embedding provider, model, and dimensions stamped during ingestion.
+4. Hybrid retrieval combines the two ranked lists using weights from the selected calibration profile. It reports degradation if one configured modality is unavailable.
+5. An optional reranker runs only when its provider/model has a verified reranking capability and its candidate/input-token budgets permit the call.
+6. Only sufficient evidence is formatted into the G19 token-aware context budget. Insufficient evidence reaches the final answerability gate as an abstention signal, not as answer context.
 
 This is what keeps the assistant grounded in your documentation instead of relying only on the base model's training data.
 
@@ -149,19 +150,47 @@ This is what keeps the assistant grounded in your documentation instead of relyi
 
 All settings are configurable per bot from the Filament panel and as global defaults in `.env`:
 
-| Setting            | Env / Config                  | Default | Description                                     |
-| ------------------ | ----------------------------- | ------- | ----------------------------------------------- |
-| **top_k**          | `retrieval.top_k`             | 6       | How many chunks to retrieve                     |
-| **min_similarity** | `retrieval.min_similarity`    | 0.65    | Minimum cosine similarity threshold             |
-| **Context budget** | `retrieval.max_context_chars` | 12000   | Maximum characters of context sent to the model |
-| **Lexical fallback** | `retrieval.hybrid.lexical_strategy` | `simple_like` | `simple_like`, `postgres_fts`, or `disabled` |
+| Setting | Env / Config | Default | Description |
+| --- | --- | --- | --- |
+| **Strategy** | `AGENTIC_CHATBOT_RETRIEVAL_STRATEGY` / `retrieval.strategy` | `vector` | Explicitly selects `vector`, `hybrid`, or `lexical_only` |
+| **Index version** | `AGENTIC_CHATBOT_RETRIEVAL_INDEX_VERSION` / `retrieval.index_version` | `g21-knowledge-index-v1` | Version stamped on chunks and checked at retrieval |
+| **top_k** | `retrieval.top_k` | 6 | How many chunks to retrieve |
+| **min_similarity** | `retrieval.min_similarity` | 0.65 | Minimum vector similarity |
+| **Context budget** | `AGENTIC_CHATBOT_RETRIEVAL_CONTEXT_BUDGET_TOKENS` / `retrieval.context_budget_tokens` | G19 retrieved-evidence lane | Maximum token budget for formatted evidence |
+| **Lexical engine** | `AGENTIC_CHATBOT_RETRIEVAL_LEXICAL_ENGINE` / `retrieval.lexical.engine` | `postgres_fts` | `postgres_fts` or explicitly bounded `simple_like` |
+| **Lexical candidates** | `AGENTIC_CHATBOT_RETRIEVAL_LEXICAL_CANDIDATE_LIMIT` | 200 | Hard pre-scoring candidate bound |
+| **Lexical timeout** | `AGENTIC_CHATBOT_RETRIEVAL_LEXICAL_STATEMENT_TIMEOUT_MS` | 750 ms | PostgreSQL transaction-local statement timeout |
+| **Calibration profile** | `AGENTIC_CHATBOT_RETRIEVAL_LEXICAL_CALIBRATION_PROFILE` | `de_en_v1` | Named dataset/version with thresholds and rank weights |
+| **Reranker** | `AGENTIC_CHATBOT_RETRIEVAL_RERANKER_ENABLED` | `false` | Explicit capability- and budget-gated reranking stage |
 
 **Tuning guidance:**
 
 - **top_k** — higher values give broader context but may include less relevant chunks and increase cost. Lower values are tighter but risk missing relevant content.
 - **min_similarity** — higher values (e.g., 0.8) only return strong matches. Lower values (e.g., 0.5) are more forgiving but may include noise.
-- **Context budget** — too low removes helpful context. Too high adds noise and increases token cost.
-- **Lexical fallback** — `simple_like` is compatible with every database, `postgres_fts` is PostgreSQL-only, and `disabled` keeps retrieval vector-only.
+- **Context budget** — too low removes helpful context. Too high adds noise and increases token cost. It is enforced with the same model-aware token profiles as G19.
+- **Lexical retrieval** — do not copy scoring weights or thresholds to another corpus without a versioned evaluation dataset. PostgreSQL FTS is the production default; unindexed `simple_like` requires an explicit bounded small-dataset opt-in.
+
+### Retrieval resilience and answerability
+
+Retrieval returns a typed result with `status`, `strategy`, `evidence_quality`, `evidence_score`, chunks, safe diagnostics, and error codes. Status is one of `success`, `empty`, `insufficient_evidence`, `degraded`, `unavailable`, or `failed`. In `hybrid` mode, a vector or lexical failure can produce a degraded result only when the remaining evidence is sufficient. `vector` and `lexical_only` never invoke the other modality implicitly.
+
+Diagnostics contain a query fingerprint, per-stage latency/candidate counts, index version plus embedding identity, selected strategy, calibration dataset/version, and reranker budget/capability status. They do not contain the raw retrieval query. Workflow traces and terminal workflow variables also redact raw retrieval-query values.
+
+Runtime V2 attaches an evidence requirement to every planned step. Direct answers use the bot's grounding policy (`optional` by default), configured source-backed topics become `required`, workflow/runtime-state answers use `none` or `forbidden`, and required answers pass through the final answerability gate. A required answer cannot be emitted without the configured evidence count and answerability threshold. The assistant abstains instead of silently falling back to model knowledge, and required streaming is buffered until that decision is known.
+
+```php
+'grounding' => [
+    'default_mode' => 'optional',
+    'source_backed_topics' => [],
+    'minimum_evidence_count' => 1,
+    'minimum_answerability' => 0.70,
+    'abstain_when_unavailable' => true,
+],
+```
+
+Knowledge tool output is an untrusted structured envelope containing the retrieval strategy, evidence quality, degradation state, evidence reference range, and bounded context. Citation IDs are checked against the final evidence pack; invalid IDs are removed before output. Context truncation happens at sentence or word boundaries rather than cutting a sentence mid-stream. Once retrieval has been attempted, an insufficient result cannot be rewritten into a grounded answer by the assistant or response composer.
+
+Run `php artisan migrate` to create the PostgreSQL FTS index, then re-ingest every source after first adopting G21 or whenever the index version or embedding identity changes. Existing unstamped chunks are intentionally incompatible. Run `composer eval:retrieval-quality` before deployment and whenever a calibration dataset/profile changes.
 
 ### Knowledge Readiness
 

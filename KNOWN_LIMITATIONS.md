@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.16.1<br>
-> **Last updated**: 2026-06-19
+> **Version**: 0.17.0<br>
+> **Last updated**: 2026-08-19
 
 This page documents known constraints, upstream limitations, and workarounds.
 
@@ -29,17 +29,21 @@ The package supports both PostgreSQL + `pgvector` and ChromaDB, but PostgreSQL r
 
 **Workaround**: Use ChromaDB as an alternative vector store backend (see configuration).
 
-ChromaDB now keeps similarity thresholds strict by default. `AGENTIC_CHATBOT_CHROMA_ALLOW_THRESHOLD_BYPASS=true` is available only as an explicit compatibility escape hatch and marks bypassed chunks.
+ChromaDB keeps similarity thresholds strict. Below-threshold candidates are not available through a compatibility escape hatch.
 
 ---
 
-## 3. Workflow loop execution limits
+## 3. Workflow batch-map execution limits
 
-Loop nodes enforce a hard iteration ceiling (configurable via `workflow.max_steps`). Exceeding the limit terminates the workflow with a user-facing error.
+`batchMap` nodes enforce `maxItems` (maximum 100), and the workflow still
+enforces its global step ceiling. Exceeding either limit terminates execution
+with a bounded failure.
 
-**Impact**: Very large loop-count workflows will fail. Default is 50 steps.
+**Impact**: Very large collections are intentionally not processed in one chat
+workflow.
 
-**Workaround**: Increase `max_steps` in config, or break complex logic into smaller chat-focused workflows.
+**Workaround**: Page or pre-filter the source, or split long-running work into
+a purpose-built queued integration instead of increasing chat-runtime scope.
 
 ---
 
@@ -59,7 +63,7 @@ The "Generate from prompt" feature produces workflow JSON via the configured LLM
 
 The embeddable chat widget is loaded through a `<script>` tag and calls the plugin's API endpoints directly. Sites with strict Content Security Policy headers must allow the widget script URL plus the API origin used by the chat endpoints. The current widget runtime also injects its own `<style>` tag, so CSP policies that forbid inline styles can still block the widget even on the same Laravel app.
 
-Query-string and request-body widget tokens are still accepted by default for compatibility. Production hosts should disable them and use the widget token header before public rollout.
+Production embeds bootstrap short-lived tokens at runtime and send them in the widget token header. Query-string and request-body token compatibility is disabled by default in production but remains available in non-production for migration testing; enabling either mode publicly weakens the intended token boundary.
 
 ---
 
@@ -81,19 +85,26 @@ Delay/timer nodes dispatch a `ResumeWorkflowRunJob` to the queue. If your queue 
 
 ---
 
-## 8. Structured Compound Requests need explicit capability contracts
+## 8. Multi-item entry plans are read-only and all-or-nothing
 
-`legacy` remains the default compound engine. `shadow` and `structured` depend on registered action, tool, or API Connector capabilities with schemas, side-effect metadata, and bot-level approval.
+Authorized Entry Turn Plans accept only independent, fully covered read tasks
+bound to one immutable workflow release. Every task item must satisfy the
+published slot/input policy and exact capability contract.
 
-**Impact**: Ambiguous, dependent, unsafe alternative, or incomplete single-item plans may stay on the normal assistant/workflow path instead of executing as compound requests. Write and mixed read/write plans still require confirmation by default.
+**Impact**: Ambiguous, dependent, alternative, mixed read/write, duplicate, or
+partially admitted turns clarify instead of executing the apparently safe
+subset.
 
-**Workaround**: Roll out per bot: start with `shadow`, inspect audit records, add schemas for allowed capabilities, then switch selected bots to `structured`.
+**Workaround**: Publish precise entry routes and connector input policies, or
+model dependent/write work explicitly in the workflow with confirmation.
 
 ---
 
 ## 9. Turn understanding is provider-sensitive
 
-Workflow turn understanding can classify pending answers, corrections, side questions, cancellations, and compound follow-ups. Provider JSON behavior and confidence calibration still vary by model.
+Workflow turn understanding can classify pending answers, corrections, side
+questions, cancellations, and multi-item requests. Provider JSON behavior and
+confidence calibration still vary by model.
 
 **Impact**: Low-confidence or malformed classifications intentionally fall back to deterministic pending-input behavior. This can ask a clarifying question or keep the workflow halted instead of guessing.
 
@@ -101,42 +112,25 @@ Workflow turn understanding can classify pending answers, corrections, side ques
 
 ---
 
-## 10. AgentGraph confirmation and execution runs are separate
+## 10. AgentGraph and Laravel expose different operational records
 
-Compound write confirmation and compound execution may create distinct AgentGraph runs. Workflow waitpoints also project pending interactions from SDK interrupts.
+AgentGraph is the graph-state authority. `WorkflowRun` and pending-interaction
+rows are versioned operational projections of its checkpoints and interrupts.
 
-**Impact**: Admin/debug views can show a confirmation run, an execution run, and a workflow run for one visitor turn. This is intentional so confirmations, cancellations, and replacements keep independent durable state.
+**Impact**: During a crash or unavailable SDK store, an operational row can
+temporarily lag the authoritative AgentGraph state and show reconciliation
+required.
 
-**Workaround**: Use the stored `agent_graph_run_id`, `agent_graph_thread_id`, `agent_graph_interrupt_id`, and pending-interaction records when debugging a turn.
+**Workaround**: Use the stored AgentGraph run, thread, checkpoint, and interrupt
+identities and the supported reconciliation path; never edit projection state
+as an execution shortcut.
 
 ---
 
-## 11. Schema-v2 editor authoring is required
+## 11. Schema-v2 collectForm authoring has a runtime boundary
 
 Schema-v2 Ask steps can compile structured fields into `collectForm` runtime nodes, including fields authored as JSON text. The runtime still validates the compiled workflow contract, not arbitrary UI-only draft data.
 
-The editor save, validate, publish, and import paths require schema v2 authoring payloads. Schema v1 remains the executable runtime graph for diagnostics, archives, and low-level integrations, but it is not the canonical editable workflow format.
+**Impact**: Invalid JSON or non-list structured field payloads are ignored by the compiler and will not become form fields.
 
-**Impact**: Old runtime JSON may need conversion or a manual rebuild as semantic steps before it can be edited and published through the current editor.
-
-**Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing. Rebuild ambiguous schema v1 workflows in schema v2.
-
----
-
-## 12. Pending interaction projections can be repaired, not guessed
-
-AgentGraph checkpoints and interrupts are the source of truth for SDK-backed workflow waitpoints. `bot_pending_interactions` rows are projections used for chat routing and admin visibility.
-
-**Impact**: If a pending interaction is expired, stale, or points at a changed interrupt, the runtime closes or reprojects it instead of guessing. A stale `resolving` claim is released only after the configured timeout and only when the underlying interrupt still matches.
-
-**Workaround**: Tune `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS`, run `php artisan filament-agentic-chatbot:doctor`, and inspect AgentGraph interrupt metadata when a conversation appears stuck.
-
----
-
-## 13. Streaming fallback depends on transport and provider support
-
-LLM token streaming still depends on provider and SDK support. Deterministic workflow messages can simulate small `text_delta` chunks so the widget behaves consistently, but this is not the same as provider-native token streaming.
-
-**Impact**: Some workflow nodes may emit complete messages instead of provider token deltas. If execution fails mid-stream, the widget receives a safe structured error event and `[DONE]`, not raw stack traces.
-
-**Workaround**: Configure `AGENTIC_CHATBOT_WORKFLOW_STREAMING_LLM_DEFAULT`, `AGENTIC_CHATBOT_WORKFLOW_STREAMING_SIMULATE_DETERMINISTIC`, deterministic delay, and chunk size for your UX target.
+**Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing.

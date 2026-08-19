@@ -2,10 +2,12 @@
 
 The chat widget is the embeddable UI layer that connects end users to your configured bot. It is the front-end for the bot, sources, retrieval, workflows, and conversation storage already set up in Filament.
 
+Do not put Bot Access Tokens in widget markup or public JavaScript. Widgets use the signed widget token (`X-filament-agentic-chatbot-Token`) and bot domain allow-lists; Bot Access Tokens are server-side secrets for trusted backend integrations only.
+
 ## What The Widget Does
 
 - Renders a floating chat bubble on any website or product page
-- Opens into a full chat panel with message history, streaming responses, and source citations
+- Opens into a full chat panel with durable message history, committed responses, and source citations
 - Connects to your Laravel backend via the plugin's API routes
 - Supports signed tokens for access control
 - Supports assistant-message feedback buttons for quick helpful / not-helpful signals
@@ -72,7 +74,30 @@ The simplest and recommended setup is to embed the widget from the same Laravel 
 
 If you render the widget from Blade, Livewire, or an Inertia page inside the same monolith, that is the easiest path operationally and from a security perspective.
 
-### Option 1: Script Tag (simplest)
+### Option 1: Blade Component (recommended for same app)
+
+In Filament, open **Bots** and confirm that the bot is active with one verified live workflow deployment. Then run the **Use as public widget** row action and add the component to your Blade layout or page:
+
+```blade
+<x-filament-agentic-chatbot::chat-widget />
+```
+
+The component resolves bots in this order:
+
+1. An explicit component prop, such as `bot-public-id="YOUR_BOT_PUBLIC_ID"`
+2. The bot marked **Public Widget** in the Bots table
+3. `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`
+4. The first runnable bot
+
+At every level, runnable means that the bot is active and its live deployment passes immutable artifact and dependency-closure verification. An invalid explicit or configured ID fails closed. A marked but unrunnable or multiply marked selection also fails closed instead of silently exposing a different bot.
+
+Use an explicit prop only when a page should intentionally override the selected public widget bot:
+
+```blade
+<x-filament-agentic-chatbot::chat-widget bot-public-id="YOUR_BOT_PUBLIC_ID" />
+```
+
+### Option 2: Script Tag
 
 Add a single `<script>` tag to any HTML page:
 
@@ -80,7 +105,6 @@ Add a single `<script>` tag to any HTML page:
 <script
     src="https://your-app.com/filament-agentic-chatbot/widget"
     data-bot="YOUR_BOT_PUBLIC_ID"
-    data-token="SIGNED_TOKEN"
     data-area="public"
     data-template="aurora"
     data-accent="#f97316"
@@ -95,14 +119,13 @@ Add a single `<script>` tag to any HTML page:
 ></script>
 ```
 
-Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
+The script path is controlled by `widget.script_route`; update deployed snippets when you change it. The package registers that configured path only.
 
 **Required attributes:**
 
-| Attribute    | Description                                                            |
-| ------------ | ---------------------------------------------------------------------- |
-| `data-bot`   | The bot's public ID (found in the bot edit page in Filament)           |
-| `data-token` | A signed embed token (required when `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true`) |
+| Attribute  | Description                                                  |
+| ---------- | ------------------------------------------------------------ |
+| `data-bot` | The bot's public ID (found in the bot edit page in Filament) |
 
 Common optional attributes:
 
@@ -124,7 +147,7 @@ Common optional attributes:
 
 All optional `data-*` attributes override the bot's default settings.
 
-### Option 2: NPM Package (for SPAs)
+### Option 3: NPM Package (for SPAs)
 
 Install the helper package:
 
@@ -152,6 +175,7 @@ mountFilamentAgenticChatbotWidget({
     inputPlaceholder: "Type a message...",
     compactMode: false,
     fontPreset: "modern-sans",
+    sizePreset: "comfortable",
     showSources: true,
     lang: "en",
 });
@@ -177,20 +201,32 @@ The NPM loader creates and appends the `<script>` element with the right `data-*
 | `inputPlaceholder` | string                | Input field placeholder                    |
 | `compactMode`      | boolean               | Enable compact layout                      |
 | `fontPreset`       | string                | Typography preset name                     |
+| `sizePreset`       | string                | Size preset (`compact`, `comfortable`, `spacious`) |
 | `showSources`      | boolean               | Show source citations                      |
 | `lang`             | string                | UI language code                           |
+
+## Event Stream And Failure Behavior
+
+The widget consumes committed chat outcomes over server-sent events. Workflow execution and canonical persistence finish before the response is projected. The package emits `init`, `message_complete`, and `error` events, then closes with `data: [DONE]`; it does not manufacture token deltas from an already completed message.
+
+If workflow execution fails after a run has been prepared, the server logs the failure, marks the run failed, emits a safe error event, and closes the stream. JSON `/complete` integrations receive the same safe error code/message shape as a normal chat failure. Stack traces, provider secrets, and raw technical exception messages should stay out of widget responses.
+
+The stream encoder substitutes invalid UTF-8 before sending JSON events. If encoding still fails, the client receives a safe `stream_encoding_failed` error event instead of malformed SSE data.
 
 ## Widget Security
 
 ### Signed Tokens
 
-When `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` (recommended for production), every widget request must include a valid signed token. Tokens are HMAC-SHA256 signed and include:
+When `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` (recommended for production), the browser loader calls `POST /api/filament-agentic-chatbot/chat/{botPublicId}/bootstrap` without a static token. The endpoint validates the area and exact browser origin against Allowed Domains, then returns a short-lived HMAC-SHA256 token with `Cache-Control: no-store`. Tokens include:
 
+- a widget audience and token version
 - the bot's public ID
-- an expiration timestamp
-- an optional host restriction
+- issue and expiration timestamps
+- the exact browser origin
 
-Generate a token from your backend:
+The loader retains access only in memory, refreshes it before expiry with a single in-flight request, and automatically retries only safe reads. It never replays chat sends, session creation, deletion, feedback, or form writes. `WidgetEmbedToken::make()` remains available for explicit server-to-server integrations, but browser snippets must not contain its result.
+
+For a non-browser server integration that deliberately uses this lower-level boundary:
 
 ```php
 use Heiner\FilamentAgenticChatbot\Support\WidgetEmbedToken;
@@ -207,11 +243,19 @@ $token = WidgetEmbedToken::make(
 | ---------------------------- | ----------------------------- | ----------------------- |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED` | Require signed tokens         | `true`                  |
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`     | HMAC signing secret           | falls back to `APP_KEY` |
-| `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES` | Signed token lifetime. Production default: `60` minutes; local/non-production default: `43200` minutes. | env-specific |
-| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS` | Accept `?token=` on API requests | `true`                  |
-| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS`  | Accept `token` in JSON/form bodies | `true`                  |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES` | Signed token lifetime. Production default: `10` minutes; local/non-production default: `60` minutes. | env-specific |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_REFRESH_BEFORE_SECONDS` | Browser renewal lead time | `120` |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS` | Accept `?token=` on API requests | production: `false`; otherwise: `true` |
+| `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS`  | Accept `token` in JSON/form bodies | production: `false`; otherwise: `true` |
+| `AGENTIC_CHATBOT_WIDGET_CONVERSATION_CREDENTIAL_REQUIRED` | Require the server-issued credential outside production too | production is always enforced |
 
-Production embeds should send tokens with the `X-filament-agentic-chatbot-Token` header. Script snippets may include `data-token` for the loader to forward, but generated tokens still expire according to `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES`. Query-string and body tokens remain enabled by default for compatibility, but `php artisan filament-agentic-chatbot:doctor` warns in production so you can migrate toward header-only transport.
+The loader sends access through the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens default to disabled in production. The bootstrap endpoint has independent per-bot/origin/IP and global-IP rate limits through `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE_PER_IP`.
+
+### Conversation Credentials
+
+After obtaining widget access, the shipped loader calls `POST /api/filament-agentic-chatbot/chat/{botPublicId}/session`. The server returns a random session ID plus a separate high-entropy conversation credential over a `Cache-Control: no-store` response. The widget persists the pair locally and sends the credential only in the `X-Filament-Agentic-Chatbot-Conversation-Credential` header.
+
+Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The session ID remains a lookup key and may appear in history/turn URLs, but it is not sufficient to read, export, mutate, or delete an anonymous production conversation. A stale or invalid locally saved pair is discarded and safely bootstrapped again; write requests are not replayed by that recovery path. Authenticated area users, scoped Bot Access Tokens, and channel identities continue to use their stronger existing authority bindings.
 
 ### Domain Allowlists
 
@@ -253,23 +297,6 @@ If you embed the widget on pages served by the same Laravel monolith, CORS is us
 - `is_ready`
 
 Use it for custom widget empty states such as "sources are still indexing" without guessing from source records.
-
-## Streaming And Failure Behavior
-
-The widget consumes server-sent events for streaming chat responses. Workflow streams use structured events such as `init`, `text_delta`, `workflow_node`, `message_complete`, and `error`, then close with `data: [DONE]`.
-
-If workflow execution fails after a run has been prepared, the server logs the failure, marks the run failed, emits a safe error event, and closes the stream. JSON `/complete` integrations receive the same safe error code/message shape as a normal chat failure. Stack traces, provider secrets, and raw technical exception messages should stay out of widget responses.
-
-Streaming-related configuration:
-
-| Env Variable | Purpose |
-| --- | --- |
-| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_LLM_DEFAULT` | Default for whether supported LLM workflow nodes stream tokens. |
-| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_SIMULATE_DETERMINISTIC` | Simulate token-like deltas for deterministic workflow messages so UI behavior stays smooth. |
-| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_DETERMINISTIC_DELAY_MS` | Delay between deterministic chunks. |
-| `AGENTIC_CHATBOT_WORKFLOW_STREAMING_DETERMINISTIC_CHUNK_SIZE` | Chunk size for deterministic simulated streaming. |
-
-SSE payloads substitute invalid UTF-8 before encoding JSON, so malformed provider/tool output should not produce empty browser events.
 
 ## Content Security Policy
 

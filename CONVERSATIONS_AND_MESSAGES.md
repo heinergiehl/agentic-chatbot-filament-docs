@@ -66,6 +66,10 @@ Because conversations contain user input, you should define a retention policy a
 
 Filament Agentic Chatbot includes privacy-oriented endpoints for these workflows.
 
+The API and Filament review page share the same versioned export and lifecycle-safe deletion authority. Deletion removes the live transcript and session/run memory, but deliberately fails closed while durable work is still active, waiting, unknown, or unreconciled. Structured business records and operational, accounting, quality, or audit evidence may remain under the host retention policy; the deletion result discloses their categories and counts without exposing retained payloads.
+
+Do not describe the session endpoint as a complete GDPR/DSAR erasure workflow. A host-level data-subject process must separately evaluate long-term actor memory, retained records, logs, and backups.
+
 ## Related Docs
 
 - [Core Concepts](CORE_CONCEPTS.md)

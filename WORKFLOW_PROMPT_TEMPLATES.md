@@ -18,7 +18,7 @@ Create a simple Q&A workflow:
 4. Use an AI agent with this system prompt: "You are a helpful product expert. Answer the user's question using ONLY the context provided. If the context does not contain the answer, say you don't know. Be concise and friendly." The user prompt should be: "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}" — store the response as "answer"
 5. Send the AI's answer to the user: "{{answer}}"
 
-The AI agent that generates the answer should stream to chat. No classification needed — this is a simple linear flow.
+Use a user-facing Answer step for the final response. No classification is needed in this simple linear flow.
 ```
 
 ---
@@ -33,7 +33,7 @@ Create a customer support workflow with intent classification and routing:
 1. Send a welcome message: "Welcome to Acme Support! How can I help you today?"
 2. Collect the user's question (variableName: "user_question", inputType: "text")
 3. Search the knowledge base with the user's question (outputVariable: "kb_context", topK: 6)
-4. Use a classification AI agent (streamToChat: false, temperature: 0, maxTokens: 10):
+4. Use an internal classification AI task (temperature: 0, maxTokens: 10):
    - System prompt: "Classify the customer's question into exactly ONE category. Respond with a single word only: billing, technical, account, or general. No explanation."
    - User prompt: "{{user_question}}"
    - outputVariable: "intent"
@@ -42,7 +42,7 @@ Create a customer support workflow with intent classification and routing:
    - case "technical" (label "Technical")
    - case "account" (label "Account")
    - default label "General"
-6. Each branch has its own AI agent (all use outputVariable: "answer", streamToChat: true, temperature: 0.7):
+6. Each branch has its own AI task (all use outputVariable: "answer", temperature: 0.7), followed by the user-facing Send Message step in step 7:
    - Billing agent system prompt: "You are a billing specialist. Help the customer with invoices, payments, subscriptions, and pricing. Use the provided context. Be professional and clear."
    - Technical agent system prompt: "You are a technical support engineer. Help troubleshoot issues, explain configurations, and guide through solutions. Use the provided context. Be patient and thorough."
    - Account agent system prompt: "You are an account manager. Help with account settings, profile changes, access issues, and permissions. Use the provided context."
@@ -67,8 +67,8 @@ Build a lead qualification chatbot workflow:
 5. Collect their company size (variableName: "company_size", prompt: "How many employees does your company have?", inputType: "choice", choices: "1-10,11-50,51-200,200+")
 6. Collect their main interest (variableName: "interest", prompt: "What are you most interested in?", inputType: "choice", choices: "Product demo,Pricing information,Technical integration,Partnership")
 7. Use a condition to check if company_size equals "200+":
-   - YES path: Use an AI agent (streamToChat: true, outputVariable: "response") with system prompt: "You are an enterprise sales assistant. The lead is from a large company (200+ employees). Provide a premium, personalized response. Mention dedicated account management and custom pricing. Be enthusiastic but professional." User prompt: "Lead info — Name: {{user_name}}, Email: {{user_email}}, Company size: {{company_size}}, Interest: {{interest}}"
-   - NO path: Use an AI agent (streamToChat: true, outputVariable: "response") with system prompt: "You are a friendly sales assistant. Provide a helpful response based on the lead's interest. Mention our self-service options and suggest a free trial. Be warm and encouraging." User prompt: "Lead info — Name: {{user_name}}, Email: {{user_email}}, Company size: {{company_size}}, Interest: {{interest}}"
+   - YES path: Use an AI task (outputVariable: "response") with system prompt: "You are an enterprise sales assistant. The lead is from a large company (200+ employees). Provide a premium, personalized response. Mention dedicated account management and custom pricing. Be enthusiastic but professional." User prompt: "Lead info — Name: {{user_name}}, Email: {{user_email}}, Company size: {{company_size}}, Interest: {{interest}}"
+   - NO path: Use an AI task (outputVariable: "response") with system prompt: "You are a friendly sales assistant. Provide a helpful response based on the lead's interest. Mention our self-service options and suggest a free trial. Be warm and encouraging." User prompt: "Lead info — Name: {{user_name}}, Email: {{user_email}}, Company size: {{company_size}}, Interest: {{interest}}"
 8. Both paths converge to a sendMessage: "{{response}}\n\nThank you, {{user_name}}! We'll follow up at {{user_email}} shortly."
 ```
 
@@ -86,8 +86,8 @@ Create an IT helpdesk triage workflow:
 3. Collect urgency level (variableName: "urgency", prompt: "How urgent is this?", inputType: "choice", choices: "Low - can wait,Medium - affects my work,High - completely blocked,Critical - affects multiple people")
 4. Search the knowledge base with the issue description (outputVariable: "kb_context", topK: 8, minSimilarity: 0.6)
 5. Use a condition: check if {{kb_context}} is_empty:
-   - YES path (no KB results): Send "I couldn't find a known solution. Let me escalate this to our team." Then use an AI agent (streamToChat: true, outputVariable: "ticket_summary") with system prompt: "You are an IT helpdesk assistant. Summarize this issue into a structured ticket format with: Issue Summary, Urgency, Recommended Team (Network, Software, Hardware, Access Management), and Suggested Priority (P1-P4). Be concise." User prompt: "Issue: {{issue_description}}\nUrgency: {{urgency}}" — then send: "I've prepared a ticket summary:\n\n{{ticket_summary}}\n\nA team member will contact you within the next business day."
-   - NO path (KB results found): Use an AI agent (streamToChat: true, outputVariable: "solution") with system prompt: "You are an IT support specialist. Using the knowledge base context, provide a step-by-step solution for the user's issue. If the context only partially matches, say so and provide what you can. Number your steps." User prompt: "Knowledge base context:\n{{kb_context}}\n\nUser's issue: {{issue_description}}" — then send: "Here's what I found:\n\n{{solution}}\n\nDid this resolve your issue? If not, I can escalate to our team."
+   - YES path (no KB results): Send "I couldn't find a known solution. Let me escalate this to our team." Then use an AI task (outputVariable: "ticket_summary") with system prompt: "You are an IT helpdesk assistant. Summarize this issue into a structured ticket format with: Issue Summary, Urgency, Recommended Team (Network, Software, Hardware, Access Management), and Suggested Priority (P1-P4). Be concise." User prompt: "Issue: {{issue_description}}\nUrgency: {{urgency}}" — then send: "I've prepared a ticket summary:\n\n{{ticket_summary}}\n\nA team member will contact you within the next business day."
+   - NO path (KB results found): Use an AI task (outputVariable: "solution") with system prompt: "You are an IT support specialist. Using the knowledge base context, provide a step-by-step solution for the user's issue. If the context only partially matches, say so and provide what you can. Number your steps." User prompt: "Knowledge base context:\n{{kb_context}}\n\nUser's issue: {{issue_description}}" — then send: "Here's what I found:\n\n{{solution}}\n\nDid this resolve your issue? If not, I can escalate to our team."
 ```
 
 ---
@@ -105,7 +105,7 @@ Create a product recommendation workflow:
 4. Collect experience level (variableName: "experience", prompt: "What's your experience level?", inputType: "choice", choices: "Beginner,Intermediate,Advanced,Expert")
 5. Use a setVariable node to build the search query: variableName "search_query", expression "{{use_case}} budget {{budget}} for {{experience}} users"
 6. Search the knowledge base with {{search_query}} (outputVariable: "product_context", topK: 10)
-7. Use an AI agent (streamToChat: true, outputVariable: "recommendation", temperature: 0.7, maxTokens: 2048) with system prompt: "You are a knowledgeable product advisor. Based on the customer's needs and our product catalog, recommend 1-3 products. For each recommendation include: product name, why it fits their needs, price range, and a brief pros/cons list. Tailor complexity to their experience level. If our catalog doesn't have a perfect match, recommend the closest options and explain trade-offs." User prompt: "Customer needs:\n- Use case: {{use_case}}\n- Budget: {{budget}}\n- Experience: {{experience}}\n\nAvailable products from our catalog:\n{{product_context}}"
+7. Use an AI task (outputVariable: "recommendation", temperature: 0.7, maxTokens: 2048) with system prompt: "You are a knowledgeable product advisor. Based on the customer's needs and our product catalog, recommend 1-3 products. For each recommendation include: product name, why it fits their needs, price range, and a brief pros/cons list. Tailor complexity to their experience level. If our catalog doesn't have a perfect match, recommend the closest options and explain trade-offs." User prompt: "Customer needs:\n- Use case: {{use_case}}\n- Budget: {{budget}}\n- Experience: {{experience}}\n\nAvailable products from our catalog:\n{{product_context}}"
 8. Send: "{{recommendation}}\n\nWould you like more details about any of these options?"
 ```
 
@@ -123,7 +123,7 @@ Build an onboarding wizard workflow:
 3. Collect their primary goal (variableName: "primary_goal", prompt: "What's the first thing you want to accomplish?", inputType: "text")
 4. Collect their team size (variableName: "team_size", prompt: "How many people on your team?", inputType: "choice", choices: "Just me,2-5,6-20,20+")
 5. Search the knowledge base with "getting started {{user_role}} {{primary_goal}}" (outputVariable: "onboarding_context", topK: 6)
-6. Use an AI agent (streamToChat: true, outputVariable: "onboarding_tips", temperature: 0.7, maxTokens: 1500) with system prompt: "You are a friendly onboarding assistant. Create a personalized quick-start guide based on the user's role, goals, and team size. Include: 3 recommended first steps, 2 features they should explore based on their role, and one pro tip. Use the knowledge base context for accurate feature references. Keep it concise and encouraging. Use emoji sparingly for warmth." User prompt: "New user profile:\n- Role: {{user_role}}\n- Goal: {{primary_goal}}\n- Team size: {{team_size}}\n\nKnowledge base:\n{{onboarding_context}}"
+6. Use an AI task (outputVariable: "onboarding_tips", temperature: 0.7, maxTokens: 1500) with system prompt: "You are a friendly onboarding assistant. Create a personalized quick-start guide based on the user's role, goals, and team size. Include: 3 recommended first steps, 2 features they should explore based on their role, and one pro tip. Use the knowledge base context for accurate feature references. Keep it concise and encouraging. Use emoji sparingly for warmth." User prompt: "New user profile:\n- Role: {{user_role}}\n- Goal: {{primary_goal}}\n- Team size: {{team_size}}\n\nKnowledge base:\n{{onboarding_context}}"
 7. Send: "Here's your personalized getting-started guide:\n\n{{onboarding_tips}}\n\nFeel free to ask me anything as you explore! I'm here to help."
 ```
 
@@ -141,9 +141,9 @@ Create a FAQ bot with smart escalation:
 3. Search the knowledge base with {{user_question}} (outputVariable: "kb_context", topK: 6, minSimilarity: 0.65)
 4. Use a condition: check if {{kb_context_count}} is greater_than "0":
    - YES path (context found):
-     a. Use an AI agent (streamToChat: false, outputVariable: "confidence_check", temperature: 0, maxTokens: 20) with system prompt: "Evaluate whether the provided context contains enough information to answer the question accurately. Respond with ONLY one word: 'confident' or 'uncertain'. Nothing else." User prompt: "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}"
+     a. Use an internal AI task (outputVariable: "confidence_check", temperature: 0, maxTokens: 20) with system prompt: "Evaluate whether the provided context contains enough information to answer the question accurately. Respond with ONLY one word: 'confident' or 'uncertain'. Nothing else." User prompt: "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}"
      b. Use a condition: check if {{confidence_check}} contains "confident":
-        - YES: Use an AI agent (streamToChat: true, outputVariable: "answer", temperature: 0.5) with system prompt: "Answer the question using the provided context. Be accurate, concise, and helpful. Cite specific details from the context." User prompt: "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}" — then send: "{{answer}}"
+        - YES: Use an AI task (outputVariable: "answer", temperature: 0.5) with system prompt: "Answer the question using the provided context. Be accurate, concise, and helpful. Cite specific details from the context." User prompt: "Context:\n{{kb_context}}\n\nQuestion: {{user_question}}" — then send: "{{answer}}"
         - NO: Send: "I found some related information but I'm not fully confident in the answer. Here's what I found:\n\n{{kb_context}}\n\nWould you like me to connect you with a team member for a more detailed answer?"
    - NO path (no context): Send: "I don't have information about that in my knowledge base yet. Would you like me to connect you with a team member who can help?"
 ```
@@ -184,9 +184,9 @@ Important: do NOT build a simple rating or sentiment collector. Lightweight help
    - Use a setVariable node to assign "submission_type" = "feature_request"
 9. Docs/setup branch:
    - Search the knowledge base with "{{feedback_title}} {{feedback_detail}}" (outputVariable: "kb_docs_context")
-   - Use a hidden AI agent (streamToChat: false, temperature: 0, maxTokens: 10) to classify the docs coverage as exactly one word: covered or gap (outputVariable: "docs_coverage")
+   - Use an internal AI task (temperature: 0, maxTokens: 10) to classify the docs coverage as exactly one word: covered or gap (outputVariable: "docs_coverage")
    - Use a condition checking whether {{docs_coverage}} contains "covered"
-   - YES path: use a user-facing AI agent (streamToChat: true) to answer with the docs context, then collect whether it solved the issue (variableName: "docs_resolution_status", choices: "Solved,Partly solved,Still blocked") and build shared "case_details"
+   - YES path: use a user-facing Answer step with the docs context, then collect whether it solved the issue (variableName: "docs_resolution_status", choices: "Solved,Partly solved,Still blocked") and build shared "case_details"
    - NO path: send a message that no confident docs answer was found and build shared "case_details" explaining that it is still blocked
    - Merge the docs paths with a join node
    - Use a setVariable node to assign "submission_type" = "docs_setup_issue"
@@ -199,7 +199,7 @@ Important: do NOT build a simple rating or sentiment collector. Lightweight help
    - YES path: collect follow-up email (variableName: "contact_email", inputType: "email") and set a shared variable "followup_message" like "If we need more context, we can reach you at {{contact_email}}."
    - NO path: use a setVariable node to assign "contact_email" = "not_provided" and another setVariable node for "followup_message" = "No follow-up contact was requested."
 14. Merge the follow-up paths with a join node.
-15. Use a hidden AI agent (streamToChat: false, temperature: 0, maxTokens: 120) to generate an internal triage note in exactly three lines and store it as "operator_triage":
+15. Use an internal AI task (temperature: 0, maxTokens: 120) to generate a triage note in exactly three lines and store it as "operator_triage":
    - Line 1: "Priority: low | medium | high | critical"
    - Line 2: "Area: workflow editor | runtime | widget | docs/setup | AI quality | integration | other"
    - Line 3: "Summary: <concise actionable summary>"
@@ -212,8 +212,8 @@ Important: do NOT build a simple rating or sentiment collector. Lightweight help
 Implementation notes:
 - Use join nodes for both docs-path convergence and final branch convergence.
 - Keep provider and model empty so the bot defaults are used.
-- Hidden classification / triage AI nodes must use streamToChat: false.
-- The docs answer node should use streamToChat: true because it is user-facing.
+- Classification and triage belong in internal AI tasks.
+- Visitor replies belong in typed Answer or Send Message steps; delivery flags are compiler-owned.
 ```
 
 ---
@@ -221,7 +221,7 @@ Implementation notes:
 ## Tips for Writing Your Own Prompts
 
 1. **Be explicit about variable names** — say `variableName: "user_email"` not just "collect their email"
-2. **Specify `streamToChat: false`** for classification/intermediate AI agents
+2. **Use typed step intent** — internal AI tasks compute values; Answer and Send Message steps communicate with visitors
 3. **Use the same `outputVariable`** across parallel branches when they converge to one sendMessage
 4. **Always include a default branch** for switchRouter workflows
 5. **Reference variables with `{{double_braces}}`** in message content and system prompts

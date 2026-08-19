@@ -19,6 +19,7 @@ Channel support is package-owned:
 - `ProcessChannelInboundMessage` claims inbound events before running the bot/workflow, records the answer, and sends it back through the driver.
 - `SendChannelOutboundMessage` retries provider rate-limited outbound sends without running the bot/workflow a second time.
 - `BotAccessToken` remains the authoritative product-level governance layer for abilities, areas, budgets, and per-token rate limits.
+- Channel setup only lists active, unexpired Bot Access Tokens that allow the selected default area and the `chat` ability. Create one token per channel connection for clean reporting and runtime isolation.
 - Channel webhooks use a separate ingress rate limiter to protect the queue before the bot runtime is reached.
 - Outbound drivers split long replies into provider-safe message chunks instead of silently truncating workflow output.
 
@@ -77,11 +78,11 @@ Image delivery supports two generic forms. Public `http` or `https` `imageUrl` v
 
 ## Admin Setup
 
-1. Open **Agentic Chatbot > Bot Access Tokens**.
+1. Open **Agentic Chatbot > Connect > Bot Access Tokens**.
 2. Create one token per external channel, for example `Telegram Support`.
 3. Set its channel to `Telegram` or `Slack`.
 4. Scope areas, abilities, budgets, and rate limits for that channel.
-5. Open **Agentic Chatbot > Channels**.
+5. Open **Agentic Chatbot > Connect > Channels**.
 6. Create a channel connection for the bot and select the matching Bot Access Token.
 7. Save, copy the generated webhook URL, and configure it in the provider dashboard.
 
@@ -163,6 +164,7 @@ Telegram replies send a `sendChatAction` activity indicator before workflow exec
 
 | Command | Behavior |
 | ------- | -------- |
+| `/start` | Shows the short channel start prompt without running the bot or workflow |
 | `/help` | Shows the channel command list |
 | `/status` | Runs local channel diagnostics and returns the summary |
 | `/reset` | Starts a fresh channel session for the thread without deleting historical conversations |

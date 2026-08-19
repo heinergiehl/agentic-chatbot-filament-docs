@@ -1,268 +1,86 @@
-# Filament Agentic Chatbot — Documentation
+# Agentic Chatbot for Filament
 
-Public documentation for the [heiner/filament-agentic-chatbot](https://github.com/heinergiehl/filament-agentic-chatbot) plugin.
+A Laravel/Filament plugin for building, validating, publishing, and operating source-grounded AI chatbots with explicit agentic workflows in your own application.
 
-This repository is organized so buyers, evaluators, implementers, and support users can jump directly to the page they need instead of digging through one long README.
+The documentation target is `v0.17.0`. That source remains a release candidate until its contract is approved and the protected exact-artifact workflow passes. Do not treat documentation availability as proof that a package version has been published.
 
-> For Filament marketplace `docs_url`, use [FILAMENT_PLUGIN_PAGE.md](FILAMENT_PLUGIN_PAGE.md), not this README. Filament renders a single raw Markdown file and does not resolve repository-relative links like GitHub does.
+## Why this product
 
----
+- Native Filament management for bots, sources, Data Resources, workflows, connectors, quality checks, conversations, handoffs, usage, privacy, and traces
+- One understandable production path: one immutable verified workflow deployment is live for each bot
+- AgentGraph-owned workflow state and one guarded external-capability boundary
+- Tokenless public widget bootstrap and conversation credentials instead of permanent browser secrets
+- Exact release artifact, SHA-256, per-entry manifest, embedded CycloneDX SBOM, clean Laravel 12/13 installs, and PostgreSQL/pgvector upgrade/rollback evidence
 
-## 🚀 Live Demo
+## Supported target
 
-Try the plugin before you buy:
+- PHP 8.3+
+- Laravel 12.61.1+ or 13.12.0+
+- Filament 5.2+
+- `heiner/agent-graph` `^0.15.1`
+- PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
+- Supervised asynchronous queue worker for production ingestion, delays, and background work
 
-**[filament-agentic-chatbot.heinerdevelops.tech](https://filament-agentic-chatbot.heinerdevelops.tech/)**
+Docker is used for reproducible release validation, not imposed as a customer deployment model. See [Compatibility and Certification](COMPATIBILITY.md) for the supported-versus-certified distinction and provider boundaries.
 
-Log in with the demo credentials on the login page. The demo includes pre-configured bots, ingested documentation sources, sample workflows, and a live chat widget.
+## Install after publication
 
----
+```bash
+composer require heiner/filament-agentic-chatbot:^0.17
+php artisan vendor:publish --tag=filament-agentic-chatbot-config
+php artisan migrate
+php artisan filament-agentic-chatbot:doctor
+php artisan queue:work
+```
 
-## 📦 Workflow Examples
+Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel. Custom Filament themes must include the package views in their source scan as shown in the [Quickstart](QUICKSTART.md).
 
-15 ready-to-import workflow JSON files demonstrate real-world scenarios including onboarding, support routing, order tracking, lead qualification, feedback capture, image delivery, scoped memory, and adversarial reliability testing:
+## Public widget
 
-**[Browse the examples](examples/README.md)**
+Production snippets contain no long-lived token:
 
----
+```html
+<script
+    src="https://your-app.example/filament-agentic-chatbot/widget"
+    data-bot="YOUR_BOT_PUBLIC_ID"
+    data-area="public"
+    data-size="comfortable"
+    data-font="system"
+    data-show-sources="true"
+    defer
+></script>
+```
 
-## Versioned Documentation
+Set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10`, use a dedicated signing key, and configure every intended browser origin in Allowed Domains. The loader calls the tokenless, origin-checked `/bootstrap` endpoint, keeps the returned token in memory, and renews it before expiry. Session IDs are lookup keys, not anonymous conversation authority.
 
-`main` tracks the latest documentation work. Frozen documentation snapshots are tagged to match plugin releases:
+## Documentation
 
-- Current docs snapshot: [v0.16.1 release](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.1)
-- Current docs tag: [`v0.16.1`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.16.1)
-- Historical snapshots: [`v0.12.0`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.12.0), [`v0.9.8`](https://github.com/heinergiehl/agentic-chatbot-filament-docs/tree/v0.9.8)
-
-When the plugin ships a new version, the docs repo should receive the same tag, for example plugin `v0.14.0` -> docs `v0.14.0`.
-
----
-
-## Start Here
-
-If you are evaluating the plugin, read these in order:
-
-1. [Product Overview](PRODUCT_OVERVIEW.md)
-2. [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-3. [Core Concepts](CORE_CONCEPTS.md)
-4. [Quickstart](QUICKSTART.md)
-
-## What This Plugin Is
-
-Filament Agentic Chatbot is the newer, broader plugin in the product line.
-
-It keeps the source-grounded answer capabilities of the earlier Filament RAG plugin and adds:
-
-- visual workflows
-- assistant graph orchestration with optional knowledge search and workflows exposed as tools
-- branching logic
-- AI agent nodes
-- action and HTTP nodes
-- API connectors for external services
-- Smart Data Queries for safe natural-language lookups against allowed internal resources
-- guided Data Resources for UI-managed live Eloquent reads with field policies, result caps, safety scopes, and per-bot narrowing
-- API-fed knowledge sources for JSON records
-- assistant profile controls for tone, boundaries, and fallback behavior
-- quality scenarios, workflow-linked quality runs, and feedback-to-scenario review loops
-- human handoff queues for low-confidence or operator-required conversations
-- package-owned Telegram and Slack channel integrations
-- guided intake, routing, and escalation flows
-
-That means it can work as:
-
-- a straightforward documentation chatbot
-- a product onboarding assistant
-- a lead qualification assistant
-- a support triage assistant
-- an internal ops assistant with workflow logic
-
-## Product Tour
-
-These are real screenshots from the current product surface. The main plugin page intentionally uses a smaller set of higher-signal screenshots; this README keeps a few extra supporting views for implementers.
-
-### Control plane
-
-Manage bots from a Filament-native admin area with clear navigation for build, connect, observe, improve, and buyer-signal workflows.
-
-![Bot list](./images/agentic-chatbot/01-bot-list.png)
-
-### Widget live preview
-
-Tune widget template, font, accent color, size, copy, starter prompts, and source visibility while the floating preview updates beside the form.
-
-![Widget live preview](./images/agentic-chatbot/02-bot-edit.png)
-
-### Knowledge source setup
-
-Create URL, file, text, or API-backed sources from a guided form. Detailed ingestion tables live in the product, but the docs avoid leading with status-heavy table screenshots.
-
-![New knowledge source form](./images/agentic-chatbot/03b-new-source-form.png)
-
-### Data Resource readiness
-
-`v0.15.0` adds a Filament-managed Data Resources workflow for safe live database answers. Admins approve the model, allowed fields, answer-ready defaults, filtering, sorting, limits, and safety scope before a bot or workflow can query live records.
-
-![Data Resource readiness](./images/agentic-chatbot/19-data-resources-readiness.png)
-
-### Compound Requests and turn ownership
-
-`v0.16.1` includes the v0.16 Compound Request engine modes, structured capability execution, workflow turn-understanding hardening, AgentGraph confirmation/execution metadata, stronger pending-turn ownership, and a patch for default workflow replies after internal action/tool steps.
-
-### Workflow runtime resilience
-
-Workflow chat turns now fail closed instead of leaving users in silent waiting states. Workflow streams emit safe structured error events and close with `[DONE]`; JSON `/complete` requests return safe error payloads and roll back prepared runs when execution fails. Pending AgentGraph waitpoints are treated as projections and stale `resolving` claims are recovered after the configured timeout.
-
-### Conversation review
-
-Review transcripts, citations, feedback, session metadata, handoff actions, flags, and export controls in one Filament screen.
-
-![Conversation transcript](./images/agentic-chatbot/04-conversation-transcript.png)
-
-### Public widget
-
-The public widget can reuse the same bot configuration across landing pages, documentation sites, product surfaces, and authenticated Laravel areas.
-
-Embed snippets support signed tokens and runtime presentation overrides. Production installs should set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=60` and refresh generated tokens before they expire. Common script attributes include:
-
-| Attribute | Values |
-| --------- | ------ |
-| `data-token` | Signed widget token when signing is enabled |
-| `data-size` | `compact` \| `comfortable` \| `spacious` |
-| `data-font` | `modern-sans` \| `humanist-sans` \| `friendly-rounded` \| `editorial-serif` \| `technical-mono` |
-| `data-show-sources` | `true` \| `false` |
-
-![Widget desktop conversation snapshot](./images/agentic-chatbot/05-widget-desktop.png)
-
-![Widget mobile conversation snapshot](./images/agentic-chatbot/06-widget-mobile.png)
-
-### Workflow library
-
-Start from the workflow list to see active workflows, assigned bots, and available drafts before opening the editor.
-
-![Workflow list](./images/agentic-chatbot/07-workflow-list.png)
-
-### Visual workflow editor
-
-The workflow editor keeps the node catalog, graph, selected-node inspector, toolbar, minimap, and publish readiness visible together. The screenshot uses a compact 15-node fit-advisor workflow so the graph is readable.
-
-![Workflow editor with node library and settings panel](./images/agentic-chatbot/08-workflow-editor-canvas.png)
-
-### Focus and dark mode
-
-Focus mode removes surrounding chrome and side panels when the canvas needs attention. Dark mode keeps the same graph readable for longer authoring and debugging sessions.
-
-![Workflow editor focus mode](./images/agentic-chatbot/09-workflow-editor-focus-mode.png)
-
-![Workflow editor dark mode](./images/agentic-chatbot/18-workflow-editor-dark-mode.png)
-
-### Workflow quality loop
-
-Saved tests sit beside the draft, show current pass state, and can participate in release gates.
-
-![Workflow quality panel](./images/agentic-chatbot/10-workflow-quality-panel.png)
-
-Create repeatable quality tests for direct bot answers or workflow drafts.
-
-![Create quality test](./images/agentic-chatbot/13-quality-lab.png)
-
-### AI drafting and connectors
-
-Use the Generate tab for a first workflow draft from a plain-language brief, then wire reusable API connector profiles into workflow nodes or API-backed sources.
-
-![Workflow generate tab](./images/agentic-chatbot/11-workflow-generate-tab.png)
-
-![API connectors list](./images/agentic-chatbot/16-api-connectors-list.png)
-
-## Documentation Map
-
-### Evaluate The Plugin
-
-- [Product Overview](PRODUCT_OVERVIEW.md)
-- [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- [Core Concepts](CORE_CONCEPTS.md)
-- [Reference Links](REFERENCE_LINKS.md)
-
-### Install And Launch
-
-- [Quickstart](QUICKSTART.md)
-- [Operations](OPERATIONS.md)
-- [Upgrading](UPGRADING.md)
-- [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
-- [Security And Privacy](SECURITY_AND_PRIVACY.md)
-
-### Learn The Product Model
-
-- [Bots](BOTS.md)
-- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
-- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
-- [Ingestion And Retrieval](INGESTION_AND_RETRIEVAL.md)
-- [Agentic Workflows](AGENTIC_WORKFLOWS.md)
-- [Quality Loop](QUALITY_LOOP.md)
-- [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md)
-- [Workflow Semantic Authoring](workflow-editor-semantic-authoring.md)
-- [Workflow Turn Understanding](workflow-turn-understanding.md)
-- [Workflow Turn Evals](workflow-turn-evals.md)
-- [Compound Requests](compound-requests.md)
-- [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md)
-- [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
+- [Marketplace/product page](FILAMENT_PLUGIN_PAGE.md)
+- [Quickstart and Golden Path](QUICKSTART.md)
+- [Core concepts](CORE_CONCEPTS.md)
+- [Bots and readiness](BOTS.md)
+- [Agentic workflows](AGENTIC_WORKFLOWS.md)
+- [Workflow semantic authoring](workflow-editor-semantic-authoring.md)
 - [Data Resources](DATA_RESOURCES.md)
+- [Knowledge and retrieval](INGESTION_AND_RETRIEVAL.md)
 - [API Connectors](API_CONNECTORS.md)
-- [API Integrations](API_INTEGRATIONS.md)
-- [Channel Integrations](CHANNELS.md)
-- [API Source Roadmap](API_SOURCE_ROADMAP.md)
-- [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
-- [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md)
-- [Incident Management Example](examples/incident-management/README.md)
-- [Localization](LOCALIZATION.md)
-- [Release Notes v0.16.1](RELEASE_NOTES_v0.16.1.md)
-- [Release Notes v0.16.0](RELEASE_NOTES_v0.16.0.md)
-- [Release Notes v0.15.0](RELEASE_NOTES_v0.15.0.md)
-- [Release Notes v0.13.0](RELEASE_NOTES_v0.13.0.md)
-- [Docs Snapshot v0.16.1](https://github.com/heinergiehl/agentic-chatbot-filament-docs/releases/tag/v0.16.1)
-- [Changelog](CHANGELOG.md)
-- [AgentGraph SDK Refactor Notes](RELEASE_NOTES_AGENTGRAPH_SDK_REFACTOR.md)
-- [Workflow Prompt Templates](WORKFLOW_PROMPT_TEMPLATES.md)
-- [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
-- [Chat Widget](CHAT_WIDGET.md)
-- [Context Areas](CONTEXT_AREAS.md)
-- [Conversations And Messages](CONVERSATIONS_AND_MESSAGES.md)
+- [Widget](CHAT_WIDGET.md)
+- [Channels](CHANNELS.md)
+- [Security and privacy](SECURITY_AND_PRIVACY.md)
+- [Operations](OPERATIONS.md)
+- [Compatibility and certification](COMPATIBILITY.md)
+- [Known limitations](KNOWN_LIMITATIONS.md)
+- [Upgrade guide](UPGRADING.md)
+- [Release notes v0.17.0](RELEASE_NOTES_v0.17.0.md)
+- [Support](SUPPORT_POLICY.md)
+- [Refund and license terms](REFUND_AND_LICENSE.md)
 
-### Policies And Support
+## Important 0.17 boundary
 
-- [Support Policy](SUPPORT_POLICY.md)
-- [Refund And License](REFUND_AND_LICENSE.md)
-- [Security And Privacy](SECURITY_AND_PRIVACY.md)
-- [Data Retention Policy](DATA_RETENTION_POLICY.md)
-- [Privacy Policy Template](PRIVACY_POLICY_TEMPLATE.md)
-- [Known Limitations](KNOWN_LIMITATIONS.md)
+Version 0.17 removes the Compound Request runtime/modes, the legacy `loop` node, connector v1/v2 execution compatibility, old environment aliases, and static widget tokens. It adds the bounded `batchMap` primitive, connector v3 publication pins, and the tokenless widget bootstrap. This is a breaking minor release: back up, read the upgrade guide, use a maintenance window, migrate, republish retired workflows, run Doctor, and verify a real live conversation before reopening production traffic.
 
-## Common Questions
+## Support and license
 
-- What does the plugin add? → [Product Overview](PRODUCT_OVERVIEW.md)
-- How is it different from the older RAG plugin? → [How It Differs From Filament RAG](HOW_IT_DIFFERS_FROM_FILAMENT_RAG.md)
-- Can I use it as a simple source-grounded chatbot first? → [Quickstart](QUICKSTART.md)
-- How do workflows fit in? → [Agentic Workflows](AGENTIC_WORKFLOWS.md)
-- How do I improve assistant quality after feedback? → [Quality Loop](QUALITY_LOOP.md)
-- What changed in the database after the AgentGraph SDK refactor? → [Database And Breaking Changes](DATABASE_AND_BREAKING_CHANGES.md)
-- How do I set up API connectors for external services? → [API Connectors](API_CONNECTORS.md)
-- How do I connect Telegram or Slack? → [Channel Integrations](CHANNELS.md)
-- How do I call a bot from a custom backend? → [API Integrations](API_INTEGRATIONS.md)
-- How do I use Qwen, DeepSeek, or another OpenAI-compatible gateway? → [OpenAI-Compatible Providers](OPENAI_COMPATIBLE_PROVIDERS.md)
-- How would this work for incident management data? → [Incident Management Blueprint](INCIDENT_MANAGEMENT_BLUEPRINT.md) and [Incident Management Example](examples/incident-management/README.md)
-- Can the bot use API-fed knowledge or database-backed resources? → [Knowledge Sources](KNOWLEDGE_SOURCES.md), [API Source Roadmap](API_SOURCE_ROADMAP.md), and [Agentic Workflows](AGENTIC_WORKFLOWS.md)
-- How do workflow focus mode, releases, traces, quality checks, and connectors look in practice? → [Agentic Workflows](AGENTIC_WORKFLOWS.md) and [Quality Loop](QUALITY_LOOP.md)
-- How do I generate workflow JSON? → [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md)
-- How do I embed the widget? → [Chat Widget](CHAT_WIDGET.md)
-- How do I translate the package UI? → [Localization](LOCALIZATION.md)
+Support: `webdevislife2021@gmail.com`. Response targets, supported release lines, and `0.16` EOL are defined in [Support Policy](SUPPORT_POLICY.md).
 
-## Versioning
-
-Docs should track plugin releases. If the plugin release is `vX.Y.Z`, the matching docs snapshot should be tagged the same way.
-
-The current public docs snapshot is `v0.16.1`. The current runtime compatibility baseline is PHP 8.3+, Laravel 12 or 13, Filament 5.2+, `laravel/ai` `^0.7 || ^1.0`, and `heiner/agent-graph` `^0.15.1` as the transitive workflow runtime. The `v0.12.0` tag was an early preview; new installs should target `^0.16.1`.
-
-## Related Repositories
-
-- Plugin code: [heinergiehl/filament-agentic-chatbot](https://github.com/heinergiehl/filament-agentic-chatbot)
-- Public docs: [heinergiehl/agentic-chatbot-filament-docs](https://github.com/heinergiehl/agentic-chatbot-filament-docs)
-- Older RAG-only docs: [heinergiehl/rag-filament-docs](https://github.com/heinergiehl/rag-filament-docs)
+The plugin is commercial proprietary software. The purchase record defines project/entity scope. Unless a broader tier is stated, the default is one legal entity and one Licensed Application, including its non-production environments. SaaS use of that application is allowed; plugin redistribution and resale of a general-purpose hosted builder are not.

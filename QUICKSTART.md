@@ -31,9 +31,11 @@ It helps you ship AI assistants inside your product faster. It does not replace 
 
 - PHP 8.3+ (PHP 8.4 is also supported)
 - Composer 2.2+ (current 2.x recommended)
-- Laravel 12 or 13
-- PostgreSQL with `pgvector` (default/recommended), or ChromaDB as an optional backend
+- Laravel 12.61.1+ or 13.12.0+
+- PostgreSQL with `pgvector` (default/recommended) plus PHP `ext-pdo_pgsql`, or ChromaDB as an optional backend
 - A supported chat provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, or `AZURE_OPENAI_API_KEY`
+
+The package supports Laravel 12 and 13, but Composer blocks framework versions below `12.61.1` and Laravel 13 versions below `13.12.0`. Upgrade the host app first if Composer reports a conflict against those patch levels.
 
 ## 3. Choose Your Start Path
 
@@ -109,7 +111,8 @@ AGENTIC_CHATBOT_CONTEXT_DEFAULT_AREA=public
 AGENTIC_CHATBOT_CONTEXT_ALLOWED_AREAS=public,member,admin
 AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true
 AGENTIC_CHATBOT_WIDGET_SIGNING_KEY=replace-with-a-long-random-secret
-AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=60
+AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10
+AGENTIC_CHATBOT_WIDGET_SIGNING_REFRESH_BEFORE_SECONDS=120
 GEMINI_API_KEY=
 ```
 
@@ -137,6 +140,12 @@ AGENTIC_CHATBOT_DB_PORT=5432
 AGENTIC_CHATBOT_DB_DATABASE=filament_agentic_chatbot
 AGENTIC_CHATBOT_DB_USERNAME=postgres
 AGENTIC_CHATBOT_DB_PASSWORD=secret
+```
+
+For pgvector, make sure PHP has `pdo_pgsql` enabled. On hosts where the database user cannot create extensions, create the vector extension once as a privileged database user before migrations:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
 If your main app DB is MySQL, use dedicated PostgreSQL for vector retrieval:
@@ -168,6 +177,14 @@ php artisan migrate
 php artisan queue:work
 ```
 
+If the host app uses Laravel's `database` queue driver and has not created queue tables yet, run this first:
+
+```bash
+php artisan queue:table
+php artisan queue:batches-table
+php artisan migrate
+```
+
 Optional (recommended for deployments):
 
 ```bash
@@ -182,32 +199,93 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as blocking.
 
-## 7. Create Your First Bot
+## 7. Golden Path: Bot To Live Deployment
 
-1. Open Filament admin.
-2. Open the `Agentic Chatbot` navigation group.
-3. Create a bot in `Bots`.
-4. Add a source in `Sources` (text/file/url).
-5. Wait until source status is `completed`.
-6. Review `Runtime Status` and `Live Preview` on the bot edit page.
-7. Use `Test Retrieval` and `Test Bot Answer` on the bot edit page.
-8. Use `Setup Check` actions on bot/source pages if anything is blocked.
-9. Copy the `Embed Snippet` once the bot looks and behaves correctly.
+Use this path for the first production-style bot. It keeps one clear authority: one bot, exactly one live main workflow, and only the capabilities that workflow is allowed to use.
 
-## 8. Optional: Add Your First Workflow
+### 1. Create the bot
 
-After the knowledge foundation is working, you can layer in agentic behavior:
+1. Open **Agentic Chatbot > Build > Bots** and create a bot.
+2. Choose what the bot may do under **What should this bot be allowed to do?** Start with the narrowest option that covers the workflow.
+3. Configure the provider, model, instructions, access, and widget basics, then save.
 
-1. Open `Workflows` in the `Agentic Chatbot` navigation group.
-2. Create a workflow for qualification, onboarding, triage, or escalation.
-3. Draft the first version manually or use the `AI Draft` tab.
-4. Test recent runs and inspect traces before publishing.
-5. Publish only when the workflow behaves as expected.
-6. If the workflow needs internal reads or structured writes, configure the bot capability mode and allowed internal data resources before publishing.
+### 2. Create and assign the main workflow
+
+1. Open **Agentic Chatbot > Build > Workflows** and create a workflow.
+2. Assign the bot you just created. This establishes the workflow's model, knowledge, and capability boundary.
+3. Save the workflow and open its visual editor.
+
+The bot may keep other draft or standby workflows, but only one published workflow can be its live main workflow.
+
+### 3. Build with a recipe or Simple Builder
+
+1. Choose **Workflow recipes** for a guided starting point, or add the focused steps shown by **Simple Builder**.
+2. Keep the first flow small: start, ask or route if needed, answer or act, then finish.
+3. Save the draft. Draft changes do not change live chat.
+
+You do not need Advanced nodes for the normal path.
+
+### 4. Connect only the modules this workflow needs
+
+- For approved documents, add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md), then use a Knowledge Answer step.
+- For live application records, define the maximum policy in [Data Resources](DATA_RESOURCES.md), approve or narrow it on the bot, then choose that resource in a Data Answer step. The inspector shows the resource contract and its allowed information and filters.
+- For an external service, create the saved connection and versioned operation in [API Connectors](API_CONNECTORS.md), then select that API Operation in the workflow. The node asks only for the operation's allowed inputs.
+- For a write, enable the required bot ability and use an approved action or API Operation. Keep confirmation enabled unless the published contract explicitly proves it is unnecessary.
+
+Do not configure the same module a second time in the workflow. The workflow selects from the bot-approved Knowledge, Data Resource, API Operation, and Capability contracts.
+
+### 5. Test the draft
+
+1. Use **Test** in the workflow editor and run the normal conversation path.
+2. Add **Saved tests** for routes and answers that must keep working.
+3. Open **Review**. Every blocker links directly to its step, bot setup, node picker, or Simple Builder location.
+4. For a write path, verify that the bot asks for confirmation before the change is executed.
+
+### 6. Review and publish
+
+1. Select **Publish**.
+2. In **Review before publishing**, confirm what the bot can and cannot do, which data it reads, which writes it can perform, and when confirmation is required.
+3. Add a publish note when the workflow can change data or call a mutating service.
+4. Resolve every blocker, then publish the draft.
+
+Publishing creates a versioned deployment. It does not silently make another draft live.
+
+### 7. Make the deployment live
+
+Return to the workflow page or Workflows list and choose **Make deployment live**. If another workflow is live for this bot, the action replaces it so the bot still has exactly one live main workflow.
+
+### 8. Verify the live bot
+
+1. Open the bot **Overview** and confirm the expected **Live Deployment**, version/hash, capabilities, writes, confirmation policy, and health summary.
+2. Run one real conversation through **Live Preview**, the widget, or your staging frontend.
+3. Confirm the execution in **Workflow Runs** and inspect any saved submission or external side effect.
+4. Use **Stop live deployment** immediately if the live behavior does not match the tested draft.
+
+## 8. Advanced: Custom Workflow Building
+
+Use these paths after the golden path works:
+
+- **AI Draft** can generate a starting draft from a plain-language description; review and test it like any other draft.
+- **Advanced nodes** expose expert workflow behavior without changing the main workflow/deployment model.
+- Custom actions, raw HTTP, imports, subworkflows, retries, and detailed schema authoring belong in [Agentic Workflows](AGENTIC_WORKFLOWS.md), [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md), and [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md).
+
+Advanced authoring still uses the same bot approvals, Review checks, Publish Review, versioned deployment, and single-live-workflow rule.
 
 ## 9. Embed Widget
 
-Use the `Embed Snippet` action on bot edit page.
+For a page served by the same Laravel app, use the package component:
+
+1. Open `Bots` in Filament.
+2. Confirm that the bot is active and has one verified live workflow deployment, then run the `Use as public widget` row action.
+3. Add the component to your Blade layout or page.
+
+```blade
+<x-filament-agentic-chatbot::chat-widget />
+```
+
+Every candidate must be active and backed by a hash-verified live workflow deployment. The component resolves the uniquely marked public-widget bot, then falls back to `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`, then the first runnable bot. An explicit, configured, marked, or fallback bot that is not runnable is rejected rather than activated or exposed implicitly.
+
+For external websites or pages where you want a fixed bot, use the `Embed Snippet` action on the bot edit page.
 
 Example:
 
@@ -215,18 +293,17 @@ Example:
 <script
     src="https://your-app.com/filament-agentic-chatbot/widget"
     data-bot="YOUR_BOT_PUBLIC_ID"
-    data-token="SIGNED_TOKEN"
     defer
 ></script>
 ```
 
-Use `/filament-agentic-chatbot/widget` for new snippets. Existing snippets that use `/filament-agentic-chatbot/widget.js` are still supported for compatibility.
+The script path is controlled by `widget.script_route`; update deployed snippets when you change it. The package registers that configured path only.
 
-If signing is enabled, include `data-token` from the generated snippet and refresh that signed token before `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES` expires.
+The generated snippet contains no token. The loader verifies the browser origin against the bot's Allowed Domains, obtains short-lived access from the bootstrap endpoint, and renews it automatically. In production, an empty Allowed Domains list blocks bootstrap even when a permissive compatibility flag is present.
 
 After the first real conversations land, open the bot `Analytics` page to review feedback, citation coverage, and potential knowledge gaps.
 
-## 10. Optional: Server API / Channel Integration
+## 10. Advanced: Server API And Channels
 
 For server API clients, Telegram bots, or Slack apps, create a Bot Access Token in Filament, set a channel label for reporting, and call the JSON complete endpoint:
 
@@ -250,10 +327,11 @@ Use this before publishing:
 1. New Laravel app installs package without manual hacks.
 2. `php artisan migrate` succeeds.
 3. `php artisan filament-agentic-chatbot:doctor` has no `FAIL`.
-4. A source ingests to `completed`.
-5. Widget answers a test prompt.
-6. If workflows are enabled, a draft saves and publishes cleanly.
-7. At least one workflow execution appears in `Workflow Runs`, and any `store_submission` output appears in `Submissions`.
+4. pgvector installs show `ext-pdo_pgsql` enabled and `CREATE EXTENSION vector` available, or ChromaDB health is green.
+5. Any source used by the workflow ingests to `completed`.
+6. The main workflow draft tests cleanly, publishes, and is made live.
+7. The widget answers a test prompt through that live workflow.
+8. The execution appears in `Workflow Runs`, and any `store_submission` output appears in `Submissions`.
 
 ### One-Command Smoke Script (PowerShell)
 
@@ -296,6 +374,6 @@ powershell -ExecutionPolicy Bypass -File scripts/smoke/smoke-install.ps1 `
 - `vector_backend_not_implemented`: the configured backend is not supported. Use `pgvector` (recommended) or `chroma`.
 - `column cannot have more than 2000 dimensions for ivfflat index`: high-dimensional embedding + ANN index limit. Installation now skips ANN index in this case; retrieval still works.
 
-## 12. VPS Demo Deployment (Optional)
+## 12. Advanced: VPS Demo Deployment
 
 If you maintain a separate public demo app on VPS, keep that deployment flow outside the buyer quick-start path. The package itself does not require a dedicated demo environment to install, migrate, or launch successfully.

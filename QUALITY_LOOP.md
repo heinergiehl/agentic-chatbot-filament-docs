@@ -4,7 +4,7 @@ The quality loop turns real conversations and draft workflow tests into repeatab
 
 ## Quality Lab
 
-Use **Agentic Chatbot > Quality Lab** to create saved scenarios for a bot.
+Use **Agentic Chatbot > Improve > Quality Lab** to create saved scenarios for a bot.
 
 Each scenario stores:
 
