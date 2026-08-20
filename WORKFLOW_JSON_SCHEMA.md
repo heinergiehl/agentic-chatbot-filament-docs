@@ -73,13 +73,115 @@ Most node types may include these optional fields inside `data`:
 
 Node retry is executed by the AgentGraph runtime for thrown node exceptions. It does not retry user clarification, invalid workflow input, validation branches, human interrupts, delays, or API business errors. HTTP Request and API Connector nodes also have request-level `retryAttempts`, `retryDelayMs`, `retryBackoff`, and `retryUnsafeMethods`; those fields apply to outbound HTTP calls, not to the whole workflow node.
 
+### Workflow Behavior Policy
+
+Schema-v2 authoring stores workflow-wide user-facing reply behavior under
+`policies.behavior`. The default is an explicit inherited policy:
+
+```json
+{
+  "version": 1,
+  "mode": "inherit"
+}
+```
+
+Choose a workflow-owned policy when the release must differ from the linked bot:
+
+```json
+{
+  "version": 1,
+  "mode": "custom",
+  "role": "Returns specialist",
+  "audience": "German customers",
+  "tone": "direct",
+  "answerLength": "short",
+  "language": { "mode": "fixed", "locale": "de-DE" },
+  "uncertainty": "abstain",
+  "citations": "required",
+  "responseFormat": "markdown",
+  "boundaries": ["Never claim that a refund was issued without workflow evidence."]
+}
+```
+
+Allowed custom values are:
+
+- `tone`: `neutral`, `friendly`, `professional`, `warm`, `direct`
+- `answerLength`: `short`, `balanced`, `detailed`
+- `language.mode`: `mirror_user` or `fixed`; fixed mode requires a language tag such as `de` or `de-DE`
+- `uncertainty`: `state_limits`, `clarify_once`, `abstain`
+- `citations`: `automatic`, `required`, `off`
+- `responseFormat`: `inherit`, `markdown`, `plain_text`
+
+Role, audience, locale, and boundaries are fixed release instructions and
+cannot contain `{{runtime}}` references. Unknown fields fail validation. At
+publish, inherited bot defaults or the custom policy are resolved into a closed
+`workflow_behavior.v1` runtime snapshot. That snapshot is stored in runtime
+`policies.behavior`, copied only to user-facing `answer` and `workflowAgent`
+nodes, and covered by the deployment hash. It controls wording only and grants
+no tool, data, write, routing, handoff, or state authority.
+
+### Workflow Safety Policy
+
+Schema-v2 authoring also stores the mandatory workflow-wide content boundary in
+`policies.safety`. New workflows use the release-safe baseline by default:
+
+```json
+{
+  "version": 1,
+  "mode": "standard"
+}
+```
+
+`standard` always blocks credential disclosure, high-confidence attempts to
+override workflow authority, and prompt leakage while allowing ordinary email
+addresses, phone numbers, and links required by intake workflows. `strict`
+additionally blocks those three contact-data classes in both directions. A
+`custom` policy can tighten each direction independently and add up to 40 fixed
+blocked terms:
+
+```json
+{
+  "version": 1,
+  "mode": "custom",
+  "input": {
+    "blockEmail": true,
+    "blockPhone": false,
+    "blockUrls": true,
+    "blockedTerms": ["internal campaign code"]
+  },
+  "output": {
+    "blockEmail": true,
+    "blockPhone": true,
+    "blockUrls": true,
+    "blockedTerms": ["confidential tier"]
+  }
+}
+```
+
+Preset modes reject hidden overrides, custom rules require all fields, and
+blocked terms cannot contain runtime references. Publication resolves this
+authoring form into the closed `workflow_safety.v1` runtime contract with fixed
+size limits and non-disableable baseline checks. The resolved profile is stored
+in runtime `policies.safety`, copied into the deployment policy manifest, and
+covered by the deployment hash. Missing, malformed, weakened, or unsupported
+runtime safety contracts fail closed.
+
+The boundary runs before raw user content is persisted, routing, AI planning,
+tools, or writes and again after turn finalization and immediately before
+canonical assistant-message persistence. Blocked input executes no workflow
+path and is stored only as a localized placeholder plus the turn fingerprint;
+blocked output is replaced with localized recovery copy before JSON or streaming
+transport. Use a
+`guardrail` node only when the workflow needs an explicit domain-specific
+`valid`/`invalid` branch. It is not a substitute for this mandatory policy.
+
 ---
 
 ## Node Types & Data Fields
 
 Current supported node types:
 
-`trigger`, `sendMessage`, `collectInput`, `collectForm`, `condition`, `aiAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `batchMap`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
+`trigger`, `sendMessage`, `collectInput`, `collectForm`, `condition`, `aiAgent`, `workflowAgent`, `answer`, `queryRewrite`, `summarize`, `structuredOutput`, `knowledgeBase`, `confidenceCheck`, `guardrail`, `contextBuilder`, `rerank`, `errorHandler`, `confirmation`, `action`, `httpRequest`, `apiConnector`, `setVariable`, `entityExtractor`, `memoryRead`, `memoryWrite`, `end`, `join`, `batchMap`, `delay`, `switchRouter`, `validation`, `transform`, `log`, `randomSplit`, `codeExpression`, `subWorkflow`, `intentClassifier`, `sentiment`, and `note`.
 
 The visual editor also exposes a `Data Retrieval` palette item. Persisted JSON stores it as an `action` node with `actionKey: "query_data_resource"`.
 
@@ -242,6 +344,43 @@ Has **two outputs**: `"yes"` and `"no"` handles.
 > **Runtime note:** `emitProviderDeltas` does not publish or hide a chat message. Durable replies are committed first and rendered from the canonical outcome. Schema-v2 authoring derives this flag from the typed step kind.
 
 > `temperature` and `maxTokens` are validated, preserved in workflow JSON, and passed to the Laravel AI SDK where the selected provider supports them.
+
+> The generic `aiAgent` is an internal processing node. Published user-facing
+> Behavior applies to `answer` and `workflowAgent`; internal AI nodes do not
+> inherit mutable bot persona, citation, or response-format settings.
+
+---
+
+### 5a. `workflowAgent` — Deployment-bound Read Agent
+
+```json
+{
+    "id": "agent_1",
+    "type": "workflowAgent",
+    "position": { "x": 400, "y": 520 },
+    "data": {
+        "label": "Research and answer",
+        "systemPrompt": "Answer only from approved workflow tools and state uncertainty.",
+        "userPromptTemplate": "Question: {{input}}",
+        "allowedActionKeys": ["query_data_resource"],
+        "allowedDataResourceKeys": ["customers"],
+        "outputVariable": "workflow_answer",
+        "toolTraceVariable": "workflow_answer_tool_trace",
+        "maxIterations": 6,
+        "maxToolCalls": 6,
+        "maxIdenticalCalls": 2,
+        "maxToolResultBytes": 32768,
+        "maxTotalToolResultBytes": 65536,
+        "timeoutSeconds": 45,
+        "parallelCalls": 1,
+        "emitProviderDeltas": false
+    }
+}
+```
+
+`allowedActionKeys` must contain one to eight exact, registered read-only action keys. Mutable catalog actions and every write contract are rejected. `allowedDataResourceKeys` is required only when `query_data_resource` is selected. `systemPrompt`, `provider`, and `model` are static authority fields and cannot contain workflow-variable references; place `{{input}}` and other runtime values in `userPromptTemplate`.
+
+Publication freezes the selected action identities, request/result schema hashes, resource bindings, and limits. Runtime re-verifies them before exposing the tools, executes every call through `CapabilityExecutionGateway`, treats results as untrusted data, and persists only a bounded hash-based trace. The node supports a normal success edge and one explicit `sourceHandle: "error"` recovery edge. Workflow-agent v1 is sequential and read-only; writes remain explicit confirmed workflow nodes.
 
 ---
 
@@ -548,6 +687,8 @@ Routes to different branches based on a value. Has **dynamic outputs** — one p
 ### 14. `note` — Canvas Annotation
 
 Notes cannot be connected to other nodes. They are visual annotations only.
+Their content is never compiled into prompts, permissions, tool instructions,
+policies, or runtime behavior.
 
 ```json
 {
@@ -845,7 +986,7 @@ The JSON must follow this structure:
 - Top level: { schemaVersion: 1, nodes: [...], edges: [...] }
 - Each node needs: id (string), type (string), position: {x, y}, data: {label, ...type-specific fields}
 - Optional common node runtime retry fields live inside data: nodeRetryAttempts (0-5), nodeRetryDelayMs (0-5000), nodeRetryBackoff (boolean). Use them only for transient technical node exceptions, not for user clarification, validation branches, or HTTP status handling.
-- Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, batchMap, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
+- Valid node types: trigger, sendMessage, collectInput, condition, aiAgent, workflowAgent, answer, queryRewrite, summarize, structuredOutput, knowledgeBase, confidenceCheck, guardrail, contextBuilder, rerank, errorHandler, confirmation, action, httpRequest, apiConnector, setVariable, entityExtractor, memoryRead, memoryWrite, end, join, batchMap, delay, switchRouter, intentClassifier, sentiment, validation, transform, log, randomSplit, codeExpression, subWorkflow, note
 - Every workflow must have exactly one "trigger" node
 - Edges connect nodes: { id, source, target, sourceHandle? }
 - For condition nodes, use sourceHandle "yes" or "no"

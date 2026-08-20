@@ -34,6 +34,7 @@ Use semantic steps when the author needs to configure behavior:
 | `route` | Choose a branch from intent or conditions |
 | `knowledgeAnswer` | Answer from approved knowledge sources |
 | `dataAnswer` | Query approved data resources |
+| `agentAnswer` | Let AI choose only deployment-pinned read tools and answer from bounded results |
 | `action` | Run an allowed side-effect or tool |
 | `approval` | Require explicit user confirmation |
 | `finish` | End the workflow deliberately |

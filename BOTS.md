@@ -118,9 +118,9 @@ This lets you optimize different bots for:
 - cost
 - provider-specific capabilities
 
-The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible gateways. Each provider includes a small curated model list, and the **Manual ID** option lets you enter exact model identifiers from your provider.
+The built-in provider picker supports Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible gateways. The package catalogue records common provider model IDs, but the recommended selector exposes only entries that also have an explicit verified assistant capability profile. The **Manual ID** option lets you enter an exact model identifier after its profile has been configured.
 
-Manual IDs are safe by default: they do not implicitly receive tool-calling or native JSON-schema support from their name. For a private or self-hosted model whose capabilities you have verified, declare a profile under `filament-agentic-chatbot.models.capabilities`; the doctor command then validates the configured chat model against the required assistant profile.
+Catalogue membership and manual IDs are safe by default: neither implicitly receives developer-instruction, tool-calling, streaming, or native JSON-schema support from its name. For a private, preview, or self-hosted model whose capabilities you have verified, declare a profile under `filament-agentic-chatbot.models.capabilities`; the form, runtime, and doctor command then validate the configured model against the required agent profile. Workflow generation additionally requires a verified structured-output profile and fails closed when none is available.
 
 Use OpenRouter for routed models such as Qwen or DeepSeek variants without adding a provider-specific integration for each model family. Use **OpenAI-Compatible** when the provider exposes a chat-completions-style API with a custom base URL, such as Qwen DashScope compatible mode or a private gateway. Enter the base URL on the bot, or configure it globally with:
 

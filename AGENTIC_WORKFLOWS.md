@@ -46,6 +46,7 @@ The workflow edit page combines five working areas:
 | ------------ | ------------------------------------------------------------------- |
 | **Nodes**    | The visual canvas where you build the graph                         |
 | **AI Draft** | Describe a flow in natural language and get an AI-generated draft   |
+| **Behavior** | Configure release-bound tone, language, uncertainty, citations, and response format |
 | **Runs**     | Inspect execution history, per-node traces, variables, and outcomes |
 | **Versions** | Manage published vs draft versions, release notes, and rollbacks    |
 | **Test**     | Run the saved draft in a sandbox conversation before publishing     |
@@ -63,6 +64,36 @@ To keep the catalog usable as it grows, the sidebar exposes authoring choices in
 - **Internal runtime** only for compiled-graph diagnostics and engine-level investigation
 
 The UX goal is to keep Builder and Expert focused on chatbot behavior, with technical controls moved into contextual advanced sections inside each node inspector. Normal authors should not need to place raw runtime nodes. The engine compiles schema v2 semantic steps into the executable graph internally.
+
+### Behavior And Notes
+
+Use the **Behavior** build tab for workflow-wide reply customization. **Bot
+defaults** copies the linked bot's current conversation profile into the next
+immutable deployment. **Custom for this workflow** owns a typed release policy
+for tone, answer length, response language, uncertainty, citations, response
+format, role, audience, and fixed boundaries. Changing either source marks the
+draft stale; an active workflow changes only after publishing again.
+
+Behavior settings shape user-facing Answer and Agent Answer steps. They do not
+change routing, retries, clarification state, handoff, tools, data access, or
+writes. Model-facing capabilities stay on explicit workflow nodes and immutable
+deployment contracts.
+
+The same **Behavior** tab owns the workflow-wide **Safety boundary**. Standard
+protection is always active and blocks credentials, workflow-authority override
+attempts, and prompt leakage. Strict privacy also rejects email addresses, phone
+numbers, and links in both directions. Custom restrictions let authors tighten
+input and output separately and add fixed blocked terms. Raw input is checked
+before its content is persisted and before routing or tools; rejected input is
+represented only by a localized placeholder and a turn fingerprint. Output is
+checked again before any assistant reply is stored or shown. The rules are
+resolved and hash-bound when the workflow is published.
+
+Notes are visual documentation only. Add more notes when authors need to explain
+why a branch exists or record review context, but never use notes to configure a
+bot. Text in a note cannot become a prompt, permission, tool instruction, or
+runtime transition. Add a typed policy field or a real semantic step when a new
+setting must affect execution.
 
 ## Node Types
 
@@ -111,6 +142,21 @@ Uses the configured AI model for tasks such as:
 
 The AI agent node can reference workflow variables and previous conversation context. Per-node `temperature` and `maxTokens` values are passed through the Laravel AI SDK generation options where the selected provider supports them.
 
+The ordinary AI Agent remains tool-free. Use Agent Answer only when the model must choose between approved read capabilities.
+
+The generic AI Agent is an internal processing step and does not receive the
+workflow's user-facing Behavior profile. Use Answer or Agent Answer for the
+final reply that should follow the published tone, language, citation, and
+format contract.
+
+### Agent Answer
+
+Agent Answer is the dedicated Expert step for bounded, workflow-scoped tool use. The author selects one to eight eligible read actions and, for `query_data_resource`, the exact Data Resources the agent may query. The system prompt is static authority; visitor input and workflow variables belong only in the user task template. A provider/model is accepted only when its verified capability profile supports developer instructions and tool calling.
+
+Publish freezes every selected action version, contract hash, request- and result-schema hash, semantic profile, resource binding, and safety budget into the immutable deployment. Runtime re-verifies those pins, then exposes only model-facing adapters whose calls cross `CapabilityExecutionGateway`. Results are bounded and marked as untrusted data, and the safe tool trace stores hashes, status, sizes, timing, and counters rather than raw payloads or results.
+
+Agent Answer v1 is read-only and sequential. It limits model iterations, total calls, identical repeats, per-result bytes, aggregate result bytes, and timeout. Connect its explicit `error` output to a useful fallback. Writes remain ordinary Action/API/Memory nodes behind approval, confirmation, idempotency, and reconciliation; the model cannot propose or dispatch them as tools.
+
 ### Answer
 
 Generates a grounded final answer from knowledge context, structured data, or both. Use this instead of a generic AI Agent when the node is responsible for the final user-facing response.
@@ -146,7 +192,11 @@ Checks whether retrieved context or structured data is strong enough to continue
 
 ### Guardrail
 
-Checks user input or variables for unsafe content or configured PII patterns before allowing downstream work.
+Checks selected input or variables for workflow-specific content rules and
+routes through explicit `valid` or `invalid` branches. Use it when a business
+rule needs visible branching or a tailored fallback. The mandatory workflow
+Safety boundary is separate, cannot be omitted, and runs before the graph and
+before response persistence even when no Guardrail step exists.
 
 ### Context Builder
 
@@ -187,7 +237,7 @@ At publication, the runtime follows each declared intent route and adds a bounde
 
 For domain names that require canonical external values, a host can tag an optional `CapabilityEntityResolver`. The resolver is selected only by the declared slot `entityType`; it cannot add routes or capabilities. A high-confidence resolved value is recorded with resolver provenance, while ambiguous, missing, low-confidence, or unavailable resolutions remain unfilled and therefore continue through the workflow's normal clarification path.
 
-`CapabilityExecutionGateway` is the only execution boundary for workflow actions, API Connector operations, and raw HTTP. It fixes the order to contract resolution, exact materialized-payload validation, authority, confirmation, idempotency claim, dispatch, result validation, and ledger finalization; action execution may additionally queue operator review. Connector and raw HTTP transport starts only after claim, and a dispatched write whose outcome cannot be verified is recorded as `unknown` with `reconciliation_required=true` and is not automatically retried. Action handlers receive only the validated payload and readonly `CapabilityExecutionContext`.
+`CapabilityExecutionGateway` is the only execution boundary for workflow actions, Agent Answer read tools, API Connector operations, and raw HTTP. It fixes the order to contract resolution, exact materialized-payload validation, authority, confirmation, idempotency claim, dispatch, result validation, and ledger finalization; action execution may additionally queue operator review. Connector and raw HTTP transport starts only after claim, and a dispatched write whose outcome cannot be verified is recorded as `unknown` with `reconciliation_required=true` and is not automatically retried. Action handlers receive only the validated payload and readonly `CapabilityExecutionContext`.
 
 Publish materializes the action contract version, contract hash, payload-schema hash, and secret-free contract snapshot into the immutable workflow deployment. Runtime resolution compares that pinned identity with the current registry and fails closed until the workflow is republished after a contract change.
 

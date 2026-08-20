@@ -31,7 +31,7 @@ HTTP, widget, channel, or supported tool adapter
 
 Transport adapters resolve identity, access, bot, conversation, area, and client-turn identity. They do not select a workflow transition, mutate graph state, or execute a capability.
 
-`ChatTurnApplicationService` owns the application transaction sequence. It acquires the durable turn, persists the canonical user message, executes the request, commits one typed outcome, and only then returns a protocol response. Replaying the same accepted client-turn identity returns the stored response without executing again.
+`ChatTurnApplicationService` owns the application transaction sequence. It acquires the durable turn, verifies the exact release safety policy against the raw input before any user content is persisted, stores either the accepted message or a localized non-secret blocked placeholder, executes only accepted input, commits one typed outcome, and only then returns a protocol response. Replaying the same accepted client-turn identity returns the stored response without executing again.
 
 ## Deployment Selection
 
@@ -128,9 +128,63 @@ suppress a later independent read. The final checkpoint contains exact coverage
 metadata and one ordered combined output; intermediate branch outputs are not
 committed as separate visitor-visible messages.
 
+## Workflow Behavior Authority
+
+User-facing answer style is release authority, not mutable bot state. Schema-v2
+authoring stores a typed `policies.behavior` contract. `mode: inherit` copies the
+linked bot's role, audience, tone, answer length, language list, fallback and
+citation guidance, response format, source-display setting, and boundaries at
+publish time. `mode: custom` stores only the closed workflow-owned fields for
+tone, length, response language, uncertainty behavior, citations, response
+format, role, audience, and boundaries. Runtime references and unknown fields
+are rejected in both modes.
+
+The resolved `workflow_behavior.v1` snapshot is written into the immutable
+runtime policy and into each user-facing `answer` or `workflowAgent` node. It is
+therefore covered by the deployment hash and revalidated before use. Later bot
+edits cannot alter an active deployment; republishing creates a different
+artifact. Internal AI processing such as query rewriting, summarization, and
+structured extraction does not receive the user-facing persona, citations, or
+format policy and cannot be destabilized by mutable bot presentation settings.
+
+Behavior policy controls wording only. It never grants tools, data access,
+writes, routing, handoff, confirmation, or workflow-state authority. Canvas
+notes remain non-executable annotations and are never promoted into prompts,
+permissions, or runtime behavior.
+
+## Workflow Safety Boundary
+
+Every published workflow carries one closed `workflow_safety.v1` policy. The
+authoring modes are `standard`, `strict`, and `custom`, but the credential,
+workflow-authority-override, and prompt-leak protections plus fixed input/output
+size ceilings cannot be disabled. Strict and custom modes may only tighten the
+baseline. Publication resolves the policy into the runtime snapshot and policy
+manifest, so any change creates a different deployment hash and later draft or
+bot edits cannot change an active release.
+
+The live chat application inspects raw input before persisting its content and
+before turn routing, semantic planning, AI execution, tools, or writes. Rejected
+input is represented durably only by a localized placeholder plus a SHA-256
+input fingerprint on the turn. The application inspects the complete finalized
+result again before outcome selection, then protects each canonical assistant
+message once more immediately before persistence. JSON and SSE are rendered
+only from that committed safe outcome. Interactive prompts use an allowlisted
+public payload so cards, choices, metadata, or run projections cannot
+reintroduce rejected text. Editor Preview and Quality Lab execute the same
+boundary against the exact preview deployment artifact before recording a
+workflow path.
+
+A rejected input produces a completed, localized recovery result without
+dispatch. A rejected output is replaced rather than partially redacted, and
+public evidence contains only stable category/direction metadata, never the
+matched secret or blocked term. A missing, malformed, weakened, or unsupported
+runtime policy fails closed. The optional `guardrail` workflow node remains for
+domain-specific validation and explicit branching; it cannot replace or bypass
+the global boundary.
+
 ## Capability Execution
 
-`CapabilityExecutionGateway` is the only productive boundary for workflow actions, API Operations, raw HTTP, and memory writes. `CapabilityGrantAuthorizer` is an internal deterministic policy component invoked only by that gateway; it authorizes exact grants but never dispatches capabilities.
+`CapabilityExecutionGateway` is the only productive boundary for workflow actions, workflow-agent read tools, API Operations, raw HTTP, and memory writes. `CapabilityGrantAuthorizer` is an internal deterministic policy component invoked only by that gateway; it authorizes exact grants but never dispatches capabilities.
 
 The gateway performs, in order:
 
@@ -159,6 +213,10 @@ successful provider response belongs to the canonical requested entity.
 Capability requests always declare their execution mode explicitly. Every live read or write requires a persisted `WorkflowRun`, the run-bound persisted bot and conversation, server-attested runtime authority, and exact deployment ID, hash, and runtime-schema identity verified from the immutable run artifact. A capability cannot gain live authority merely from a callable action or a caller-supplied state object; preview and quality execution remain isolated in their declared non-live modes. The connector operation workbench is a narrower non-live exception: it accepts reads only with an in-memory server permit bound to the exact operation and contract hash, which cannot be supplied by workflow JSON.
 
 Every action contract declares both a non-empty request schema and a non-empty result schema. Missing result contracts fail during provider registration; handler results that violate the immutable hash-bound contract fail before they can become workflow state.
+
+The ordinary AI task and answer nodes remain tool-free. Tool choice is available only through the dedicated `workflowAgent` runtime node, authored as the Expert-level `agentAnswer` semantic step. Publication resolves one to eight exact read-only `CapabilityActionDefinition` contracts, freezes their version, contract hash, request- and result-schema hashes, semantic profile, optional Data Resource bindings, and node budgets into the deployment, and rejects writes or mutable capability catalogs. Runtime re-resolves and compares every pin before constructing model-facing adapters. Those adapters are not execution authority: every call crosses the action path of `CapabilityExecutionGateway`, and the model cannot override server-supplied resource allowlists or binding evidence.
+
+Workflow-agent v1 is deliberately sequential and read-only. Hash-bound limits cap model steps, total calls, identical repeats, per-result bytes, aggregate result bytes, and wall-clock time. Tool results enter the model only as bounded untrusted data. Durable traces contain capability identity, hashes, status, sizes, timing, and counters, but no raw arguments or results. Provider/model profiles must explicitly attest developer-instruction and tool support. Writes remain explicit workflow nodes behind the existing confirmation, idempotency, unknown-outcome, and reconciliation contracts; model-proposed writes are not part of this runtime version.
 
 One canonical capability result is stored under the declared output variable. Trace output is a bounded preview, while answer composition resolves the canonical value only when needed. Per-variable and total serialized workflow-state budgets stop an oversized result with an explicit non-retryable outcome instead of allowing PHP or database serialization to exhaust the process.
 
