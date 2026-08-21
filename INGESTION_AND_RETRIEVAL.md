@@ -2,7 +2,7 @@
 
 This page explains how content enters the system and how the assistant finds relevant context at question time.
 
-Retrieval is a capability used by the runtime. In the default architecture, the assistant calls `KnowledgeSearchTool` only when uploaded sources are available and the user question needs source-backed knowledge. Workflows can also call the same retrieval layer through Knowledge Base nodes.
+Retrieval is a workflow-bound runtime capability. A published Knowledge Base node performs retrieval and places bounded evidence into workflow state; conversational agents never receive a mutable or implicit knowledge-search tool.
 
 ## Ingestion
 
@@ -133,7 +133,7 @@ Chroma filtering is strict. If all nearest-neighbor results fall below the confi
 
 ## Retrieval
 
-Retrieval is the runtime step that finds relevant chunks when the assistant uses `KnowledgeSearchTool` or a workflow Knowledge Base node runs.
+Retrieval is the runtime step that finds relevant chunks when a published workflow runs a Knowledge Base node.
 
 ### What Happens During Retrieval
 
@@ -188,13 +188,13 @@ Runtime V2 attaches an evidence requirement to every planned step. Direct answer
 ],
 ```
 
-Knowledge tool output is an untrusted structured envelope containing the retrieval strategy, evidence quality, degradation state, evidence reference range, and bounded context. Citation IDs are checked against the final evidence pack; invalid IDs are removed before output. Context truncation happens at sentence or word boundaries rather than cutting a sentence mid-stream. Once retrieval has been attempted, an insufficient result cannot be rewritten into a grounded answer by the assistant or response composer.
+Knowledge retrieval output is an untrusted structured envelope containing the retrieval strategy, evidence quality, degradation state, evidence reference range, and bounded context. Citation IDs are checked against the final evidence pack; invalid IDs are removed before output. Context truncation happens at sentence or word boundaries rather than cutting a sentence mid-stream. Once retrieval has been attempted, an insufficient result cannot be rewritten into a grounded answer by the assistant or response composer.
 
 Run `php artisan migrate` to create the PostgreSQL FTS index, then re-ingest every source after first adopting G21 or whenever the index version or embedding identity changes. Existing unstamped chunks are intentionally incompatible. Run `composer eval:retrieval-quality` before deployment and whenever a calibration dataset/profile changes.
 
 ### Knowledge Readiness
 
-The assistant receives `KnowledgeSearchTool` only when a bot has at least one completed source with chunks. Completed sources without chunks, pending sources, and failed sources do not make the tool available.
+Knowledge Base nodes can retrieve evidence only when the bot has at least one completed source with chunks. Completed sources without chunks, pending sources, and failed sources do not make retrieval ready.
 
 The public config endpoint includes additive `bot.knowledge_health`:
 
