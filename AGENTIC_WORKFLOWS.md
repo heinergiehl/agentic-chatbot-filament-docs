@@ -285,11 +285,13 @@ runtime may admit one release-bound Authorized Entry Turn Plan containing tasks
 and items; AgentGraph executes it inside one workflow run without reclassifying
 items.
 
-Published schema-v2 workflows also include `workflowReleaseContract.capability_contract`. It is the canonical workflow capability contract used by planner context, workflow prompts, capability discovery, deployment policy metadata, docs, and eval context. It is versioned, hashed, and snapshot-tested, and contains capability keys, labels, examples, slots, validators, side-effect class, confirmation policy, output frames, allowed follow-ups, and forbidden assumptions.
+Published schema-v2 workflows include one immutable `publishedWorkflowContract`. It is the sole runtime authority for entry routes, inputs, capability dispatch contracts, cardinality, side effects, confirmation, public presentation, behavior, and result policy. The publisher compiles and hashes it only after every dependency is pinned; productive runtime services verify and project that artifact instead of recompiling authority from mutable graph or bot metadata.
 
 ### HTTP Request
 
 Calls an external URL directly from the workflow. Configure method, URL, headers, body, timeout, and whether the flow should continue on failure. Use this for one-off integrations where you do not need a reusable connector profile.
+
+When raw HTTP is enabled, `AGENTIC_CHATBOT_WORKFLOW_HTTP_REQUEST_ALLOWED_DOMAINS` must contain at least one exact host or explicit wildcard such as `*.example.com` in every Laravel environment. Local and testing environments do not bypass the allowlist or private-network checks. A trusted internal target additionally requires the existing `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=true` opt-in and must still match the domain allowlist.
 
 Non-2xx responses and missing URLs stop the workflow by default. Enable `continueOnFail` only when a downstream fallback branch reads the `*_status` or `*_error` variables and handles the failure intentionally.
 

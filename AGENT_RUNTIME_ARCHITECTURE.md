@@ -13,9 +13,9 @@ Starter migration readiness is derived from the production compiler output, not 
 ## Request To Response
 
 ```text
-HTTP, widget, channel, or supported tool adapter
+HTTP, widget, or channel adapter
 -> ChatEndpointContextResolver
--> ChatTurnApplicationService
+-> ChatTurnApplicationService::execute(context, Complete|Stream)
 -> DurableChatTurnService acquisition and idempotency
 -> ChatTurnRequestExecutor
 -> RuntimeTurnPlanner
@@ -90,9 +90,21 @@ The productive command set is closed:
 
 `WorkflowCommandHandler` is the workflow-transition entry. It receives transport data separately from the authorized command, resolves the pinned execution artifact, and passes only the selected bounded plan, authoritative turn state, effective input, and typed continuation transition to `WorkflowTurnExecutor`. Exact local state patches selected before authorization are applied idempotently; they cannot reinterpret input or change the command.
 
+The internal workflow-turn requests expose no requested-mode, JSON variable,
+or transport selector. Fresh starts enter only through an authorized
+`StartWorkflowCommand`; resume, hold, cancel, and replacement behavior is
+derived from the attested turn-state snapshot and its exact
+`AuthorizedWorkflowTransition`.
+
 ## AgentGraph State Authority
 
 AgentGraph owns graph-backed run, checkpoint, interrupt, resume, delay, task, and structured child-execution state.
+
+When a workflow state carries AgentGraph context, AgentGraph is also the sole
+runtime memory authority. Missing reads and empty searches are authoritative
+results and never fall back to legacy `WorkflowMemory` rows. Legacy rows remain
+available to the explicitly separate no-AgentGraph path and to lifecycle,
+privacy, migration, and operator-correction surfaces.
 
 `WorkflowRun` and `BotPendingInteraction` are operational projections. A projection write verifies the SDK run/thread/graph/deployment/checkpoint/interrupt identity and advances `WorkflowRun.state_version` with a one-step compare-and-set. Stale writers fail without rewriting AgentGraph.
 
@@ -186,6 +198,13 @@ the global boundary.
 
 `CapabilityExecutionGateway` is the only productive boundary for workflow actions, workflow-agent read tools, API Operations, raw HTTP, and memory writes. `CapabilityGrantAuthorizer` is an internal deterministic policy component invoked only by that gateway; it authorizes exact grants but never dispatches capabilities.
 
+Live writes always require a non-empty payload schema, trusted payload provenance,
+an exact Runtime V2 grant bound to the immutable deployment, and canonical
+payload-bound engine confirmation. These requirements do not depend on the
+Laravel environment and have no configuration switch. Reads remain free of
+write grants and write confirmation; Preview and Quality modes cannot acquire
+live-write authority.
+
 The gateway performs, in order:
 
 1. immutable contract and deployment-pin resolution;
@@ -196,6 +215,15 @@ The gateway performs, in order:
 6. dispatch;
 7. typed result validation;
 8. durable ledger finalization.
+
+Memory, action, API Connector, and raw HTTP writes cannot reach handler or
+transport dispatch without a positive lease-fenced ledger claim. This invariant
+has no environment or configuration switch; reads remain ledger-free. Write
+policies choose exactly one canonical identity: the hash-bound prepared
+invocation, or typed business-key components derived only from authorized
+payload and server-attested context. Retry, AgentGraph resume, and operator
+review reuse the original claim; a separately confirmed invocation can receive
+a new invocation-scoped claim.
 
 The public execution boundary remains the gateway. Internally, deployment and
 authority binding, write-context materialization, and closed outcome creation

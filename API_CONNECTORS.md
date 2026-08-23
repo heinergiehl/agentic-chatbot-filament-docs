@@ -458,10 +458,11 @@ delay, and task semantics.
 
 Every write contract requires confirmation and an explicit integrity policy:
 
-- modes: `allow_duplicate`, `idempotent_replay`, or `reject_duplicate`;
+- modes: `idempotent_replay` or `reject_duplicate`;
+- identity: `invocation` or `business_key`;
 - scopes: `bot`, `conversation`, `owner`, `workflow_run`, or `global`;
-- non-duplicate modes require typed business-key components under canonical
-  `input.*` paths;
+- `business_key` identity requires typed components under canonical `input.*`
+  paths, while `invocation` uses the server-attested prepared invocation key;
 - supported normalizers are `string`, `lower`, `email`, `datetime_utc`, `date`,
   and `sha256`;
 - conflict checks are `none`, `data_resource`, or an exact
@@ -471,11 +472,14 @@ Every write contract requires confirmation and an explicit integrity policy:
 
 Business identity is derived from validated canonical operation input, never
 from model-selected transport fields, headers, deployment metadata, or caller
-idempotency strings. Provider idempotency is derived from the server-owned
-ledger/request identity.
+idempotency strings. Invocation identity binds the authorized bot/authority,
+immutable deployment and contract, workflow run, turn/message, execution path,
+node, and payload. Provider idempotency is derived from the positive ledger
+claim, not from a caller-controlled header value.
 
 The central side-effect ledger encrypts request payload, result, and metadata at
-rest. A write claim uses a random hashed lease token. Terminal updates are
+rest. Every connector write must obtain a positive claim before transport; read
+operations remain ledger-free. A write claim uses a random hashed lease token. Terminal updates are
 fenced by ledger row, `running` status, and that token hash; losing the fence
 produces `unknown` rather than pretending success or issuing another write.
 Expired running writes also become `unknown` and are never automatically
@@ -538,6 +542,13 @@ HTTP definition.
 ## Security invariants
 
 - Production base URLs use HTTPS and must pass connector network policy.
+- Productive requests, OAuth token refresh, connector workbench tests, and
+  connector-backed API sources use the same explicit
+  `network.allow_private_request_urls` authority. Local and testing environments
+  grant no automatic private-network access.
+- Method and path policy runs before DNS. Public targets are resolved once and
+  the validated addresses are pinned into the transport; private or reserved
+  targets require the explicit network opt-in.
 - Redirects, pagination links, and polling targets are authorized again and may
   not escape the approved origin/path boundary.
 - Connector credentials and default headers are encrypted at rest; operation

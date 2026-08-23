@@ -243,7 +243,8 @@ Use a public documentation URL for `AGENTIC_CHATBOT_DOCS_URL`, not an internal a
 
 ## Workflow Runtime Guardrails
 
-- `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks workflow HTTP Request and API Connector nodes from targeting localhost, RFC1918, or other reserved/private destinations.
+- Enabled workflow HTTP Request nodes require a non-empty `AGENTIC_CHATBOT_WORKFLOW_HTTP_REQUEST_ALLOWED_DOMAINS` list in every Laravel environment. Configure exact hosts or explicit wildcards such as `*.example.com`; local and testing environments grant no automatic network authority.
+- `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks workflow HTTP Request nodes, productive API Connector calls, OAuth token refresh, connector tests, and connector-backed API sources from targeting localhost, RFC1918, or other reserved/private destinations in every Laravel environment. Setting it to `true` enables those intentional internal targets; raw HTTP hosts must still match the separate raw HTTP domain allowlist. General URL-source ingestion remains governed by `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS`.
 - `AGENTIC_CHATBOT_WORKFLOW_RUNNING_TIMEOUT_SECONDS` lets abandoned `running` workflow executions be reclaimed so future conversations are not blocked forever.
 - `AGENTIC_CHATBOT_WORKFLOW_DELAYED_TIMEOUT_SECONDS` lets abandoned `delayed` workflow executions be reclaimed when a queued resume never arrives. It defaults to the running timeout when unset.
 - `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS` releases abandoned pending-interaction resolver claims when the AgentGraph interrupt still matches. This prevents stale `resolving` rows from blocking the next valid user answer.

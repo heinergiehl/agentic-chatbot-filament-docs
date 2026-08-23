@@ -17,6 +17,8 @@ php artisan filament-agentic-chatbot:doctor
 
 The report and result paths must be new files. Bots with an existing verified live deployment remain bound to it. Eligible deploymentless bots receive the matching immutable starter; ambiguous or invalid release state blocks without overwrite. Any bot still lacking a verified live deployment is unavailable to widget, API, and channel chat until an operator publishes and activates one.
 
+Public-widget selection now has one stored key: `runtime_config.public_widget.entrypoint`. The irreversible `2026_08_23_000001_cut_over_public_widget_entrypoint.php` migration moves the former `widget.public_entrypoint` flag and removes that alias before productive code starts. Conflicting old and canonical values block the migration instead of choosing one silently.
+
 ## Public API cutover
 
 - `FilamentAgenticChatbotPlugin::contentExtractor()`, `textChunker()`, and
