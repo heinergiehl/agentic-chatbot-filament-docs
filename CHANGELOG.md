@@ -21,19 +21,21 @@ All notable changes to this package will be documented in this file.
 - Added exact candidate-versus-live Quality Lab comparisons with isolated no-write conversations, deterministic failure triage, deployment- and scenario-bound evidence, and optional candidate-activation gates. Knowledge-gap regressions enable the gate automatically.
 - Added a high-confidence Knowledge Operations inbox that groups durable knowledge-search fallbacks, encrypts question excerpts and operator notes, creates citation/no-write regression tests, and permits resolution only with an active Knowledge Source plus a current passing Agent run.
 - Added verified private chat attachments across the widget and canonical Agent turn, with content detection, model-capability checks, hash-bound idempotency, private storage, budget preflight, SDK support, and scheduled retention cleanup.
-- Added production WhatsApp Cloud API and Mailgun Email channel drivers with guided setup, signed webhooks, text-first replies, provider diagnostics, test sends, and delivery-status ingestion.
-- Added secure inbound Telegram, Slack, WhatsApp, and Mailgun files through one canonical attachment boundary, including bounded provider-host downloads and path-free durable Mailgun queue staging.
+- Added production WhatsApp Cloud API, Mailtrap Email, and Mailgun Email channel drivers with guided setup, signed webhooks, text-first replies, provider diagnostics, test sends, and delivery-status ingestion.
+- Added secure inbound Telegram, Slack, WhatsApp, Mailtrap, and Mailgun files through one canonical attachment boundary, including bounded provider-host downloads and path-free durable email queue staging.
 - Added owner-deletion cleanup so channel connections and force-deleted Agents purge private attachment objects before database cascades remove their ledgers.
-- Added a server-attested email presentation contract so Mailgun turns produce self-contained asynchronous replies without allowing channel metadata to authorize capabilities or supply tool inputs.
+- Added a server-attested email presentation contract so email-channel turns produce self-contained asynchronous replies without allowing channel metadata to authorize capabilities or supply tool inputs.
 
 ### Changed
 
-- Made Slack, WhatsApp Cloud API, and Mailgun Email fail closed behind default-off deployment flags until each provider completes a separate real-account acceptance run; Telegram remains the available external channel.
+- Restored stable Gemini 2.5 Flash-Lite to the verified model selector and capability/pricing catalogs so Integration Studio can use the lowest-cost structured-output model without a host-only override.
+- Made Slack and Mailtrap Email real-provider-tested but explicit deployment opt-ins, and kept WhatsApp Cloud API and Mailgun Email fail closed behind separate default-off provider flags until each completes its real-account acceptance run; Telegram remains available by default.
 - Hardened the `0.17.0` candidate around the Agent-first production boundary: immutable Knowledge, Connector, Data Resource, and Playbook authority is pinned at publication and runtime drift fails closed.
 - Made protected release evidence exact and blocking. Catalog cases must match the executed PHPUnit `test_file::test_method`; calibrated retrieval, real pgvector, live Knowledge citation retention, and the final all-jobs-green aggregator are required release jobs.
 
 ### Fixed
 
+- Bound Mailtrap webhook-secret selection to the explicit `inbound_receiving` event type so Email Sending delivery events that also contain `inbox_id` are authenticated with the distinct Sending webhook secret.
 - Made advanced Channel Connection JSON validation compile as Laravel rules instead of being evaluated as Filament dependency-injected UI closures, so guided provider connections can be saved reliably.
 - Reconciled terminal AgentGraph chat turns before returning `busy`, prevented unmaterialized side-effect success from replaying a fabricated result, and persisted only sources actually cited by an Agent answer.
 - Redacted direct Connector results, made Playbook cancellation require explicit re-attested user intent, and moved uploaded Knowledge files to private, ownership-authenticated storage with an explicit migration path.

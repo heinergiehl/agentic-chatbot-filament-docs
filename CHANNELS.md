@@ -2,7 +2,7 @@
 
 Channels let the package receive and answer messages from external systems while keeping Agent authority, optional Playbook execution, conversation, usage, and budget logic inside the Filament plugin.
 
-The web widget remains the default web chat surface. Telegram is the currently supported external provider. Slack, WhatsApp Cloud API, and Mailgun Email are implemented but intentionally disabled until their separate real-provider acceptance is complete. Every enabled entry point calls the same Agent runtime, stores the same conversations, and reuses the Agent's configured AI provider credential; each channel connection stores only the credentials required by that delivery provider.
+The web widget remains the default web chat surface. Telegram, Slack, and Mailtrap Email are real-provider tested external channels. Mailtrap Email is the preferred asynchronous-email implementation; Mailgun remains an optional alternative. WhatsApp Cloud API stays deferred. Every enabled entry point calls the same Agent runtime, stores the same conversations, and reuses the Agent's configured AI provider credential; each channel connection stores only the credentials required by that delivery provider.
 
 ## Release Availability
 
@@ -10,19 +10,21 @@ The web widget remains the default web chat surface. Telegram is the currently s
 | --- | --- | --- |
 | Web widget | Supported | Available |
 | Telegram Bot API | Supported and real-provider tested | Available |
-| Slack App | Staged for later real-provider acceptance | Disabled |
+| Slack App | Supported and real-provider tested | Disabled until explicitly enabled |
 | WhatsApp Cloud API | Deferred because provider onboarding is not yet accepted | Disabled |
-| Mailgun Email | Staged for later asynchronous-email acceptance | Disabled |
+| Mailtrap Email | Supported and real-provider tested | Disabled until explicitly enabled |
+| Mailgun Email | Optional alternative; real-provider acceptance deferred | Disabled |
 
 Disabled providers are absent from the Filament setup wizard. Existing records remain visible for deactivation or deletion, but their diagnostics, test-send, activation, inbound webhook, and outbound runtime paths fail closed. Enabling a staged provider is an explicit deployment decision:
 
 ```env
 AGENTIC_CHATBOT_CHANNELS_SLACK_ENABLED=false
 AGENTIC_CHATBOT_CHANNELS_WHATSAPP_ENABLED=false
-AGENTIC_CHATBOT_CHANNELS_EMAIL_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_MAILGUN_ENABLED=false
 ```
 
-Set one of these values to `true` only in the environment where that provider is being acceptance-tested. An implementation or mocked contract test is not a live-provider certification.
+Enable Slack or Mailtrap only after configuring buyer-owned credentials and completing a staging smoke test for that exact connection. Enable WhatsApp or Mailgun only in the environment where that still-staged provider is being acceptance-tested. An implementation or mocked contract test is not a live-provider certification.
 
 ## Architecture
 
@@ -49,14 +51,14 @@ The host app only supplies credentials, queue workers, and public webhook reacha
 
 Renderer behavior defaults to text-first for external realtime channels. This keeps Agents and Playbooks channel-agnostic, avoids noisy button menus, and lets users continue with natural language. Playbook choices are rendered as numbered text options unless native controls are explicitly enabled.
 
-| Capability | Telegram | Slack | WhatsApp Cloud | Mailgun Email |
-| ---------- | -------- | ----- | -------------- | ------------- |
+| Capability | Telegram | Slack | WhatsApp Cloud | Email (Mailtrap or Mailgun) |
+| ---------- | -------- | ----- | -------------- | --------------------------- |
 | Text | Native text message | Native message text | Native text message | Plain-text threaded email |
 | Choices | Numbered text by default; optional callback buttons | Numbered text by default; optional Block Kit buttons | Numbered text | Numbered text |
-| Inbound files | Photos and supported documents | Supported Slack files | Images and supported documents | Supported multipart attachments |
+| Inbound files | Photos and supported documents | Supported Slack files | Images and supported documents | Supported Mailtrap downloads or Mailgun multipart attachments |
 | Outbound images | Public URL or direct stored-file upload | Block image or direct stored-file upload | Text/media-link fallback | Text/media-link fallback |
 | Cards and sources | Compact text fallback | Text fallback; optional Block Kit | Compact text fallback | Compact text fallback |
-| Delivery statuses | Send result | Send result | Sent, delivered, read, failed | Accepted, delivered, opened, failed |
+| Delivery statuses | Send result | Send result | Sent, delivered, read, failed | Sent, delivered, read, failed |
 | Activity indicator | Native typing | Configurable placeholder | None | None |
 
 Text options keep Playbook waitpoint semantics intact:
@@ -112,7 +114,7 @@ New connections stay inactive until the operator deliberately activates them. Fo
 
 The **Channels** table includes operational actions:
 
-- **Diagnostics** checks Agent/link/token readiness, the active Agent deployment and its Playbook pins, provider credentials, webhook URL shape, webhook verification, raw payload storage, private attachment storage, queue mode, saved provider errors, and provider-specific state such as Telegram webhook info, Slack `auth.test`, WhatsApp phone-number metadata, or Mailgun domain state.
+- **Diagnostics** checks Agent/link/token readiness, the active Agent deployment and its Playbook pins, provider credentials, webhook URL shape, webhook verification, raw payload storage, private attachment storage, queue mode, saved provider errors, and provider-specific state such as Telegram webhook info, Slack `auth.test`, WhatsApp phone-number metadata, Mailtrap inbox access, or Mailgun domain state.
 - **Test Send** sends a provider-native test message and records the outbound delivery event.
 - **Set Telegram Webhook** configures Telegram with `message`, `edited_message`, and `callback_query` updates.
 - **Set Telegram Commands** publishes `/start`, `/help`, `/status`, and `/reset` to Telegram clients.
@@ -121,14 +123,15 @@ Release checklist for customer environments:
 
 1. Confirm that only providers with completed real-provider acceptance are enabled, then run a queue worker under a supervisor, not an interactive terminal.
 2. Set a stable public HTTPS webhook base URL on each channel connection or through `AGENTIC_CHATBOT_CHANNELS_WEBHOOK_BASE_URL`.
-3. Enable webhook verification in production and configure the provider verification secret: Telegram `webhook_secret`, Slack `signing_secret`, WhatsApp `app_secret`, or Mailgun `webhook_signing_key`.
+3. Enable webhook verification in production and configure the provider verification secret: Telegram `webhook_secret`, Slack `signing_secret`, WhatsApp `app_secret`, both Mailtrap webhook secrets, or Mailgun `webhook_signing_key`.
 4. Run **Diagnostics** after saving credentials and after every tunnel/domain change.
 5. For Telegram, run **Set Telegram Webhook** after the public URL changes.
 6. For Slack, reinstall the app after changing OAuth scopes such as `files:write`.
 7. For WhatsApp, subscribe the Meta app to message webhooks and test inside an open customer-service conversation window; proactive messages outside that window require an approved template and are not emitted by this reply-only driver.
-8. For Mailgun, use a receiving route with `forward("<generated-webhook-url>")` and configure delivery-event webhooks separately when status tracking is wanted.
-9. Send one real inbound message through each channel and confirm inbound and outbound delivery events are completed.
-10. If an Agent or Playbook returns images for Telegram or Slack, keep `native_images` enabled and either provide a public `imageUrl` or a readable Laravel storage `imageArtifact`.
+8. For Mailtrap, create separate JSON inbound-receiving and transactional-sending webhooks that point to the generated package URL and store each signing secret in its matching field.
+9. For Mailgun, use a receiving route with `forward("<generated-webhook-url>")` and configure delivery-event webhooks separately when status tracking is wanted.
+10. Send one real inbound message through each channel and confirm inbound and outbound delivery events are completed.
+11. If an Agent or Playbook returns images for Telegram or Slack, keep `native_images` enabled and either provide a public `imageUrl` or a readable Laravel storage `imageArtifact`.
 
 For local development on `localhost:8000`, expose the app with HTTPS:
 
@@ -149,7 +152,7 @@ When the Agent invokes a Playbook for a channel message, the Playbook receives c
 | Variable | Description |
 | -------- | ----------- |
 | `channel` | `telegram`, `slack`, `whatsapp`, or `email` |
-| `channel_provider` | Provider key such as `telegram_bot`, `slack_app`, `whatsapp_cloud`, or `mailgun_email` |
+| `channel_provider` | Provider key such as `telegram_bot`, `slack_app`, `whatsapp_cloud`, `mailtrap_email`, or `mailgun_email` |
 | `channel_external_thread_id` | Provider chat or Slack workspace/channel/user/thread key |
 | `channel_external_user_id` | Provider user identifier |
 | `channel_external_user_label` | Display name or username |
@@ -296,11 +299,63 @@ The GET verification challenge is accepted only when `hub.verify_token` matches 
 
 Outbound replies are deliberately text-first, split at WhatsApp's text limit, and use the inbound customer's WhatsApp ID. The driver records provider message IDs plus sent/delivered/read/failed status events. It does not originate approved template messages; a proactive test outside Meta's customer-service window may therefore be rejected by Meta. Set `"preview_urls": true` to enable link previews or override the pinned Graph API version with `"graph_api_version": "v26.0"` after validating that version in your Meta app.
 
+## Mailtrap Email
+
+Provider: `Email via Mailtrap`
+
+Release status: supported and real-provider tested, but disabled by default as an explicit deployment opt-in. Set `AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=true` only after configuring the deployment's own token, hosted inbox, two provider-issued webhook secrets, public HTTPS callback, and verified sender. Email is an asynchronous support and document-intake surface, not a realtime-chat substitute.
+
+The real-provider acceptance covers a Mailtrap-hosted Inbound inbox, exact-body HMAC verification for both webhook types, full-message fetch, a bounded text attachment through the canonical attachment boundary, a committed Gemini Agent turn, same-thread reply, and idempotent delivery-status ingestion. Email Sending events are classified by their explicit event type because Mailtrap may include `inbox_id` on delivery or rejection events too.
+
+Credentials JSON:
+
+```json
+{
+  "api_token": "mailtrap-api-token",
+  "inbound_inbox_id": "42",
+  "inbound_address": "support-123@inbound-mailtrap.io",
+  "from_address": "assistant@example.com",
+  "from_name": "Example Assistant",
+  "inbound_webhook_signing_secret": "inbound-webhook-secret",
+  "sending_webhook_signing_secret": "sending-webhook-secret"
+}
+```
+
+Mailtrap setup:
+
+1. Create an API v2 token that can manage Inbound folders/inboxes and webhooks and can send transactional email. Store the token only in the encrypted channel credential; never put it in source control, logs, Playbook variables, or browser-visible configuration.
+2. Create a dedicated Inbound folder and hosted inbox. Copy the numeric inbox ID and generated `@inbound-mailtrap.io` address into the channel form.
+3. Configure a verified sending domain and sender. Mailtrap's demo domain may send only to the account's registered address and is suitable only for acceptance testing.
+4. Create an `inbound_receiving` webhook scoped to the exact Inbound inbox. Select JSON payload format, point it to the generated package webhook URL, and copy its signing secret into **Inbound Webhook Signing Secret**.
+5. Create an `email_sending` webhook for the transactional stream and the delivery/open/click/bounce/spam/unsubscribe/suspension/reject events you need. Use the same package URL and copy this webhook's distinct signing secret into **Sending Webhook Signing Secret**.
+6. Run **Diagnostics**, use **Test Send** with an allowed recipient, then send one real email to the Inbound address and confirm that the Agent's answer remains in the same Mailtrap thread.
+
+Mailtrap signs the exact raw body with HMAC-SHA256 in `Mailtrap-Signature`. Both JSON batches and JSON Lines are accepted, with at most 500 events per request. Inbound notifications are bound to the configured numeric inbox before the package fetches the full message from Mailtrap's Inbound API. Sender, exact recipient, message ID, inbox ID, and returned payload binding are verified; automated, list, bulk, bounce, and package-generated mail is suppressed.
+
+Plain text is preferred and HTML-only mail is reduced to bounded plain text. Non-inline attachments are downloaded only from Mailtrap's signed HTTPS storage URLs, validated through the canonical attachment boundary, and durably staged with path-free queue descriptors. Hosted-inbox replies use Mailtrap's message-reply API without a `from` field; if Mailtrap deterministically rejects that with `400` for a custom-domain inbox, the driver retries once with the configured verified sender. New outbound messages use the transactional Email API and set the Inbound address as `reply_to`.
+
+Each outbound message includes only the connection public ID in Mailtrap `custom_variables`. Delivery webhooks without that exact binding are ignored, preventing one Mailtrap webhook from updating another channel connection. Provider message and event IDs remain the idempotency identities for outbound and status ledgers.
+
+### Mailtrap Local for development
+
+Mailtrap Local is an optional local SMTP catcher and rendering sandbox. It does not emulate Mailtrap Cloud Inbound, signed webhooks, hosted inboxes, transactional delivery, account permissions, or high availability, so it supplements rather than replaces the provider-contract and real-account tests.
+
+```bash
+docker run -d --name filament-agentic-chatbot-mailtrap-local \
+  --restart unless-stopped \
+  -p 127.0.0.1:3535:3535 \
+  -p 127.0.0.1:3550:3550 \
+  -v filament-agentic-chatbot-mailtrap-local:/var/lib/mailtrap-local \
+  mailtrap/mailtrap-local:0.3.0
+```
+
+Use `127.0.0.1:3535` for SMTP and open `http://127.0.0.1:3550` for its UI/API. The productive `mailtrap_email` driver deliberately keeps the official HTTPS API endpoints pinned; it does not accept a user-controlled base URL merely to point at the local catcher.
+
 ## Mailgun Email
 
 Provider: `Email via Mailgun`
 
-Release status: staged and disabled by default. Set `AGENTIC_CHATBOT_CHANNELS_EMAIL_ENABLED=true` only for the later Mailgun sandbox/real-provider acceptance environment. Email is treated as an asynchronous support surface, not as a realtime chat substitute.
+Release status: optional alternative, staged, and disabled by default. Set `AGENTIC_CHATBOT_CHANNELS_MAILGUN_ENABLED=true` only for a dedicated Mailgun sandbox/real-provider acceptance environment. Email is treated as an asynchronous support surface, not as a realtime chat substitute.
 
 Credentials JSON:
 
@@ -331,9 +386,9 @@ The Agent also receives a server-attested, presentation-only email contract deri
 
 ## Inbound Attachments
 
-Incoming Telegram photos/documents, Slack files, WhatsApp images/documents, and Mailgun multipart attachments all cross the same canonical attachment contract before the Agent model sees them. The global attachment switch, count/byte limits, detected MIME allowlist, image/PDF/text validation, published-model media capability, private storage, durable turn hashing, and AI budget preflight are shared with widget attachments. A channel's **Accept incoming attachments** toggle is independent from the widget's attachment toggle; this lets an operator permit files on one channel without exposing an upload control on the public widget.
+Incoming Telegram photos/documents, Slack files, WhatsApp images/documents, Mailtrap attachment downloads, and Mailgun multipart attachments all cross the same canonical attachment contract before the Agent model sees them. The global attachment switch, count/byte limits, detected MIME allowlist, image/PDF/text validation, published-model media capability, private storage, durable turn hashing, and AI budget preflight are shared with widget attachments. A channel's **Accept incoming attachments** toggle is independent from the widget's attachment toggle; this lets an operator permit files on one channel without exposing an upload control on the public widget.
 
-Provider-declared MIME types and filenames are hints only. File content is detected and verified. Remote downloads require HTTPS on port 443, reject credentials/fragments and redirects, allow only the provider's known media hosts, enforce limits while streaming, and return bounded user-safe failures. Mailgun ingress filenames are encrypted, paths are random, and storage paths are never serialized into a queued job.
+Provider-declared MIME types and filenames are hints only. File content is detected and verified. Remote downloads require HTTPS on port 443, reject credentials/fragments and redirects, allow only the provider's known media hosts, enforce limits while streaming, and return bounded user-safe failures. Mailtrap downloads are durably staged before queue handoff. Mailgun ingress filenames are encrypted, paths are random, and storage paths are never serialized into a queued job.
 
 Relevant global limits:
 
@@ -389,13 +444,14 @@ AGENTIC_CHATBOT_CHANNELS_STORE_RAW_WEBHOOK_PAYLOADS=false
 AGENTIC_CHATBOT_CHANNELS_ERROR_REPLY_MESSAGE="The bot could not process this message. Please try again later."
 ```
 
-`AGENTIC_CHATBOT_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION` defaults to `true` in production and `false` outside production. When enabled, Telegram requires `webhook_secret`, Slack requires `signing_secret`, WhatsApp requires `app_secret`, and Mailgun requires `webhook_signing_key`. Raw provider payload storage is disabled by default; enable it only for short-lived debugging. Stored and queued payloads redact token, secret, signature, password, and API-key fields and bound string length, object breadth, and nesting depth before persistence. `AGENTIC_CHATBOT_CHANNELS_ERROR_REPLY_MESSAGE` is used when the bot runtime returns an error payload without a user-safe message.
+`AGENTIC_CHATBOT_CHANNELS_REQUIRE_WEBHOOK_VERIFICATION` defaults to `true` in production and `false` outside production. When enabled, Telegram requires `webhook_secret`, Slack requires `signing_secret`, WhatsApp requires `app_secret`, Mailtrap requires both provider-issued webhook signing secrets, and Mailgun requires `webhook_signing_key`. Raw provider payload storage is disabled by default; enable it only for short-lived debugging. Stored and queued payloads redact token, secret, signature, password, and API-key fields and bound string length, object breadth, and nesting depth before persistence. `AGENTIC_CHATBOT_CHANNELS_ERROR_REPLY_MESSAGE` is used when the bot runtime returns an error payload without a user-safe message.
 
-WhatsApp always needs `verify_token` for the GET subscription challenge and uses `app_secret` for POST signatures. Mailgun uses `webhook_signing_key` for both receiving-route and event signatures. The provider API credentials remain encrypted in `channel_connections`; they are never copied into Agent prompts, Playbook variables, delivery payload snapshots, or attachment descriptors.
+WhatsApp always needs `verify_token` for the GET subscription challenge and uses `app_secret` for POST signatures. Mailtrap issues a distinct signing secret for every Inbound or Email Sending webhook; the driver accepts only the two secrets stored on that connection. Mailgun uses `webhook_signing_key` for both receiving-route and event signatures. The provider API credentials remain encrypted in `channel_connections`; they are never copied into Agent prompts, Playbook variables, delivery payload snapshots, or attachment descriptors.
 
 ## Provider Notes
 
 - Telegram is the best first local test because setup is simple and replies are plain text.
 - Slack is the best B2B/backoffice channel after Telegram. Prefer slash commands and interactions over broad channel-history reads.
 - WhatsApp is the best customer-facing realtime channel when the business already has a Meta WhatsApp setup. This driver is reply-oriented and intentionally does not bypass template policy.
-- Mailgun Email is appropriate for asynchronous support intake and document-heavy requests. Use a dedicated inbound address and keep loop-suppression headers intact.
+- Mailtrap Email is the preferred asynchronous support and document-intake provider. Use a dedicated hosted inbox, a verified sender, and separate signed webhooks for Inbound and Email Sending events.
+- Mailgun Email remains an optional alternative when an installation already uses Mailgun. Use a dedicated inbound route and keep loop-suppression headers intact.

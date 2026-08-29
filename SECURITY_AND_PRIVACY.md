@@ -44,7 +44,7 @@
 - Hard monthly token/cost budget checks with in-flight request reservations
 - Bot-scoped built-in internal data resources and hidden runtime safety scopes for `query_data_resource`
 - Content-detected, hash-bound chat attachments on a non-public disk with scheduled retention cleanup
-- Provider-authenticated Telegram, Slack, WhatsApp, and Mailgun webhooks; bounded provider-host-only file downloads; and path-free durable Mailgun ingress staging
+- Provider-authenticated Telegram, Slack, WhatsApp, Mailtrap, and Mailgun webhooks; bounded provider-host-only file downloads; and path-free durable email ingress staging
 - Agent-bound outbound webhooks with public HTTPS/DNS pinning, no redirects, exact-body HMAC signatures, transactional outbox/idempotency evidence, encrypted payload storage, and PII-minimized outcome/handoff schemas
 - Raw channel payload capture disabled by default; when explicitly enabled for debugging, secret-key values are redacted and strings, object breadth, nesting, and invalid UTF-8 are bounded before queue or database persistence
 
@@ -117,14 +117,14 @@ content while retaining bounded audit metadata marked `purged`.
 
 External-channel files use the same content validation, published-model media
 capability check, canonical turn hash, and final private chat storage. Telegram,
-Slack, and WhatsApp provider references are downloaded only over HTTPS from an
-explicit provider host allowlist, without redirects, credentials in URLs, or
-unbounded reads. Mailgun multipart uploads are verified before queue dispatch
-and staged under a randomized path. Queue payloads contain only an opaque ingress
+Slack, WhatsApp, and Mailtrap provider references are downloaded only over HTTPS
+from an explicit provider host allowlist, without redirects, credentials in URLs,
+or unbounded reads. Mailtrap downloads and Mailgun multipart uploads are verified
+before queue dispatch and staged under a randomized path. Queue payloads contain only an opaque ingress
 ID and bounded file metadata; they never contain raw bytes, disk names, storage
 paths, or provider credentials.
 
-Mailgun ingress records are transport state, not conversation history. The
+Email ingress records are transport state, not conversation history. The
 daily `filament-agentic-chatbot:prune-channel-inbound-attachments` command
 purges expired staged and consumed objects after
 `AGENTIC_CHATBOT_ATTACHMENTS_CHANNEL_INGRESS_RETENTION_HOURS` (24 hours by
@@ -135,7 +135,9 @@ WhatsApp POST bodies are authenticated with the Meta App Secret and
 `X-Hub-Signature-256`; its GET subscription challenge requires the independently
 chosen Verify Token. Mailgun receiving-route and event payloads use the Webhook
 Signing Key, timestamp, and token HMAC with a bounded clock window. Slack and
-Telegram retain their signing-secret and webhook-secret checks. These delivery
+Telegram retain their signing-secret and webhook-secret checks. Mailtrap signs
+the exact raw webhook body with HMAC-SHA256 and each connection stores separate
+Inbound and Email Sending webhook secrets. These delivery
 provider secrets are encrypted in channel credentials and never supplied to the
 Agent or Playbooks.
 

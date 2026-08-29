@@ -128,7 +128,7 @@ AGENTIC_CHATBOT_WIDGET_CONTEXT_TTL_MINUTES=10
 GEMINI_API_KEY=
 ```
 
-If an existing installation pins a Gemini 2.5 model, update that explicit host value before publishing a new Agent deployment. The package's release-verified Gemini profiles are 3.7 Flash, 3.6 Flash, and 3.5 Flash Lite; an obsolete model does not silently inherit current tool or structured-output capabilities.
+The package's release-verified Gemini profiles are 3.7 Flash, 3.6 Flash, 3.5 Flash Lite, and 2.5 Flash Lite. Gemini 2.5 Flash Lite remains the lowest-cost verified option for bounded structured-output work. Unknown or retired models do not silently inherit current tool or structured-output capabilities.
 
 Optional Chroma profile:
 
@@ -315,7 +315,7 @@ For each verified gap: review the original conversation, start work, create its 
 
 ## 10. Advanced: Server API And Channels
 
-For server API clients or Telegram connections, create one Agent Access Token per integration in Filament and set the matching channel label for isolated reporting, rate limits, and budgets. Slack, WhatsApp Cloud API, and Mailgun Email are built in but intentionally unavailable by default until their separate real-provider acceptance is complete. Server clients call the JSON complete endpoint:
+For server API clients or channel connections, create one Agent Access Token per integration in Filament and set the matching channel label for isolated reporting, rate limits, and budgets. Telegram is available by default; Slack and Mailtrap Email are real-provider-tested opt-ins. WhatsApp Cloud API and Mailgun Email are built in but intentionally unavailable by default until their separate real-provider acceptance is complete. Server clients call the JSON complete endpoint:
 
 ```http
 POST /api/filament-agentic-chatbot/chat/{botPublicId}/complete

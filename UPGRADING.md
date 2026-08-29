@@ -222,21 +222,27 @@ handoff activity in the host support/audit retention decision.
 
 ## Unreleased: fail-closed channel availability
 
-Telegram remains available by default. Slack, WhatsApp Cloud API, and Mailgun
-Email are now absent from the Filament setup wizard and rejected at the runtime
-and webhook boundaries unless their explicit acceptance flags are enabled:
+Telegram remains available by default. Slack has completed its real-provider
+acceptance but remains an explicit deployment opt-in. WhatsApp Cloud API,
+Mailtrap Email, and Mailgun Email are absent from the Filament setup wizard and
+rejected at the runtime and webhook boundaries unless their provider-specific
+flags are enabled:
 
 ```env
 AGENTIC_CHATBOT_CHANNELS_SLACK_ENABLED=false
 AGENTIC_CHATBOT_CHANNELS_WHATSAPP_ENABLED=false
-AGENTIC_CHATBOT_CHANNELS_EMAIL_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_MAILGUN_ENABLED=false
 ```
 
-Merge the new `channels.slack.enabled`, `channels.whatsapp.enabled`, and
-`channels.email.enabled` keys into published configuration. Existing connection
-records are retained, but a disabled provider cannot be diagnosed, test-sent,
-activated, or executed. Enable a provider only for its later real-provider
-acceptance; mocked provider tests do not constitute that release evidence.
+Merge the new `channels.slack.enabled`, `channels.whatsapp.enabled`,
+`channels.email.providers.mailtrap.enabled`, and
+`channels.email.providers.mailgun.enabled` keys into published configuration.
+The old broad `AGENTIC_CHATBOT_CHANNELS_EMAIL_ENABLED` switch is removed so one
+email provider cannot accidentally expose the other. Existing connection records
+are retained, but a disabled provider cannot be diagnosed, test-sent, activated,
+or executed. Enable an unaccepted provider only in its dedicated acceptance
+environment; mocked provider tests do not constitute live-provider evidence.
 
 ---
 
@@ -246,23 +252,25 @@ Run `php artisan migrate` before enabling attachments. The
 `2026_08_29_000003_create_bot_message_attachments.php` migration creates the
 canonical private Chat Turn attachment ledger. The follow-up
 `2026_08_29_000004_create_channel_inbound_attachments.php` migration creates a
-short-lived durable ingress ledger so Mailgun multipart uploads survive queue
-dispatch without placing bytes, disk names, or storage paths in the job payload.
+short-lived durable ingress ledger so Mailtrap downloads and Mailgun multipart
+uploads survive queue dispatch without placing bytes, disk names, or storage
+paths in the job payload.
 Existing channel connections, conversations, and messages are not backfilled.
 
-Republish or merge the `channels.whatsapp`, `channels.email`, and attachment
+Republish or merge the `channels.whatsapp`, `channels.email.providers`, and attachment
 retention settings. The existing Agent/provider AI key remains authoritative;
-do not create a channel-specific AI key. WhatsApp and Mailgun still require
+do not create a channel-specific AI key. WhatsApp, Mailtrap, and Mailgun require
 their own encrypted delivery-provider credentials. For every file-enabled
 channel, verify that `AGENTIC_CHATBOT_ATTACHMENTS_DISK` is private and writable
 by both web and queue workers, keep Laravel Scheduler running, and exercise the
 `filament-agentic-chatbot:prune-channel-inbound-attachments --dry-run` probe.
 
-Telegram photos/documents, Slack files, WhatsApp images/documents, and Mailgun
-attachments now cross the canonical chat-attachment validation, model-capability,
+Telegram photos/documents, Slack files, WhatsApp images/documents, Mailtrap
+downloads, and Mailgun attachments now cross the canonical chat-attachment validation, model-capability,
 durable-turn, storage, and budget path. Re-run **Diagnostics** and test one real
 file through each enabled provider. WhatsApp uses Meta App Secret signatures and
-a separate Verify Token; Mailgun uses its Webhook Signing Key, not its API key.
+a separate Verify Token. Mailtrap uses two provider-issued webhook signing
+secrets; Mailgun uses its Webhook Signing Key, not its API key.
 See [Channel Integrations](docs/CHANNELS.md).
 
 ---

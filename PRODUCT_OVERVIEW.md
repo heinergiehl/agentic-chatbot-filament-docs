@@ -102,7 +102,7 @@ You still need to provide the rest of the product stack that depends on your bus
 ### Human Handoff Desk
 
 - One active, versioned support case per conversation with team routing and business-hours SLAs
-- Claim/assignment, encrypted internal notes, and customer replies inside the original web or enabled external-provider thread; Telegram is available while Slack, WhatsApp, and Email remain default-off pending acceptance
+- Claim/assignment, encrypted internal notes, and customer replies inside the original web or enabled external-provider thread; Telegram is available by default, Slack is a real-provider-tested opt-in, and WhatsApp plus both email providers remain fail-closed pending their own acceptance
 - Deterministic Agent pause during takeover, explicit resolve/handback actions, and immutable actor-attributed activity
 - Safe widget polling that exposes no operator identity, internal note, assignment, or SLA data
 

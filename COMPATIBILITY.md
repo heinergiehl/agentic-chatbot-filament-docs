@@ -27,7 +27,7 @@ An available adapter is not automatically a release-certified provider/model pai
 
 - The public widget requires JavaScript, `fetch`, server-sent events, Web Crypto-capable browsers, a CSP that permits the configured script/API origin, and an exact Allowed Domains entry.
 - Production embeds use tokenless bootstrap and short-lived header tokens; query/body token compatibility is disabled by default in production.
-- Telegram is the available external-channel integration. Slack, WhatsApp Cloud API, and Mailgun Email are built in but default-off and fail closed until their separate real-provider acceptance is complete. Any enabled channel still depends on buyer-owned provider credentials, webhook configuration, platform policy, private attachment storage, and a staging smoke test.
+- Telegram is available by default; Slack and Mailtrap Email have completed real-provider acceptance as explicit opt-ins. WhatsApp Cloud API and Mailgun Email are built in but default-off and fail closed until their separate real-provider acceptance is complete. Any enabled channel still depends on buyer-owned provider credentials, webhook configuration, platform policy, private attachment storage, and a staging smoke test.
 
 ## What “certified” means
 

@@ -127,10 +127,10 @@ cannot be removed.
 
 ### Channel Ingress Attachment Retention
 
-When the staged Mailgun provider is explicitly enabled, it must persist
-multipart uploads before its webhook can safely dispatch an asynchronous job.
-Those temporary ingress objects use the same verified private disk but a
-separate, short retention window controlled by
+When a staged email provider is explicitly enabled, Mailtrap downloads and
+Mailgun multipart uploads must be persisted before their webhooks can safely
+dispatch an asynchronous job. Those temporary ingress objects use the same
+verified private disk but a separate, short retention window controlled by
 `AGENTIC_CHATBOT_ATTACHMENTS_CHANNEL_INGRESS_RETENTION_HOURS` (default 24
 hours). Provider downloads for Telegram, Slack, and WhatsApp are resolved by the
 worker and do not create ingress rows.
@@ -157,7 +157,7 @@ Agent, token, webhook, provider, and queue readiness, diagnostics fails when a
 channel accepts files while the global attachment runtime is disabled or the
 configured disk is not a verified private writable disk. Re-run diagnostics
 after changing a disk, worker identity, or public webhook hostname. Slack,
-WhatsApp, and Mailgun diagnostics become available only after the corresponding
+WhatsApp, Mailtrap, and Mailgun diagnostics become available only after the corresponding
 `AGENTIC_CHATBOT_CHANNELS_*_ENABLED` acceptance flag is deliberately enabled.
 
 ## Scheduled API Source Sync

@@ -66,7 +66,7 @@ An Agent without one verified live Agent deployment stays blocked. A Playbook is
 - Tokenless browser snippet: an origin-checked `/bootstrap` call issues a short-lived token kept in memory and renewed before expiry
 - Separate high-entropy conversation credentials so a leaked or guessed session ID alone cannot read, export, mutate, or delete anonymous production history
 - Configurable template, accent, typography, size, copy, starter prompts, citations, source visibility, context area, and responsive layout
-- A supported Telegram package driver plus fail-closed, opt-in Slack, WhatsApp Cloud API, and Mailgun Email implementations; every enabled provider routes verified webhooks and inbound files through the same Agent/capability/usage boundaries
+- Supported Telegram plus real-provider-tested Slack and Mailtrap Email package drivers, alongside fail-closed opt-in WhatsApp Cloud API and Mailgun Email implementations; every enabled provider routes verified webhooks and inbound files through the same Agent/capability/usage boundaries
 - Agent Access Tokens for trusted server-to-server API integrations; they are never browser widget credentials
 
 ## Supported Golden Path
