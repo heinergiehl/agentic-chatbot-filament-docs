@@ -1,315 +1,400 @@
 # Agent Runtime Architecture
 
-This document describes the implemented production runtime for Filament Agentic Chatbot.
+This document describes the implemented production runtime after the agent-first hard cutover.
 
-## One Productive Runtime
+## Product Model
 
-Every chat request is bound to exactly one verified live workflow deployment. A bot without that deployment is unavailable for widget, API, channel, and tool chat.
+An Agent owns the conversation. A Playbook is an optional deterministic tool
+that the Agent may invoke for a bounded process. A simple conversational or
+knowledge Agent does not need a Playbook.
 
-Simple Assistant and Knowledge Assistant are starter workflows. They use the same publish, activation, planning, execution, persistence, and inspection path as every custom workflow. There is no runtime selector, deploymentless answer path, global tool escape, or recursive workflow tool.
+Every productive Agent is represented by exactly one live, immutable,
+hash-verified `AgentDeployment`. Its closed contract freezes behavior, model
+policy, one exact provider/model/driver/base-URL binding, effective token and
+monthly budgets, exact read-only Data Resource and Connector operation pins,
+and exact Playbook deployment pins. Provider fallback lists are authoring-time conveniences only
+and cannot be published as productive Agent authority. Mutable bot, Connector,
+or Playbook authoring data is never consulted as runtime authority.
 
-Starter migration readiness is derived from the production compiler output, not from UI labels or a legacy behavior presenter. The canonical node contracts declare typed semantic roles such as entry, user response, and knowledge. One runtime semantic profiler owns reachability and role evidence for migration checks, launch readiness, and workflow/knowledge presentation; those consumers do not reinterpret the graph. The signed migration plan binds the exact compiled runtime fingerprint and semantic profile; after publication, migration verifies the immutable deployment, dependency closure, runtime fingerprint, and semantic profile before making it live.
+API Connectors, Data Resources, knowledge sources, channels, access tokens,
+usage accounting, limits, human handoff, and operational inspection remain
+product capabilities. They do not own conversation routing.
 
-## Request To Response
+## One Productive Turn Path
 
 ```text
-HTTP, widget, or channel adapter
--> ChatEndpointContextResolver
--> ChatTurnApplicationService::execute(context, Complete|Stream)
--> DurableChatTurnService acquisition and idempotency
--> ChatTurnRequestExecutor
--> RuntimeTurnPlanner
--> RuntimeTurnPlanCompiler and TurnPlanValidator
--> RuntimeTurnAuthorizer
--> TurnStateTransitionGuard
--> AuthorizedTurnCommandExecutor
--> WorkflowCommandHandler
--> WorkflowTurnExecutor and AgentGraphWorkflowRuntime
--> typed outcome committer
--> ChatTurnResponseRenderer
+HTTP / widget / channel
+-> ChatTurnApplicationService
+-> DurableChatTurnService
+-> AgentTurnLoop
+-> verified AgentDeployment
+-> AgentTurnModel
+   -> answer or clarify directly
+   -> optionally invoke one or more exact deployment-pinned read tools
+   -> or invoke an exact deployment-pinned Playbook tool
+-> canonical ChatTurnResult
+-> durable outcome and assistant-message commit
+-> JSON / SSE renderer
 ```
 
-Transport adapters resolve identity, access, bot, conversation, area, and client-turn identity. They do not select a workflow transition, mutate graph state, or execute a capability.
-
-`ChatTurnApplicationService` owns the application transaction sequence. It acquires the durable turn, verifies the exact release safety policy against the raw input before any user content is persisted, stores either the accepted message or a localized non-secret blocked placeholder, executes only accepted input, commits one typed outcome, and only then returns a protocol response. Replaying the same accepted client-turn identity returns the stored response without executing again.
-
-## Deployment Selection
-
-`WorkflowRuntimeArtifactRepository` resolves the bot's live deployment. Productive execution accepts only an immutable `AgentWorkflowDeployment` whose hash, workflow/version identity, runtime schema, manifests, and complete dependency closure verify.
-
-Planning records that deployment as one typed authorization reference containing bot, workflow, deployment, and hash identity. Run reservation locks the conversation, bot, and workflow and verifies both live pointers against that same reference; it never reselects a newer deployment after the turn has been authorized. A concurrent release therefore produces a retryable turn-state conflict and no run.
-
-Every live reservation, including direct `WorkflowRunner` use, crosses that typed boundary. The convenience entrypoint first resolves the current bot deployment and then repeats the exact bot, conversation, workflow, deployment, and hash checks under the reservation locks. Preview and quality execution are separate persisted modes and cannot enter this live fallback.
-
-Drafts and authoring payloads never execute as live chat. Editor tests use separately identified preview artifacts. Rollback selects an existing verified historical deployment; it never recompiles historical authoring data.
-
-The bot and workflow live pointers are projections managed by `WorkflowReleaseService`. Publish, make-live, stop-live, and rollback callers use that service rather than model helpers or editor-side pointer writes.
-
-## Interpretation, Planning, And Policy
-
-Contextual semantic interpreters may propose entry intent, slot meaning, waitpoint intent, clarification, or safe protocol text. A proposal has no execution authority.
-
-At idle, one bounded primary Workflow Turn Understanding call classifies the current natural-language message against the verified deployment's public workflow and capability contract. Deterministic entry admission may request one constrained repair from that same interpreter for a repairable read-only contract-shape error; call count and repair reason are recorded. Only a clear `supported_request` may proceed to workflow start. Greetings, workflow or conversation-history questions, and unsupported requests return grounded protocol text; ambiguous or unavailable interpretation clarifies without creating a run. Explicit tool starts and exact typed workflow controls remain deterministic fast paths. This is the same canonical interpretation boundary used where active waitpoints need language understanding, not a second planner or execution authority; every result remains an untrusted proposal checked against the deployed contract and deterministic policy.
-
-Entry understanding consumes a minimal public projection of every published start route, declared public slot schemas, and public capability descriptions and examples. It does not receive internal node inventories, stored slot values, keyword lists, or confirmation details. The same structured call may propose bounded initial slot candidates only when each value is backed by a literal span in the latest message; deterministic route binding, declared-slot validation, type validation, and provenance checks decide whether any candidate is admitted. Missing or rejected inputs do not block a supported request; the workflow starts and its own waitpoints collect and validate what remains.
-
-When the release contract publishes semantically labelled entry intents, `supported_request` cannot start a run without one exact route binding above the calibrated route threshold. A missing or weak binding produces a targeted clarification and no fallback to an alternative classifier. A linear release whose structural start route has no labelled intents may start directly from one high-confidence supported interpretation.
-
-Conversation-history recall is a read-only protocol branch of that same entry interpretation. A closed recall kind selects `ConversationRecallResponder`, which can read only the already compiled bounded context snapshot. Conversation summaries remain explicitly untrusted context, are never promoted to workflow variables, and cannot authorize a transition or capability.
-
-Entry contract v8 is exhaustive rather than winner-takes-all. For a message with several acts, each act must cite an ordered literal source span and bind to one exact published route. Deterministic policy authorizes one `Authorized Entry Turn Plan` version 2 only when every executable act is an independent read and every reachable branch is read-only. The plan groups distinct objectives as tasks and repeated inputs for the same route as items, preserves user order, and binds both the workflow release-contract hash and capability-contract hash. Mixed, dependent, duplicate, unsupported, or incompletely covered turns clarify without partially executing the apparently safe subset.
-
-The same entry contract is the sole semantic owner for result-set follow-ups. It may emit only declared operation keys plus an explicit result-set reference. Freshness, field-role authorization, patch construction, single-use binding, and pinned DataQuery validation are deterministic. There is no separate productive turn-act classifier or task-frame continuation router.
-
-At a waitpoint, semantic understanding may propose only a closed side-question kind and the current turn language. A deterministic responder answers from the authoritative pending-input contract—purpose, format, choices, optionality, confirmation effect, or current step—and never from model-authored facts. Unknown questions state that limitation and repeat the pending question. Ambiguous input repeats the authoritative question and available choices without resolving the interrupt or mutating workflow state.
-
-The deterministic runtime then:
-
-1. compiles a bounded `TurnContextPack` and authoritative turn-state snapshot;
-2. compiles and validates a candidate plan whose `candidate` steps still have no execution authority;
-3. `RuntimeTurnAuthorizer` evaluates deterministic policy, selects exactly one step, binds authoritative workflow/run/waitpoint identity, pins the deployment, and issues any side-effect grants;
-4. the authorizer discards alternative candidate steps and returns exactly one closed `AuthorizedTurnCommand` variant or one non-executing protocol command; its payload contains scalar identities, a bounded selected plan, and an optional typed `AuthorizedWorkflowTransition`, never Eloquent models or the mutable chat request;
-5. `TurnStateTransitionGuard` compare-and-sets state versions only for the exact start, resume, cancel, or state-bearing hold command;
-6. the exhaustive command executor applies the authorized transition without semantic interpretation, route selection, or command replacement.
-
-Unsupported, ambiguous, stale, or unowned requests produce a bounded clarification or blocked response. Static meta/waitpoint text is a protocol result inside the workflow boundary; it cannot call a capability or replace the live workflow.
-
-There is no productive Directive, Target, or post-authorization Mapper representation. When an authorized workflow start consumes route data from its candidate plan, the server-reserved command envelope attests the exact command type, plan ID, and step ID. Inner workflow nodes fail closed if that command-plan-step attestation is absent or mismatched.
-
-Pre-workflow route clarification is durable but is not an AgentGraph interrupt. `bot_entry_clarifications` binds the original input, admitted entry acts, route options, source turn, bot, conversation, workflow deployment, and release-contract hash until the route answer is resolved. An unmatched greeting, meta/help/status question, or unsupported request preserves the active clarification; a clear new request supersedes it. A matched answer enters a compare-and-set claim lifecycle (`available`, `resolving`, `finalized` or `reconciliation_required`). The resolving claim and its concrete run ID are recorded in the same transaction as run reservation, safe pre-dispatch failures restore availability, and unknown post-dispatch outcomes require reconciliation. A route answer is control provenance only: it may select a published route but can never become a workflow slot or capability argument.
-
-## Workflow Commands
-
-The productive command set is closed:
-
-- start the verified live workflow;
-- resume its verified AgentGraph interrupt;
-- cancel the current workflow task;
-- hold the current run while returning a safe clarification;
-- return a protocol response that performs no external work.
-
-`WorkflowCommandHandler` is the workflow-transition entry. It receives transport data separately from the authorized command, resolves the pinned execution artifact, and passes only the selected bounded plan, authoritative turn state, effective input, and typed continuation transition to `WorkflowTurnExecutor`. Exact local state patches selected before authorization are applied idempotently; they cannot reinterpret input or change the command.
-
-The internal workflow-turn requests expose no requested-mode, JSON variable,
-or transport selector. Fresh starts enter only through an authorized
-`StartWorkflowCommand`; resume, hold, cancel, and replacement behavior is
-derived from the attested turn-state snapshot and its exact
-`AuthorizedWorkflowTransition`.
-
-## AgentGraph State Authority
-
-AgentGraph owns graph-backed run, checkpoint, interrupt, resume, delay, task, and structured child-execution state.
-
-When a workflow state carries AgentGraph context, AgentGraph is also the sole
-runtime memory authority. Missing reads and empty searches are authoritative
-results and never fall back to legacy `WorkflowMemory` rows. Legacy rows remain
-available to the explicitly separate no-AgentGraph path and to lifecycle,
-privacy, migration, and operator-correction surfaces.
-
-`WorkflowRun` and `BotPendingInteraction` are operational projections. A projection write verifies the SDK run/thread/graph/deployment/checkpoint/interrupt identity and advances `WorkflowRun.state_version` with a one-step compare-and-set. Stale writers fail without rewriting AgentGraph.
-
-Current-state projection is deliberately bounded: it reads only the AgentGraph run, current checkpoint, and pending interrupt. Checkpoint history, write history, traces, and timelines are diagnostic surfaces and are never loaded as part of a productive turn.
-
-Resume is accepted only from the current SDK interrupt and a typed, policy-authorized resolution. Full Laravel state is never merged into a checkpoint. Missing projections may be rebuilt from the current SDK interrupt without replaying a side effect.
-
-Resume, recovery, and cancellation attest the projected run ID against the SDK run, thread, graph, immutable deployment, hash, and runtime schema before any SDK transition. A foreign or unverifiable binding fails closed without mutating either run. Idempotent cancellation is recognized from a freshly attested SDK status, never from exception text. If completion or failure wins a cancellation race, the authoritative terminal checkpoint is projected and reported truthfully instead of being relabelled as cancelled; a version- and token-bound close claim prevents failure recovery from reopening that terminal projection.
-
-Interrupt reads first attest the Laravel projection against the SDK run, thread, graph, and immutable deployment binding, before looking up or projecting an interrupt. They then have three explicit outcomes: `found`, `absent`, and `unavailable`. Only confirmed absence from a valid binding may close or stale an operational projection. A foreign or stale binding is invalid; an unavailable SDK store or run inspection preserves the pending state, returns a retryable result, and leaves queued delay delivery retryable. Neither case is presented as a missing pause.
-
-Age is only an attestation trigger. A stale-looking running or delayed projection
-is preserved while a resume delivery is active, while AgentGraph reports
-running/interrupted progress, when authority is unavailable, or when dispatch
-may have occurred before the first local graph projection. A verified terminal
-SDK state may be projected and reconciled; `updated_at` alone never proves an
-orphan and never authorizes cancellation.
-
-Queued workflow delays carry an encrypted continuation authority issued from the server-attested turn context and bound to the exact run, conversation, bot, deployment hash, and schema version. Delivery re-attests those identities and the current conversation-bound access token before resuming. Revoked, expired, scope-drifted, or capability-reduced tokens fail closed; accepted continuations restore the trusted actor/tenant context and the fresh access-token model so AI limits, monthly budgets, and usage attribution remain identical to the originating channel.
-
-Delayed delivery ownership is separate from `WorkflowRun` projection state. `workflow_resume_deliveries` binds one queue delivery to the exact AgentGraph run, checkpoint, interrupt, projection version, deployment hash, and encrypted continuation authority. A leased delivery marks SDK dispatch before calling resume; an expired pre-dispatch claim is safe to reclaim, while an expired dispatching or unknown delivery must inspect AgentGraph first. If the original interrupt still exists, the delivery may retry. If AgentGraph advanced, `recover()` projects its authoritative checkpoint without resending resume. A scheduled sweeper redispatches due, unknown, or lease-expired ledger rows, closing the database-to-queue crash window without creating a second workflow-state authority.
-
-Once automatic attempts are exhausted, an expired claimed or dispatching delivery is moved to `unknown`, its lease is cleared, and reconciliation metadata is recorded. It cannot remain stranded in an unsupported in-flight state or be redispatched automatically; an audited operator action is required for one further inspection/recovery cycle.
-
-Subworkflows are pinned in the parent deployment's transitive dependency closure. Structured concurrency owns child start, completion, failure, timeout, and cancellation propagation. A child cannot resolve a newer workflow or deployment at runtime.
-
-An Authorized Entry Turn Plan remains one workflow run. AgentGraph owns its
-task/item cursor and executes every already-bound item through explicit graph
-transitions. The classifier consumes the authorized route embedded in the
-current task; it does not classify again. Every item starts from the same
-isolated variable baseline and records one typed outcome. A failed read cannot
-suppress a later independent read. The final checkpoint contains exact coverage
-metadata and one ordered combined output; intermediate branch outputs are not
-committed as separate visitor-visible messages.
-
-## Workflow Behavior Authority
-
-User-facing answer style is release authority, not mutable bot state. Schema-v2
-authoring stores a typed `policies.behavior` contract. `mode: inherit` copies the
-linked bot's role, audience, tone, answer length, language list, fallback and
-citation guidance, response format, source-display setting, and boundaries at
-publish time. `mode: custom` stores only the closed workflow-owned fields for
-tone, length, response language, uncertainty behavior, citations, response
-format, role, audience, and boundaries. Runtime references and unknown fields
-are rejected in both modes.
-
-The resolved `workflow_behavior.v1` snapshot is written into the immutable
-runtime policy and into each user-facing `answer` or `workflowAgent` node. It is
-therefore covered by the deployment hash and revalidated before use. Later bot
-edits cannot alter an active deployment; republishing creates a different
-artifact. Internal AI processing such as query rewriting, summarization, and
-structured extraction does not receive the user-facing persona, citations, or
-format policy and cannot be destabilized by mutable bot presentation settings.
-
-Behavior policy controls wording only. It never grants tools, data access,
-writes, routing, handoff, confirmation, or workflow-state authority. Canvas
-notes remain non-executable annotations and are never promoted into prompts,
-permissions, or runtime behavior.
-
-## Workflow Safety Boundary
-
-Every published workflow carries one closed `workflow_safety.v1` policy. The
-authoring modes are `standard`, `strict`, and `custom`, but the credential,
-workflow-authority-override, and prompt-leak protections plus fixed input/output
-size ceilings cannot be disabled. Strict and custom modes may only tighten the
-baseline. Publication resolves the policy into the runtime snapshot and policy
-manifest, so any change creates a different deployment hash and later draft or
-bot edits cannot change an active release.
-
-The live chat application inspects raw input before persisting its content and
-before turn routing, semantic planning, AI execution, tools, or writes. Rejected
-input is represented durably only by a localized placeholder plus a SHA-256
-input fingerprint on the turn. The application inspects the complete finalized
-result again before outcome selection, then protects each canonical assistant
-message once more immediately before persistence. JSON and SSE are rendered
-only from that committed safe outcome. Interactive prompts use an allowlisted
-public payload so cards, choices, metadata, or run projections cannot
-reintroduce rejected text. Editor Preview and Quality Lab execute the same
-boundary against the exact preview deployment artifact before recording a
-workflow path.
-
-A rejected input produces a completed, localized recovery result without
-dispatch. A rejected output is replaced rather than partially redacted, and
-public evidence contains only stable category/direction metadata, never the
-matched secret or blocked term. A missing, malformed, weakened, or unsupported
-runtime policy fails closed. The optional `guardrail` workflow node remains for
-domain-specific validation and explicit branching; it cannot replace or bypass
-the global boundary.
-
-## Capability Execution
-
-`CapabilityExecutionGateway` is the only productive boundary for workflow actions, workflow-agent read tools, API Operations, raw HTTP, and memory writes. `CapabilityGrantAuthorizer` is an internal deterministic policy component invoked only by that gateway; it authorizes exact grants but never dispatches capabilities.
-
-Live writes always require a non-empty payload schema, trusted payload provenance,
-an exact Runtime V2 grant bound to the immutable deployment, and canonical
-payload-bound engine confirmation. These requirements do not depend on the
-Laravel environment and have no configuration switch. Reads remain free of
-write grants and write confirmation; Preview and Quality modes cannot acquire
-live-write authority.
-
-The gateway performs, in order:
-
-1. immutable contract and deployment-pin resolution;
-2. exact payload materialization and closed-schema validation;
-3. runtime-authority and policy verification;
-4. confirmation binding when required;
-5. idempotency claim;
-6. dispatch;
-7. typed result validation;
-8. durable ledger finalization.
-
-Memory, action, API Connector, and raw HTTP writes cannot reach handler or
-transport dispatch without a positive lease-fenced ledger claim. This invariant
-has no environment or configuration switch; reads remain ledger-free. Write
-policies choose exactly one canonical identity: the hash-bound prepared
-invocation, or typed business-key components derived only from authorized
-payload and server-attested context. Retry, AgentGraph resume, and operator
-review reuse the original claim; a separately confirmed invocation can receive
-a new invocation-scoped claim.
-
-The public execution boundary remains the gateway. Internally, deployment and
-authority binding, write-context materialization, and closed outcome creation
-are separate deterministic collaborators so the gateway retains one readable
-pipeline without introducing capability-specific bypasses.
-
-Published API operations use connector contract version 3. Their declarative
-input policies define admissible literal or enum values, semantic/entity types,
-normalization, aliases, and ambiguity handling for every provider rather than
-encoding API-specific fixes in the planner. `batch_mode` and `max_items`
-describe whether one operation may be safely fanned out or called natively in
-batch. Optional result-identity evidence independently verifies that a
-successful provider response belongs to the canonical requested entity.
-
-Capability requests always declare their execution mode explicitly. Every live read or write requires a persisted `WorkflowRun`, the run-bound persisted bot and conversation, server-attested runtime authority, and exact deployment ID, hash, and runtime-schema identity verified from the immutable run artifact. A capability cannot gain live authority merely from a callable action or a caller-supplied state object; preview and quality execution remain isolated in their declared non-live modes. The connector operation workbench is a narrower non-live exception: it accepts reads only with an in-memory server permit bound to the exact operation and contract hash, which cannot be supplied by workflow JSON.
-
-Every action contract declares both a non-empty request schema and a non-empty result schema. Missing result contracts fail during provider registration; handler results that violate the immutable hash-bound contract fail before they can become workflow state.
-
-The ordinary AI task and answer nodes remain tool-free. Tool choice is available only through the dedicated `workflowAgent` runtime node, authored as the Expert-level `agentAnswer` semantic step. Publication resolves one to eight exact read-only `CapabilityActionDefinition` contracts, freezes their version, contract hash, request- and result-schema hashes, semantic profile, optional Data Resource bindings, and node budgets into the deployment, and rejects writes or mutable capability catalogs. Runtime re-resolves and compares every pin before constructing model-facing adapters. Those adapters are not execution authority: every call crosses the action path of `CapabilityExecutionGateway`, and the model cannot override server-supplied resource allowlists or binding evidence.
-
-Workflow-agent v1 is deliberately sequential and read-only. Hash-bound limits cap model steps, total calls, identical repeats, per-result bytes, aggregate result bytes, and wall-clock time. Tool results enter the model only as bounded untrusted data. Durable traces contain capability identity, hashes, status, sizes, timing, and counters, but no raw arguments or results. Provider/model profiles must explicitly attest developer-instruction and tool support. Writes remain explicit workflow nodes behind the existing confirmation, idempotency, unknown-outcome, and reconciliation contracts; model-proposed writes are not part of this runtime version.
-
-One canonical capability result is stored under the declared output variable. Trace output is a bounded preview, while answer composition resolves the canonical value only when needed. Per-variable and total serialized workflow-state budgets stop an oversized result with an explicit non-retryable outcome instead of allowing PHP or database serialization to exhaust the process.
-
-Write handlers do not own a second idempotency lifecycle. A dispatched write with an unverifiable outcome is stored as `unknown` with reconciliation required and is never retried automatically. Operator reconciliation records the verified external outcome; it does not redispatch the write. The Filament recovery path re-scopes the selected ledger row to its `WorkflowRun`, re-authorizes the authenticated operator against that exact row on the server, requires audit evidence and explicit no-retry acknowledgement, and exposes no encrypted payload data. A privileged console path covers non-workflow ledgers.
-
-Every productive write grant is bound to the authorized parent workflow deployment ID and hash. The capability-grant authorizer compares that identity with the pinned `WorkflowRun` before accepting the grant, so a grant cannot cross a release boundary even when node and operation identifiers remain unchanged.
-
-## Knowledge And Evidence
-
-Knowledge is a workflow capability. Attached sources are searched only by a reachable Knowledge step in the live deployment.
-
-Retrieval produces typed evidence with source identity, score, and citation metadata. Answerability uses per-source scores; a minimum evidence count is satisfied only when that many allowed sources clear the threshold. When citations are required, only valid `[n]` references to allowed evidence count, and invalid or filtered references force abstention. Provider output cannot promote untrusted model text into verified evidence.
-
-## Durable Outcomes And Rendering
-
-The application commits one canonical outcome before JSON or SSE serialization. Supported outcomes cover completed, collect-input, confirmation, delayed, cancelled, failed, and unknown states.
-
-The committed outcome stores stable message/run/interaction identities and the transport-independent payload. JSON, SSE, and channel adapters render that same outcome. Renderers do not create domain transitions, repair projections, or execute capabilities.
-
-Final workflow-answer policy is read from the verified deployment pinned to the `WorkflowRun`. A later publication may change future runs, but cannot retroactively enable model rewriting or otherwise change presentation authority for an existing run.
-
-If AgentGraph reached a terminal checkpoint but the process failed before `WorkflowRun`, `ChatTurn`, or the assistant message was finalized, a retry of the same durable turn projects the authoritative terminal state and commits the missing outcome without dispatching a node or external capability again. Workflow node and final-answer messages remain provisional in the in-memory execution result. The canonical outcome transaction materializes the visible `BotMessage` rows, replaces provisional identities with canonical IDs, and replays idempotently. No visitor-visible workflow message is durable before that transaction.
-
-Structured read results carry one turn locale. Units are formatted centrally
-for that locale, and entity labels may be localized only from explicit maps
-keyed by stable canonical IDs; missing mappings fall back to the canonical
-provider value rather than free model translation.
-
-Turn authority and message presentation have separate identities. The positive durable `ChatTurn` ID is the active turn ID used by AgentGraph resume, capability execution, budgets, and usage attribution. The assistant turn ID (`user-message-{id}`) groups visitor-visible messages, quality evidence, and diagnostics. Presentation code never overwrites the active authority identity.
-
-The public SSE endpoint is a commit-first event projection, not a pre-commit token channel. It emits complete committed messages and never simulates streaming by splitting finished text into artificial deltas. Explicit `WorkflowRunner` callers may receive ephemeral provider deltas through a callback, but that callback is not a domain-state or public-chat authority. Schema-v2 authoring derives callback eligibility from the typed step kind; it is not a visitor-visibility setting and does not control conversation memory.
-
-Unexpected failure before a definitive outcome becomes `unknown`; the durable turn remains protected from automatic re-execution. Known validation or policy failures become bounded terminal outcomes with safe error codes.
-
-Known capability failures also carry a closed response intent such as `not_found`, `invalid`, `rate_limited`, `unavailable`, or `forbidden`. One deterministic renderer localizes that intent from the current turn language. Connector configuration may select only an allowlisted intent and cannot inject recovery code or override unknown-write reconciliation.
-
-## Release And Migration Operations
-
-Operational cutovers use actor-bound, HMAC-signed reports, deterministic inventories, compare-and-set mutation plans, and new-only output files. Ambiguous data blocks. Destructive durable migrations require an authenticated encrypted backup and tested exact restore.
-
-Migration readers may recognize removed pre-cutover values solely to classify stored data. Those readers are not registered in the productive chat path and cannot enable a removed runtime.
-
-## Supported Extension Boundary
-
-The supported host surface is allowlisted in [Public API](PUBLIC_API.md). In particular:
-
-- host actions are immutable `CapabilityActionDefinition` values supplied by a tagged `CapabilityProvider`; their required `CapabilitySemanticProfile` is secret-free, hash-bound metadata and never execution authority;
-- optional `CapabilityEntityResolver` implementations are local, deterministic canonicalizers selected only by declared slot entity type; external lookup still crosses `CapabilityExecutionGateway` as a deployed workflow capability;
-- content extraction, chunking, and source URL resolution use their public contracts;
-- node kinds and runtime schemas are package-owned;
-- internal planners, registries, Eloquent model aliases, and runtime configuration trees are not extension APIs.
-
-## Required Invariants
-
-- one verified live deployment per bot;
-- one application turn entry and one workflow command handler;
-- semantic interpretation proposes; deterministic policy authorizes;
-- AgentGraph is the graph-state authority;
-- capability work crosses `CapabilityExecutionGateway` exactly once;
-- writes preserve confirmation, payload binding, authority, idempotency, redaction, unknown-outcome, and reconciliation guarantees;
-- canonical outcomes are committed before rendering;
-- missing, stale, corrupt, ambiguous, or unverified state fails closed.
-
-## Verification
-
-The package release boundary runs the full test suite, runtime baseline/release gates, recovery and migration evidence, dead-code checks, archive-manifest validation, and marketplace readiness. Provider or external-host evidence is reported as blocked rather than passed when the required credentials or compatible host state are unavailable.
-
-See [AgentGraph SDK Usage](AGENTGRAPH_SDK_USAGE.md), [Agentic Workflows](AGENTIC_WORKFLOWS.md), [Operations](OPERATIONS.md), and the accepted [Production Runtime Boundaries ADR](adr/0001-production-runtime-boundaries.md).
+`AgentTurnLoop` is the sole productive implementation of
+`ChatTurnRequestExecutor`. It handles normal conversation, empty-input
+clarification, provider failures, and Playbook results. Provider exceptions are
+mapped to bounded errors and localized safe answers; raw exception text is not
+returned to visitors.
+
+Transport resolves access, bot, area, conversation, and client-turn identity.
+It does not select a Playbook, mutate workflow state, or authorize a
+capability. `ChatTurnApplicationService` applies the safety boundary and
+commits a canonical outcome before a renderer can serialize it. Replaying a
+completed client-turn identity returns the persisted result without another
+model or capability call. The same identity may be replayed through JSON or SSE;
+transport choice and a later active deployment do not change the canonical
+request identity or persisted result.
+
+## Agent Deployment Authority
+
+`AgentDeploymentPublisher` creates an immutable contract and deployment hash.
+Publication freezes:
+
+- behavior and response policy;
+- exact provider, driver, base URL, model, input/output limits, and monthly
+  token/cost policy;
+- allowed knowledge and data authority;
+- exact published read-only Connector operation revision, contract and input
+  schema hashes, environment binding, discovery metadata, input policies, and
+  optional result-identity proof;
+- exact Playbook workflow ID, deployment ID, deployment hash, tool identity,
+  and structured invocation contract (outcome, start rule, exclusions, and
+  examples); and
+- the release metadata needed to verify the contract.
+
+Publication selects that immutable artifact as the Agent's release candidate;
+it does not change live traffic. `AgentReleaseService` runs the exact candidate
+through the normal persistent `ChatTurnApplicationService` runtime using a
+server-attested admin-test conversation. A passing evidence record binds the
+candidate ID and hash, productive authoring fingerprint, committed Chat Turn,
+operator, and evidence hash. Productive writes remain blocked by
+`CapabilityExecutionGateway` during this test. Activation locks the Agent row,
+compares both the expected candidate and previous live deployment, revalidates
+the immutable artifact, current authoring fingerprint, evidence hash, and
+durable Chat Turn, then changes the live pointer atomically. No direct
+productive publish-and-activate path exists.
+
+`AgentDeploymentRepository` resolves and verifies the deployment selected for
+the durable turn. A missing, foreign, mutable, or hash-invalid deployment fails
+closed. Later authoring changes require publication of a new deployment; they
+cannot alter an in-flight or historical turn.
+
+There is no global tool or Playbook registry, client-selected operation or
+workflow ID, mutable authoring fallback, or legacy main-workflow conversation
+owner.
+
+## Direct Read Capability Invocation
+
+`AgentConnectorTurn` and `AgentDataResourceTurn` project only exact immutable
+entries from the verified Agent deployment into model-visible tools. A direct
+tool is eligible only when its published effect is `read`; every write,
+approval, wait, or dependent multi-step job belongs in a Playbook.
+
+Each approved Data Resource becomes its own closed read tool. Its normalized
+resource definition, contract hash, allowed query modes, fields, filters,
+sorting, scope rules, and list limits are copied into the Agent deployment.
+Custom scope-source paths and code-reviewed static scope values are pinned with
+that definition; request-specific authority values remain server-attested at
+execution. Runtime never consults mutable host or Bot scope configuration for a
+live direct tool.
+Model-proposed filter values are type-checked and, except for booleans, must be
+literal evidence in the latest visitor message before the central capability
+gateway may execute the bounded database query.
+
+The model sees the operation purpose, realistic intent examples, entity types,
+closed JSON input schema, and a bounded set of explicit visitor aliases. This
+metadata helps a smaller model associate terms such as “Bisaflor” with a
+Pokémon lookup without adding API-specific routing classes. Metadata proposes
+the route; it never authorizes it.
+
+Each call is checked twice: the tool adapter and `CapabilityExecutionGateway`
+independently bind every argument to literal evidence in the latest visitor
+message, apply exact published aliases, optionally apply the pinned `safe_v1`
+matcher only against that published alias map, or use a registered deterministic
+resolver only for `capability_resolver`; they then validate the closed schema,
+re-resolve the exact revision and environment, and verify declared result
+identity. The safe matcher auto-corrects only a unique close candidate and turns
+every uncertain candidate set into the contract's configured clarify-or-reject
+outcome. Unknown literal values remain literal values. A host resolver used
+directly must expose a stable key, version,
+and behavior hash through `VersionedCapabilityEntityResolver`; that identity is
+pinned into the Agent deployment and reverified at both admission and gateway
+execution. Merely registering a resolver never changes `literal` or `enum`
+behavior. An ungrounded correction is rejected unless the immutable contract
+selects the published alias matcher or a versioned resolver returns an
+unambiguous canonical value.
+
+A scalar read input may explicitly publish
+`continuation_mode: exact_previous_success`. After a complete authoritative
+success, the runtime stores only those admitted fields in an encrypted,
+hash-checked binding scoped to the conversation, capability, immutable Agent
+deployment, and source user message. For the immediately following persisted
+user message, a strict bounded follow-up grammar such as “Und morgen?” may make
+that field optional in the tool schema; the model must omit it and the server
+supplies the exact prior value. Unknown words, expiry, an intervening user turn,
+a different conversation/capability/deployment, non-scalar inputs, writes, and
+model-proposed historical values all fail closed. Expired ciphertext is pruned
+by the package scheduler.
+
+A read tool may be repeated for independent items only when the immutable
+operation contract declares `fanout_safe`; `max_items` and the global five-call
+budget both apply, leaving the sixth model step available for the final answer.
+`single_only` and `native_batch` permit one call, with a
+native batch owning its list input inside that call and the published
+`max_items` bound constraining every declared array. Server-owned or prior-task
+input policies are Playbook-only and make an operation ineligible as a direct
+tool.
+
+Calls remain separate evidence records with redacted grounded and canonical
+inputs. Ambiguous resolver candidates produce a deterministic clarification,
+not a failed-lookup answer. Provider partial results and explicit call failures
+cannot be presented as complete evidence. The evidence guard also prevents the
+model from claiming that it searched a connected source when no such execution
+trace exists. Each model-visible result is bounded to 16 KB and all Connector
+results in one turn share a 48 KB budget; truncation becomes incomplete evidence
+rather than a silently shortened success.
+
+When different direct-read capabilities compete for the same literal visitor
+evidence, a candidate-free rejection is treated as route ambiguity rather than
+as a missing field of the rejected tool. The visitor receives one contextual
+choice between the public capability labels. A genuine resolver choice or an
+unresolved request item with different evidence retains its specific input
+clarification, so a successful sibling result cannot hide an incomplete
+multi-part request.
+
+Every direct-read tool call also carries a required, exact quote of the latest
+visitor message that states the call's purpose. This routing-only value is
+removed before input binding and is never sent to the external capability or
+persisted. A per-turn ledger permits different explicit purpose spans, but
+blocks a second capability before execution when it overlaps the same implicit
+intent already completed by another direct read. The evidence guard remains the
+fail-safe when a provider omits that model-side routing evidence.
+
+The runtime deliberately does not use a keyword list to infer which tool
+arbitrary prose must invoke. Such a classifier would be capability-specific,
+multilingual, and brittle. Instead, **Test live bot** and the Agent Quality Lab
+can assert one exact set of routes per turn: answer without a tool, knowledge
+search, one or more Data Resources or API Connectors, one Playbook, or
+clarification. API checks may also require an exact distinct item count.
+Evaluation uses only committed, allowlisted execution evidence. It rejects
+missing or incomplete evidence and every unexpected tool attempt. Request
+values and provider results are not copied into durable operator evidence. This
+makes routing an explicit weak-model eval rather than a false universal runtime
+guarantee. New follow-up values are still admitted only from the latest visitor
+message; only the preceding server-attested exception may be carried.
+
+One per-turn sequence guard deterministically prevents a weak model from mixing
+a direct read and a Playbook. Whichever productive capability class runs
+first owns that model run; calls from the other class are rejected before
+execution. An already-open Playbook owns productive capability execution from
+the beginning of the turn. Knowledge search remains a bounded read-only context
+tool and cannot supply executable Playbook or Connector inputs.
+
+The runtime does not automatically search the public web for unknown terms. Web
+or entity discovery must be published as its own governed read capability,
+otherwise the Agent asks for clarification or states the limit.
+
+## Playbook Invocation
+
+For each turn, `AgentPlaybookTurn` derives the model's tool set only from the
+verified Agent deployment. With no open run, those tools may start only their
+exact pins. With an open run, the Agent sees the matching continuation tool,
+unless the latest visitor message independently matches the bounded explicit
+cancellation grammar. Only then is the continuation tool replaced by the
+closed cancel tool. The cancel handler repeats this attestation before changing
+state, so model instructions, retrieved knowledge, history, negation, quoted
+text, and mixed requests cannot authorize cancellation.
+
+Starting a Playbook reserves a `WorkflowRun` bound to the Agent deployment and
+the exact immutable Playbook deployment. Continuing it uses the latest user
+message only as proposed input to the current typed waitpoint. A Playbook
+result is projected back through `AgentPlaybookResultProjector`; the graph does
+not become a second general-chat owner.
+
+At most one open Playbook run (`running`, `halted`, or `delayed`) may exist for
+a conversation, enforced both transactionally and by a database constraint.
+Continuation and recovery resolve the historical Agent deployment recorded on
+that run, even after another Agent deployment becomes live. The current mutable
+Agent or a newly published allowlist cannot rewrite that authority.
+
+Playbook execution is:
+
+```text
+AgentPlaybookTurn
+-> WorkflowRunner::reserveRun
+-> WorkflowExecutionService
+-> AgentGraphWorkflowRuntime
+-> typed result / waitpoint / delay / terminal state
+-> AgentPlaybookResultProjector
+-> AgentTurnLoop
+```
+
+AgentGraph owns checkpoint, interrupt, resume, delay, task, structured child
+execution, and cancellation state. `WorkflowRun` and pending-interaction rows
+are operational projections and indexes. Recovery verifies graph, thread, run,
+deployment, checkpoint, and interrupt identity before projecting or resuming.
+When a typed capability precondition fails before the first graph checkpoint,
+the terminal projection is allowed only from matching persisted AgentGraph run
+input and error envelopes; it carries no resumable graph progress and never
+authorizes capability replay.
+
+## Capability And Side-Effect Boundary
+
+Direct read tools and Playbook nodes do not receive ambient permission. A
+direct read is authorized only by the exact verified Agent deployment pin bound
+to that admitted turn; activating a newer deployment does not mutate an
+already-running turn. At
+Playbook execution time,
+`WorkflowCapabilityGrantIssuer` derives a fresh grant set from the exact
+verified Playbook deployment and run. `CapabilityExecutionGateway` is the only
+productive boundary for Data Resource queries, API Connector calls, host
+actions, raw HTTP operations, and memory writes.
+
+The gateway verifies:
+
+- Agent deployment, and where applicable Playbook deployment, run and node,
+  plus operation, environment, schema, and payload binding;
+- read/write effect and declared authority;
+- exact confirmation payload for writes;
+- idempotency and side-effect ledger ownership;
+- result schema and redaction; and
+- unknown-outcome and reconciliation semantics.
+
+Semantic model output may propose a tool and arguments. It cannot grant access,
+change an immutable pin, authorize a write, confirm a different payload, or
+turn an uncertain provider outcome into success.
+
+## Conversation And Waitpoints
+
+General questions and side questions remain Agent turns. A running Playbook may
+continue only through its deployment-bound continuation tool. The current
+Playbook waitpoint and AgentGraph state determine whether input can resolve an
+interrupt; unexpected text therefore produces an Agent answer or clarification
+instead of falling through a router/planner taxonomy.
+
+Playbook node-level AI tasks may interpret bounded input for that node. Their
+output remains untrusted data checked by the node contract and deterministic
+policy. They do not plan the outer chat turn.
+
+## Durability, Safety, And Operations
+
+- One durable `ChatTurn` owns client-turn idempotency and the selected Agent
+  deployment.
+- A completed turn replays from its canonical persisted outcome across JSON and
+  SSE, including after its deployment is no longer active.
+- Before an active turn is reported as busy, blocks a new client-turn ID, or is
+  projected by the turn-status endpoint, the application checks its bound
+  AgentGraph authority. A terminal graph result is committed idempotently into
+  the canonical `ChatTurn` outcome without dispatching any graph node again.
+- One immutable Playbook deployment owns every live graph run.
+- One open Playbook run at most is admitted per conversation.
+- One AgentGraph checkpoint owns graph-backed progress.
+- All productive memory reads, writes, and searches use the AgentGraph memory
+  store. Playbook memory requires the current AgentGraph node context; general
+  Agent conversation memory enters through an explicit conversation-thread
+  boundary. Historical `workflow_memories` rows remain available only to export
+  and privacy cleanup; they are never a runtime or operator-edit fallback.
+- One capability ledger owns each external side effect.
+- Canonical outcomes are persisted before JSON or SSE serialization.
+- Unknown post-dispatch outcomes block automatic replay and require
+  reconciliation.
+- Usage preflight covers instructions, retained history, current input, tool
+  schemas, and conservative local-attachment size before transport. It prunes
+  oldest history to the effective input/context boundary, enforces the
+  provider-profile output maximum on the request, and records provider-reported
+  input, output, reasoning, cache-read, and cache-write buckets exactly once.
+- Usage and cost accounting retain Agent deployment, Playbook deployment, run,
+  stage, and parent-turn attribution without persisting prompts in operational
+  summaries. Any unpriced settled call makes aggregate cost unknown rather than
+  displaying a misleading zero or partial total.
+- Provider compatibility is evaluated separately from deterministic local
+  release contracts; missing credentials are reported as blocked or skipped,
+  never as passed.
+
+## Authoring Surface
+
+Agent configuration is form-first. Administrators approve Data Resources,
+select direct published Connector reads, and attach optional Playbooks on the
+Agent form. Connector operation authoring
+captures purpose, realistic request examples, ability aliases, entity types,
+input grounding/aliases, and optional result identity in structured fields.
+
+Playbooks are optional advanced process automation. The existing React Flow
+island is retained as the Playbook editor, including its Filament tokens,
+light/dark behavior, canvas geometry, scoped Tailwind setup, focus states, and
+responsive shell. Its semantic catalog must contain process primitives rather
+than generic conversation nodes.
+
+The Playbook editor cannot define a second conversational persona, tone,
+language policy, answer length, citation policy, or fallback behavior. Those
+settings belong to the Agent. Publication snapshots the linked Agent profile
+into the immutable Playbook artifact for bounded AI steps, and Agent publication
+rejects a Playbook whose snapshot no longer matches the current Agent. Changing
+Agent behavior therefore requires republishing affected Playbooks before the
+next Agent deployment can be activated.
+
+The editor presents the immutable invocation contract before the graph. The
+contract helps the Agent decide whether to select the Playbook; the React Flow
+canvas begins only after that decision and represents the controlled process,
+not the Agent's free-form conversation or tool-selection reasoning.
+
+The target primitive set is Entry, Request Input, Capability, Decision,
+Approval, Wait, AI Task, Transform, For Each, Sub-Playbook, Result, and Note.
+Conversation, fallback, knowledge-answer, data-answer, and finish nodes are not
+Playbook primitives because the Agent owns those concerns.
+
+## Routing Publication And Quality Assurance
+
+`AgentRoutingManifestValidator` is a publish boundary. It caps the closed
+manifest at 32 model-visible tools and 32,000 routing descriptor characters,
+requires distinguishing metadata for direct API and Data Resource tools,
+requires realistic Playbook examples and competing-tool exclusions, and
+rejects duplicate model tool names or identical normalized routing phrases
+across tools.
+
+Published-Agent Quality Lab scenarios run every saved turn through
+`ChatTurnApplicationService`, using one fresh test conversation per scenario
+and the exact verified active `AgentDeployment`. Ordered turns share that
+conversation, so compound requests and elliptical follow-ups exercise the real
+history path. Each turn may require the complete exact route set; a missing
+route or any extra attempt fails it. Results are bound to the scenario
+fingerprint and deployment hash. A newer deployment therefore makes them stale.
+Playbook-draft scenarios remain separately bound to the draft fingerprint and
+compiled artifact. Historical captured turns can remain immutable run evidence,
+but cannot be created as executable scenario targets.
+
+Admin live-test and release-candidate conversations are server-attested. The
+central capability gateway blocks productive writes for one-turn live tests,
+candidate tests, and multi-turn Agent Quality runs, even when the Agent invokes
+a Playbook. Read operations and provider calls continue through the real
+capability path so routing evidence remains representative without allowing a
+test to mutate productive systems.
+
+`AgentRoutingEvidenceEvaluator` owns the shared exact-route contract used by
+both the live test and Agent Quality Lab. The protected
+`evals/AgentRoutingProviderEvalTest.php` suite supplies real-provider confidence
+for English, German, typo, negative, ambiguous, knowledge, Data Resource, API,
+Playbook, compound-read, and contextual elliptical-follow-up routing. Missing
+provider credentials make that gate skipped or blocked, never passed.
+
+## Forbidden Productive Paths
+
+The released runtime must not contain or resolve:
+
+- a workflow-first chat router, runtime turn planner, authorized turn command,
+  or second conversation coordinator;
+- a mandatory main workflow or starter graph for a simple Agent;
+- mutable or global tool fallback;
+- capability execution outside `CapabilityExecutionGateway`;
+- graph-state transitions in transport or rendering; or
+- a compatibility switch that can reactivate the removed runtime.
+
+Historical database rows and audit presenters may retain old labels only when
+they are read-only and cannot be resumed or executed.

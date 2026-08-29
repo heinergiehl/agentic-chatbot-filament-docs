@@ -1,12 +1,12 @@
 # API Integrations
 
-Use Bot Access Tokens when a trusted server-side API client, widget bridge, Telegram bot, or Slack app needs to call a configured chatbot.
+Use Agent Access Tokens when a trusted server-side API client, widget bridge, Telegram bot, or Slack app needs to call a configured Agent.
 
-Bot Access Tokens are server-side secrets. Do not embed them in browser JavaScript, public widgets, mobile apps, screenshots, logs, or customer-visible configuration. Browser widgets should use the signed widget token flow; server integrations should send Bot Access Tokens from a trusted backend via `Authorization: Bearer fac_...` or `X-filament-agentic-chatbot-Access-Token`.
+Agent Access Tokens are server-side secrets. Do not embed them in browser JavaScript, public widgets, mobile apps, screenshots, logs, or customer-visible configuration. Browser widgets should use the signed widget token flow; server integrations should send Agent Access Tokens from a trusted backend via `Authorization: Bearer fac_...` or `X-filament-agentic-chatbot-Access-Token`.
 
-## Create A Bot Access Token
+## Create An Agent Access Token
 
-1. Open **Agentic Chatbot > Connect > Bot Access Tokens** in Filament.
+1. Open **Agentic Chatbot > Connect > Agent Access Tokens** in Filament.
 2. Select the bot.
 3. Give the token a clear name such as `Telegram production`.
 4. Set **Channel** to classify where the token is used, for example `API`, `Web Widget Bridge`, `Telegram`, or `Slack`.
@@ -16,7 +16,7 @@ Bot Access Tokens are server-side secrets. Do not embed them in browser JavaScri
 8. Add a per-token rate limit and monthly token/cost budgets for production integrations.
 9. Store the generated token immediately. It is shown once.
 
-Bot Access Tokens are credentials for your Laravel chatbot API. They are not Telegram or Slack provider tokens. External platforms keep their own credentials in your app config or secret manager, and your webhook/controller uses the Bot Access Token only when it calls the chatbot endpoint.
+Agent Access Tokens are credentials for your Laravel Agent API. They are not Telegram or Slack provider tokens. External platforms keep their own credentials in your app config or secret manager, and your webhook/controller uses the Agent Access Token only when it calls the Agent endpoint. The PHP model and configuration namespace remain `BotAccessToken` and `bot_access_tokens`.
 
 `last_used_at` writes are throttled to reduce write pressure on busy integrations. Configure the window with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES` (default `5`). Per-token rate limits remain enforced on every request. Invalid token attempts are separately throttled with `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_INVALID_ATTEMPTS_PER_MINUTE` (default `10`).
 
@@ -38,9 +38,9 @@ If your host app wants to assign tokens to users, teams, tenants, customers, or 
 
 The package stores `owner_type` and `owner_id` only. It does not create a user system, tenant system, or authorization policy. Use this metadata for reporting, filtering, support, and cleanup workflows; keep real access control in your application.
 
-Conversation history, export, deletion, and feedback requests enforce this runtime scope. A token can access only conversations explicitly bound to that exact token with the same bot, owner, and channel. Unbound or partially bound conversations are never authorizable through a Bot Access Token.
+Conversation history, export, deletion, and feedback requests enforce this runtime scope. A token can access only conversations explicitly bound to that exact token with the same Agent, owner, and channel. Unbound or partially bound conversations are never authorizable through an Agent Access Token.
 
-Bot Access Tokens use HMAC-SHA256 hash version 2 with your app key or `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_HASH_KEY`. The G25 migration revokes older hash versions because their plaintext cannot be recovered; rotate them before deploying the breaking release.
+Agent Access Tokens use HMAC-SHA256 hash version 2 with your app key or `AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_HASH_KEY`. The `2026_07_15_000002_migrate_breaking_runtime_cleanup_data.php` migration revokes older hash versions because their plaintext cannot be recovered; rotate them before upgrading across that migration.
 
 ## Complete Chat Endpoint
 
@@ -64,18 +64,18 @@ Content-Type: application/json
 
 | Field | Required | Description |
 | --- | --- | --- |
-| `message` | Yes | User message passed to the bot or active workflow. |
+| `message` | Yes | User message passed to the active Agent. |
 | `session_id` | Yes | Stable conversation key controlled by the integration. Use one per external chat/user/thread. |
 | `client_turn_id` | Recommended | Stable ID for this one user turn. Reuse it only when retrying the identical request. Alternatively send the same value as an `Idempotency-Key` header. |
 | `area` | No | Context area, for example `public`, `member`, `admin`, or a custom area such as `manager`. |
 
-Every accepted response includes `X-Chat-Turn-Id`. The server generates an ID when the request omits one, but integrations should provide their own stable delivery/event ID so a timeout retry cannot run the same workflow or external action twice. Reusing an ID with different message, resolution, area, or transport returns `409 chat_turn_input_mismatch`. A completed, waiting, failed, or cancelled turn returns its stored response without re-running the model or workflow; `X-Chat-Turn-Replayed: true` identifies that path.
+Every accepted response includes `X-Chat-Turn-Id`. The server generates an ID when the request omits one, but integrations should provide their own stable delivery/event ID so a timeout retry cannot run the same Agent turn, Playbook, or external action twice. Reusing an ID with different message, resolution, area, or transport returns `409 chat_turn_input_mismatch`. A completed, waiting, failed, or cancelled turn returns its stored response without re-running the Agent or Playbook; `X-Chat-Turn-Replayed: true` identifies that path.
 
-Only one executing turn is allowed per conversation. A duplicate request for the currently executing ID returns `202 chat_turn_in_progress` with `Retry-After`. A different ID sent while that turn is active returns `409 conversation_turn_in_progress`. If the server cannot prove whether an interrupted turn completed, it records `unknown` and returns `409 chat_turn_outcome_unknown` instead of risking duplicate side effects. An operator must verify the external outcome and use the audited reconciliation command documented in the Operations guide; clients must not work around the lock with another ID.
+Only one executing turn is allowed per conversation. Before returning a busy response, admitting a different client-turn ID, or answering the turn-status endpoint, the runtime reconciles an already-terminal bound AgentGraph result into the canonical Chat Turn exactly once without dispatching workflow nodes again. A genuinely active duplicate returns `202 chat_turn_in_progress` with `Retry-After`; a different ID returns `409 conversation_turn_in_progress`. If the server cannot prove whether an interrupted turn completed, it records `unknown` and returns `409 chat_turn_outcome_unknown` instead of risking duplicate side effects. An operator must verify the external outcome and use the audited reconciliation command documented in the Operations guide; clients must not work around the lock with another ID.
 
 ### Success Response
 
-The endpoint returns the final assistant message in a stable JSON shape. If an active workflow handles the message, workflow metadata and structured button/card fields are included.
+The endpoint returns the final Agent message in a stable JSON shape. If the Agent invokes a Playbook, run metadata and structured button/card fields are included.
 
 ```json
 {

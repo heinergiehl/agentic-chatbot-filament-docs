@@ -1,93 +1,62 @@
 # Core Concepts
 
-This page explains the main building blocks of Filament Agentic Chatbot and links to the detailed docs for each one.
+## The short version
 
-## The Short Version
+An Agent owns conversation. Its live deployment is an immutable, hash-verified
+contract that fixes behavior, model policy, knowledge, budgets, and optional
+Playbooks. A Playbook is a bounded process tool; it is never the main chat loop.
 
-Filament Agentic Chatbot gives you a Filament-native control plane for running grounded AI assistants inside a Laravel app.
+## Concept map
 
-The core flow is:
+| Concept | Meaning | Learn more |
+| --- | --- | --- |
+| Agent | Configured conversational assistant with explicit behavior and authority | [Agents and Playbooks](AGENTIC_WORKFLOWS.md) |
+| Agent deployment | One immutable contract currently receiving chat | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
+| Playbook | Optional typed multi-step process the Agent may invoke | [Playbook Builder](PLAYBOOK_BUILDER.md) |
+| Playbook deployment | Immutable graph and pinned dependency closure | [Playbook JSON Schema](WORKFLOW_JSON_SCHEMA.md) |
+| Capability | An allowed knowledge, data, API, host-action, memory, or Playbook operation | [Agents and Playbooks](AGENTIC_WORKFLOWS.md) |
+| Knowledge Source | Indexed content available only when included in the Agent contract | [Knowledge Sources](KNOWLEDGE_SOURCES.md) |
+| Data Resource | Governed read contract for host-application records | [Data Resources](DATA_RESOURCES.md) |
+| API Connector | Saved external connection with immutable published operations | [API Connectors](API_CONNECTORS.md) |
+| Conversation | Durable visitor and assistant message history | [Chat Widget](CHAT_WIDGET.md) |
+| Capability gateway | Only productive boundary for external execution | [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) |
 
-1. Create a **bot**
-2. Create and assign its **main workflow**
-3. Connect only the **Knowledge Sources**, **Data Resources**, **API Operations**, and other capabilities that workflow needs
-4. Test the draft and its important saved scenarios
-5. Review and **publish** a versioned deployment
-6. Make that deployment the bot's single **live deployment**
-7. Answer through the **chat widget** or your own frontend
-8. Review **conversations**, workflow runs, and operating health inside Filament
+## How the pieces fit
 
-## Concept Map
+The administrator creates an Agent, configures its behavior, attaches only the
+resources it needs, and publishes a deployment. General conversation and
+knowledge do not require a canvas.
 
-| Concept        | What It Means                                                                                             | Learn More                                                  |
-| -------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- |
-| Bot            | A configured assistant with its own prompt, model, permissions, access rules, and widget branding         | [Bots](BOTS.md)                                             |
-| Main Workflow  | The visual conversation and capability contract assigned to a bot                                        | [Agentic Workflows](AGENTIC_WORKFLOWS.md)                   |
-| Live Deployment | The one published main-workflow version currently receiving chat for a bot                               | [Agentic Workflows](AGENTIC_WORKFLOWS.md)                   |
-| Capability     | An approved thing the bot or workflow may do, such as read knowledge, query data, call an operation, or write | [Bots](BOTS.md)                                          |
-| Knowledge Source | A piece of knowledge you want the bot to use, such as text, a file, or a URL                            | [Knowledge Sources](KNOWLEDGE_SOURCES.md)                               |
-| Data Resource  | A live Eloquent record set that workflows may read with approved columns, filters, sorting, limits, and scopes | [Data Resources](DATA_RESOURCES.md)                                      |
-| Document       | The normalized stored version of a source after extraction                                                | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
-| Chunk          | A smaller searchable section of a document used for retrieval and citations                               | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
-| Ingestion      | The pipeline that extracts, normalizes, chunks, embeds, and stores source content                         | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
-| Retrieval      | The step where relevant chunks are selected for a user question                                           | [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)       |
-| Subworkflow    | A reusable workflow module pinned to a published deployment version                                       | [Agentic Workflows](AGENTIC_WORKFLOWS.md)                   |
-| API Connector  | A saved external API connection profile reusable across workflows (base URL, auth, headers, timeout)      | [API Connectors](API_CONNECTORS.md)                         |
-| API Operation  | A versioned action on a saved connector with fixed allowed inputs and side-effect policy                  | [API Connectors](API_CONNECTORS.md)                         |
-| Widget         | The embeddable chat UI for websites or product frontends                                                  | [Chat Widget](CHAT_WIDGET.md)                               |
-| Context Area   | The access scope for a bot, such as public, member, or admin                                              | [Context Areas](CONTEXT_AREAS.md)                           |
-| Conversation   | A stored chat session for one bot and one session identifier                                              | [Conversations and Messages](CONVERSATIONS_AND_MESSAGES.md) |
-| Message        | An individual user or assistant entry inside a conversation                                               | [Conversations and Messages](CONVERSATIONS_AND_MESSAGES.md) |
+When a task needs explicit branching, visitor input, approval, delays, bounded
+iteration, or several external operations, the administrator creates and
+publishes a Playbook and assigns it to the Agent. Publishing the Agent pins the
+exact Playbook deployment. Mutable drafts and unassigned integrations are not
+runtime authority.
 
-## How The Pieces Fit Together
+The model proposes wording and calls. Deterministic policy validates grants,
+arguments, side effects, confirmation, idempotency, budgets, and state changes.
+AgentGraph owns Playbook checkpoints and waitpoints. Transport code renders
+only persisted canonical outcomes.
 
-### Bot
+## Knowledge and data
 
-The bot is the central assistant definition. It decides:
+Knowledge Sources contain indexed documents and chunks for grounded context.
+Data Resources expose live application records through declared columns,
+filters, scopes, and limits. They are different capabilities and neither is a
+global database tool.
 
-- which model and provider answer questions
-- which sources belong to it
-- how strict retrieval should be
-- which capabilities its workflow may use
-- which users or areas can access it
-- how the widget looks and behaves
+## Connectors and writes
 
-### Sources, Documents, and Chunks
+An API Connector can contain several versioned operations. A Playbook
+Capability step pins the published operation revision, contract hash, and input
+schema hash. Writes require the exact grant and policy, explicit approval when
+declared, idempotency, and truthful handling of unknown outcomes.
 
-A source is the input. During ingestion, that source becomes a normalized document, and that document is split into chunks. Those chunks are what retrieval actually searches.
+## Read next
 
-That means the bot does not search entire files or pages at once. It searches smaller grounded pieces of content.
-
-### Data Resources
-
-Data Resources are for live database answers, not semantic document search. Admins define approved Eloquent models and columns in **Data Resources**, then approve a narrowed subset per bot. Workflows can query those resources through `query_data_resource`, but they cannot invent columns, filters, sorts, or limits outside the configured policy.
-
-### Retrieval and Answers
-
-A reachable Knowledge step in the live workflow decides where approved sources are needed. Knowledge search embeds the query, finds relevant chunks, and supplies grounded context for the answer. Sources attached to a bot are never a deploymentless direct-answer path.
-
-### Agent Workflows
-
-The main workflow lets you add branching, questions, grounded answers, backend actions, API Operations, confirmation, and reusable subworkflows. Draft changes stay separate from the published live deployment until you explicitly publish and activate them.
-
-Start with [the Quick Start golden path](QUICKSTART.md#7-golden-path-bot-to-live-deployment), recipes, and Simple Builder.
-
-### Advanced Concepts
-
-Custom actions, raw HTTP, expert nodes, schema details, and engine architecture are separate advanced topics. Read [Agentic Workflows](AGENTIC_WORKFLOWS.md), [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md), or [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) only when the normal path needs that depth.
-
-### Conversations and Widget Runtime
-
-The widget is only the interface layer. The bot, sources, retrieval, workflows, and conversations live in your Laravel app and are managed from Filament.
-
-## Read These Next
-
-- [Product Overview](PRODUCT_OVERVIEW.md)
-- [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md)
-- [Bots](BOTS.md)
-- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
+- [Quick Start](QUICKSTART.md)
+- [Agents and Playbooks](AGENTIC_WORKFLOWS.md)
+- [Playbook Builder](PLAYBOOK_BUILDER.md)
 - [Data Resources](DATA_RESOURCES.md)
-- [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
-- [Agentic Workflows](AGENTIC_WORKFLOWS.md)
 - [API Connectors](API_CONNECTORS.md)
-- [Chat Widget](CHAT_WIDGET.md)
+- [Security and Privacy](SECURITY_AND_PRIVACY.md)

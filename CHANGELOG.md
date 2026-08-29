@@ -4,13 +4,59 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
-No changes have been recorded after the `0.17.0` release candidate.
+### Added
+
+- Added an evidence-backed conversation-outcome ledger with encrypted evidence references, immutable Agent/Playbook attribution, source-scoped idempotency, an after-commit event, and a supported host recording contract.
+- Added automatic human-handoff outcomes, authorized operator recording from Conversation Review, and an Agent Analytics Outcomes tab with explicit success, handoff, and currency-safe attributed-value reporting.
+- Added app-aware Solution Kits with a strict versioned provider contract, atomic/idempotent draft installation, immutable actor-attributed evidence, verified model and mapping selection, and an Agent Overview release path.
+- Added the built-in Customer Support & Human Handoff Kit with optional approved app reads, a visitor-confirmed handoff Playbook, blocking current-draft quality coverage, widget copy, and outcome goals.
+- Added a full-page Integration Studio that deterministically imports OpenAPI 3.x JSON/YAML, Postman Collection v2, or pasted cURL into reviewed inactive API Connector and Operation drafts without executing source content or contacting the service.
+- Added optional AI-assisted connector/operation presentation using only centrally configured verified provider/model profiles. The wizard contains no LLM key field; server-encrypted receipts bind AI provenance while technical request, authentication, effect, confirmation, retry, and execution semantics remain locked.
+- Added atomic/idempotent Integration Studio installation with strict authorization, raw-source rejection, credential-free immutable evidence, cross-connection/model-mutation guards, and schema-valid synthetic test-input suggestions that are only prefilled in the later governed test action.
+- Added a production Handoff Desk with one-active-case database enforcement, business-hours SLAs, claim/assignment, encrypted internal notes, same-thread operator replies for web/Telegram/Slack, immutable activity, optimistic locking, idempotent actions, safe widget polling, and deterministic Agent pause/handback.
+- Added origin-, Agent-, area-, and version-bound signed widget context for server-attested customer and tenant identity, deterministic Data Resource scoping, and encrypted delayed-continuation preservation without accepting browser-supplied authority.
+- Added a typed, framework-free widget SDK with idempotent mounting, explicit lifecycle control and events, memory-only context renewal, deterministic cleanup, and safe-read-only credential retry semantics.
+- Added typed suggested-message and visible page-context widget APIs plus replay-stable, privacy-minimized `outcome`, `capability`, and `handoff` events. Browser context is encrypted per turn, hash-bound, prompt-isolated, visitor-clearable, and never becomes runtime authority or capability input.
+- Added scheduled Published Agent quality scenarios with atomic crash-recoverable claims, centrally configured provider credentials, per-scenario cadence, immutable run evidence, and explicit failure telemetry.
+- Added exact candidate-versus-live Quality Lab comparisons with isolated no-write conversations, deterministic failure triage, deployment- and scenario-bound evidence, and optional candidate-activation gates. Knowledge-gap regressions enable the gate automatically.
+- Added a high-confidence Knowledge Operations inbox that groups durable knowledge-search fallbacks, encrypts question excerpts and operator notes, creates citation/no-write regression tests, and permits resolution only with an active Knowledge Source plus a current passing Agent run.
+- Added verified private chat attachments across the widget and canonical Agent turn, with content detection, model-capability checks, hash-bound idempotency, private storage, budget preflight, SDK support, and scheduled retention cleanup.
+- Added production WhatsApp Cloud API and Mailgun Email channel drivers with guided setup, signed webhooks, text-first replies, provider diagnostics, test sends, and delivery-status ingestion.
+- Added secure inbound Telegram, Slack, WhatsApp, and Mailgun files through one canonical attachment boundary, including bounded provider-host downloads and path-free durable Mailgun queue staging.
+- Added owner-deletion cleanup so channel connections and force-deleted Agents purge private attachment objects before database cascades remove their ledgers.
+- Added a server-attested email presentation contract so Mailgun turns produce self-contained asynchronous replies without allowing channel metadata to authorize capabilities or supply tool inputs.
+
+### Changed
+
+- Made Slack, WhatsApp Cloud API, and Mailgun Email fail closed behind default-off deployment flags until each provider completes a separate real-account acceptance run; Telegram remains the available external channel.
+- Hardened the `0.17.0` candidate around the Agent-first production boundary: immutable Knowledge, Connector, Data Resource, and Playbook authority is pinned at publication and runtime drift fails closed.
+- Made protected release evidence exact and blocking. Catalog cases must match the executed PHPUnit `test_file::test_method`; calibrated retrieval, real pgvector, live Knowledge citation retention, and the final all-jobs-green aggregator are required release jobs.
+
+### Fixed
+
+- Made advanced Channel Connection JSON validation compile as Laravel rules instead of being evaluated as Filament dependency-injected UI closures, so guided provider connections can be saved reliably.
+- Reconciled terminal AgentGraph chat turns before returning `busy`, prevented unmaterialized side-effect success from replaying a fabricated result, and persisted only sources actually cited by an Agent answer.
+- Redacted direct Connector results, made Playbook cancellation require explicit re-attested user intent, and moved uploaded Knowledge files to private, ownership-authenticated storage with an explicit migration path.
+- Made the irreversible action-review waitpoint migration reconcile pre-existing or partially created indexes idempotently, so a retried production upgrade does not fail on duplicate PostgreSQL relations.
+- Made Agent Access Token filter discovery select only scalar filter columns, preventing PostgreSQL `DISTINCT` failures on JSON-backed token metadata.
+
+### Migration
+
+- Added `2026_08_28_000001_create_bot_conversation_outcomes_table.php`. Existing history is not inferred or backfilled; run migrations before recording outcomes.
+- Added `2026_08_28_000002_create_agent_solution_kit_installations_table.php`. Existing Agents are not changed; run migrations before using the Solution Kit wizard.
+- Added `2026_08_28_000003_create_integration_studio_installations.php`. Existing Connectors are not changed; run migrations before using Integration Studio.
+- Added `2026_08_29_000001_build_production_handoff_desk.php`. It maps legacy `pending` cases to `waiting_operator`, adds version/SLA/team fields and immutable activity, and fails closed when a conversation already has competing active cases.
+- Added `2026_08_29_000002_build_quality_operations.php`. It adds automation state to saved quality scenarios and creates encrypted knowledge-gap and immutable occurrence ledgers. Existing scenarios remain manual and existing conversations are not heuristically backfilled.
+- Added `2026_08_29_000003_create_bot_message_attachments.php`. It creates verified private attachment and per-turn linkage ledgers; existing messages are not backfilled.
+- Added `2026_08_29_000004_create_channel_inbound_attachments.php`. It creates idempotent, short-lived private ingress staging for queued channel uploads; existing channels are not backfilled.
+- Added `2026_08_29_000007_add_widget_display_context_to_chat_turns.php`. It adds encrypted, nullable storage for bounded visitor-visible page context; existing turns are not backfilled.
+- Added `2026_08_29_000008_add_candidate_quality_comparisons.php`. It adds opt-in candidate release gates and deployment-role/comparison bindings to quality runs; existing Published Agent runs are classified as live and remain valid under the prior hash-based current-run contract.
 
 ## [0.17.0] - 2026-08-19
 
 ### Breaking
 
-- Completed the workflow-only runtime cutover. Every chat now requires one immutable, hash-verified live workflow deployment; direct Assistant, Knowledge-only answer, compound top-level planning, and recursive workflow escape paths are no longer productive runtime options.
+- Completed the Agent-first runtime cutover. Every chat now requires one immutable, hash-verified live Agent deployment; ordinary answers and pinned read tools remain Agent-owned, while optional Playbooks are closed, deployment-pinned process tools. Legacy runtime profiles, top-level Knowledge bypass, compound planning, global-tool escape paths, and recursive Playbooks are no longer productive options.
 - Removed runtime product-mode aliases, `RAG_*` environment fallbacks, fine-grained runtime enable/engine switches, compound shadow execution, duplicate AgentGraph workflow-node metadata, legacy Bot Access Token hash lookup, conversation-meta workflow memory, workflow-snapshot metadata reads, and compound-specific answer interpreter/composer aliases. See `UPGRADING.md` for the required Before/After migration.
 - Removed API Connector V1/legacy field execution, mutable-draft fallback, workflow/deployment operation snapshots as execution authority, raw `compound_requests.api_connectors.capabilities`, the Google Calendar compound feature flag, and alternate connector result projections. Existing workflows must publish exact immutable revision, full-contract, input-schema, and environment pins after the irreversible cutover described in `UPGRADING.md`.
 - Removed the PHPStan baseline and all temporary architecture exceptions after fixing the underlying findings.
@@ -28,20 +74,19 @@ No changes have been recorded after the `0.17.0` release candidate.
 - Added `filament-agentic-chatbot:reconcile-side-effect` plus doctor visibility for unknown external write outcomes. Operators must verify the provider result out of band and record `succeeded` or `failed`; the command never repeats the write.
 - Added canonical `filament-agentic-chatbot.connector-operation` version `2` drafts and immutable revisions, closed chatbot input schemas, distinct materialized-request schemas, publisher-derived `metadata.capability`, strategy IDs, and bounded operation-test evidence.
 - Closed every server-owned nested operation-contract object and runtime payload schema, made direct revision persistence use the full executable-contract validator, and rejected static credentials from serialized templates, schema values/annotations, capability presentation, and extensible outcome, pagination, async-completion, and write-integrity policies.
-- Added one `filament-agentic-chatbot.connector-result` version `2` envelope across workflow, chatbot, workbench, and compound consumers with explicit `succeeded`, `replayed`, `partial`, `failed`, `blocked`, and `unknown` outcomes.
+- Added one `filament-agentic-chatbot.connector-result` version `2` envelope across Agent, Playbook, and workbench consumers with explicit `succeeded`, `replayed`, `partial`, `failed`, `blocked`, and `unknown` outcomes.
 - Added bounded canonical capability-result projection, durable workflow-state budgets, and terminal AgentGraph chat-turn recovery that finalizes a crashed turn without redispatching workflow nodes or external capabilities.
 - Added an encrypted, leased continuation journal for bounded pagination and async polling. Connector invocations own continuation progress; the journal is not a scheduler and AgentGraph remains workflow checkpoint/wait authority.
 - Added `filament-agentic-chatbot:setup-google-calendar-connector` to create or update the OAuth connector and publish the canonical confirmation-required `create_google_calendar_event` operation.
-- Added Authorized Entry Turn Plan version 2 with ordered tasks/items, exact workflow and capability release hashes, deterministic preclassified AgentGraph dispatch, isolated item state, typed per-item outcomes, and complete ordered answer composition.
 - Added generic connector input policies for literal/enum admission, normalization, aliases, ambiguity, semantic/entity types, bounded batch modes, and optional requested-versus-observed result-identity verification.
 - Added the `batchMap` workflow node as the one bounded collection traversal primitive.
 
 ### Changed
 
-- Multi-objective read turns now use one AgentGraph-owned workflow run and the same `CapabilityExecutionGateway` as every other external call. The weather-plus-Pokémon flow no longer depends on API-specific or Compound Request code.
+- Multi-objective independent reads now remain Agent-owned and use separate bounded, deployment-pinned calls through `CapabilityExecutionGateway`. Ordered, dependent, interruptible, or write-bearing work belongs to an explicit Playbook; no API-specific or Compound Request planner remains.
 - Kept the audited Guzzle 7/PSR-7 2 security floors while admitting the native Guzzle 8/PSR-7 3 dependency line used by Laravel 13, avoiding a needless framework dependency downgrade.
 
-- Reworked bot readiness, overview, quality scenarios, and launch guidance around the single live-workflow path. Bots without a verified live deployment now remain explicitly blocked, including bots that already have indexed knowledge.
+- Reworked bot readiness, overview, quality scenarios, and launch guidance around the single live-Agent path. Bots without a verified live Agent deployment remain explicitly blocked, including bots that already have indexed Knowledge.
 - Removed reflection-based retrieval dispatch, implicit lexical fallback, and Chroma threshold bypass. Retrieval now fails closed on incompatible index identity or insufficient evidence, uses G19 token budgets, and keeps raw queries out of retrieval diagnostics and terminal workflow traces.
 - Hardened workflow turn routing so negated or exploratory cancel mentions no longer cancel active runs, while explicit replacement turns can still interrupt and replace an open workflow.
 - Restricted semantic continuation to usable task frames, preserved structured clarification prompts and options through the runtime target boundary, and removed stale task-frame ownership of fresh requests.

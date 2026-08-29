@@ -27,21 +27,138 @@ If pending items do not move for several minutes, verify worker health and provi
 
 Source deletion also uses the queue when the backend needs an external vector delete call. Keep workers running after bulk deletes so `CleanupKnowledgeSourceVectorsJob` can remove Chroma vectors by collected chunk ID. The job is idempotent and safe to retry.
 
-## Conversation Memory Repair
+## Outbound Webhook Recovery
 
-Historical workflow-run episodes and work events are not backfilled by chat requests. Run the explicit idempotent repair command after importing legacy conversations or when an operator has verified that prepared memory projections are missing:
-
-```bash
-php artisan filament-agentic-chatbot:repair-conversation-memory --conversation=123
-```
-
-For a bounded bulk repair, provide an explicit limit:
+Signed outcome and handoff webhooks use a transactional outbox plus a durable
+delivery ledger. The package registers this recovery command every minute:
 
 ```bash
-php artisan filament-agentic-chatbot:repair-conversation-memory --limit=100
+php artisan filament-agentic-chatbot:maintain-outbound-webhooks --limit=500
 ```
 
-The command accepts a maximum limit of 500, inspects only conversations with terminal workflow runs in bulk mode, and reports created episode/work-event counts. When more candidates remain, it prints the exact `--after=<last-id> --limit=<same-limit>` continuation to process the next bounded page. Re-running a page is safe and creates no duplicates. It does not execute workflows, call models or connectors, retry writes, or change runtime authority.
+It recovers un-fanned-out events, due retry rows, and expired worker leases, then
+prunes only terminal ledgers older than `OUTBOUND_WEBHOOK_RETENTION_DAYS`. Preview
+eligible work without dispatching or pruning:
+
+```bash
+php artisan filament-agentic-chatbot:maintain-outbound-webhooks --dry-run
+```
+
+Keep Scheduler and an asynchronous worker running. If a dedicated connection or
+queue is configured, supervise it separately:
+
+```env
+OUTBOUND_WEBHOOK_QUEUE_CONNECTION=database
+OUTBOUND_WEBHOOK_QUEUE=agentic-chatbot-webhooks
+```
+
+```bash
+php artisan queue:work database --queue=agentic-chatbot-webhooks
+```
+
+Monitor old `pending`, `retry_scheduled`, and `delivering` rows and new
+`dead_letter` rows. Resolve the receiver incident before an authorized operator
+uses the reasoned manual retry in **Connect > Webhooks**. See [Outbound
+Webhooks](OUTBOUND_WEBHOOKS.md).
+
+## Quality Operations
+
+The package registers two commands with Laravel Scheduler every five minutes:
+
+```bash
+php artisan filament-agentic-chatbot:run-due-quality-scenarios
+php artisan filament-agentic-chatbot:collect-knowledge-gaps
+```
+
+The first atomically claims due, active **Published Agent** scenarios and queues each run once. A stale claim becomes eligible again after the configured lease window; a worker or dispatch failure clears the claim, records a bounded error code and failure count, and schedules another attempt. Playbook draft tests and archived scenarios cannot enable automation.
+
+The second inspects already committed Chat Turns. It persists a gap only when durable operator evidence records `knowledge_searched=true` and `safe_capability_fallback`, the canonical answer has no sources, and the conversation is not an admin live test. Question excerpts and resolution notes are encrypted; occurrences remain immutable and deduplicated per Chat Turn. Existing history is intentionally not inferred or backfilled.
+
+Production requires Laravel Scheduler and an asynchronous queue worker. Automated tests use the same Agent provider/model and credential resolution as a manual Published Agent quality run—an existing per-Agent key still takes precedence over the central provider key, and no quality-specific API key is stored.
+
+```env
+AGENTIC_CHATBOT_QUALITY_OPERATIONS_ENABLED=true
+AGENTIC_CHATBOT_QUALITY_OPERATIONS_QUEUE_CONNECTION=database
+AGENTIC_CHATBOT_QUALITY_OPERATIONS_QUEUE=agentic-chatbot-quality
+AGENTIC_CHATBOT_QUALITY_OPERATIONS_DISPATCH_LIMIT=25
+AGENTIC_CHATBOT_QUALITY_OPERATIONS_CLAIM_STALE_AFTER_MINUTES=30
+AGENTIC_CHATBOT_KNOWLEDGE_GAP_DETECTION_ENABLED=true
+AGENTIC_CHATBOT_KNOWLEDGE_GAP_LOOKBACK_DAYS=30
+AGENTIC_CHATBOT_KNOWLEDGE_GAP_SCAN_LIMIT=500
+```
+
+Run the worker for a dedicated queue when configured:
+
+```bash
+php artisan queue:work database --queue=agentic-chatbot-quality
+```
+
+Operational probes are non-mutating with `--dry-run`:
+
+```bash
+php artisan filament-agentic-chatbot:run-due-quality-scenarios --dry-run
+php artisan filament-agentic-chatbot:collect-knowledge-gaps --dry-run
+```
+
+See [Quality Operations](QUALITY_OPERATIONS.md) for the state, evidence, incident, and resolution contracts.
+
+## Chat Attachment Retention
+
+Chat files are stored separately from public assets and expire after
+`AGENTIC_CHATBOT_ATTACHMENTS_RETENTION_DAYS` (default 30 days). The package
+registers a daily `02:30` scheduler task:
+
+```bash
+php artisan filament-agentic-chatbot:prune-chat-attachments --limit=1000
+```
+
+Preview a retention run without deleting file content:
+
+```bash
+php artisan filament-agentic-chatbot:prune-chat-attachments --dry-run
+```
+
+Keep Laravel Scheduler running, monitor non-zero command failures, and verify
+that `AGENTIC_CHATBOT_ATTACHMENTS_DISK` is private and writable on every worker.
+The command is idempotent: it selects only expired `available` rows, removes the
+private object, and then marks its bounded metadata `purged`. Conversation
+privacy deletion uses the same storage service and fails closed when a file
+cannot be removed.
+
+### Channel Ingress Attachment Retention
+
+When the staged Mailgun provider is explicitly enabled, it must persist
+multipart uploads before its webhook can safely dispatch an asynchronous job.
+Those temporary ingress objects use the same verified private disk but a
+separate, short retention window controlled by
+`AGENTIC_CHATBOT_ATTACHMENTS_CHANNEL_INGRESS_RETENTION_HOURS` (default 24
+hours). Provider downloads for Telegram, Slack, and WhatsApp are resolved by the
+worker and do not create ingress rows.
+
+The package registers a daily `02:35` sweep:
+
+```bash
+php artisan filament-agentic-chatbot:prune-channel-inbound-attachments --limit=1000
+```
+
+Preview the selected rows without deleting content:
+
+```bash
+php artisan filament-agentic-chatbot:prune-channel-inbound-attachments --dry-run
+```
+
+The command selects only expired `staged` or `consumed` records. It removes the
+private object before marking its bounded metadata `purged`, is idempotent, and
+fails the run when storage still contains an object that could not be deleted.
+Monitor that failure independently from normal chat-attachment retention.
+
+For enabled-channel incidents, run **Connect > Channels > Diagnostics**. In addition to
+Agent, token, webhook, provider, and queue readiness, diagnostics fails when a
+channel accepts files while the global attachment runtime is disabled or the
+configured disk is not a verified private writable disk. Re-run diagnostics
+after changing a disk, worker identity, or public webhook hostname. Slack,
+WhatsApp, and Mailgun diagnostics become available only after the corresponding
+`AGENTIC_CHATBOT_CHANNELS_*_ENABLED` acceptance flag is deliberately enabled.
 
 ## Scheduled API Source Sync
 
@@ -74,6 +191,22 @@ The command only queues sources whose `next_sync_at` is due. It skips busy sourc
 
 Every provider call creates an atomic `AiUsageCall` reservation before transport starts. Successful responses settle from provider-reported input, output, reasoning, and cache usage. A provider failure, missing usage, or settlement database failure remains visible as `reconciliation_required`; it is never silently released or replaced with an estimated actual value.
 
+For conversational calls, preflight accounts for developer instructions,
+retained history, the current message, tool schemas, and a conservative encoded
+size bound for local attachments. Oldest history is pruned until the effective
+input/context limit is met. Remote URL or provider-ID attachments whose token
+footprint cannot be known fail closed. The provider-profile output maximum is
+sent as the real per-round generation cap. Tool-enabled calls reserve the
+verified worst-case context/output envelope for every permitted model step;
+an unknown context window cannot start a multi-step call. This conservative
+reservation is intentional: it keeps monthly token and cost limits hard even
+when the provider performs several tool rounds internally.
+
+Provider usage is normalized once into disjoint input, output, reasoning,
+cache-read, and cache-write buckets. Dashboard and report token totals include
+all five. If any settled call lacks pricing, aggregate cost is shown as
+unpriced/unknown rather than as zero or a partial total.
+
 The package registers this idempotent command with Laravel Scheduler every minute by default:
 
 ```bash
@@ -87,6 +220,31 @@ AGENTIC_CHATBOT_USAGE_RECONCILIATION_SCHEDULE_ENABLED=false
 ```
 
 Monitor `ai_usage_calls.status = reconciliation_required`, reconciliation event/log volume, and the age of `reserved` calls. Expiry is idempotent and releases only the still-reserved monthly aggregate; it does not invent provider usage.
+
+## Human Review Retention
+
+Human Review execution payloads and resumable state are encrypted at rest. The
+package registers a daily `02:15` retention sweep that removes only terminal
+reviews older than `ACTION_REVIEW_RETENTION_DAYS` (default 90 days):
+
+```bash
+php artisan filament-agentic-chatbot:prune-action-reviews --limit=1000
+```
+
+Pending, executing, and unknown/reconciliation-required reviews are never
+removed by this sweep. Use `--dry-run` before a manual retention change; keep
+Laravel Scheduler running so sensitive terminal payloads do not outlive the
+configured window.
+
+## Agent-First Runtime Constraint Upgrade
+
+Run package migrations before enabling chat traffic after this upgrade. The
+new constraint permits only one open Playbook (`running`, `halted`, or
+`delayed`) per conversation. If historical data contains multiple open runs,
+the migration stops before changing their state or dropping the previous
+guard. Reconcile or cancel those runs through the AgentGraph-backed runtime,
+then rerun the migration. Do not repair them with direct `workflow_runs` SQL;
+that table is an operational projection, not the graph state authority.
 
 ## Delayed Workflow Resume Recovery
 
@@ -130,9 +288,15 @@ AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_QUERY_TOKENS=false
 AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS=false
 AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=false
 AGENTIC_CHATBOT_WIDGET_CONVERSATION_CREDENTIAL_REQUIRED=true
+AGENTIC_CHATBOT_WIDGET_CONTEXT_ENABLED=true
+AGENTIC_CHATBOT_WIDGET_CONTEXT_TTL_MINUTES=10
+AGENTIC_CHATBOT_WIDGET_CONTEXT_REFRESH_BEFORE_SECONDS=120
+AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS=
 ```
 
 Browser embeds are tokenless at rest: the loader obtains an origin-bound token from `POST .../bootstrap`, keeps it in memory, renews it before expiry, and sends it in `X-filament-agentic-chatbot-Token`. It retries only safe reads after renewal. The separate anonymous conversation credential comes from `POST .../session` and never appears in a URL; production enforces this authority even if stale published config omits it. Keep query/body token compatibility disabled, configure explicit production Allowed Domains, and monitor bootstrap `429` responses separately from chat traffic.
+
+Signed customer context is optional. Its key falls back to `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`; set `AGENTIC_CHATBOT_WIDGET_CONTEXT_SIGNING_KEY` only when independent rotation is operationally useful. Areas listed in `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS` fail closed when the context is missing, expired, origin-mismatched, or invalid. Never log the `X-Filament-Agentic-Chatbot-Context` header; the token is integrity-protected, not encrypted.
 
 ## Health Check
 
@@ -144,6 +308,14 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as a release blocker.
 
+For automated production setup, grant destructive authority explicitly and only to the step that needs it:
+
+```bash
+php artisan filament-agentic-chatbot:install --force-migrations
+```
+
+Add `--force-config` only when the deployment is intentionally replacing the host's published package config. The former ambiguous `--force` option is rejected before setup starts; it never overwrites config or authorizes migrations.
+
 For faster in-panel checks during setup, use the **Setup Check** action on bot and source pages. It gives you a quick vector-backend and queue-readiness signal before you fall back to the full doctor command.
 
 Supported vector backends today are `pgvector` and `chroma`. If the doctor output mentions Pinecone scaffolding, that path is not a supported production backend yet.
@@ -154,7 +326,7 @@ For pgvector, the host needs PHP `ext-pdo_pgsql` and a PostgreSQL database where
 CREATE EXTENSION IF NOT EXISTS vector;
 ```
 
-Production warnings are intentionally early and actionable. Review warnings for widget query/body token transport, active bots without domain allowlists, APP_KEY fallback signing, multiple active workflows on one bot, full workflow trace capture, and encrypted bot credentials that cannot decrypt with the current `APP_KEY`.
+Production warnings are intentionally early and actionable. Review warnings for widget query/body token transport, active Agents without domain allowlists, APP_KEY fallback signing, missing or invalid Agent deployments, full Playbook trace capture, and encrypted bot credentials that cannot decrypt with the current `APP_KEY`.
 
 ### AgentGraph Interrupt Consistency
 
@@ -172,7 +344,7 @@ Then reconcile the affected active conversations before allowing side effects. I
 
 The doctor check `Chat turn reconciliation` reports durable turn IDs whose result is `unknown` or whose active execution lease expired. These conversations remain locked intentionally: sending the same request with a new ID is not a safe substitute for reconciliation and could duplicate an external write.
 
-Before unlocking a conversation, an operator must inspect the external provider, workflow run, effect ledger, and application logs out of band. An expired lease alone does not prove that the original process stopped; verify that separately. Once the operator has established that the turn must be abandoned, run:
+Before unlocking a conversation, an operator must inspect the external provider, Playbook run, effect ledger, and application logs out of band. An expired lease alone does not prove that the original process stopped; verify that separately. Once the operator has established that the turn must be abandoned, run:
 
 ```bash
 php artisan filament-agentic-chatbot:reconcile-chat-turn 123 \
@@ -193,7 +365,7 @@ Do not use direct SQL to clear `active_lock`; that bypasses status eligibility, 
 
 ### External Side-Effect Reconciliation
 
-The doctor check `Side-effect reconciliation` reports write-ledger rows whose external outcome is `unknown`. Do not retry the workflow, connector, action, or authorized turn-plan item with a new identifier: a timeout or ambiguous provider response may have occurred after the remote system committed the write.
+The doctor check `Side-effect reconciliation` reports write-ledger rows whose external outcome is `unknown`. Do not retry the Playbook Capability, connector, or action with a new identifier: a timeout or ambiguous provider response may have occurred after the remote system committed the write.
 
 Inspect the provider audit log and the local workflow/connector trace out of band. Then record the verified result:
 
@@ -218,7 +390,7 @@ Run this after migrations when validating API integrations, scoped bot tokens, u
 php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 ```
 
-The command creates temporary QA bots, workflows, and Bot Access Tokens, then checks:
+The command creates temporary QA Agents, Agent deployments, and Agent Access Tokens, then checks:
 
 - JSON complete endpoint success through `Authorization: Bearer ...`
 - area-scope rejection
@@ -241,18 +413,18 @@ AGENTIC_CHATBOT_SUPPORT_EMAIL=webdevislife2021@gmail.com
 
 Use a public documentation URL for `AGENTIC_CHATBOT_DOCS_URL`, not an internal admin route or a private repository link.
 
-## Workflow Runtime Guardrails
+## Playbook Runtime Guardrails
 
-- Enabled workflow HTTP Request nodes require a non-empty `AGENTIC_CHATBOT_WORKFLOW_HTTP_REQUEST_ALLOWED_DOMAINS` list in every Laravel environment. Configure exact hosts or explicit wildcards such as `*.example.com`; local and testing environments grant no automatic network authority.
-- `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks workflow HTTP Request nodes, productive API Connector calls, OAuth token refresh, connector tests, and connector-backed API sources from targeting localhost, RFC1918, or other reserved/private destinations in every Laravel environment. Setting it to `true` enables those intentional internal targets; raw HTTP hosts must still match the separate raw HTTP domain allowlist. General URL-source ingestion remains governed by `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS`.
-- `AGENTIC_CHATBOT_WORKFLOW_RUNNING_TIMEOUT_SECONDS` lets abandoned `running` workflow executions be reclaimed so future conversations are not blocked forever.
-- `AGENTIC_CHATBOT_WORKFLOW_DELAYED_TIMEOUT_SECONDS` lets abandoned `delayed` workflow executions be reclaimed when a queued resume never arrives. It defaults to the running timeout when unset.
+- Enabled Playbook raw-HTTP capabilities require a non-empty `AGENTIC_CHATBOT_WORKFLOW_HTTP_REQUEST_ALLOWED_DOMAINS` list in every Laravel environment. Configure exact hosts or explicit wildcards such as `*.example.com`; local and testing environments grant no automatic network authority.
+- `AGENTIC_CHATBOT_ALLOW_PRIVATE_REQUEST_URLS=false` blocks Playbook raw-HTTP capabilities, productive API Connector calls, OAuth token refresh, connector tests, and connector-backed API sources from targeting localhost, RFC1918, or other reserved/private destinations in every Laravel environment. Setting it to `true` enables those intentional internal targets; raw HTTP hosts must still match the separate raw HTTP domain allowlist. General URL-source ingestion remains governed by `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS`.
+- `AGENTIC_CHATBOT_WORKFLOW_RUNNING_TIMEOUT_SECONDS` lets abandoned `running` Playbook executions be reclaimed so future conversations are not blocked forever.
+- `AGENTIC_CHATBOT_WORKFLOW_DELAYED_TIMEOUT_SECONDS` lets abandoned `delayed` Playbook executions be reclaimed when a queued resume never arrives. It defaults to the running timeout when unset.
 - `AGENTIC_CHATBOT_WORKFLOW_PENDING_RESOLVING_TIMEOUT_SECONDS` releases abandoned pending-interaction resolver claims when the AgentGraph interrupt still matches. This prevents stale `resolving` rows from blocking the next valid user answer.
 - `AGENTIC_CHATBOT_WORKFLOW_TRACE_CAPTURE_*`, `AGENTIC_CHATBOT_WORKFLOW_TRACE_MAX_STRING_LENGTH`, and `AGENTIC_CHATBOT_WORKFLOW_TRACE_REDACT_*` control how much trace data is stored and how sensitive values are scrubbed.
 
 If all trace capture flags are left enabled in production, doctor reports a warning. That keeps this release compatible while making privacy review explicit.
 
-Workflow stream failures are mapped to safe `error` events and closed with `[DONE]`. JSON `/complete` failures use the same safe error mapper and roll back prepared runs. Treat repeated `chat_failed` errors as an operational signal: inspect workflow run details, server logs, provider credentials, and queue health rather than asking users to retry indefinitely.
+Agent stream failures are mapped to safe `error` events and closed with `[DONE]`. JSON `/complete` failures use the same safe error mapper and roll back prepared Playbook runs. Treat repeated `chat_failed` errors as an operational signal: inspect Agent/Playbook evidence, server logs, provider credentials, and queue health rather than asking users to retry indefinitely.
 
 ## Ingestion Fetch Limits
 
@@ -270,7 +442,7 @@ Allowed content types live in `filament-agentic-chatbot.ingestion.allowed_conten
 
 ## Runtime Write Pressure
 
-Bot Access Tokens update `last_used_at` at most once per throttle window:
+Agent Access Tokens update `last_used_at` at most once per throttle window:
 
 ```env
 AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES=5
@@ -289,11 +461,13 @@ Before production launch:
 - Queue worker process is supervised (systemd/Supervisor/Horizon)
 - Database queue installs have migrated `jobs`, `failed_jobs`, and `job_batches`
 - Laravel scheduler calls `filament-agentic-chatbot:sync-knowledge-sources` if API source auto sync is used
+- Laravel Scheduler is supervised for automated Quality Lab runs and Knowledge Operations
+- Quality automation uses an asynchronous supervised queue connection, not `sync`
 - `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` with a strong signing key
 - If `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, set `AGENTIC_CHATBOT_ANYSTACK_ID`, `AGENTIC_CHATBOT_DOCS_URL`, and `AGENTIC_CHATBOT_SUPPORT_EMAIL`
 - Domain allowlist configured per bot
 - Header-only widget token transport for public embeds
-- No workflow routing conflicts in the Workflows list
+- Every active Agent has one hash-verified Agent deployment
 - Knowledge sources show completed chunks before public launch
 - At least one successful load test run against a production-like environment
 
@@ -319,19 +493,21 @@ Track:
 - If you changed vector backend/model settings: use `Re-Ingest Bot Sources` (bot page) or `Re-Ingest All Sources` (sources list).
 - If bot setup still feels unclear: use `Test Retrieval`, `Test Bot Answer`, and `Setup Check` before you debug deeper infrastructure.
 - If chat rate-limited: reduce traffic burst and add retry backoff in clients.
-- If a workflow answer appears stuck: run `filament-agentic-chatbot:doctor`, inspect active `workflow_runs` and `bot_pending_interactions`, and verify the running/delayed/resolving timeout settings above.
+- If a Playbook appears stuck: run `filament-agentic-chatbot:doctor`, inspect active `workflow_runs` and `bot_pending_interactions`, and verify the running/delayed/resolving timeout settings above.
 - If retrieval quality drops: tune `top_k`, `min_similarity`, and source quality.
 
-## Data Resources (query_data_resource)
+## Data Resources (`query_data_resource` and `mutate_data_resource`)
 
-For workflows that use `query_data_resource`:
+For Playbooks that use Data Resources:
 
 - Define the required resources in **Agentic Chatbot > Connect > Data Resources**. Choose an Eloquent model, then select columns from the detected database table instead of typing column names by hand.
 - Use config-backed resources only as install-time seeds or reviewed defaults. After migrations, **Sync from config** can create or update UI-managed resources when you intentionally want that.
 - Restrict each bot to the minimum required resource keys and narrow fields per bot when needed.
-- Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated workflows map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
+- Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated Playbooks map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
+- Keep direct Agent Data Resource tools read-only. For a Playbook write, explicitly enable only `insert` and/or `update`, require a server-resolved ownership scope, and select the minimum writable, required, and exact-identity fields. Updates also require an integer or date-time optimistic-lock column.
+- Verify the confirmation text contains only policy-approved business fields. Confirm that stale versions, invalid values, multiple matches, replays, and cross-tenant targets fail closed and that the side-effect ledger records the exact result identity.
 - Re-check permissions, migrations, and cache after changing global resources.
-- Validate one real workflow run against representative production data before go-live.
+- Validate one real Playbook run against representative production data before go-live.
 ## Runtime Release Gate
 
 Before shipping runtime changes, run:
@@ -340,8 +516,14 @@ Before shipping runtime changes, run:
 composer assurance:runtime-release
 ```
 
-The command blocks on routing, evidence/fidelity, write-safety, pending/turn-plan state, security, observability, model compatibility, release-operation, or operational-quality regressions. Its schema-v2 redacted JSON report is written to `build/runtime-release-report.json` and contains aggregate test counts, durations, 42 named scenario results, quality thresholds, Wilson 95% intervals, failed test identifiers, and exact rerun commands. It does not store PHPUnit output, prompts, payloads, credentials, or model responses.
+The command blocks on Agent routing, evidence, write safety, pending Playbook
+state, security, observability, model compatibility, release operations, or
+operational-quality regressions. Its redacted JSON report is written to
+`build/runtime-release-report.json` and contains aggregate test counts,
+durations, named scenario results, quality thresholds, Wilson 95% intervals,
+failed test identifiers, and exact rerun commands. It does not store PHPUnit
+output, prompts, payloads, credentials, or model responses.
 
 Protected tags additionally require the complete native structured-tools, prompt-JSON tools, and restricted/no-tools provider matrix, live provider evals for the two supported profiles, capability rejection for the restricted profile, PostgreSQL fresh-install/upgrade/rollback evidence, and the 1,000-iteration soak. See [Runtime Release Assurance](RELEASE_ASSURANCE.md) for the environment contract and release decision.
 
-`filament-agentic-chatbot:doctor` reports removed runtime-mode and engine environment variables by name. Delete those variables; there is no replacement mode selector. Values are never printed. Doctor also blocks a bot that lacks one verified live workflow deployment.
+`filament-agentic-chatbot:doctor` reports removed runtime-mode and engine environment variables by name. Delete those variables; there is no replacement mode selector. Values are never printed. Doctor also reports an active Agent that lacks one verified Agent deployment and fails invalid deployment or Playbook pins.

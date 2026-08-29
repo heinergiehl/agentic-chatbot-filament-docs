@@ -27,10 +27,53 @@ $this->app->singleton(
 );
 ```
 
+Connector access to a private network is a separate, high-risk host authority.
+It is denied by default and cannot be enabled by connector, workflow, or model
+payload. A host that deliberately needs it binds a resolver backed by an
+explicit server-owned allowlist of connector IDs and exact target origins:
+
+```php
+use Heiner\FilamentAgenticChatbot\Contracts\ConnectorEgressPolicyResolver;
+use Heiner\FilamentAgenticChatbot\Models\ApiConnector;
+
+$this->app->singleton(
+    ConnectorEgressPolicyResolver::class,
+    fn () => new class((array) config('services.chatbot.private_connector_targets', [])) implements ConnectorEgressPolicyResolver {
+        public function __construct(private readonly array $connectorTargets) {}
+
+        public function allowsPrivateNetwork(ApiConnector $connector, string $url): bool
+        {
+            $scheme = strtolower((string) parse_url($url, PHP_URL_SCHEME));
+            $host = rtrim(strtolower((string) parse_url($url, PHP_URL_HOST)), '.');
+            $port = parse_url($url, PHP_URL_PORT) ?? match ($scheme) {
+                'http' => 80,
+                'https' => 443,
+                default => null,
+            };
+
+            foreach ((array) ($this->connectorTargets[(string) $connector->getKey()] ?? []) as $target) {
+                if (is_array($target)
+                    && strtolower((string) ($target['scheme'] ?? '')) === $scheme
+                    && rtrim(strtolower((string) ($target['host'] ?? '')), '.') === $host
+                    && (int) ($target['port'] ?? 0) === $port) {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+    },
+);
+```
+
+Configure every required base-URL and OAuth token origin separately. The
+resolver can permit special-use and cloud-metadata destinations, so never add a
+metadata origin and keep both the connector and origin allowlists narrow.
+
 ## Capability and action providers
 
 `CapabilityProvider` is the single host extension seam for visitor-safe
-capability discovery and immutable workflow actions. Register the provider as a
+operator inventory metadata and immutable workflow actions. Register the provider as a
 singleton and tag it with the interface class. Action execution is still
 materialized, authorized, confirmed, idempotent, and invoked through the
 package capability gateway.
@@ -41,7 +84,7 @@ package capability gateway.
 namespace App\Chatbot;
 
 use Heiner\FilamentAgenticChatbot\Services\Capabilities\CapabilityActionDefinition;
-use Heiner\FilamentAgenticChatbot\Services\Capabilities\CapabilityDiscoveryContext;
+use Heiner\FilamentAgenticChatbot\Services\Capabilities\CapabilityInventoryContext;
 use Heiner\FilamentAgenticChatbot\Services\Capabilities\CapabilityProvider;
 use Heiner\FilamentAgenticChatbot\Services\Capabilities\CapabilitySemanticProfile;
 
@@ -51,7 +94,7 @@ final class CrmCapabilityProvider implements CapabilityProvider
     public function label(): string { return 'CRM'; }
     public function summary(): string { return 'Approved CRM lookups.'; }
 
-    public function items(CapabilityDiscoveryContext $context): array
+    public function items(CapabilityInventoryContext $context): array
     {
         return [[
             'key' => 'crm_lookup',
@@ -80,6 +123,8 @@ final class CrmCapabilityProvider implements CapabilityProvider
             ],
             confirmationPolicy: 'none',
             idempotencyPolicy: ['mode' => 'none'],
+            cardinality: ['mode' => 'single_only', 'max_items' => 1],
+            resultIdentity: [],
             semanticProfile: new CapabilitySemanticProfile(
                 label: 'CRM lookup',
                 description: 'Find an approved CRM record by identifier.',
@@ -105,6 +150,13 @@ public function register(): void
 }
 ```
 
+The Filament **Capability Bridge** page is a read-only diagnostic view over
+this same extension seam. It materializes declarations through the canonical
+contract validator so an operator can review effect, confirmation,
+idempotency, schema shape, and hash before routing an action. It does not scan
+or expose arbitrary Filament Resources, model methods, controllers, or UI
+Actions, and it does not create execution authority.
+
 Providers return `CapabilityActionDefinition` objects from `actions()`. Write
 actions must declare `runtime_grant` confirmation and a gateway idempotency
 policy. Every action must declare non-empty request and result schemas; both are
@@ -116,6 +168,9 @@ hashed with the executable contract and lets deployment project only capabilitie
 reachable from a declared workflow route into its semantic classifier. It does
 not grant execution authority. Duplicate or incomplete action contracts fail
 package boot/resolution and are reported by the Doctor command before chat traffic.
+The directly reflected handler implementation source is also hashed into the
+contract. A deployed action therefore fails closed after its handler code
+changes until the owning Playbook and Agent are reviewed and republished.
 
 Providers that need locale aliases, canonical external IDs, or tenant-specific
 entity lookup may additionally register a `CapabilityEntityResolver` singleton
@@ -127,6 +182,101 @@ can clarify. Resolvers normalize data only—they do not select routes or author
 capability execution. They must be deterministic and side-effect-free; any
 external lookup remains a deployed workflow capability executed through the
 package gateway.
+
+## Solution Kit providers
+
+`SolutionKitProvider` is the host extension seam for versioned, app-aware Agent
+starting points. Register a singleton and tag it with the interface class:
+
+```php
+use App\Chatbot\SalesQualificationKitProvider;
+use Heiner\FilamentAgenticChatbot\SolutionKits\Contracts\SolutionKitProvider;
+
+public function register(): void
+{
+    $this->app->singleton(SalesQualificationKitProvider::class);
+    $this->app->tag(SalesQualificationKitProvider::class, SolutionKitProvider::class);
+}
+```
+
+The provider's `solutionKits()` method returns `SolutionKitDefinition`
+instances. Definitions are closed and credential-free. They require semantic
+versioning, at least one complete schema-v2 Playbook, active blocking
+current-draft quality coverage for every Playbook, and at least one measurable
+outcome. Write-capable definitions must require explicit installation approval.
+Duplicate Kit keys fail catalog resolution.
+
+The extension seam is authoring-only. Installation creates an inactive Agent,
+unpublished drafts, saved tests, and immutable installation evidence in one
+transaction. It never publishes, activates, or executes a capability. Host
+actions referenced by a Kit remain separate `CapabilityProvider` contracts and
+execute only through the package capability gateway. See [Solution
+Kits](SOLUTION_KITS.md) for the complete schema and lifecycle.
+
+## Evidence-backed business outcomes
+
+Trusted host code may record a verified business result against a conversation
+through `RecordsConversationOutcomes`. Use this boundary from server-side
+domain events, verified provider webhooks, or other authoritative application
+code. Never create an outcome directly from visitor input, model output, or an
+unverified tool response.
+
+```php
+use Heiner\FilamentAgenticChatbot\Contracts\RecordsConversationOutcomes;
+use Heiner\FilamentAgenticChatbot\Outcomes\ConversationOutcomeClassification;
+use Heiner\FilamentAgenticChatbot\Outcomes\ConversationOutcomeKey;
+use Heiner\FilamentAgenticChatbot\Outcomes\ConversationOutcomeSignal;
+
+$outcome = app(RecordsConversationOutcomes::class)->record(
+    $conversation->getKey(),
+    new ConversationOutcomeSignal(
+        key: ConversationOutcomeKey::APPOINTMENT_BOOKED,
+        classification: ConversationOutcomeClassification::Success,
+        source: 'host.calendar_webhook',
+        idempotencyKey: 'calendar-event:evt_123',
+        evidenceType: 'calendar_event',
+        evidenceReference: 'evt_123',
+        valueMinorUnits: 2500,
+        currency: 'EUR',
+    ),
+);
+```
+
+`key`, `source`, and `evidenceType` are stable machine identifiers. The package
+ships common keys through `ConversationOutcomeKey`; host-specific keys are also
+accepted. `idempotencyKey` must identify the same source event on every retry.
+An exact retry returns the existing result with `wasCreated === false`; reusing
+the same identity for different content fails closed.
+
+Optional chat-turn, Playbook-run, and handoff IDs are accepted only when they
+belong to the target conversation. Deployment attribution is derived and
+verified by the recorder rather than supplied by the caller. Evidence references
+are encrypted at rest and are intentionally omitted from
+`RecordedConversationOutcome`. Trusted callers may supply both `actorType` and
+`actorId` for an auditable operator or service identity; supplying only one
+fails closed. A newly committed outcome dispatches
+`ConversationOutcomeRecorded`; idempotent replays do not dispatch it again.
+
+## Handoff activity event
+
+After a Handoff Desk activity commits, the package dispatches
+`HandoffActivityRecorded`. The event carries only the handoff public ID,
+activity public ID, activity type, and resulting handoff version. It contains no
+note text, contact data, operator identity, or credential. Hosts may listen for
+this event to refresh a private support dashboard or enqueue a separately
+authorized notification; read any additional case data through the host's
+normal record authorization boundary.
+
+## Durable outbound webhooks
+
+Hosts that need a configurable external callback should use **Connect >
+Webhooks**, not attach network work directly to the public Laravel events. The
+package transactionally records a versioned, PII-minimized outbox event,
+dispatches only after commit, signs the exact body, retries transient failures,
+and exposes an authorized delivery/dead-letter ledger. Delivery is at least once
+with a stable event ID for receiver idempotency. See [Outbound
+Webhooks](OUTBOUND_WEBHOOKS.md) for the payload, signature, retry, and operations
+contract.
 
 ## Configuration
 
@@ -143,6 +293,17 @@ upgrade instruction; internal runtime defaults are not host configuration.
   `filament-agentic-chatbot.widget.script`. Its URI follows the canonical
   `widget.script_route` host setting; the removed `/widget.js` alias is not
   supported.
+- The framework-free browser SDK in `widget-sdk` is a supported non-PHP
+  contract. Its handle methods are `open`, `close`, `toggle`, `getState`,
+  `refreshConfig`, `refreshContext`, `startNewConversation`,
+  `sendSuggestedMessage`, `updateDisplayContext`, `on`, and `destroy`.
+  Supported events are `ready`, `open`, `close`, `destroy`, `error`,
+  `conversation`, `outcome`, `capability`, and `handoff`; their exact public
+  payload types are declared in `widget-sdk/index.d.ts`.
+- Browser-supplied display context is untrusted visitor-visible context, not
+  signed customer context or runtime authority. The server-side validation,
+  minimization, encrypted persistence, and idempotency binding are part of its
+  public behavior.
 - The chat and channel HTTP endpoints listed in the machine allowlist are the
   supported transport surface. Controller classes are internal.
 - Filament resource/page/widget classes, render-hook implementation, generated
@@ -157,8 +318,11 @@ The test suite reads this JSON block directly. Keep it valid JSON.
 {
   "php_types": [
     "Heiner\\FilamentAgenticChatbot\\FilamentAgenticChatbotPlugin",
+    "Heiner\\FilamentAgenticChatbot\\Contracts\\AdminAuthorizationQueryScope",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ChunksText",
+    "Heiner\\FilamentAgenticChatbot\\Contracts\\ConnectorEgressPolicyResolver",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ExtractsContent",
+    "Heiner\\FilamentAgenticChatbot\\Contracts\\RecordsConversationOutcomes",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ResolvesSourceUrls",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\DataQueryCostGuard",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\VectorStore",
@@ -172,8 +336,10 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolution",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolutionContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolverRegistry",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityDiscoveryContext",
+    "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityInventoryContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\BotCapabilityView",
+    "Heiner\\FilamentAgenticChatbot\\SolutionKits\\Contracts\\SolutionKitProvider",
+    "Heiner\\FilamentAgenticChatbot\\SolutionKits\\SolutionKitDefinition",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelActivityIndicator",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelDriver",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelMessageRenderer",
@@ -194,8 +360,14 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Channels\\RichMessages\\RichSource",
     "Heiner\\FilamentAgenticChatbot\\Events\\AiUsageReconciliationRequired",
     "Heiner\\FilamentAgenticChatbot\\Events\\ChatMessageSent",
+    "Heiner\\FilamentAgenticChatbot\\Events\\ConversationOutcomeRecorded",
+    "Heiner\\FilamentAgenticChatbot\\Events\\HandoffActivityRecorded",
     "Heiner\\FilamentAgenticChatbot\\Events\\SourceIngested",
     "Heiner\\FilamentAgenticChatbot\\Events\\SourceIngestionFailed",
+    "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeClassification",
+    "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeKey",
+    "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeSignal",
+    "Heiner\\FilamentAgenticChatbot\\Outcomes\\RecordedConversationOutcome",
     "Heiner\\FilamentAgenticChatbot\\Support\\WidgetEmbedToken",
     "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityCheckKey",
     "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityCheckStatus",
@@ -220,6 +392,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "label",
     "summary"
   ],
+  "solution_kit_provider_methods": [
+    "solutionKits"
+  ],
   "config_keys": [
     "action_review.actions",
     "action_review.authorization.enabled",
@@ -229,6 +404,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "action_review.default_mode",
     "action_review.enabled",
     "action_review.expires_after_minutes",
+    "action_review.retention_days",
     "action_review.risky_write_mode",
     "agent_workflows.authorization.enabled",
     "agent_workflows.authorization.manage_ability",
@@ -262,6 +438,19 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "api_connectors.require_explicit_allowlists",
     "api_connectors.require_ssl_verification",
     "api_connectors.strategies.classes",
+    "attachments.allowed_mime_types",
+    "attachments.channel_ingress_retention_hours",
+    "attachments.disk",
+    "attachments.download_timeout_seconds",
+    "attachments.enabled",
+    "attachments.max_file_bytes",
+    "attachments.max_files",
+    "attachments.max_image_height",
+    "attachments.max_image_pixels",
+    "attachments.max_image_width",
+    "attachments.max_total_bytes",
+    "attachments.path",
+    "attachments.retention_days",
     "bot_access_tokens.accept_authorization_bearer",
     "bot_access_tokens.authorization.enabled",
     "bot_access_tokens.authorization.manage_ability",
@@ -284,6 +473,28 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bot_handoff_requests.authorization.manage_ability",
     "bot_handoff_requests.authorization.require_gates",
     "bot_handoff_requests.authorization.view_ability",
+    "bot_handoff_requests.desk.business_hours.friday",
+    "bot_handoff_requests.desk.business_hours.monday",
+    "bot_handoff_requests.desk.business_hours.saturday",
+    "bot_handoff_requests.desk.business_hours.sunday",
+    "bot_handoff_requests.desk.business_hours.thursday",
+    "bot_handoff_requests.desk.business_hours.tuesday",
+    "bot_handoff_requests.desk.business_hours.wednesday",
+    "bot_handoff_requests.desk.default_assignee.id",
+    "bot_handoff_requests.desk.default_assignee.label",
+    "bot_handoff_requests.desk.default_assignee.type",
+    "bot_handoff_requests.desk.default_team",
+    "bot_handoff_requests.desk.poll_after_ms",
+    "bot_handoff_requests.desk.sla.high.first_response_minutes",
+    "bot_handoff_requests.desk.sla.high.resolution_minutes",
+    "bot_handoff_requests.desk.sla.low.first_response_minutes",
+    "bot_handoff_requests.desk.sla.low.resolution_minutes",
+    "bot_handoff_requests.desk.sla.normal.first_response_minutes",
+    "bot_handoff_requests.desk.sla.normal.resolution_minutes",
+    "bot_handoff_requests.desk.sla.urgent.first_response_minutes",
+    "bot_handoff_requests.desk.sla.urgent.resolution_minutes",
+    "bot_handoff_requests.desk.teams",
+    "bot_handoff_requests.desk.timezone",
     "bot_submissions.authorization.enabled",
     "bot_submissions.authorization.manage_ability",
     "bot_submissions.authorization.require_gates",
@@ -297,14 +508,14 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bots.authorization.require_gates",
     "bots.authorization.view_ability",
     "capabilities.default_mode",
-    "capabilities.discovery.categories",
-    "capabilities.discovery.enabled",
     "channels.activity.indicators",
     "channels.authorization.enabled",
     "channels.authorization.manage_ability",
     "channels.authorization.require_gates",
     "channels.authorization.view_ability",
     "channels.drivers",
+    "channels.email.enabled",
+    "channels.email.signature_tolerance_seconds",
     "channels.max_webhook_requests_per_minute",
     "channels.max_webhook_requests_per_minute_per_ip",
     "channels.queue.connection",
@@ -312,8 +523,11 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "channels.rate_limiter",
     "channels.renderers",
     "channels.require_webhook_verification",
+    "channels.slack.enabled",
     "channels.store_raw_webhook_payloads",
     "channels.webhook_base_url",
+    "channels.whatsapp.enabled",
+    "channels.whatsapp.graph_api_version",
     "chunking.overlap_tokens",
     "chunking.size_tokens",
     "chunking.tokenizer_encoding",
@@ -332,6 +546,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "data_resources.authorization.manage_ability",
     "data_resources.authorization.require_gates",
     "data_resources.authorization.view_ability",
+    "data_resources.resources",
+    "data_resources.scope_sources",
+    "data_resources.scope_values",
     "database.charset",
     "database.connection",
     "database.database",
@@ -352,6 +569,13 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "google_calendar.oauth.scope",
     "google_calendar.oauth.token_url",
     "google_calendar.send_updates",
+    "google_docs.connector_name",
+    "google_docs.oauth.access_token",
+    "google_docs.oauth.client_id",
+    "google_docs.oauth.client_secret",
+    "google_docs.oauth.refresh_token",
+    "google_docs.oauth.scope",
+    "google_docs.oauth.token_url",
     "grounding.abstain_when_unavailable",
     "grounding.default_mode",
     "grounding.minimum_answerability",
@@ -371,6 +595,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "knowledge_sources.authorization.manage_ability",
     "knowledge_sources.authorization.require_gates",
     "knowledge_sources.authorization.view_ability",
+    "knowledge_sources.uploads.directory",
+    "knowledge_sources.uploads.disk",
+    "knowledge_sources.uploads.visibility",
     "models.capabilities",
     "models.chat",
     "models.embedding",
@@ -378,9 +605,30 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "openai_compatible.api_key",
     "openai_compatible.base_url",
     "openai_compatible.driver",
+    "outbound_webhooks.authorization.enabled",
+    "outbound_webhooks.authorization.manage_ability",
+    "outbound_webhooks.authorization.require_gates",
+    "outbound_webhooks.authorization.view_ability",
+    "outbound_webhooks.connect_timeout_seconds",
+    "outbound_webhooks.enabled",
+    "outbound_webhooks.lease_seconds",
+    "outbound_webhooks.max_attempts",
+    "outbound_webhooks.queue.connection",
+    "outbound_webhooks.queue.queue",
+    "outbound_webhooks.retention_days",
+    "outbound_webhooks.retry_delays_seconds",
+    "outbound_webhooks.timeout_seconds",
     "product_profile",
     "providers.chat",
     "providers.embedding",
+    "quality_operations.claim_stale_after_minutes",
+    "quality_operations.dispatch_limit",
+    "quality_operations.enabled",
+    "quality_operations.knowledge_gap_detection_enabled",
+    "quality_operations.knowledge_gap_lookback_days",
+    "quality_operations.knowledge_gap_scan_limit",
+    "quality_operations.queue",
+    "quality_operations.queue_connection",
     "retrieval.context_budget_tokens",
     "retrieval.lexical.engine",
     "retrieval.lexical.simple_like.allow_unindexed_small_dataset",
@@ -412,6 +660,13 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "vector_dimensions",
     "widget.allow_all_domains",
     "widget.bot_public_id",
+    "widget.context.authorizes_non_public_areas",
+    "widget.context.enabled",
+    "widget.context.max_payload_bytes",
+    "widget.context.refresh_before_seconds",
+    "widget.context.required_areas",
+    "widget.context.signing_key",
+    "widget.context.ttl_minutes",
     "widget.conversation_credentials.required",
     "widget.default_accent_color",
     "widget.default_area",
@@ -482,15 +737,20 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "GET,POST api/filament-agentic-chatbot/channels/{connection}/webhook"
   ],
   "commands": [
+    "filament-agentic-chatbot:collect-knowledge-gaps",
     "filament-agentic-chatbot:doctor",
+    "filament-agentic-chatbot:maintain-outbound-webhooks",
+    "filament-agentic-chatbot:prune-channel-inbound-attachments",
+    "filament-agentic-chatbot:prune-chat-attachments",
     "filament-agentic-chatbot:prune-pending-interaction-drafts",
     "filament-agentic-chatbot:qa-enterprise-smoke",
     "filament-agentic-chatbot:reconcile-ai-usage",
     "filament-agentic-chatbot:reconcile-chat-turn",
     "filament-agentic-chatbot:reconcile-side-effect",
     "filament-agentic-chatbot:reconcile-workflow-resume-deliveries",
-    "filament-agentic-chatbot:repair-conversation-memory",
+    "filament-agentic-chatbot:run-due-quality-scenarios",
     "filament-agentic-chatbot:setup-google-calendar-connector",
+    "filament-agentic-chatbot:setup-google-docs-connector",
     "filament-agentic-chatbot:sync-knowledge-sources"
   ]
 }

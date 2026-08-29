@@ -23,11 +23,39 @@ The lifecycle is explicit:
 5. Select that revision in a workflow or allow its generated bot capability.
 6. Upgrade each consumer deliberately when a newer revision is published.
 
+### Integration Studio import path
+
+From the Connector list, **Import integration** opens a five-step full-page
+assistant for OpenAPI 3.x JSON/YAML, Postman Collection v2, or pasted cURL. The
+source is parsed locally and never executed. Authentication samples, scripts,
+cookies, file content, remote references, and other secret-bearing material are
+discarded. After parsing, the raw source is cleared and only an encrypted,
+authenticated, secret-free manifest continues through the wizard.
+
+The optional AI step reuses an existing centrally configured provider key. It
+has no API-key field and may suggest only names, descriptions, intent examples,
+and fictional schema-valid test input. A server-encrypted receipt binds that
+assistant run to the manifest, selected operations, provider, and model. HTTP,
+authentication, effect, confirmation, retry, and execution semantics remain
+deterministic and locked.
+
+Final installation is authorized, idempotent, actor-attributed, and atomic. It
+creates only an inactive, untested connector and inactive, unpublished
+operation drafts plus immutable evidence; it does not contact the service.
+Continue through the normal governed test and immutable publication lifecycle.
+See [Integration Studio](INTEGRATION_STUDIO.md) for formats, limits, key
+handling, failure behavior, and the complete operator flow.
+
 Saving a draft never mutates a published revision. Drafts are not discoverable
-or productively executable. The read-only operation workbench is the only
-exception: it recompiles the current draft, issues an in-memory server-owned
-permit for that exact hash, and records bounded test evidence. A persisted flag,
-model output, or request value cannot grant draft execution.
+or productively executable. The operation workbench is the only exception: it
+recompiles the current draft and issues an in-memory server-owned permit for
+that exact hash. Reads use the normal connector target. A confirmation-required
+WRITE may run only against an explicitly linked staging-only connector whose
+origin, environment binding, and credential material are provably separate
+from production. That request traverses the same capability gateway,
+payload-specific confirmation, idempotency, side-effect ledger, and result
+identity checks as a Playbook. A persisted flag, model output, or request value
+cannot grant draft execution.
 
 Draft assignment itself is a security boundary, not merely a publication
 check. Before mutable JSON reaches storage, standardized objects are closed,
@@ -79,7 +107,12 @@ The default environment change policy is `requires_republish`: changing the
 connector's bound base URL, authentication identity/configuration, or default
 headers advances the binding version and invalidates the deployed binding until
 the workflow is reviewed and republished. Automatic OAuth access-token refresh
-does not represent an operator environment change. The explicit operator policy
+does not represent an operator environment change. Before contacting the token
+endpoint, the runtime durably records one refresh attempt for the exact saved
+credential fingerprint. A transport or persistence ambiguity is terminally
+classified as `unknown` and cannot be dispatched again; reconnecting the
+connector creates a new credential fingerprint and is the only safe recovery.
+The explicit operator policy
 `allow_without_republish` permits a connector-owned environment rotation without
 turning node data into URL authority; revision, full-contract, input-schema,
 owner, and request-policy checks still apply. The current secret-free binding
@@ -278,29 +311,99 @@ dialect is closed to the constraints the runtime actually enforces, so an
 unknown keyword cannot masquerade as validation or hide static credentials.
 
 Publication derives `metadata.capability` from the operation name,
-description, and intent examples. `batch_mode` is one of `single_only`,
-`fanout_safe`, or `native_batch`; `max_items` is the operation's `0..25`
-bound. The immutable workflow release copies this declaration into each
-connector tool's `batch_policy`. Authorized Entry Turn Plans permit separate
-per-item calls only for `fanout_safe` and enforce the smallest bound across
-every reachable connector. The historical `max_items: 0` sentinel resolves to
-the global 25-item turn-plan ceiling; newly authored batch declarations store
-an explicit `1..25` bound. `single_only`, `native_batch`, or missing release
-evidence fail closed for multi-item planning; `native_batch` never implicitly
-becomes fan-out. Every public
-input has a declarative `input_policies` entry that controls source evidence,
+description, intent examples, ability aliases, and entity types. These fields
+are the model-visible discovery contract when a published read is assigned
+directly to an Agent. Every public input policy may additionally declare
+visitor-value aliases such as `Bisaflor -> venusaur`; runtime admission applies
+them deterministically after proving that the visitor phrase occurred in the
+latest message. `batch_mode` is one of `single_only`, `fanout_safe`, or
+`native_batch`; `max_items` is the operation's `0..25`
+bound. The immutable Playbook release copies this declaration into each
+connector capability's `batch_policy`. A bounded For Each step may issue
+separate per-item calls only for `fanout_safe` and enforces the smallest
+published bound. The historical `max_items: 0` sentinel resolves to the global
+25-item ceiling; newly authored batch declarations store an explicit `1..25`
+bound. `single_only`, `native_batch`, or missing release evidence fail closed
+for fan-out; `native_batch` never implicitly becomes per-item execution. Every
+public input has a declarative `input_policies` entry that controls source evidence,
 semantic/entity type, normalization, aliases, and ambiguity. Optional
 `result_identity` binds the canonical requested value to provider response
 evidence. These are generic operation contracts, not API-specific planner code.
 Tool descriptions can expose purpose, effect, and confirmation requirements,
 but not connector secrets, private headers, base URLs, or request templates.
 
+Direct Agent tools accept only `literal`, schema-backed `enum`, published alias
+map (`local_resolver`), or a host-registered `capability_resolver` source. A
+published input may opt into `typo_tolerance: safe_v1`. That versioned local
+strategy compares only against the immutable alias map, automatically accepts
+only one unique close match, and sends ambiguous matches through the published
+`ambiguity` policy (`clarify` or `reject`). For a `literal` source, values with
+no alias candidate remain unchanged, so an
+open field such as a city name does not become a closed allowlist. Exact aliases
+remain the default when `typo_tolerance` is `none` or omitted. A capability
+resolver is selected by its registered `entity_type` and must return
+a bounded resolved, ambiguous, not-found, or unavailable outcome. Direct Agent
+use additionally requires `VersionedCapabilityEntityResolver`: its stable key,
+version, and SHA-256 behavior hash are copied into the immutable Agent
+deployment and reverified before admission and again at the execution gateway.
+Changing aliases or canonicalization rules therefore blocks old deployments
+until the Agent is republished instead of silently changing their behavior. An
+unversioned resolver remains available to an explicitly bound Playbook but is
+not deployable as a direct Agent tool. `system_value` and `prior_task_output`
+remain Playbook-owned; assigning such an operation directly fails closed rather
+than turning a server value into visitor input. Installing a host resolver does
+not alter `literal`, `enum`, or `local_resolver` admission; host-resolver
+execution requires the published `capability_resolver` source.
+
+Literal numeric grounding uses an exact signed/decimal token boundary. A value
+such as `42` is not accepted merely because the latest message contains `-42`,
+and `1` is not accepted from `1.5`; signs, decimal fractions, exponents, and
+adjacent numeric separators remain part of the number being matched.
+
+For direct calls, `fanout_safe` authorizes repeated per-item requests only up to
+the smaller of `max_items` and the Agent's five-call per-turn budget; the sixth
+model step remains available for the final answer. `single_only` and
+`native_batch` authorize one call; a native batch receives multiple items only
+through its declared input schema, and the runtime overlays the published
+`max_items` ceiling on every array in that direct-tool schema. Ambiguous
+resolver output is returned as bounded candidates for a deterministic visitor
+choice. Provider partial data and explicit failed attempts are treated as
+incomplete evidence. An identical successful request in the same turn replays
+its already bounded evidence without another provider call and does not consume
+a distinct-item slot. Model-visible Connector results are limited to 16 KB per
+call and 48 KB across the turn. Truncation is recorded as incomplete evidence,
+so a large provider payload cannot crowd out the final answer or be presented
+as a complete result.
+
+Connector routing quality is evaluated explicitly rather than inferred with a
+global vocabulary. In **Test live bot**, an operator may select one or more
+direct reads from the active immutable Agent deployment and state the expected
+distinct item count for each one in a representative prompt. This supports
+compound checks such as Pokémon plus weather without introducing a second
+planner. The committed operator trace records only the capability key, bounded
+status/cardinality facts, and whether fan-out calls were distinct; request
+values and provider payloads are excluded. The eval counts distinct successful
+calls for `fanout_safe` and distinct canonical items in the largest declared
+array dimension for `native_batch`. Every expected route must have exact
+coverage, no incomplete attempt, and an actual Agent answer decision. This
+catches weak-model omissions such as answering only Berlin when Berlin and New
+York were requested without pretending that a generic runtime heuristic can
+understand every future API domain.
+
 `response.schema` validates the full decoded provider response before
 `response.json_path` selects the value exposed as result `data`. Schema
 mismatches fail closed (`failed` for reads, `unknown` with reconciliation for
 claimed writes), and the public error envelope contains only bounded violation
-metadata rather than the provider payload. The operation does not own an output
-variable; that presentation/state name belongs to each workflow node.
+metadata rather than the provider payload. `response.output_mapping` selects
+small, stable semantic facts for workflows and direct Agent context; when it is
+non-empty, a direct Agent receives these curated facts rather than the complete
+provider object. A numeric mapping may declare bounded `scale`, `offset`, and
+`precision` values so provider units are normalized deterministically before a
+model sees them. For example, `{"path":"response.height","scale":0.1,
+"precision":1}` can publish a `height_meters` fact from a decimeter source.
+Invalid or non-numeric transformations omit that semantic fact instead of
+silently publishing a mislabeled raw value. The operation does not own an
+output variable; that presentation/state name belongs to each Playbook step.
 
 Every server-owned object is closed: the top-level document plus `request`,
 `response`, `effect`, `execution`, `retry`, `strategies`, `auth`, `metadata`,
@@ -336,12 +439,14 @@ the exact bytes against that digest immediately before dispatch.
 
 ## One capability boundary
 
-Workflow nodes, Authorized Entry Turn Plan items, and the operation workbench
+Direct Agent read tools, Playbook Capability steps, and the operation workbench
 are consumers of the same published contract and the same capability execution
-gateway. A plan binds the exact published revision ID, full contract hash,
-input-schema hash, and environment binding. If that binding changes before
-dispatch or confirmation, execution fails closed and a new release-bound plan
-is required.
+gateway. Production binds the exact published revision ID, full contract hash,
+input-schema hash, and environment binding into the immutable Agent or Playbook
+deployment. A direct Agent tool is allowed only for a read-only operation;
+writes, approvals, waits, and dependent multi-step work require a Playbook. If
+an operation or environment binding changes before dispatch or confirmation,
+execution fails closed and the owning deployment must be republished.
 
 ## Owner-scoped connectors
 
@@ -349,15 +454,14 @@ A connector may be global, bot-scoped, or additionally scoped by
 `owner_type`/`owner_id`. An owner-scoped operation is visible and executable
 only when a transient, server-attested runtime authority context matches the
 conversation, bot/token, actor/tenant, and owner pair. The normal catalog can
-derive that context from the matching conversation; exact workflow and
-Authorized Entry Turn Plan execution carry it through the same resolver and
-gateway.
+derive that context from the matching conversation; exact Playbook execution
+carries it through the same resolver and gateway.
 
 Owner scope is never accepted from model output, operation input, workflow
 variables, persisted planner payloads, or checkpoints. Without matching
 authority the operation is omitted from discovery and exact resolution fails
-closed. Workflow and Authorized Entry Turn Plan execution carry the same
-server-attested authority through the resolver and gateway. A global or
+closed. Playbook execution carries the same server-attested authority through
+the resolver and gateway. A global or
 bot-scoped connector with blank owner fields retains its normal bot visibility.
 
 ## Canonical result envelope
@@ -473,7 +577,7 @@ Every write contract requires confirmation and an explicit integrity policy:
 Business identity is derived from validated canonical operation input, never
 from model-selected transport fields, headers, deployment metadata, or caller
 idempotency strings. Invocation identity binds the authorized bot/authority,
-immutable deployment and contract, workflow run, turn/message, execution path,
+immutable deployment and contract, Playbook run, turn/message, execution path,
 node, and payload. Provider idempotency is derived from the positive ledger
 claim, not from a caller-controlled header value.
 
@@ -486,8 +590,8 @@ Expired running writes also become `unknown` and are never automatically
 reclaimed or retried.
 
 Reconciliation is operator-only and never dispatches an external request. First
-verify the provider outcome out of band. For a workflow write, open its
-**Workflow Run** in Filament and choose **Resolve unknown write**. The action is
+verify the provider outcome out of band. For a Playbook write, open its
+**Playbook Run** in Filament and choose **Resolve unknown write**. The action is
 scoped to unknown ledger rows from that run, requires an authenticated operator,
 an explicit no-retry acknowledgement, the verified outcome, and audit evidence.
 It derives operator identity from the authenticated account and never exposes
@@ -497,7 +601,7 @@ Production hosts require a dedicated Gate by default. Keep
 `AGENTIC_CHATBOT_SIDE_EFFECT_RECONCILIATION_AUTHORIZATION_REQUIRE_GATES=true` and
 defining the configured `filament-agentic-chatbot.reconcile-side-effects`
 ability for `BotSideEffectExecution`. Local and testing environments retain an authenticated-operator default for low-friction setup. Doctor blocks a relaxed production posture without a registered Gate. The console command remains the
-privileged operations path for ledgers that are not attached to a workflow run:
+privileged operations path for ledgers that are not attached to a Playbook run:
 
 ```bash
 php artisan filament-agentic-chatbot:reconcile-side-effect <id> \
@@ -513,8 +617,9 @@ new source of execution authority.
 
 ## Google Calendar golden path
 
-The setup command creates or updates the OAuth connector and creates and
-publishes the canonical `create_google_calendar_event` operation:
+The setup command creates or updates the OAuth connector and saves the
+canonical `create_google_calendar_event` operation as a draft. It does not
+publish the operation automatically:
 
 ```bash
 php artisan filament-agentic-chatbot:setup-google-calendar-connector \
@@ -534,25 +639,93 @@ arguments, which may be retained in shell history:
 The generated closed input schema covers title, start/end time, timezone, and
 optional description, location, and attendees. It maps those fields to Google's
 nested event request, validates a response containing `id` and `status`, pins a
-typed `input.*` business identity, and requires confirmation. Publish the
-operation, reference that immutable revision from a workflow, and republish the
-workflow deployment. There is no separate Google batch flag or duplicated raw
-HTTP definition.
+typed `input.*` business identity, and requires confirmation. Before testing,
+link the production connector to a staging-only Google Calendar connector with
+a different origin, environment binding, and OAuth credentials. Publish the
+operation in Filament only after that exact draft succeeds through the staging
+WRITE path and its succeeded side-effect ledger entry is bound to the evidence.
+WRITE publication has no production override. Then reference that immutable
+revision from a workflow and republish the workflow deployment. There is no
+separate Google batch flag or duplicated raw HTTP definition.
+
+## Google Docs golden path
+
+The idempotent setup command creates or updates one bot-scoped OAuth connector
+and two explicit operation drafts. It never publishes either draft:
+
+```bash
+php artisan filament-agentic-chatbot:setup-google-docs-connector \
+  --bot=<bot-public-id> \
+  --prompt-secrets
+```
+
+Prefer the hidden prompt or these environment variables over secret
+command-line arguments:
+
+- `AGENTIC_CHATBOT_GOOGLE_DOCS_CLIENT_ID`
+- `AGENTIC_CHATBOT_GOOGLE_DOCS_CLIENT_SECRET`
+- `AGENTIC_CHATBOT_GOOGLE_DOCS_REFRESH_TOKEN`
+- optional `AGENTIC_CHATBOT_GOOGLE_DOCS_ACCESS_TOKEN`
+- optional `AGENTIC_CHATBOT_GOOGLE_DOCS_SCOPE`
+
+The default scope is Google's recommended per-file scope,
+`https://www.googleapis.com/auth/drive.file`. It is sufficient for documents
+created by, or explicitly opened for, the app. Editing an arbitrary existing
+document requires an explicitly approved broader scope such as
+`https://www.googleapis.com/auth/documents`; do not replace the default with
+the restricted full-Drive scope.
+
+`create_google_document` calls `documents.create` with a closed title-only
+request and requires a closed Document response containing `documentId` and
+`title`. It maps the generated ID to semantic output and verifies the returned
+title against the admitted input. A server-generated `documentId` cannot be
+compared with a pre-request input, so the ID is instead required by the response
+schema and captured in the encrypted replay result.
+
+`insert_text_into_google_document` calls `documents.batchUpdate` for a known
+`document_id`. Its one-item `insertText` request is closed at every object
+boundary; the response must carry the same `documentId`, and the gateway rejects
+a mismatched successful response. Both writes require a payload-bound
+confirmation, disable unsafe HTTP retries, and use gateway replay protection.
+Creation is keyed to one workflow-run invocation; insertion uses
+`(document_id, index, text)` within the workflow run, so retrying an interrupted
+node does not create a second document or insert the same text twice.
+
+As with every connector WRITE, first link a staging-only Google Docs connector
+with separate endpoint and OAuth credentials. Test each exact draft hash there,
+publish only the ledger-backed candidate, pin that immutable revision in the
+workflow, and republish the workflow deployment. The setup command performs
+none of those authority transitions on behalf of an operator.
 
 ## Security invariants
 
 - Production base URLs use HTTPS and must pass connector network policy.
-- Productive requests, OAuth token refresh, connector workbench tests, and
-  connector-backed API sources use the same explicit
-  `network.allow_private_request_urls` authority. Local and testing environments
-  grant no automatic private-network access.
-- Method and path policy runs before DNS. Public targets are resolved once and
-  the validated addresses are pinned into the transport; private or reserved
-  targets require the explicit network opt-in.
-- Redirects, pagination links, and polling targets are authorized again and may
-  not escape the approved origin/path boundary.
+- Productive requests, OAuth token refresh, read workbench tests, staging WRITE tests, and
+  connector-backed API sources use the same connector-scoped egress authority.
+  The default denies every non-public target in every environment; the global
+  `network.allow_private_request_urls` setting does not authorize connectors.
+- A private-network exception requires a host-server binding for
+  `ConnectorEgressPolicyResolver` and an explicit decision for the selected
+  persisted connector and concrete target URL. Host implementations should
+  exact-allowlist each required base-URL or OAuth origin; a connector-ID-only
+  exception is too broad. Connector, operation, workflow, and model payloads
+  cannot select or configure that resolver. A resolver failure denies access.
+- Method and path policy runs before DNS. Every permitted target is resolved
+  once and the validated addresses are pinned into the transport. Loopback, private,
+  link-local, shared, benchmark, documentation, multicast, reserved, and cloud
+  metadata targets fail closed at testing, publication, and runtime.
+- Pinned connector requests disable ambient HTTP proxy environment settings;
+  a proxy must not become a second, remote DNS-resolution path around the pin.
+- Automatic HTTP redirects are disabled. Pagination links and polling targets
+  may not escape the approved origin/path boundary and are DNS-authorized and
+  pinned again immediately before every continuation dispatch.
 - Connector credentials and default headers are encrypted at rest; operation
   contracts remain secret-free.
+- Offline workbench fixtures accept only operator-confirmed synthetic data,
+  encrypt input and response content at rest, and bind it to the exact draft
+  hash. Replays use the canonical response mapper without transport and write
+  only secret-free authoring evidence. Fixture runs are never eligible as
+  publication evidence or productive responses.
 - Connector base URLs are structurally validated before persistence: absolute
   HTTP(S), no userinfo, query, fragment, or surrounding whitespace. Production
   HTTPS, DNS, and SSRF checks remain a separate stricter runtime policy.
@@ -568,8 +741,8 @@ HTTP definition.
 - Request, response, retry, page, item, poll, and elapsed-time sizes have global
   ceilings in addition to contract limits.
 - Binary responses are bounded artifacts, not prompt text.
-- Published revisions, full contract and input-schema hashes, workflow pins,
-  Authorized Entry Turn Plan bindings, owner authority, and environment bindings are verified
+- Published revisions, full contract and input-schema hashes, Playbook pins,
+  Agent deployment bindings, owner authority, and environment bindings are verified
   before dispatch.
 
 ## Breaking cutover
@@ -616,18 +789,15 @@ operation-test evidence, and encrypted/fenced side-effect payload storage:
 - `2026_07_15_000004_create_api_connector_continuations_table.php`
 - `2026_07_15_000005_create_api_connector_operation_test_runs_table.php`
 - `2026_07_15_000006_harden_side_effect_execution_journal.php`
+- `2026_08_29_000006_create_api_connector_operation_fixtures.php`
 
-Legacy workflow nodes and deployments are not silently rewritten into exact
-pins. After the cutover, test and publish each operation as needed, select its
-published revision on every affected workflow node, and republish so the node
-receives the exact revision ID, full contract hash, input-schema hash, and
+Playbook capabilities bind exact published operation revisions. Each deployed
+capability carries the revision ID, full contract hash, input-schema hash, and
 environment binding. Verify read, confirmed write, error, partial, and
 unknown/reconciliation paths in staging before serving customer traffic.
 
-Connector usage inspection is deliberately read-only and scans persisted
-authoring/runtime references without compiling or executing a workflow. An
-unpinned legacy `connectorId` reference is shown as **Migration required** on
-the connector page and continues to fail closed at validation/publication and
-runtime boundaries. This diagnostic path may be removed only after the upgrade
-inventory reports zero unpinned connector references; it is not a productive
-compatibility adapter.
+Connector usage inspection is deliberately read-only and scans current
+semantic Playbook references without compiling or executing a workflow. Only
+published operation revisions with exact contract pins count as executable
+references; unpinned connector snapshots are not a supported authoring or
+runtime format.

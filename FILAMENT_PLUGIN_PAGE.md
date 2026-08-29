@@ -1,12 +1,15 @@
 # Agentic Chatbot for Filament
 
-A Filament-native control plane for building, validating, publishing, and operating source-grounded AI chatbots with explicit agentic workflows inside your Laravel application.
+A Filament-native control plane for building, validating, publishing, and operating governed conversational Agents with optional source-grounded knowledge and bounded visual Playbooks inside your Laravel application.
 
-The documented target is `v0.17.0`. It is a release candidate until the protected release contract is approved and the exact commercial ZIP passes every required gate. After publication, install with:
+The documented target is `v0.17.0`. **Release status:** Candidate. A tag may ship only after the governed contract is approved and every protected exact-source and exact-artifact job passes. After publication, copy the private Composer repository URL from the buyer's Anystack page and install with:
 
 ```bash
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot:^0.17
 ```
+
+Composer authenticates with the buyer email and Anystack license key; an enabled activation policy appends the Anystack-provided fingerprint to the key with `:`. Credentials never belong in committed `composer.json` or `auth.json` files.
 
 ## Product promise
 
@@ -14,39 +17,45 @@ Build a useful support, onboarding, qualification, or internal-operations chatbo
 
 The shortest production path is intentionally explicit:
 
-1. Create a bot and configure one chat provider/model.
-2. Add knowledge or an approved Data Resource when the bot needs grounded data.
-3. Create or generate a workflow, then resolve the editor's readiness issues.
-4. Validate and publish an immutable deployment.
-5. Make that verified deployment live for the bot.
-6. Run the real behavior check or public widget chat.
-7. Inspect the resulting conversation, workflow run, and trace.
+1. Create an Agent and configure its conversation behavior and provider/model.
+2. Add only the knowledge and approved capabilities that Agent needs.
+3. Optionally create a Playbook for a bounded multi-step process, resolve its readiness issues, and publish it.
+4. Assign any published Playbooks to the Agent.
+5. Use **Publish candidate** to create one immutable, hash-verified release candidate without changing live traffic.
+6. Run **Test release candidate** through the persistent runtime; productive writes remain blocked during candidate testing.
+7. Use **Make candidate live** only after the exact deployment hash and saved Agent fingerprint have passing durable evidence.
+8. Verify the live Agent through a real behavior check or public widget chat.
+9. Inspect the conversation and, when one ran, its Playbook run and trace.
 
-A bot without one verified live workflow deployment stays blocked. Draft edits do not silently change live behavior.
+An Agent without one verified live Agent deployment stays blocked. A Playbook is never required for ordinary or knowledge-grounded chat, and draft edits do not silently change live behavior.
 
 ## What ships
 
 ### Filament control plane
 
-- Multi-bot management for identity, provider/model, prompt behavior, retrieval, widget presentation, access, and readiness
+- Multi-Agent management for identity, provider/model, prompt behavior, retrieval, widget presentation, access, and readiness
 - Guided setup and launch status with permission-aware actions and direct links to the next fix
 - Knowledge source ingestion for URLs, files, text, and bounded API-fed JSON
 - Approved Eloquent Data Resources with returned/filterable/sortable fields, tenant/actor scope, result limits, and query budgets
+- Integration Studio for locally importing OpenAPI, Postman, or cURL into reviewed inactive Connector drafts, with optional central-key AI metadata suggestions
+- Capability Bridge inspection for explicit host-registered action contracts, plus encrypted exact-draft Connector response fixtures and network-free canonical replay
 - Conversation review with citations, feedback, handoff, privacy export/deletion, and lifecycle guards
+- Scheduled Published Agent regressions plus a verified Knowledge Operations inbox with evidence-backed resolution
 - Usage, quality, provider diagnostics, Doctor checks, reconciliation queues, and run/trace inspection
 
-### Visual agentic workflow editor
+### Visual Playbook Builder
 
-- Draft, validation, quality scenarios, immutable publication, explicit live activation, and rollback history
-- Triggers, replies, questions/forms, conditions, switch routing, AI steps, knowledge retrieval, Data Resources, connectors, read-only raw HTTP, actions, confirmation, transforms, variables, structured output, guardrails, bounded `batchMap`, delays, joins, sub-workflows, and terminal states
-- Focus mode, minimap, zoom/fit, searchable node catalog, structured field editors, keyboard operation, dark mode, and responsive Filament integration
-- AI-assisted workflow generation that always produces a draft and must pass deterministic validation before publication
+- Draft, validation, quality scenarios, immutable publication, and deployment history
+- Twelve semantic process steps: Entry, Request Input, Capability, Decision, Approval, Wait, AI Task, Transform, For Each, Sub-Playbook, Result, and Note
+- Governed capability configuration for knowledge, Data Resources, API Connectors, host actions, memory, and raw read-only HTTP without exposing runtime-only node taxonomies
+- Focus mode, minimap, zoom/fit, searchable step catalog, structured field editors, keyboard operation, dark mode, and responsive Filament integration
+- AI-assisted Playbook generation that always produces a draft and must pass deterministic validation before publication
 - Read-only node inspection for raw HTTP (`GET`/`HEAD`) with allowlist, DNS-pinned transport, and streaming response-size limits
 
 ### Production runtime
 
-- One immutable, hash-verified workflow deployment per live bot
-- AgentGraph-owned checkpoints, interrupts, resume, delay, cancellation, and task semantics through `heiner/agent-graph` `^0.15.1`
+- One immutable, hash-verified Agent deployment per live Agent, with an exact optional Playbook dependency closure
+- Agent-owned conversation and intent understanding; AgentGraph owns only Playbook checkpoints, interrupts, resume, delay, cancellation, and task semantics through `heiner/agent-graph` `^0.15.1`
 - One productive external capability boundary with authorization, exact payload binding, confirmation, idempotency, encrypted ledgers, secret-aware redaction, unknown-outcome handling, and operator reconciliation
 - Durable chat turns with client idempotency, per-conversation serialization, committed JSON/SSE replay, and crash-safe terminal recovery
 - API Connector v3 contracts with exact revision/schema/environment pins, bounded pagination/polling, typed outcomes, and fail-closed write handling
@@ -57,8 +66,8 @@ A bot without one verified live workflow deployment stays blocked. Draft edits d
 - Tokenless browser snippet: an origin-checked `/bootstrap` call issues a short-lived token kept in memory and renewed before expiry
 - Separate high-entropy conversation credentials so a leaked or guessed session ID alone cannot read, export, mutate, or delete anonymous production history
 - Configurable template, accent, typography, size, copy, starter prompts, citations, source visibility, context area, and responsive layout
-- Slack and Telegram package drivers that route through the same bot/workflow/usage boundaries
-- Bot Access Tokens for trusted server-to-server API integrations; they are never browser widget credentials
+- A supported Telegram package driver plus fail-closed, opt-in Slack, WhatsApp Cloud API, and Mailgun Email implementations; every enabled provider routes verified webhooks and inbound files through the same Agent/capability/usage boundaries
+- Agent Access Tokens for trusted server-to-server API integrations; they are never browser widget credentials
 
 ## Supported Golden Path
 
@@ -81,12 +90,18 @@ Provider adapters are available for Gemini, OpenAI, Anthropic, xAI, OpenRouter, 
 After `v0.17.0` is published:
 
 ```bash
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot:^0.17
-php artisan vendor:publish --tag=filament-agentic-chatbot-config
-php artisan migrate
-php artisan filament-agentic-chatbot:doctor
+```
+
+Register `FilamentAgenticChatbotPlugin::make()` in the target Filament panel provider, configure the provider and vector backend in `.env`, then finish the idempotent setup:
+
+```bash
+php artisan filament-agentic-chatbot:install
 php artisan queue:work
 ```
+
+The installer verifies panel registration first and fails before publishing config or running migrations when the plugin is missing. After that preflight, it publishes config, runs package and AgentGraph migrations, and executes Doctor. Treat any `FAIL` as blocking.
 
 Register the plugin in the desired Filament panel:
 
@@ -109,7 +124,7 @@ If the host uses a custom Filament theme, include the package views in the theme
 
 ## Embed the widget
 
-Copy the generated snippet from the bot editor. It contains public presentation settings but no long-lived credential:
+Copy the generated snippet from the Agent editor. It contains public presentation settings but no long-lived credential:
 
 ```html
 <script
@@ -143,10 +158,10 @@ This is not a drop-in patch update from 0.16.1:
 - API Connector v1/v2 execution compatibility is removed in favor of v3 publication pins;
 - legacy environment aliases and runtime mode switches are removed;
 - static widget tokens in HTML are removed;
-- legacy workflow deployments may be retired and require review/republishing;
+- legacy live-workflow pointers are removed and require explicit Agent republishing;
 - cutover migrations include irreversible cleanup.
 
-Back up the database, read the 0.17.0 upgrade guide and release notes, use a maintenance window, rotate affected credentials, run migrations and both Doctor commands, republish replacements, test the exact live workflow, and only then reopen traffic.
+Back up the database, read the 0.17.0 upgrade guide and release notes, use a maintenance window, rotate affected credentials, run migrations and both Doctor commands, republish replacement Agent deployments, test the live Agent and every assigned Playbook, and only then reopen traffic.
 
 ## What this product is not
 
@@ -160,15 +175,16 @@ Back up the database, read the 0.17.0 upgrade guide and release notes, use a mai
 
 The sold ZIP is generated from a clean commit, byte-hashed, self-verified, and shipped with an embedded release manifest and CycloneDX SBOM plus an external per-entry manifest. Protected jobs install the same downloaded bytes into clean Laravel 12 and Laravel 13 PostgreSQL/pgvector hosts, exercise the supported upgrade and migration rollback/re-apply, run deterministic and live-provider gates, and run a sustained concurrency/budget soak.
 
-A missing credential, skipped external check, stale public document, path-only install, or committed checklist is not passing evidence. Release status remains `candidate` until the governed contract is explicitly approved.
+A missing credential, skipped external check, stale public document, path-only install, or committed checklist is not passing evidence. The governed contract remains blocking until its status is explicitly approved and every required protected job succeeds for the same source commit and artifact.
 
 ## Documentation and support
 
 - [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
 - [Quickstart and Golden Path](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
-- [Workflow authoring](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
+- [Agents and Playbooks](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
 - [Chat widget](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
 - [API Connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
+- [Integration Studio](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/INTEGRATION_STUDIO.md)
 - [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Compatibility and certification](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)

@@ -1,8 +1,8 @@
 # Chat Widget
 
-The chat widget is the embeddable UI layer that connects end users to your configured bot. It is the front-end for the bot, sources, retrieval, workflows, and conversation storage already set up in Filament.
+The chat widget is the embeddable UI layer that connects end users to your configured Agent. It is the front-end for the Agent, sources, retrieval, optional Playbooks, and conversation storage already set up in Filament.
 
-Do not put Bot Access Tokens in widget markup or public JavaScript. Widgets use the signed widget token (`X-filament-agentic-chatbot-Token`) and bot domain allow-lists; Bot Access Tokens are server-side secrets for trusted backend integrations only.
+Do not put Agent Access Tokens in widget markup or public JavaScript. Widgets use the signed widget token (`X-filament-agentic-chatbot-Token`) and Agent domain allow-lists; Agent Access Tokens are server-side secrets for trusted backend integrations only.
 
 ## What The Widget Does
 
@@ -10,6 +10,7 @@ Do not put Bot Access Tokens in widget markup or public JavaScript. Widgets use 
 - Opens into a full chat panel with durable message history, committed responses, and source citations
 - Connects to your Laravel backend via the plugin's API routes
 - Supports signed tokens for access control
+- Supports bounded image and document attachments when the exact Published Agent model is release-verified for them
 - Supports assistant-message feedback buttons for quick helpful / not-helpful signals
 - Adapts to desktop and mobile screen sizes
 
@@ -31,6 +32,38 @@ Per bot, you can customize all of these from the Filament panel:
 | **Input placeholder** | Placeholder text in the message input        | "Type a message..."             |
 | **Response format**   | `markdown` or `plain_text`                   | `markdown`                      |
 | **Language**          | Widget UI language code                      | `en`, `de`, `fr`, `es`          |
+| **Attachments**       | Allow verified private image/document uploads | `true` / `false`                |
+
+## File Attachments
+
+When attachments are enabled for an Agent and its exact published model has a
+verified image or document capability, the composer exposes an accessible file
+picker. A turn may contain text, files, or both. Failed sends retain the
+browser-owned `File` objects for an explicit retry or edit; a new chat and a
+successful terminal turn clear them.
+
+The browser limits are presentation only. The server independently enforces
+the file count, per-file and total byte limits, detects MIME type from content,
+checks images and text structure, canonicalizes untrusted names, binds file
+hashes to the durable `client_turn_id`, and stores files on a private disk. It
+rejects an unknown or unverified model capability instead of silently dropping
+the file. Supported defaults are JPEG, PNG, WebP, PDF, JSON, CSV, Markdown, and
+UTF-8 plain text.
+
+```env
+AGENTIC_CHATBOT_ATTACHMENTS_ENABLED=true
+AGENTIC_CHATBOT_ATTACHMENTS_DISK=local
+AGENTIC_CHATBOT_ATTACHMENTS_PATH=filament-agentic-chatbot/chat-attachments
+AGENTIC_CHATBOT_ATTACHMENTS_MAX_FILES=3
+AGENTIC_CHATBOT_ATTACHMENTS_MAX_FILE_BYTES=10485760
+AGENTIC_CHATBOT_ATTACHMENTS_MAX_TOTAL_BYTES=20971520
+AGENTIC_CHATBOT_ATTACHMENTS_RETENTION_DAYS=30
+```
+
+The configured disk must not be publicly served. The default Laravel `local`
+disk is appropriate when it points outside `public/` and `serve` remains
+disabled. See [Security and Privacy](SECURITY_AND_PRIVACY.md#private-chat-attachments)
+and [Operations](OPERATIONS.md#chat-attachment-retention).
 
 ## Style Templates
 
@@ -76,7 +109,7 @@ If you render the widget from Blade, Livewire, or an Inertia page inside the sam
 
 ### Option 1: Blade Component (recommended for same app)
 
-In Filament, open **Bots** and confirm that the bot is active with one verified live workflow deployment. Then run the **Use as public widget** row action and add the component to your Blade layout or page:
+In Filament, open **Agents** and confirm that the Agent is active with one verified live Agent deployment. Then run the **Use as public widget** row action and add the component to your Blade layout or page:
 
 ```blade
 <x-filament-agentic-chatbot::chat-widget />
@@ -89,7 +122,7 @@ The component resolves bots in this order:
 3. `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`
 4. The first runnable bot
 
-At every level, runnable means that the bot is active and its live deployment passes immutable artifact and dependency-closure verification. An invalid explicit or configured ID fails closed. A marked but unrunnable or multiply marked selection also fails closed instead of silently exposing a different bot.
+At every level, runnable means that the Agent is active and its live deployment passes immutable artifact and dependency-closure verification. An invalid explicit or configured ID fails closed. A marked but unrunnable or multiply marked selection also fails closed instead of silently exposing a different Agent.
 
 Use an explicit prop only when a page should intentionally override the selected public widget bot:
 
@@ -140,10 +173,11 @@ Common optional attributes:
 | `data-subtitle` | Chat panel subtitle |
 | `data-welcome` | Welcome message |
 | `data-compact` | `true` or `false` |
-| `data-size` | `compact`, `comfortable`, or `spacious` |
-| `data-font` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |
+| `data-size-preset` | `compact`, `comfortable`, or `spacious` |
+| `data-font-preset` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |
 | `data-show-sources` | `true` or `false` |
 | `data-lang` | UI language code such as `en`, `de`, `fr`, or `es` |
+| `data-context-endpoint` | Authenticated host endpoint returning a short-lived signed customer-context token |
 
 All optional `data-*` attributes override the bot's default settings.
 
@@ -160,11 +194,10 @@ Then mount it in your JavaScript:
 ```js
 import { mountFilamentAgenticChatbotWidget } from "@heiner/filament-agentic-chatbot-widget";
 
-mountFilamentAgenticChatbotWidget({
+const widget = mountFilamentAgenticChatbotWidget({
     botId: "YOUR_BOT_PUBLIC_ID",
     scriptUrl: "https://your-app.com/filament-agentic-chatbot/widget",
     apiBase: "https://your-app.com",
-    token: "SIGNED_TOKEN",
     area: "public",
     position: "right",
     template: "aurora",
@@ -179,9 +212,12 @@ mountFilamentAgenticChatbotWidget({
     showSources: true,
     lang: "en",
 });
+
+await widget.ready;
+await widget.open();
 ```
 
-The NPM loader creates and appends the `<script>` element with the right `data-*` attributes. It is a thin wrapper — no bundled UI framework and no iframe wrapper.
+The typed, framework-free SDK creates the script element, waits for the runtime, and returns one idempotent lifecycle handle per Agent. It exposes `open()`, `close()`, `toggle()`, `getState()`, `refreshConfig()`, `refreshContext()`, `startNewConversation()`, `sendSuggestedMessage()`, `updateDisplayContext()`, `on()`, and `destroy()`. Lifecycle events never include embed tokens, signed context tokens, conversation credentials, capability inputs, or provider results.
 
 ### Available NPM Options
 
@@ -190,7 +226,6 @@ The NPM loader creates and appends the `<script>` element with the right `data-*
 | `botId`            | string                | **Required.** Bot public ID                |
 | `scriptUrl`        | string                | URL to the widget script endpoint          |
 | `apiBase`          | string                | Your Laravel app's base URL                |
-| `token`            | string                | Signed embed token                         |
 | `area`             | string                | Context area (`public`, `member`, `admin`) |
 | `position`         | `'left'` \| `'right'` | Widget position on screen                  |
 | `template`         | string                | Style template name                        |
@@ -204,10 +239,27 @@ The NPM loader creates and appends the `<script>` element with the right `data-*
 | `sizePreset`       | string                | Size preset (`compact`, `comfortable`, `spacious`) |
 | `showSources`      | boolean               | Show source citations                      |
 | `lang`             | string                | UI language code                           |
+| `contextEndpoint`  | string                | Authenticated endpoint that returns a signed customer-context issuance |
+| `contextTokenProvider` | function           | Async/sync token provider for an existing application API client |
+| `contextToken`     | string                | Initial short-lived context token; cannot renew itself |
+| `readyTimeoutMs`   | number                | SDK readiness timeout (1–60 seconds) |
+| `displayContext`   | object \| null         | Initial visitor-visible, untrusted page context |
+
+### Host actions and public lifecycle events
+
+`sendSuggestedMessage(text, { open?: boolean })` sends bounded text through the same persistent chat endpoint, idempotency ledger, deployment, capability, and recovery boundaries as composer input. It does not create a second command path. The method fails explicitly for invalid text or an unavailable/busy widget.
+
+`updateDisplayContext(context)` lets an SPA describe the page currently visible to the visitor. The context requires a short label and may include an absolute HTTP(S) URL plus at most 16 scalar attributes. URL query strings, fragments, and credentials are removed; secret-like keys, nested values, control characters, oversized fields, and payloads over 4 KiB are rejected. The normalized label is visibly rendered above the composer and can be cleared by the visitor.
+
+Display context is **not signed authority**. It is encrypted with the durable turn, included in the turn's idempotency hash, and appended only to the model prompt inside an explicit untrusted-data boundary. The literal user message remains unchanged. Display context is never copied into workflow runtime variables, capability binders, actor/tenant identity, or authorization. Use signed customer and tenant context for server-attested identity and scope.
+
+The SDK supports `outcome`, `capability`, and `handoff` in addition to the basic widget lifecycle events. The server freezes a minimal lifecycle projection into the committed turn so JSON, SSE, turn polling, and replay return the same evidence. The runtime deduplicates outcomes per turn, capabilities per opaque event ID, and handoffs per public state transition for the lifetime of the mounted conversation. These payloads expose only public turn status, declared business outcome data, generic capability kind/status, and the existing safe handoff projection. They never expose internal IDs, exact capability keys, inputs/results, secrets, operator identity, notes, or SLA data.
 
 ## Event Stream And Failure Behavior
 
 The widget consumes committed chat outcomes over server-sent events. Workflow execution and canonical persistence finish before the response is projected. The package emits `init`, `message_complete`, and `error` events, then closes with `data: [DONE]`; it does not manufacture token deltas from an already completed message.
+
+The terminal `message_complete` or `error` projection may contain the frozen `public_chat_turn_lifecycle.v1` envelope consumed by the SDK. It is transport-neutral and replay-stable.
 
 If workflow execution fails after a run has been prepared, the server logs the failure, marks the run failed, emits a safe error event, and closes the stream. JSON `/complete` integrations receive the same safe error code/message shape as a normal chat failure. Stack traces, provider secrets, and raw technical exception messages should stay out of widget responses.
 
@@ -251,11 +303,97 @@ $token = WidgetEmbedToken::make(
 
 The loader sends access through the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens default to disabled in production. The bootstrap endpoint has independent per-bot/origin/IP and global-IP rate limits through `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE_PER_IP`.
 
+### Signed Customer And Tenant Context
+
+Never trust a customer ID, tenant ID, plan, cart ID, or other authority value sent as ordinary JSON or a `data-*` attribute. For personalized Agents, issue a short-lived signed context from a host-owned authenticated endpoint:
+
+```php
+use Heiner\FilamentAgenticChatbot\Models\Bot;
+use Heiner\FilamentAgenticChatbot\Support\WidgetContextToken;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Route;
+
+Route::get('/api/chatbot/customer-context', function (Request $request) {
+    $user = $request->user() ?? abort(401);
+    $bot = Bot::query()->where('public_id', $request->string('bot'))->firstOrFail();
+    $origin = $request->header('Origin') ?: 'https://shop.example.com';
+    $area = (string) $request->string('area', 'member');
+
+    $issuance = WidgetContextToken::issueForBot(
+        bot: $bot,
+        origin: $origin,
+        area: $area,
+        actor: $user,
+        tenant: ['type' => 'store', 'id' => (string) $user->store_id],
+        attributes: [
+            'plan' => (string) $user->plan,
+            'cart_id' => (string) $user->active_cart_id,
+        ],
+    ) ?? abort(503);
+
+    return response()->json($issuance->toArray())->withHeaders([
+        'Cache-Control' => 'no-store, private',
+        'Pragma' => 'no-cache',
+    ]);
+})->middleware('auth');
+```
+
+The endpoint must derive identity from its authenticated server session, enforce the requested Agent/area/tenant itself, and return `Cache-Control: no-store`. The token is signed, not encrypted: never include passwords, API keys, bearer tokens, secrets, or data that the browser must not read. The issuer rejects sensitive attribute names, unsafe keys, excessive nesting, more than 64 scalar attributes, strings over 1,000 characters, and payloads over the configured byte limit.
+
+Mount the SDK with exactly one renewable source:
+
+```js
+const widget = mountFilamentAgenticChatbotWidget({
+    botId: "YOUR_BOT_PUBLIC_ID",
+    area: "member",
+    contextEndpoint: "/api/chatbot/customer-context",
+});
+```
+
+The widget calls this endpoint with `bot` and `area` query parameters, includes host cookies, disables caching, keeps the returned token in memory, and sends it only in `X-Filament-Agentic-Chatbot-Context`. The backend verifies the HMAC, token version, Agent, area, exact origin, issue time, and expiry before it creates or opens a conversation. Signed actor and tenant identity bind conversation ownership and deterministic data scopes; attributes are available as the reserved `__widget_context` workflow value and `widget_context` authority scope. Ordinary request input with the same names is stripped and cannot create authority.
+
+Context can authenticate a non-public area only when it contains an actor type and ID and `AGENTIC_CHATBOT_WIDGET_CONTEXT_AUTHORIZES_NON_PUBLIC_AREAS=true`. The issuing endpoint is therefore the authorization boundary. Set `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS=member,checkout` when an area must never fall back to anonymous operation.
+
+On login, logout, tenant switch, or another identity change, call `await widget.refreshContext()`. It starts a new conversation by default so two identities cannot share a conversation. Pass `{ startNewConversation: false }` only for renewal where the attested identity is guaranteed unchanged. Automatic renewal retries safe reads only; it never replays session creation, a chat send, form/feedback writes, or deletion.
+
+| Env Variable | Description | Default |
+| --- | --- | --- |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_ENABLED` | Accept and issue signed widget context | `true` |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_SIGNING_KEY` | Optional dedicated HMAC key | falls back to `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`, then `APP_KEY` |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_TTL_MINUTES` | Context lifetime (clamped to 1–60 minutes) | production `10`; otherwise `60` |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_REFRESH_BEFORE_SECONDS` | Renewal lead time | `120` |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS` | Comma-separated areas that require signed context | empty |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_AUTHORIZES_NON_PUBLIC_AREAS` | Treat a signed actor as authentication for its exact area | `true` |
+| `AGENTIC_CHATBOT_WIDGET_CONTEXT_MAX_PAYLOAD_BYTES` | Maximum decoded token payload | `4096` |
+
+The context-signing key is optional by design: existing installs can use the current widget-signing key without adding another secret. A dedicated key is useful only when operators want independent rotation. Rotate all current context tokens for one Agent by incrementing `runtime_config.widget.context_token_version`; when absent, it follows the existing widget token version.
+
 ### Conversation Credentials
 
 After obtaining widget access, the shipped loader calls `POST /api/filament-agentic-chatbot/chat/{botPublicId}/session`. The server returns a random session ID plus a separate high-entropy conversation credential over a `Cache-Control: no-store` response. The widget persists the pair locally and sends the credential only in the `X-Filament-Agentic-Chatbot-Conversation-Credential` header.
 
-Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The session ID remains a lookup key and may appear in history/turn URLs, but it is not sufficient to read, export, mutate, or delete an anonymous production conversation. A stale or invalid locally saved pair is discarded and safely bootstrapped again; write requests are not replayed by that recovery path. Authenticated area users, scoped Bot Access Tokens, and channel identities continue to use their stronger existing authority bindings.
+Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The session ID remains a lookup key and may appear in history/turn URLs, but it is not sufficient to read, export, mutate, or delete an anonymous production conversation. A stale or invalid locally saved pair is discarded and safely bootstrapped again; write requests are not replayed by that recovery path. Authenticated area users, scoped Agent Access Tokens, and channel identities continue to use their stronger existing authority bindings.
+
+### New Chat And History Deletion
+
+The shipped widget exposes **Start new chat** and **Delete history and memory** as separate actions. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Playbook is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
+
+History deletion remains an explicit, confirmed operation. A successful deletion immediately opens a fresh chat. If the lifecycle guard refuses deletion, the widget localizes the typed reason, keeps the old chat intact, and offers only safe recovery actions: retry when the response is retryable, or start a separate new chat while the prior conversation remains available for resolution or support.
+
+### Human Handoff Continuity
+
+When a conversation enters the Handoff Desk, the history response exposes only
+a safe projection: whether takeover is active, its public status, who the
+visitor is waiting for, the last update time, and the server-selected polling
+interval. Operator identities, internal notes, SLA details, and assignment data
+never enter the browser payload.
+
+The widget remains messageable during takeover. It replaces the composer hint
+with localized support copy, stores each visitor message normally, and polls
+history only while the handoff is active so customer-visible human replies
+appear in the same thread without a reload. The Agent/model path stays paused
+until an operator resolves the case or explicitly returns control. Polling is
+cancelled when the panel/session is reset and is not used for inactive chats.
 
 ### Domain Allowlists
 
@@ -268,8 +406,8 @@ Empty allowlists are still allowed by default through `AGENTIC_CHATBOT_WIDGET_AL
 | Area     | Behavior                                                            |
 | -------- | ------------------------------------------------------------------- |
 | `public` | No authentication required                                          |
-| `member` | Requires an authenticated user (checked via configured auth guards) |
-| `admin`  | Requires an authenticated user with admin ability                   |
+| `member` | Requires an authenticated host user or an exact-area signed actor context |
+| `admin`  | Requires the configured host authorization; enable signed-context issuance only from an equally protected endpoint |
 
 ### Rate Limiting
 
@@ -326,7 +464,7 @@ Configuration: `area="member"` or `area="admin"`, requires auth guard, signing e
 
 ## Server-Side Integrations
 
-Use the widget for browser embeds. Use Bot Access Tokens and the JSON complete endpoint for trusted server-side API clients, Telegram bots, Slack apps, or incident-management systems.
+Use the widget for browser embeds. Use Agent Access Tokens and the JSON complete endpoint for trusted server-side API clients, Telegram bots, Slack apps, or incident-management systems.
 
 See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract and webhook examples.
 

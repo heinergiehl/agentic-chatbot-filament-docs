@@ -2,7 +2,11 @@
 
 This page explains how content enters the system and how the assistant finds relevant context at question time.
 
-Retrieval is a workflow-bound runtime capability. A published Knowledge Base node performs retrieval and places bounded evidence into workflow state; conversational agents never receive a mutable or implicit knowledge-search tool.
+Retrieval is a deployment-pinned Agent capability. A published Agent receives a
+closed knowledge-search tool only for the exact completed sources and retrieval
+policy copied into its immutable deployment. A Playbook may also declare a
+bounded Knowledge Capability step. Neither path reads mutable, implicit, or
+globally available sources.
 
 ## Ingestion
 
@@ -133,7 +137,7 @@ Chroma filtering is strict. If all nearest-neighbor results fall below the confi
 
 ## Retrieval
 
-Retrieval is the runtime step that finds relevant chunks when a published workflow runs a Knowledge Base node.
+Retrieval finds relevant chunks when the published Agent searches its pinned knowledge or a Playbook runs a knowledge Capability step.
 
 ### What Happens During Retrieval
 
@@ -176,7 +180,15 @@ Retrieval returns a typed result with `status`, `strategy`, `evidence_quality`, 
 
 Diagnostics contain a query fingerprint, per-stage latency/candidate counts, index version plus embedding identity, selected strategy, calibration dataset/version, and reranker budget/capability status. They do not contain the raw retrieval query. Workflow traces and terminal workflow variables also redact raw retrieval-query values.
 
-Runtime V2 attaches an evidence requirement to every planned step. Direct answers use the bot's grounding policy (`optional` by default), configured source-backed topics become `required`, workflow/runtime-state answers use `none` or `forbidden`, and required answers pass through the final answerability gate. A required answer cannot be emitted without the configured evidence count and answerability threshold. The assistant abstains instead of silently falling back to model knowledge, and required streaming is buffered until that decision is known.
+The immutable Agent deployment pins the exact knowledge sources available to a
+turn. `AgentKnowledgeTurn` exposes one bounded `search_agent_knowledge` tool only
+when such pins exist, and every search crosses `CapabilityExecutionGateway`.
+The gateway accepts only usable retrieval evidence from those sources; empty,
+insufficient, degraded-below-threshold, unavailable, and failed results become
+an explicit no-evidence result. The Agent must cite only supplied reference
+numbers and answer naturally that reliable published evidence was unavailable
+instead of inventing a grounded answer. There is no second answer-composer or
+shadow answerability runtime that can override this result.
 
 ```php
 'grounding' => [
@@ -194,7 +206,10 @@ Run `php artisan migrate` to create the PostgreSQL FTS index, then re-ingest eve
 
 ### Knowledge Readiness
 
-Knowledge Base nodes can retrieve evidence only when the bot has at least one completed source with chunks. Completed sources without chunks, pending sources, and failed sources do not make retrieval ready.
+An Agent knowledge capability can retrieve evidence only when the Agent
+deployment pins at least one completed source with chunks. Completed sources
+without chunks, pending sources, failed sources, and mutable authoring-only
+attachments do not make retrieval ready.
 
 The public config endpoint includes additive `bot.knowledge_health`:
 

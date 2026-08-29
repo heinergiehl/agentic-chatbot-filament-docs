@@ -1,10 +1,10 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.17.0` (`candidate`). This matrix separates installable support from evidence produced for one exact release artifact.
+Target release: `0.17.0`. **Release status:** Candidate. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 
-| Surface | Supported range | Release-candidate evidence |
+| Surface | Supported range | Protected release evidence |
 | --- | --- | --- |
 | PHP | `8.3+` | CI covers PHP 8.3 and 8.4; the protected artifact path uses PHP 8.4. |
 | Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The same byte-verified ZIP is installed into separate Laravel 12 and 13 hosts. |
@@ -27,7 +27,7 @@ An available adapter is not automatically a release-certified provider/model pai
 
 - The public widget requires JavaScript, `fetch`, server-sent events, Web Crypto-capable browsers, a CSP that permits the configured script/API origin, and an exact Allowed Domains entry.
 - Production embeds use tokenless bootstrap and short-lived header tokens; query/body token compatibility is disabled by default in production.
-- Slack and Telegram drivers are package integrations, but end-to-end certification still depends on buyer-owned app credentials, webhook configuration, platform policy, and a staging smoke test.
+- Telegram is the available external-channel integration. Slack, WhatsApp Cloud API, and Mailgun Email are built in but default-off and fail closed until their separate real-provider acceptance is complete. Any enabled channel still depends on buyer-owned provider credentials, webhook configuration, platform policy, private attachment storage, and a staging smoke test.
 
 ## What “certified” means
 

@@ -2,20 +2,37 @@
 
 This document covers required steps when upgrading between public releases.
 
-## Workflow-only runtime cutover
+## Agent-first runtime cutover
 
-Every chat now requires exactly one hash-verified live workflow deployment. **Simple Assistant** and **Knowledge Assistant** are the supported starter workflows; they are not alternate runtime modes. Former `runtime.product_mode`, direct Assistant/Knowledge answer paths, and top-level capability planning are removed and ignored.
+Every chat now requires exactly one hash-verified live Agent deployment.
+Ordinary conversation and approved knowledge access need no Playbook. Optional
+Playbooks are deployment-pinned process tools and never own the top-level turn.
+Former workflow-first routing, live-workflow pointers, runtime modes, starter
+workflows, and request-time fallback paths are removed.
 
-Before opening chat traffic, classify every existing bot with a signed report and apply only the verified eligible starter migrations:
+Before opening chat traffic:
 
-```bash
-php artisan agentic-chatbot:runtime-starter-dry-run --actor="release-operator" --output="storage/app/runtime-starter-report.json"
-php artisan agentic-chatbot:runtime-starter-dry-run --verify="storage/app/runtime-starter-report.json"
-php artisan agentic-chatbot:runtime-starter-migrate --actor="release-operator" --report="storage/app/runtime-starter-report.json" --output="storage/app/runtime-starter-result.json"
-php artisan filament-agentic-chatbot:doctor
-```
+1. Back up the database.
+2. Open every active Agent and assign only its approved knowledge, capabilities,
+   and optional published Playbooks, then choose **Publish candidate** without
+   changing live traffic.
+3. Run **Test release candidate** with representative conversation, Knowledge,
+   Playbook, and capability paths. Candidate testing uses the persistent runtime
+   but blocks productive writes.
+4. Use **Make candidate live** only after the exact deployment hash and saved
+   Agent fingerprint have passing durable evidence, then verify one natural live
+   conversation and its run/trace.
+5. During the maintenance window, clear any legacy
+   `active_workflow_deployment_id` only after the replacement Agent deployment
+   is verified, then run `php artisan migrate`.
+6. Run `php artisan filament-agentic-chatbot:doctor` and
+   `php artisan agent-graph:doctor` before reopening traffic.
 
-The report and result paths must be new files. Bots with an existing verified live deployment remain bound to it. Eligible deploymentless bots receive the matching immutable starter; ambiguous or invalid release state blocks without overwrite. Any bot still lacking a verified live deployment is unavailable to widget, API, and channel chat until an operator publishes and activates one.
+`2026_08_24_000001_remove_legacy_workflow_runtime_state.php` blocks instead of
+guessing when a legacy live-workflow pointer remains. It then removes that
+column, the obsolete workflow `is_active` flag, old entry-clarification rows,
+and their table. Rollback means restoring the pre-cutover database and package
+together; productive workflow-first code is not recreated.
 
 Public-widget selection now has one stored key: `runtime_config.public_widget.entrypoint`. The irreversible `2026_08_23_000001_cut_over_public_widget_entrypoint.php` migration moves the former `widget.public_entrypoint` flag and removes that alias before productive code starts. Conflicting old and canonical values block the migration instead of choosing one silently.
 
@@ -53,6 +70,13 @@ write confirmation/schema/integrity baseline are no longer configurable.
 
 Production now defaults Data Resource administration and Filament side-effect reconciliation to strict Gate mode. Register `filament-agentic-chatbot.view-data-resources`, `filament-agentic-chatbot.manage-data-resources`, and `filament-agentic-chatbot.reconcile-side-effects` before operators use those screens. Local and testing environments retain the authenticated-panel-user setup path. Doctor fails production when either surface is relaxed without a registered Gate.
 
+The installer no longer accepts the ambiguous `--force` option. Use
+`--force-config` only when you intentionally want to overwrite the host's
+published package config, and use `--force-migrations` only when a production
+deployment is authorized to run pending migrations. Automated production
+installers that previously passed `--force` must choose one or both explicit
+options; the legacy flag now exits before setup performs any work.
+
 The built-in `query_data_resource` capability result contract is version 2. It removes the concrete `scope_filters_applied` object without adding replacement scope metadata. Republish workflows that use Data Resources so their immutable capability binding pins version 2; do not add a compatibility field carrying scope names or values. Treat this as a maintenance-window cutover: Doctor fails and inventories active deployments that still pin an obsolete action contract.
 
 Data Resource query contracts are now version 3 and pin an estimated-row budget plus a cross-driver statement timeout. Run the package migrations to add `agentic_data_resources.query_safety`, review **Allow text search** and **Database query budget** for every UI-managed resource, then republish workflows that bind those resources. Doctor fails when the migration is missing, an active deployment still pins a stale Data Resource hash, or an active production resource uses a database without supported plan/timeout budgets, so run it before reopening chat traffic. The runtime now rejects PostgreSQL/MySQL/MariaDB plans above that budget before execution; SQLite is limited to local/testing Data Resource queries.
@@ -73,7 +97,7 @@ The plugin Doctor now treats `AgentGraphManager::recover()` as required SDK surf
 
 ## Current release status
 
-The target Commercial Early Access release is **`v0.17.0`**. The source tree remains a release candidate until the protected release contract is explicitly approved and every protected job passes.
+The target Commercial Early Access release is **`v0.17.0`**. **Release status:** Candidate. A tag may ship only after the governed contract is explicitly approved and every exact-source and exact-artifact job in the protected workflow passes.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
@@ -86,6 +110,160 @@ When upgrading, always:
 3. Run `php artisan migrate` to apply any new migrations.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Unreleased: scheduled quality and Knowledge Operations
+
+Run `php artisan migrate` before enabling scheduled quality operations. The
+`2026_08_29_000002_build_quality_operations.php` migration adds automation
+claims and cadence to saved quality scenarios plus encrypted knowledge-gap and
+immutable occurrence ledgers. Existing scenarios remain manual; old
+conversations are not guessed into gaps.
+
+Republish or merge the `quality_operations` config. Production must run Laravel
+Scheduler and an asynchronous queue worker. Automation deliberately reuses the
+existing Agent/provider credential chain; do not create a second API key for
+the scheduler. Start with both commands in `--dry-run`, enable cadence on one
+non-blocking Published Agent regression, and verify its persisted run before
+enabling more scenarios. See [Quality Operations](docs/QUALITY_OPERATIONS.md).
+
+---
+
+## Unreleased: evidence-backed conversation outcomes
+
+Run `php artisan migrate` before deploying this build. The
+`2026_08_28_000001_create_bot_conversation_outcomes_table.php` migration adds an
+idempotent business-outcome ledger with encrypted evidence references and
+immutable Agent/Playbook attribution.
+
+Existing conversations are intentionally not backfilled or classified by an
+LLM. Analytics starts empty and becomes authoritative as verified events arrive.
+New human-handoff requests record a handoff outcome automatically. Hosts may
+record CRM, commerce, scheduling, ticketing, or other verified results through
+the public `RecordsConversationOutcomes` contract documented in
+[Public API](docs/PUBLIC_API.md#evidence-backed-business-outcomes). Use a stable
+source idempotency key and never pass visitor- or model-authored success claims
+through that trusted boundary.
+
+After migration, verify one automatic handoff, one operator-recorded outcome,
+and one idempotent host retry in staging. Conversation-history deletion may
+retain and detach these business records under the host retention policy; its
+disclosure now includes the `business_outcomes` category.
+
+---
+
+## Unreleased: app-aware Solution Kits
+
+Run `php artisan migrate` before operators use **Use Solution Kit**. The
+`2026_08_28_000002_create_agent_solution_kit_installations_table.php` migration
+adds immutable, actor-attributed installation evidence and one-to-one Agent
+ownership.
+
+No existing Agent is modified or backfilled. A Kit installation creates a new
+inactive Agent, unpublished Playbook drafts, and saved quality scenarios in one
+transaction. It does not publish or activate deployments. After installation,
+follow the Kit release path in Agent Overview and retain the existing **Publish
+candidate**, **Test release candidate**, and **Make candidate live** separation.
+
+Hosts that register custom Kits must implement and tag the public
+`SolutionKitProvider` contract. Definitions are strict: every Playbook needs an
+active blocking current-draft test, write-capable Kits require explicit
+installation approval, credentials are forbidden, and full workflow validation
+runs before mutation. See [Solution Kits](docs/SOLUTION_KITS.md).
+
+---
+
+## Unreleased: Integration Studio
+
+Run `php artisan migrate` before operators use **Import integration**. The
+`2026_08_28_000003_create_integration_studio_installations.php` migration adds
+optional synthetic test-input suggestions to operation drafts and creates the
+immutable, actor-attributed Integration Studio installation ledger.
+
+No existing Connector or Operation is modified or backfilled. Importing
+OpenAPI, Postman, or cURL creates only inactive, untested, unpublished drafts in
+one transaction and does not contact the external service. Review each draft,
+complete write-integrity/result-identity policy, run the governed test path,
+and publish an immutable revision explicitly.
+
+The optional metadata assistant uses an already configured central AI provider
+key; do not add a second wizard-specific secret store. The imported service's
+credential remains a separate encrypted Connector value. See [Integration
+Studio](docs/INTEGRATION_STUDIO.md).
+
+---
+
+## Unreleased: production Handoff Desk
+
+Run `php artisan migrate` before reopening chat traffic. The
+`2026_08_29_000001_build_production_handoff_desk.php` migration maps legacy
+`pending` requests to `waiting_operator`, adds public IDs, teams, optimistic
+state versions, business-hour SLA timestamps, and the immutable encrypted
+activity ledger. It also enforces one active handoff per conversation at the
+database layer. If old data contains competing active requests, migration stops
+and lists the affected conversation IDs; resolve that data deliberately rather
+than deleting or merging it automatically.
+
+Republish the package config and review `bot_handoff_requests.desk`: default
+team, timezone, staffed hours, priority SLAs, optional team overrides, widget
+poll interval, and optional default assignee. Keep provider/API secrets in their
+existing central configuration; the desk adds no AI key.
+
+Before rollout, register the handoff view/manage Gates, verify their SQL scope
+for tenant-aware hosts, and exercise this sequence in staging: create, claim,
+internal note, customer-visible reply, customer follow-up, stale-version
+conflict, exact retry, resolve, and explicit return-to-Agent. For Telegram or
+Slack, also verify the existing channel-thread binding and queued delivery.
+Active handoffs now block conversation-history deletion; include completed
+handoff activity in the host support/audit retention decision.
+
+---
+
+## Unreleased: fail-closed channel availability
+
+Telegram remains available by default. Slack, WhatsApp Cloud API, and Mailgun
+Email are now absent from the Filament setup wizard and rejected at the runtime
+and webhook boundaries unless their explicit acceptance flags are enabled:
+
+```env
+AGENTIC_CHATBOT_CHANNELS_SLACK_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_WHATSAPP_ENABLED=false
+AGENTIC_CHATBOT_CHANNELS_EMAIL_ENABLED=false
+```
+
+Merge the new `channels.slack.enabled`, `channels.whatsapp.enabled`, and
+`channels.email.enabled` keys into published configuration. Existing connection
+records are retained, but a disabled provider cannot be diagnosed, test-sent,
+activated, or executed. Enable a provider only for its later real-provider
+acceptance; mocked provider tests do not constitute that release evidence.
+
+---
+
+## Unreleased: secure multimodal channels
+
+Run `php artisan migrate` before enabling attachments. The
+`2026_08_29_000003_create_bot_message_attachments.php` migration creates the
+canonical private Chat Turn attachment ledger. The follow-up
+`2026_08_29_000004_create_channel_inbound_attachments.php` migration creates a
+short-lived durable ingress ledger so Mailgun multipart uploads survive queue
+dispatch without placing bytes, disk names, or storage paths in the job payload.
+Existing channel connections, conversations, and messages are not backfilled.
+
+Republish or merge the `channels.whatsapp`, `channels.email`, and attachment
+retention settings. The existing Agent/provider AI key remains authoritative;
+do not create a channel-specific AI key. WhatsApp and Mailgun still require
+their own encrypted delivery-provider credentials. For every file-enabled
+channel, verify that `AGENTIC_CHATBOT_ATTACHMENTS_DISK` is private and writable
+by both web and queue workers, keep Laravel Scheduler running, and exercise the
+`filament-agentic-chatbot:prune-channel-inbound-attachments --dry-run` probe.
+
+Telegram photos/documents, Slack files, WhatsApp images/documents, and Mailgun
+attachments now cross the canonical chat-attachment validation, model-capability,
+durable-turn, storage, and budget path. Re-run **Diagnostics** and test one real
+file through each enabled provider. WhatsApp uses Meta App Secret signatures and
+a separate Verify Token; Mailgun uses its Webhook Signing Key, not its API key.
+See [Channel Integrations](docs/CHANNELS.md).
 
 ---
 
@@ -139,11 +317,13 @@ database and application together.
 
 Connector input aliases, normalization, ambiguity rules, and result-identity
 checks now belong in the published operation contract. API-specific planner
-branches are unsupported. Natural multi-objective read turns are represented by
-one release-bound Authorized Entry Turn Plan with ordered tasks and items and
-execute inside one AgentGraph-owned workflow run.
+branches are unsupported. An Agent may satisfy several independent read
+objectives with separate calls from its closed deployment tool manifest. Each
+call is authorized and bounded independently. Ordered, dependent,
+interruptible, or write-bearing work belongs in an explicitly published
+Playbook.
 
-### G25 breaking runtime cleanup
+### Breaking runtime cleanup
 
 This is a deliberately breaking cleanup. Before deploying it, back up the database, rotate every active Bot Access Token created before HMAC hash version 2 from **Connect > Bot Access Tokens**, and verify the replacement token in each server integration. Plaintext tokens are not recoverable from old hashes, so the migration revokes any still-active token whose `token_hash_version` is missing or not `2`.
 
@@ -166,17 +346,17 @@ Public configuration and API changes:
 | Before | After |
 | --- | --- |
 | `RAG_*` environment aliases | matching `AGENTIC_CHATBOT_*` variables only |
-| runtime-mode environment variables and Bot `product_mode` values | removed; one workflow-only runtime |
+| runtime-mode environment variables and Bot `product_mode` values | removed; one Agent-first runtime with optional Playbooks |
 | fine-grained runtime enable/engine switches | removed; the verified deployment contract owns executable behavior |
 | AgentGraph `workflow_node_id` / `workflow_node_type` metadata | SDK `nodeMeta` only |
 | SHA-256 Bot Access Token lookup | HMAC-SHA256 hash version 2 only; rotate before upgrade or the migration revokes it |
 | conversation-meta workflow memory | canonical `workflow_memories` rows |
 | `WorkflowRun.meta.__workflow_snapshot` | `workflow_runs.workflow_snapshot` |
-| top-level planning/interpreter configuration | removed; model-assisted work is declared inside workflow steps |
+| workflow-first planning/interpreter configuration | removed; the Agent interprets the turn and may invoke only deployment-pinned Playbooks and capabilities |
 
 Prompt-JSON structured output remains available only for provider profiles that declare that transport capability. It is an external provider-format adapter and never grants routing, policy, or execution authority. The protected release matrix continues to test native structured tools, prompt-JSON tools, and restricted no-tools profiles.
 
-After migration, clear cached configuration and run the Doctor again. Old environment names, per-bot modes, and engine switches are ignored rather than translated at request time. A bot without one verified live deployment fails closed. See [G25 Breaking Cleanup Evidence](docs/G25_BREAKING_CLEANUP_EVIDENCE.md) for the candidate-by-candidate migration and verification record.
+After migration, clear cached configuration and run the Doctor again. Old environment names, per-bot modes, and engine switches are ignored rather than translated at request time. An Agent without one verified live deployment fails closed.
 
 ### Canonical API Connector operation cutover
 
@@ -253,14 +433,6 @@ Retrieval context now consumes the G19 token budget, not a character limit. Trac
 
 Runtime V2 context budgets now use model-relevant tokens instead of characters. If the host publishes the package config or sets context-budget environment variables, replace `RUNTIME_V2_CONTEXT_*_CHARACTERS` with the corresponding `RUNTIME_V2_CONTEXT_*_TOKENS` values and merge the new `runtime.v2.context_pack.total_tokens` / `lane_tokens` config. The old character keys are not a second fallback budget path.
 
-Chat and recall requests no longer backfill historical workflow-run memory. After deploying this change, run a bounded explicit repair if legacy conversations need those projections:
-
-```bash
-php artisan filament-agentic-chatbot:repair-conversation-memory --limit=100
-```
-
-The command is idempotent and can also target one conversation with `--conversation=<id>`. If more bulk candidates remain, continue with the printed `--after=<last-id>` cursor. No database migration is required for this cutover.
-
 ### API connector auth and policy services
 
 `ApiConnector` no longer exposes runtime authentication, HTTP, header/URL policy, or credential-form helpers. Replace direct model helper calls with `ConnectorCredentialService`, or with `ConnectorAccessPolicy` plus `ConnectorDefinition::fromConnector($connector)`. Use `ConnectorCredentials::fromConnector($connector)` only when an integration explicitly needs credential values; its debug and serialized forms are redacted.
@@ -294,7 +466,11 @@ Sub-workflow nodes are also deployment-bound after `2026_07_12_000002_pin_subwor
 
 `2026_07_12_000003_add_subworkflow_dependency_contracts.php` completes that boundary with hashed input/output schemas and mappings. Parent manifests aggregate namespaced child capabilities, write effects, confirmation requirements, and policy metadata; Runtime V2 grants identify both the parent and effective child deployment. Child state is isolated by default and only declared output mappings cross back into the parent. Parent publication fails if a transitive child write has no complete payload schema. Run the materialization command again after this migration so existing parent deployments receive the complete contract closure.
 
-Runtime behavior no longer has a mode selector. New and upgraded installs use the same workflow-only entry path, and no request-time setting can enable a deploymentless answer or escape a closed workflow contract. Removed runtime aliases and top-level planner classes have no productive replacement; place model-assisted interpretation and capability work inside explicit workflow steps.
+Playbook execution remains deployment-only, but fresh chat turns enter the
+Agent deployment rather than a Playbook. No request-time setting can enable a
+deploymentless answer, a mutable draft, a global tool, or an unpinned Playbook.
+The Agent interprets conversation; deterministic contracts authorize tools and
+AgentGraph owns any invoked Playbook run.
 
 The workflow runtime now validates `date` inputs and `date` validation rules as canonical `YYYY-MM-DD` only. If a workflow currently expects natural-language dates such as "tomorrow", "next Friday", or locale-specific date strings, normalize them with semantic extraction or a transform step before they reach deterministic validation.
 
@@ -312,7 +488,7 @@ The follow-up migration `2026_07_09_000002_add_reconciliation_to_bot_chat_turns_
 
 Top-level compound execution has been removed. Express multi-step work through published workflow steps and their explicit capability contracts.
 
-API clients should send a stable `client_turn_id` in the JSON body or an `Idempotency-Key` header and reuse it only when retrying the same request. The server generates an ID when omitted, but a caller cannot receive retry deduplication unless it reuses the returned `X-Chat-Turn-Id`. Telegram and Slack channel deliveries derive this ID automatically from their provider message identity. Existing conversation history is not backfilled; durable tracking begins with the first turn after migration.
+API clients should send a stable `client_turn_id` in the JSON body or an `Idempotency-Key` header and reuse it only when retrying the same request. The server generates an ID when omitted, but a caller cannot receive retry deduplication unless it reuses the returned `X-Chat-Turn-Id`. Telegram, Slack, WhatsApp, and Email channel deliveries derive this ID automatically from their provider message identity. Existing conversation history is not backfilled; durable tracking begins with the first turn after migration.
 
 ---
 
@@ -338,7 +514,7 @@ Run `composer update heiner/filament-agentic-chatbot --with-dependencies` from a
 
 This release adds structured Compound Request planning/execution, workflow turn-understanding hardening, schema-v2 structured form preservation, and additional database constraints for pending conversation state. The default compound engine is `structured`; use `shadow` to audit generated structured plans before enabling execution for a cautious production rollout.
 
-The mode and shadow settings in this historical v0.16.0 procedure were removed by the current workflow-only cutover. Do not carry them into the current published config; follow [Workflow-only runtime cutover](#workflow-only-runtime-cutover) instead.
+The mode and shadow settings in this historical v0.16.0 procedure were removed by the current Agent-first cutover. Do not carry them into the current published config; follow [Agent-first runtime cutover](#agent-first-runtime-cutover) instead.
 
 After deployment:
 

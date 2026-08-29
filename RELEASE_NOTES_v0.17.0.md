@@ -5,23 +5,30 @@
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
-Version 0.17.0 is a breaking, security-focused runtime cutover. It is designed around one production path: every live bot routes through one immutable, hash-verified workflow deployment; AgentGraph owns workflow state; and every external capability call passes through the authorization, confirmation, idempotency, redaction, and reconciliation gateway.
+Version 0.17.0 is a breaking, security-focused Agent-first runtime cutover. It
+has one production entrypoint: every live bot executes one immutable,
+hash-verified Agent deployment. That Agent may answer normally, search only its
+pinned Knowledge, query only its pinned read capabilities, or invoke an exact
+pinned Playbook. AgentGraph owns Playbook state, and every external capability
+call passes through the authorization, confirmation, idempotency, redaction,
+and reconciliation gateway.
 
 Do not publish or install this candidate as a production release until `scripts/release/release-contract.json` is changed to `approved` in a reviewed commit and all protected release jobs pass for the exact commercial ZIP.
 
 ## What buyers gain
 
-- A guided readiness flow from bot setup through workflow validation, publication, live activation, real-chat verification, and run/trace inspection.
+- A guided readiness flow from Agent setup through candidate publication, persistent real-chat testing, atomic live activation, optional Playbook validation, and turn/run/trace inspection.
 - Tokenless browser snippets with origin-checked bootstrap, short-lived in-memory tokens, renewal before expiry, and a separate anonymous conversation credential.
 - Durable turn idempotency and serialization, explicit unknown-outcome reconciliation, immutable deployment/capability pins, and bounded external-call handling.
 - A safer editor: raw HTTP inspection is read-only (`GET`/`HEAD`), host-policy checked, DNS pinned, and response-size bounded; connector writes remain behind the productive execution gateway.
+- A full-page Integration Studio that imports OpenAPI, Postman, or cURL locally into inactive Connector drafts, optionally improves only presentation metadata through an existing central AI key, and records atomic actor-attributed installation evidence.
 - Fail-closed sensitive Filament surfaces and a shared privacy lifecycle for conversation inspection, export, and deletion.
 - Bounded ingestion downloads, secret-aware operational logging, and dependency constraints that exclude audited vulnerable Guzzle/PSR-7/CommonMark versions while supporting Laravel 13's native Guzzle 8/PSR-7 3 line.
 - Exact commercial artifact evidence: deterministic ZIP, whole-file SHA-256, per-entry sidecar, embedded release manifest, and CycloneDX 1.6 production-dependency SBOM.
 
 ## Breaking runtime and authoring changes
 
-- Direct Assistant, knowledge-only, compound top-level, and recursive-workflow escape paths are removed from production routing. A bot without one verified live deployment is blocked.
+- Legacy Assistant/runtime profiles, the top-level Knowledge-only bypass, compound planning, global-tool escape paths, and recursive Playbooks are removed from production routing. A bot without one verified live Agent deployment is blocked; ordinary conversation and pinned Knowledge do not require a Playbook.
 - Compound Request models/modes and the legacy `loop` node are removed. Republish intentional bounded collection work with `batchMap`.
 - API Connector v1/v2 execution compatibility is removed. Publish v3 operations and deployments with exact revision, contract, schema, environment, and capability pins.
 - `RAG_*` environment fallbacks and legacy runtime mode aliases are removed. Use only documented `AGENTIC_CHATBOT_*` settings.
@@ -43,7 +50,7 @@ Docker is used to make the release host reproducible; customers do not have to d
 
 ## Release evidence required before approval
 
-The release is blocked until the exact candidate commit has green dependency audits, full tests/static analysis/formatting/editor CI, deterministic runtime release gate, complete live provider profile matrix, restricted-capability rejection, 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, 0.16.1 upgrade, rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
+The release is blocked until the protected workflow has green evidence for the exact candidate commit: locked Composer and npm dependency audits, Pint, the full PHPUnit suite, PHPStan, workflow-editor `test:ci` plus a zero asset diff, the deterministic runtime release gate, calibrated multilingual retrieval plus real pgvector integration, the complete live provider profile matrix including Knowledge citation retention, restricted-capability rejection, the 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, the 0.16.1 upgrade and rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
 
 No unavailable credential, skipped external check, path install, or static checklist is counted as passing evidence.
 

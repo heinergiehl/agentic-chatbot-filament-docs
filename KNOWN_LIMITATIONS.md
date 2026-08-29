@@ -85,30 +85,32 @@ Delay/timer nodes dispatch a `ResumeWorkflowRunJob` to the queue. If your queue 
 
 ---
 
-## 8. Multi-item entry plans are read-only and all-or-nothing
+## 8. One active Playbook per conversation
 
-Authorized Entry Turn Plans accept only independent, fully covered read tasks
-bound to one immutable workflow release. Every task item must satisfy the
-published slot/input policy and exact capability contract.
+An Agent can answer ordinary questions and use approved knowledge without a
+Playbook, but it cannot start a second Playbook while one run is still active.
 
-**Impact**: Ambiguous, dependent, alternative, mixed read/write, duplicate, or
-partially admitted turns clarify instead of executing the apparently safe
-subset.
+**Impact**: A new process request waits until the active Playbook completes or
+is cancelled. This prevents two graphs from competing for the same user reply.
 
-**Workaround**: Publish precise entry routes and connector input policies, or
-model dependent/write work explicitly in the workflow with confirmation.
+**Workaround**: Put ordered or dependent work in one bounded Playbook. Keep
+unrelated chat and knowledge questions with the Agent, and cancel an abandoned
+Playbook explicitly before starting another.
 
 ---
 
-## 9. Turn understanding is provider-sensitive
+## 9. Agent interpretation is provider-sensitive
 
-Workflow turn understanding can classify pending answers, corrections, side
-questions, cancellations, and multi-item requests. Provider JSON behavior and
-confidence calibration still vary by model.
+Natural wording, tool selection, and final response quality still vary by
+provider and model. Model output is always an untrusted proposal.
 
-**Impact**: Low-confidence or malformed classifications intentionally fall back to deterministic pending-input behavior. This can ask a clarifying question or keep the workflow halted instead of guessing.
+**Impact**: A weak model may answer instead of selecting a matching Playbook,
+or may ask for clarification. It still cannot grant a capability, bypass an
+approval, change a deployment pin, or authorize a write.
 
-**Workaround**: Run `composer run-script eval:workflow-turns` and `composer run-script eval:workflow-understanding` with your staging provider/model before enabling aggressive routing in production.
+**Workaround**: Add representative Agent quality scenarios for unexpected
+wording, active Playbook replies, side questions, cancellation, and provider
+failure. Use a model that reliably supports the declared tool contract.
 
 ---
 

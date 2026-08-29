@@ -35,7 +35,7 @@ lang/vendor/filament-agentic-chatbot/fa/workflow-editor.php
 The translation file currently covers:
 
 - Agentic Chatbot navigation group
-- Bot, source, API connector, workflow, conversation, submission, workflow run, Bot Access Token, and AI Usage Filament resources
+- Agent, source, API connector, Playbook, conversation, submission, Playbook run, Agent Access Token, and AI Usage Filament resources
 - Filament resource navigation labels, model labels, form labels, table labels, actions, notifications, empty states, widget headings, and common option labels
 - AI usage dashboard widgets
 - English fallback strings under the `raw` array for broad legacy UI coverage

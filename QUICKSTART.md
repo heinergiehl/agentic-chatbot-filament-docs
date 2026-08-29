@@ -2,14 +2,14 @@
 
 This guide is optimized for first-time setup and clean-room testing of the current Commercial Early Access release line.
 
-> Commercial Early Access note: the `0.x` line is intentionally sold before `1.0`. The install, widget, workflow, analytics, privacy, and server API foundations are already in place, but you should still expect occasional bugs and validate every rollout in staging. Early-access feedback is highly appreciated.
+> Commercial Early Access note: the `0.x` line is intentionally sold before `1.0`. The install, widget, Agent runtime, Playbook, analytics, privacy, and server API foundations are already in place, but you should still expect occasional bugs and validate every rollout in staging. Early-access feedback is highly appreciated.
 
 ## Read This First If You Are New
 
 If you are still learning the product model, start with:
 
 - [Core Concepts](CORE_CONCEPTS.md)
-- [Bots](BOTS.md)
+- [Agents](BOTS.md)
 - [Knowledge Sources](KNOWLEDGE_SOURCES.md)
 - [Ingestion and Retrieval](INGESTION_AND_RETRIEVAL.md)
 - [Chat Widget](CHAT_WIDGET.md)
@@ -18,11 +18,12 @@ If you are still learning the product model, start with:
 
 Filament Agentic Chatbot adds a managed grounded-assistant layer to a Laravel + Filament app:
 
-- Filament resources for bots, sources, workflows, and conversations
-- Retrieval and provider controls per bot
+- Filament resources for Agents, sources, optional Playbooks, and conversations
+- Retrieval and provider controls per Agent
 - Text, file, URL, and API knowledge sources for the retrieval pipeline
 - An embeddable widget for your app or external frontend
-- A workflow editor for routing, actions, connectors, runs, and releases
+- A responsive Playbook Builder for bounded steps, capabilities, runs, and immutable releases
+- A guided Integration Studio for importing OpenAPI, Postman, or cURL as inactive API Connector drafts
 - Operational checks, analytics, and privacy endpoints
 
 It helps you ship AI assistants inside your product faster. It does not replace your core app logic, billing, tenancy, or every product-specific workflow.
@@ -39,13 +40,22 @@ The package supports Laravel 12 and 13, but Composer blocks framework versions b
 
 ## 3. Choose Your Start Path
 
+### Anystack Buyer Access
+
+Anystack displays the exact private Composer repository URL and license credentials after purchase. Run the repository command inside the target Laravel app before requiring the package:
+
+```bash
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
+```
+
+Replace the placeholder with the URL shown by Anystack. Composer then prompts for the buyer email and license key during `composer require`. If the license policy uses activation fingerprints, enter the password in the exact `<license-key>:<fingerprint>` form shown by Anystack. Never commit the license key, Composer `auth.json`, or a credential-bearing repository URL. See the [official Anystack PHP Composer instructions](https://anystack.sh/docs/integrations/php).
+
 ### Path A: Existing Filament App
 
 Install package:
 
 ```bash
 composer require heiner/filament-agentic-chatbot
-php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
 Register plugin in your panel provider:
@@ -65,8 +75,8 @@ composer create-project laravel/laravel my-app
 cd my-app
 composer require filament/filament "^5.2"
 php artisan filament:install --panels --no-interaction
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot
-php artisan vendor:publish --tag=filament-agentic-chatbot-config
 ```
 
 Then add `FilamentAgenticChatbotPlugin::make()` in `app/Providers/Filament/AdminPanelProvider.php`.
@@ -101,7 +111,7 @@ AGENTIC_CHATBOT_DB_DATABASE=filament_agentic_chatbot
 AGENTIC_CHATBOT_DB_USERNAME=postgres
 AGENTIC_CHATBOT_DB_PASSWORD=secret
 AGENTIC_CHATBOT_CHAT_PROVIDER=gemini
-AGENTIC_CHATBOT_CHAT_MODEL=gemini-2.5-flash-lite
+AGENTIC_CHATBOT_CHAT_MODEL=gemini-3.7-flash
 AGENTIC_CHATBOT_EMBEDDING_PROVIDER=gemini
 AGENTIC_CHATBOT_EMBEDDING_MODEL=gemini-embedding-001
 AGENTIC_CHATBOT_VECTOR_DIMENSIONS=1536
@@ -113,8 +123,12 @@ AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true
 AGENTIC_CHATBOT_WIDGET_SIGNING_KEY=replace-with-a-long-random-secret
 AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10
 AGENTIC_CHATBOT_WIDGET_SIGNING_REFRESH_BEFORE_SECONDS=120
+AGENTIC_CHATBOT_WIDGET_CONTEXT_ENABLED=true
+AGENTIC_CHATBOT_WIDGET_CONTEXT_TTL_MINUTES=10
 GEMINI_API_KEY=
 ```
+
+If an existing installation pins a Gemini 2.5 model, update that explicit host value before publishing a new Agent deployment. The package's release-verified Gemini profiles are 3.7 Flash, 3.6 Flash, and 3.5 Flash Lite; an obsolete model does not silently inherit current tool or structured-output capabilities.
 
 Optional Chroma profile:
 
@@ -170,12 +184,14 @@ AGENTIC_CHATBOT_SUPPORT_EMAIL=webdevislife2021@gmail.com
 
 The doctor command warns if any of these commercial profile values are missing at launch time.
 
-## 5. Run Migrations + Queue Worker
+## 5. Finish Installation + Start Queue Worker
 
 ```bash
-php artisan migrate
+php artisan filament-agentic-chatbot:install
 php artisan queue:work
 ```
+
+The install command idempotently publishes the config, runs pending migrations, checks panel registration, and runs the setup doctor. If provider credentials will be added later, use `--skip-doctor` once and rerun the doctor after configuring them.
 
 If the host app uses Laravel's `database` queue driver and has not created queue tables yet, run this first:
 
@@ -191,7 +207,7 @@ Optional (recommended for deployments):
 php artisan filament:assets
 ```
 
-## 6. Validate Setup Immediately
+## 6. Re-run Setup Validation Anytime
 
 ```bash
 php artisan filament-agentic-chatbot:doctor
@@ -199,93 +215,85 @@ php artisan filament-agentic-chatbot:doctor
 
 Treat `FAIL` as blocking.
 
-## 7. Golden Path: Bot To Live Deployment
+## 7. Golden Path: Agent To Live Deployment
 
-Use this path for the first production-style bot. It keeps one clear authority: one bot, exactly one live main workflow, and only the capabilities that workflow is allowed to use.
+Use this path for the first production Agent. It keeps one clear authority: one
+immutable Agent deployment with only its published knowledge and optional
+Playbooks.
 
-### 1. Create the bot
+### 1. Create the Agent
 
-1. Open **Agentic Chatbot > Build > Bots** and create a bot.
-2. Choose what the bot may do under **What should this bot be allowed to do?** Start with the narrowest option that covers the workflow.
-3. Configure the provider, model, instructions, access, and widget basics, then save.
+1. Open **Agentic Chatbot > Build > Agents** and create an Agent.
+2. Define its role, instructions, provider, model, access, and widget basics.
+3. Choose the narrowest capability mode that covers its job, then save.
 
-### 2. Create and assign the main workflow
+The Agent can already handle ordinary conversation. A canvas is not required.
 
-1. Open **Agentic Chatbot > Build > Workflows** and create a workflow.
-2. Assign the bot you just created. This establishes the workflow's model, knowledge, and capability boundary.
-3. Save the workflow and open its visual editor.
+### 2. Connect only what the Agent needs
 
-The bot may keep other draft or standby workflows, but only one published workflow can be its live main workflow.
+- Add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md) for grounded answers.
+- Approve [Data Resources](DATA_RESOURCES.md) when a bounded Playbook must query
+  live application records.
+- Publish exact [API Connector](API_CONNECTORS.md) operations before selecting
+  them in a Capability step.
+- To start from an API description, open **Connect > API Connectors**, choose
+  **Import integration**, and follow [Integration Studio](INTEGRATION_STUDIO.md).
+  Its optional AI step reuses an existing centrally configured provider key;
+  the imported service credential remains a separate encrypted Connector value.
+- Keep writes behind Approval and the required confirmation and idempotency
+  policy.
 
-### 3. Build with a recipe or Simple Builder
+### 3. Add an optional Playbook
 
-1. Choose **Workflow recipes** for a guided starting point, or add the focused steps shown by **Simple Builder**.
-2. Keep the first flow small: start, ask or route if needed, answer or act, then finish.
-3. Save the draft. Draft changes do not change live chat.
+Create a Playbook only for a bounded multi-step process. Start with **AI Draft**
+or add one of the twelve Playbook steps manually. Validate and publish the
+Playbook, then explicitly assign it to the Agent. A draft or legacy live
+workflow pointer grants no authority.
 
-You do not need Advanced nodes for the normal path.
+### 4. Publish, test, and activate a release candidate
 
-### 4. Connect only the modules this workflow needs
+Save the Agent and choose **Publish candidate**. Publication snapshots the Agent
+behavior, model policy, knowledge, capability mode, budgets, and exact assigned
+Playbook deployments into one hash-verified contract without changing live
+traffic. Run **Test release candidate** with a representative request. The test
+uses the real persistent chat/runtime path and real reads, but the capability
+gateway blocks productive writes. Only after that exact deployment hash and
+saved Agent fingerprint have passing durable evidence can **Make candidate
+live** atomically replace the previous live deployment. Later edits require a
+new candidate and test.
 
-- For approved documents, add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md), then use a Knowledge Answer step.
-- For live application records, define the maximum policy in [Data Resources](DATA_RESOURCES.md), approve or narrow it on the bot, then choose that resource in a Data Answer step. The inspector shows the resource contract and its allowed information and filters.
-- For an external service, create the saved connection and versioned operation in [API Connectors](API_CONNECTORS.md), then select that API Operation in the workflow. The node asks only for the operation's allowed inputs.
-- For a write, enable the required bot ability and use an approved action or API Operation. Keep confirmation enabled unless the published contract explicitly proves it is unnecessary.
+### 5. Verify the live Agent
 
-Do not configure the same module a second time in the workflow. The workflow selects from the bot-approved Knowledge, Data Resource, API Operation, and Capability contracts.
+1. Confirm the active Agent deployment hash and attached capabilities.
+2. Run normal, unexpected, and ambiguous wording through **Test live Agent** or Live Preview.
+3. Check a grounded knowledge answer when sources are attached.
+4. If a Playbook is assigned, test its branch, input waitpoint, approval, and
+   result path.
+5. Confirm usage and any Playbook execution or write evidence in Observe.
 
-### 5. Test the draft
+## 8. Advanced: Playbook Building
 
-1. Use **Test** in the workflow editor and run the normal conversation path.
-2. Add **Saved tests** for routes and answers that must keep working.
-3. Open **Review**. Every blocker links directly to its step, bot setup, node picker, or Simple Builder location.
-4. For a write path, verify that the bot asks for confirmation before the change is executed.
-
-### 6. Review and publish
-
-1. Select **Publish**.
-2. In **Review before publishing**, confirm what the bot can and cannot do, which data it reads, which writes it can perform, and when confirmation is required.
-3. Add a publish note when the workflow can change data or call a mutating service.
-4. Resolve every blocker, then publish the draft.
-
-Publishing creates a versioned deployment. It does not silently make another draft live.
-
-### 7. Make the deployment live
-
-Return to the workflow page or Workflows list and choose **Make deployment live**. If another workflow is live for this bot, the action replaces it so the bot still has exactly one live main workflow.
-
-### 8. Verify the live bot
-
-1. Open the bot **Overview** and confirm the expected **Live Deployment**, version/hash, capabilities, writes, confirmation policy, and health summary.
-2. Run one real conversation through **Live Preview**, the widget, or your staging frontend.
-3. Confirm the execution in **Workflow Runs** and inspect any saved submission or external side effect.
-4. Use **Stop live deployment** immediately if the live behavior does not match the tested draft.
-
-## 8. Advanced: Custom Workflow Building
-
-Use these paths after the golden path works:
-
-- **AI Draft** can generate a starting draft from a plain-language description; review and test it like any other draft.
-- **Advanced nodes** expose expert workflow behavior without changing the main workflow/deployment model.
-- Custom actions, raw HTTP, imports, subworkflows, retries, and detailed schema authoring belong in [Agentic Workflows](AGENTIC_WORKFLOWS.md), [Smart Workflow Builder](SMART_WORKFLOW_BUILDER.md), and [Workflow JSON Schema](WORKFLOW_JSON_SCHEMA.md).
-
-Advanced authoring still uses the same bot approvals, Review checks, Publish Review, versioned deployment, and single-live-workflow rule.
+Use [Agents and Playbooks](AGENTIC_WORKFLOWS.md),
+[Playbook Builder](PLAYBOOK_BUILDER.md), and
+[Playbook JSON Schema](WORKFLOW_JSON_SCHEMA.md) after the simple Agent path
+works. Raw HTTP, saved API operations, transforms, bounded iteration, and
+Sub-Playbooks remain advanced process features.
 
 ## 9. Embed Widget
 
 For a page served by the same Laravel app, use the package component:
 
-1. Open `Bots` in Filament.
-2. Confirm that the bot is active and has one verified live workflow deployment, then run the `Use as public widget` row action.
+1. Open **Agentic Chatbot > Build > Agents** in Filament.
+2. Confirm that the Agent is active and has one verified live Agent deployment, then run the `Use as public widget` row action.
 3. Add the component to your Blade layout or page.
 
 ```blade
 <x-filament-agentic-chatbot::chat-widget />
 ```
 
-Every candidate must be active and backed by a hash-verified live workflow deployment. The component resolves the uniquely marked public-widget bot, then falls back to `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`, then the first runnable bot. An explicit, configured, marked, or fallback bot that is not runnable is rejected rather than activated or exposed implicitly.
+Every candidate must be active and backed by a hash-verified Agent deployment. The component resolves the uniquely marked public-widget Agent, then falls back to `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`, then the first runnable Agent. An explicit, configured, marked, or fallback Agent that is not runnable is rejected rather than activated or exposed implicitly.
 
-For external websites or pages where you want a fixed bot, use the `Embed Snippet` action on the bot edit page.
+For external websites or pages where you want a fixed Agent, use the `Embed Snippet` action on the Agent edit page.
 
 Example:
 
@@ -299,20 +307,22 @@ Example:
 
 The script path is controlled by `widget.script_route`; update deployed snippets when you change it. The package registers that configured path only.
 
-The generated snippet contains no token. The loader verifies the browser origin against the bot's Allowed Domains, obtains short-lived access from the bootstrap endpoint, and renews it automatically. In production, an empty Allowed Domains list blocks bootstrap even when a permissive compatibility flag is present.
+The generated snippet contains no token. The loader verifies the browser origin against the Agent's Allowed Domains, obtains short-lived access from the bootstrap endpoint, and renews it automatically. In production, an empty Allowed Domains list blocks bootstrap even when a permissive compatibility flag is present.
 
-After the first real conversations land, open the bot `Analytics` page to review feedback, citation coverage, and potential knowledge gaps.
+After the first real conversations land, open the Agent's **Analytics** page to review feedback and citation coverage. The **Knowledge** tab contains only high-confidence cases where a completed production turn durably recorded a Knowledge search, returned no source evidence, and used the safe capability fallback. It does not classify every uncited answer as a gap.
+
+For each verified gap: review the original conversation, start work, create its Published Agent regression, update and ingest the relevant Knowledge Source, run the linked test against the current deployment, and then choose **Verify resolved**. The final action fails closed until the selected source has an active generation and the exact linked regression is currently passing.
 
 ## 10. Advanced: Server API And Channels
 
-For server API clients, Telegram bots, or Slack apps, create a Bot Access Token in Filament, set a channel label for reporting, and call the JSON complete endpoint:
+For server API clients or Telegram connections, create one Agent Access Token per integration in Filament and set the matching channel label for isolated reporting, rate limits, and budgets. Slack, WhatsApp Cloud API, and Mailgun Email are built in but intentionally unavailable by default until their separate real-provider acceptance is complete. Server clients call the JSON complete endpoint:
 
 ```http
 POST /api/filament-agentic-chatbot/chat/{botPublicId}/complete
 Authorization: Bearer fac_generated_token
 ```
 
-See [API Integrations](API_INTEGRATIONS.md) for the request/response contract, common error codes, and a Laravel Telegram webhook example.
+The package-owned channel drivers use the same Agent runtime and the Agent's existing AI provider credential; do not create another AI key for each channel. Open **Connect > Channels**, choose an enabled provider, complete its guided credentials, save, copy the generated webhook URL, run **Diagnostics**, and perform one real inbound/outbound staging test. See [Channel Integrations](CHANNELS.md) for release status, provider setup, webhook verification, private inbound attachments, delivery statuses, and queue requirements. See [API Integrations](API_INTEGRATIONS.md) for the server request/response contract and common error codes.
 
 Run the enterprise smoke test after migrations:
 
@@ -328,10 +338,11 @@ Use this before publishing:
 2. `php artisan migrate` succeeds.
 3. `php artisan filament-agentic-chatbot:doctor` has no `FAIL`.
 4. pgvector installs show `ext-pdo_pgsql` enabled and `CREATE EXTENSION vector` available, or ChromaDB health is green.
-5. Any source used by the workflow ingests to `completed`.
-6. The main workflow draft tests cleanly, publishes, and is made live.
-7. The widget answers a test prompt through that live workflow.
-8. The execution appears in `Workflow Runs`, and any `store_submission` output appears in `Submissions`.
+5. Any source used by the Agent ingests to `completed`.
+6. The Agent publishes one immutable candidate without changing live traffic.
+7. **Test release candidate** records passing durable evidence for the exact deployment hash and saved Agent fingerprint before **Make candidate live** activates it.
+8. The widget answers ordinary and unexpected wording through that verified live Agent deployment.
+9. Optional Playbook execution appears in `Playbook Runs`, and any approved `store_submission` output appears in `Submissions`.
 
 ### One-Command Smoke Script (PowerShell)
 
@@ -364,9 +375,10 @@ powershell -ExecutionPolicy Bypass -File scripts/smoke/smoke-install.ps1 `
 ## Common First-Run Issues
 
 - `Source pending`: queue worker not running.
-- `This domain is not allowed`: missing bot `allowed_domains`, or host mismatch. Use host entries (`app.example.com`, `*.example.com`). `localhost:8000` and full URLs are accepted and normalized to host.
+- `This domain is not allowed`: missing Agent `allowed_domains`, or host mismatch. Use host entries (`app.example.com`, `*.example.com`). `localhost:8000` and full URLs are accepted and normalized to host.
 - `Please sign in to access this chat area`: area is non-public and current user/guard is not authorized, or session auth context is disabled. Keep `AGENTIC_CHATBOT_API_INCLUDE_SESSION_AUTH_CONTEXT=true` for `member/admin` areas.
 - `Failed to clone the git@github.com:...` during `composer require`: GitHub VCS fallback hit SSH. For private repos, add a GitHub token (`composer config --global --auth github-oauth.github.com ...`) or pass `-GitHubToken` in the smoke script.
+- `Authentication required (...composer.sh)`: use the buyer email and Anystack license key shown after purchase. When activation is enabled, include the displayed fingerprint after the license key, separated by a colon.
 - `composer-runtime-api ^2.2` during `composer create-project` or `composer require`: your Composer is too old for Laravel 12. Update to Composer 2.2+ and rerun the install.
 - `Filament panel provider not found`: `filament:install --panels` did not generate the admin panel provider on this host. Run `php artisan make:filament-panel admin` and continue.
 - `Could not reach chroma ... /api/v2/heartbeat`: start Chroma and verify `AGENTIC_CHATBOT_CHROMA_URL`.
