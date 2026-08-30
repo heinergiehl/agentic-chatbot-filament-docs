@@ -2,6 +2,36 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Guardrail, result, and channel-delivery hardening
+
+Run the pending package migrations before restarting workers. The additive
+`2026_08_30_000005_add_channel_delivery_progress.php` migration adds durable
+reply-handoff and Telegram chunk journals to channel delivery events. Reply
+snapshots are encrypted; preserve the application key while deliveries are
+pending. The migration does not infer receipts for historical sends. A possibly
+dispatched message without trustworthy
+progress remains unknown and must be reconciled with the provider, not resent
+blindly. Provider acceptance is not a delivery/read receipt.
+
+Do not drop the new column to roll back after recording delivery progress:
+the down migration refuses to discard that evidence. Restore a verified
+pre-migration backup when rollback is necessary. Use an asynchronous production
+queue; a synchronous queue returns retryable webhook backpressure when work
+must wait instead of acknowledging a retry it cannot schedule.
+
+Guardrail records now require explicit input/output assignment on the Agent.
+Publish, test, and activate a replacement Agent release to enable or change
+them. Existing unassigned releases retain baseline safety; enabling a policy in
+the catalog does not silently apply it globally. Disabling/deleting a policy
+does not change already-pinned live releases. Move legacy Rules JSON into the
+supported structured checks before publishing an assigned policy.
+
+New Playbook runs capture signed result-field evidence. Result templates select
+canonical capability fields rather than exposing literal internal prose; old
+checkpoints without evidence retain the safe status fallback. Unknown costs
+remain unpriced, not zero. Complete the manual candidate/live, channel retry,
+and appearance checks described in the public guides before customer rollout.
+
 ## Agent-first runtime cutover
 
 Every chat now requires exactly one hash-verified live Agent deployment.
@@ -10,31 +40,120 @@ Playbooks are deployment-pinned process tools and never own the top-level turn.
 Former workflow-first routing, live-workflow pointers, runtime modes, starter
 workflows, and request-time fallback paths are removed.
 
-Before opening chat traffic:
+The supported release baseline is `v0.16.1`; rehearse this procedure on a
+restored copy before the production maintenance window. Keep public chat,
+channel/webhook ingress, Scheduler and production queue workers stopped until
+the final checks pass. Drain or explicitly reconcile outstanding work before
+the backup. Retain restricted operator access for the release steps below.
 
-1. Back up the database.
-2. Open every active Agent and assign only its approved knowledge, capabilities,
-   and optional published Playbooks, then choose **Publish candidate** without
-   changing live traffic.
-3. Run **Test release candidate** with representative conversation, Knowledge,
-   Playbook, and capability paths. Candidate testing uses the persistent runtime
-   but blocks productive writes.
-4. Use **Make candidate live** only after the exact deployment hash and saved
-   Agent fingerprint have passing durable evidence, then verify one natural live
-   conversation and its run/trace.
-5. During the maintenance window, clear any legacy
-   `active_workflow_deployment_id` only after the replacement Agent deployment
-   is verified, then run `php artisan migrate`.
-6. Run `php artisan filament-agentic-chatbot:doctor` and
-   `php artisan agent-graph:doctor` before reopening traffic.
+1. Take and verify a restorable database backup, preserve the matching old
+   package and host lockfile/config, and retain any externally stored Knowledge
+   files. Inventory unresolved runs and all legacy
+   `active_workflow_deployment_id` values, including inactive or soft-deleted
+   Agents. No migration decides which customer data or old live behavior may be
+   discarded.
+2. Install the new package and its required dependencies, merge the config/API
+   changes below, and run `php artisan migrate --force` in the closed maintenance
+   window **before** trying to publish a candidate. Laravel commits completed
+   migrations individually. Earlier cutover checks still apply; resolve any
+   earlier failure before proceeding, without marking migrations as completed
+   or ignoring their guards.
+3. If legacy live pointers remain, the cutover migration,
+   `2026_08_30_000004_remove_legacy_workflow_runtime_state.php`, deliberately
+   stops with **Agent-first cutover blocked**. This is a safe checkpoint, not a
+   completed upgrade. The preceding migrations have already installed the
+   candidate pointer, Agent deployment/ChatTurn bindings, immutable Knowledge
+   generation fields and signed candidate-quality evidence fields. Confirm
+   those preceding entries are completed with `php artisan migrate:status`.
+   Keep traffic and production workers closed. If no legacy pointer remains,
+   this cutover migration completes on the first run; continue with Agent release
+   verification anyway.
+4. Rebuild Knowledge sources whose former indexes have no immutable generation
+   identity, and review the migrated capability/Playbook contracts. Open each
+   Agent that will serve traffic, assign only approved Knowledge, capabilities
+   and optional published Playbooks, then choose **Publish candidate**. Run
+   **Test release candidate** with representative paths; it uses the persistent
+   runtime while blocking productive writes. Run any required candidate-quality
+   comparisons again; unsigned historical runs are not passing release evidence.
+5. Use **Make candidate live** only after the exact deployment hash, current
+   authoring fingerprint and required capability/quality coverage pass the
+   existing release gates. Verify a controlled live conversation and its
+   run/trace while ingress remains closed. For each old pointer, record the
+   verified replacement and only then clear that exact Agent's legacy pointer
+   using the host's reviewed data-change procedure. Do not bulk-clear pointers
+   or fabricate test evidence to unblock the migration. For inactive/deleted
+   Agents, explicitly review restoration or retirement under the host's data
+   policy before clearing their pointers.
+6. Run `php artisan migrate --force` again. The final cutover now removes the
+   retired pointer column, obsolete workflow `is_active` flag, old
+   entry-clarification/work-event tables and continuation-clarification rows.
+   The subsequent channel-delivery progress migration then completes normally.
+   Verify migration status, then run
+   `php artisan filament-agentic-chatbot:doctor` and
+   `php artisan agent-graph:doctor`. Reopen traffic and resume workers/Scheduler
+   only after all required checks pass.
 
-`2026_08_24_000001_remove_legacy_workflow_runtime_state.php` blocks instead of
-guessing when a legacy live-workflow pointer remains. It then removes that
-column, the obsolete workflow `is_active` flag, old entry-clarification rows,
-and their table. Rollback means restoring the pre-cutover database and package
-together; productive workflow-first code is not recreated.
+The retained legacy column during this checkpoint is data awaiting an operator
+decision, **not a productive legacy runtime or fallback**. The new runtime still
+requires a verified Agent deployment. A stop at any point keeps traffic closed;
+rollback means restoring the verified pre-cutover database, matching old package
+and host configuration together, not `migrate:rollback`. The final destructive
+migration explicitly refuses an in-place `down()`.
+
+The final cutover was moved from its unreleased `2026_08_24_000001_...` filename
+so it cannot run ahead of its own candidate-release prerequisites. That old file
+was not present in `v0.16.1` or `v0.17.0-rc.1`/`rc.2`. If testing an intermediate
+unreleased checkout, inspect host-published migration copies as well: back up
+and remove only an obsolete, **unapplied** copy of that package migration before
+running the new release. Do not rewrite completed migration history. A database
+that already completed the old cutover needs no recreated legacy state.
 
 Public-widget selection now has one stored key: `runtime_config.public_widget.entrypoint`. The irreversible `2026_08_23_000001_cut_over_public_widget_entrypoint.php` migration moves the former `widget.public_entrypoint` flag and removes that alias before productive code starts. Conflicting old and canonical values block the migration instead of choosing one silently.
+
+### Supported-upgrade smoke and recovery evidence
+
+`scripts/smoke/smoke-upgrade.sh` provisions the exact `v0.16.1` baseline using
+that local tag's own installer (`vendor:publish`, `migrate`, Doctor). It pins the
+tag commit and checks the installed baseline reference; it does not call the
+current package installer against a version that never had that command. Keep
+the local baseline tag available. Another baseline needs an explicitly reviewed
+version-specific contract, not an arbitrary Composer range.
+
+For artifact mode, the requested version must match the metadata of the selected
+ZIP. The existing release verifier checks that ZIP and its sidecar first. The
+smoke then copies only those verified bytes into a private single-archive
+repository; other ZIPs beside the caller's file are never offered to Composer.
+SHA256 checks bind both upgrade attempts to that copy. Before application hooks
+or migrations, the installed package must match its expected version, exact
+local dist URL/SHA1 in both Composer lock and installed metadata, and the full
+archive file inventory. Changed, missing or additional installed files block
+the smoke. Artifact installation initially disables Composer scripts; discovery
+runs only after this verification. Checkout mode does not claim this immutable
+release-artifact proof.
+
+The smoke requires PostgreSQL client tools (`psql`, `pg_dump`, `pg_restore`,
+`createdb`) in addition to PHP, Composer and Git. It backs up its newly created
+baseline database and copies the matching baseline app/package before the
+upgrade. Recovery restores that dump into a separately named **new** throwaway
+database, verifies a synthetic data marker and exact migration history, binds
+the copied baseline app to that database, and runs Doctor before re-applying
+the same release artifact. An existing database is never cleaned or dropped;
+backup/restore or verification errors stop the smoke immediately.
+
+The pinned baseline installer protects its initial PostgreSQL target by issuing
+an unconditional `CREATE DATABASE` and stopping on failure before package
+migrations. The wrapper's later database-name check protects backup/restore
+selection; it is not a pre-installation guard. The offline fixture separately
+checks an already-existing baseline target and post-install configuration drift.
+
+Keep the private run directory private: its app copies include generated config
+and database connection settings. `--cleanup-on-success` removes only that run's
+apps/backups; both generated databases are retained and named in the output.
+This gate covers baseline schema installation, forward upgrade and synthetic
+backup recovery. Customer-specific live pointers, unresolved work, external
+Knowledge files and live providers still need the staging rehearsal above.
+An offline process-contract test does not replace the real PostgreSQL/exact-
+artifact release job.
 
 ## Public API cutover
 
@@ -106,8 +225,10 @@ The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists
 When upgrading, always:
 
 1. Read the [CHANGELOG.md](CHANGELOG.md) for breaking changes.
-2. Run `php artisan filament-agentic-chatbot:doctor` to verify your environment.
-3. Run `php artisan migrate` to apply any new migrations.
+2. Follow the backup and maintenance procedure above before changing the package
+   or database; preserve the old package/configuration for recovery.
+3. Run `php artisan migrate` and resolve its documented checkpoints, then run
+   `php artisan filament-agentic-chatbot:doctor` to verify the upgraded environment.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
 
@@ -126,7 +247,7 @@ Scheduler and an asynchronous queue worker. Automation deliberately reuses the
 existing Agent/provider credential chain; do not create a second API key for
 the scheduler. Start with both commands in `--dry-run`, enable cadence on one
 non-blocking Published Agent regression, and verify its persisted run before
-enabling more scenarios. See [Quality Operations](docs/QUALITY_OPERATIONS.md).
+enabling more scenarios. See [Quality Operations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUALITY_OPERATIONS.md).
 
 ---
 
@@ -142,7 +263,7 @@ LLM. Analytics starts empty and becomes authoritative as verified events arrive.
 New human-handoff requests record a handoff outcome automatically. Hosts may
 record CRM, commerce, scheduling, ticketing, or other verified results through
 the public `RecordsConversationOutcomes` contract documented in
-[Public API](docs/PUBLIC_API.md#evidence-backed-business-outcomes). Use a stable
+[Public API](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PUBLIC_API.md#evidence-backed-business-outcomes). Use a stable
 source idempotency key and never pass visitor- or model-authored success claims
 through that trusted boundary.
 
@@ -170,7 +291,7 @@ Hosts that register custom Kits must implement and tag the public
 `SolutionKitProvider` contract. Definitions are strict: every Playbook needs an
 active blocking current-draft test, write-capable Kits require explicit
 installation approval, credentials are forbidden, and full workflow validation
-runs before mutation. See [Solution Kits](docs/SOLUTION_KITS.md).
+runs before mutation. See [Solution Kits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SOLUTION_KITS.md).
 
 ---
 
@@ -190,7 +311,7 @@ and publish an immutable revision explicitly.
 The optional metadata assistant uses an already configured central AI provider
 key; do not add a second wizard-specific secret store. The imported service's
 credential remains a separate encrypted Connector value. See [Integration
-Studio](docs/INTEGRATION_STUDIO.md).
+Studio](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/INTEGRATION_STUDIO.md).
 
 ---
 
@@ -271,7 +392,7 @@ durable-turn, storage, and budget path. Re-run **Diagnostics** and test one real
 file through each enabled provider. WhatsApp uses Meta App Secret signatures and
 a separate Verify Token. Mailtrap uses two provider-issued webhook signing
 secrets; Mailgun uses its Webhook Signing Key, not its API key.
-See [Channel Integrations](docs/CHANNELS.md).
+See [Channel Integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md).
 
 ---
 
@@ -421,7 +542,7 @@ php artisan filament-agentic-chatbot:setup-google-calendar-connector \
   --prompt-secrets
 ```
 
-The command creates or updates the OAuth connector and publishes the canonical confirmation-required `create_google_calendar_event` operation. Before customer traffic, verify a read success, confirmed write, provider error, partial result, owner-scope denial, stale pin, `unknown` write, and operator reconciliation path in staging. See [API Connectors](docs/API_CONNECTORS.md).
+The command creates or updates the OAuth connector and publishes the canonical confirmation-required `create_google_calendar_event` operation. Before customer traffic, verify a read success, confirmed write, provider error, partial result, owner-scope denial, stale pin, `unknown` write, and operator reconciliation path in staging. See [API Connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md).
 
 ### Calibrated retrieval strategy and versioned indexes
 
@@ -488,7 +609,7 @@ Data Resource identity scopes are now fail-closed and request-attested. Remove `
 
 A new migration is required. `2026_07_09_000001_create_bot_chat_turns_table.php` adds the durable chat-turn ledger used for per-conversation serialization, workflow/deployment pinning, request idempotency, unknown-outcome protection, and exact JSON/SSE response replay. Run `php artisan migrate` before directing chat traffic to the upgraded application; the new runtime intentionally fails rather than silently executing without its ledger.
 
-The follow-up migration `2026_07_09_000002_add_reconciliation_to_bot_chat_turns_table.php` adds explicit operator reconciliation fields for installations that already ran an earlier development build of the ledger migration. If the doctor reports an unknown or expired chat turn, verify its external outcome first, then use `php artisan filament-agentic-chatbot:reconcile-chat-turn <id> --force --reason="..." --operator="..."`. The command only abandons and unlocks the turn; it never retries it. See [Operations](docs/OPERATIONS.md#durable-chat-turn-reconciliation).
+The follow-up migration `2026_07_09_000002_add_reconciliation_to_bot_chat_turns_table.php` adds explicit operator reconciliation fields for installations that already ran an earlier development build of the ledger migration. If the doctor reports an unknown or expired chat turn, verify its external outcome first, then use `php artisan filament-agentic-chatbot:reconcile-chat-turn <id> --force --reason="..." --operator="..."`. The command only abandons and unlocks the turn; it never retries it. See [Operations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#durable-chat-turn-reconciliation).
 
 `2026_07_09_000003_encrypt_api_connector_default_headers.php` encrypts existing API Connector default headers with the Laravel `APP_KEY`; back up the database and confirm the production key before migrating. Its earlier named-operation snapshot behavior is superseded by the canonical operation cutover above: current productive execution uses exact immutable revision, full-contract, input-schema, and environment pins and re-resolves the revision at dispatch. Republish a workflow intentionally after publishing a replacement operation revision; connector credentials and other connector-level secrets remain live encrypted configuration.
 

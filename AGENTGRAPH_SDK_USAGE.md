@@ -67,6 +67,16 @@ and policy before AgentGraph receives it. Raw user text is preserved as input
 evidence but cannot silently become an authorized write or arbitrary graph
 state.
 
+Before dispatch, the package atomically correlates the new durable Chat Turn,
+current user message, Playbook run, and immutable deployment references without
+changing the projected run status. AgentGraph's accepted resume payload carries
+the exact active-turn identity in `runtime.recovery.pending_resume`; the next
+checkpoint carries the same identity in state metadata and runtime variables.
+A package-database correlation by itself is not dispatch evidence. Recovery
+therefore distinguishes a crash before SDK acceptance (safe retry) from a crash
+after atomic acceptance (unknown until AgentGraph supplies a definitive state
+or an operator reconciles it).
+
 ## Capability boundary
 
 Graph nodes never dispatch connectors, actions, Data Resources, HTTP calls, or
@@ -81,12 +91,19 @@ authority.
 - Resume, cancel, delay, and recovery use the installed SDK's public atomic
   transitions; the plugin does not perform a second best-effort interrupt
   mutation.
+- Package projections never pre-claim `running` or synthesize a graph
+  `failed`, `delayed`, or `cancelled` transition. They project only a verified
+  SDK checkpoint/result using compare-and-swap semantics.
 - A run resumes from its immutable snapshot and exact deployment hash, never
   from current authoring data.
 - Unknown dispatch outcomes remain blocked until reconciled. Recovery cannot
   convert uncertainty into an automatic retry of a write.
 - Parent cancellation and timeout cascade through supported Sub-Playbook
   ancestry; a child cannot productively outlive its parent.
+- A child semantic result of `failed`, `unknown`, `cancelled`, or `canceled`
+  fails the parent node. Only an explicitly successful child contract can
+  reach the parent success edge; child interrupts and delays continue to bubble
+  through the SDK's structured-concurrency contract.
 
 After changing the SDK constraint or any adapter boundary, run the public API
 compatibility test, the targeted interrupted-resume/confirmation tests, and

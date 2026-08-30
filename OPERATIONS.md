@@ -194,13 +194,17 @@ Every provider call creates an atomic `AiUsageCall` reservation before transport
 For conversational calls, preflight accounts for developer instructions,
 retained history, the current message, tool schemas, and a conservative encoded
 size bound for local attachments. Oldest history is pruned until the effective
-input/context limit is met. Remote URL or provider-ID attachments whose token
-footprint cannot be known fail closed. The provider-profile output maximum is
-sent as the real per-round generation cap. Tool-enabled calls reserve the
-verified worst-case context/output envelope for every permitted model step;
-an unknown context window cannot start a multi-step call. This conservative
-reservation is intentional: it keeps monthly token and cost limits hard even
-when the provider performs several tool rounds internally.
+input/context limit is met. Internal Playbook messages are filtered before the
+configured public history limit, and pruning removes oldest complete visible
+user/assistant turns rather than leaving an orphaned half-turn. The database
+scan remains bounded even when a conversation contains many internal messages.
+Remote URL or provider-ID attachments whose token footprint cannot be known
+fail closed. The provider-profile output maximum is sent as the real per-round
+generation cap. Tool-enabled calls reserve the verified worst-case
+context/output envelope for every permitted model step; an unknown context
+window cannot start a multi-step call. This conservative reservation is
+intentional: it keeps monthly token and cost limits hard even when the provider
+performs several tool rounds internally.
 
 Provider usage is normalized once into disjoint input, output, reasoning,
 cache-read, and cache-write buckets. Dashboard and report token totals include
@@ -245,6 +249,19 @@ the migration stops before changing their state or dropping the previous
 guard. Reconcile or cancel those runs through the AgentGraph-backed runtime,
 then rerun the migration. Do not repair them with direct `workflow_runs` SQL;
 that table is an operational projection, not the graph state authority.
+
+For a stale or divergent projection, first create and archive the signed,
+read-only inventory, verify it, and only then apply an authorized repair:
+
+```bash
+php artisan agentic-chatbot:agent-graph-projection-dry-run --actor=<operator> --output=<report.json>
+php artisan agentic-chatbot:agent-graph-projection-dry-run --verify=<report.json>
+php artisan agentic-chatbot:agent-graph-projection-repair <report.json> --actor=<operator>
+```
+
+Use the optional `--workflow-run` selector to narrow repair scope. The repair
+command accepts only rows classified and signed as repair-eligible; there is no
+supported `WorkflowRun::markStale()` or direct status-update fallback.
 
 ## Delayed Workflow Resume Recovery
 
@@ -342,7 +359,7 @@ Then reconcile the affected active conversations before allowing side effects. I
 
 ### Durable Chat-Turn Reconciliation
 
-The doctor check `Chat turn reconciliation` reports durable turn IDs whose result is `unknown` or whose active execution lease expired. These conversations remain locked intentionally: sending the same request with a new ID is not a safe substitute for reconciliation and could duplicate an external write.
+The doctor check `Chat turn reconciliation` reports durable turn IDs whose result is `unknown` or whose active execution lease expired. Expiry before any exact current-turn AgentGraph checkpoint or atomically accepted resume is persisted is classified as pre-dispatch and fails retryably. Once AgentGraph has accepted that exact turn, expiry is post-dispatch uncertainty and remains locked. A database-only turn/run correlation does not by itself prove dispatch, while an invalid existing AgentGraph binding fails closed instead of being downgraded to retryable. Sending the same request with a new ID is not a safe substitute for reconciliation and could duplicate an external write.
 
 Before unlocking a conversation, an operator must inspect the external provider, Playbook run, effect ledger, and application logs out of band. An expired lease alone does not prove that the original process stopped; verify that separately. Once the operator has established that the turn must be abandoned, run:
 
@@ -523,6 +540,11 @@ operational-quality regressions. Its redacted JSON report is written to
 durations, named scenario results, quality thresholds, Wilson 95% intervals,
 failed test identifiers, and exact rerun commands. It does not store PHPUnit
 output, prompts, payloads, credentials, or model responses.
+
+After applying the Candidate Quality evidence migration, rerun every
+release-gated Candidate Quality scenario before activation. Existing rows have
+no integrity signature and are intentionally ineligible; the same applies after
+rotating `APP_KEY`. Do not backfill or copy signatures between environments.
 
 Protected tags additionally require the complete native structured-tools, prompt-JSON tools, and restricted/no-tools provider matrix, live provider evals for the two supported profiles, capability rejection for the restricted profile, PostgreSQL fresh-install/upgrade/rollback evidence, and the 1,000-iteration soak. See [Runtime Release Assurance](RELEASE_ASSURANCE.md) for the environment contract and release decision.
 

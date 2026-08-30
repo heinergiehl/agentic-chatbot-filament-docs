@@ -76,10 +76,15 @@ server-attested admin-test conversation. A passing evidence record binds the
 candidate ID and hash, productive authoring fingerprint, committed Chat Turn,
 operator, and evidence hash. Productive writes remain blocked by
 `CapabilityExecutionGateway` during this test. Activation locks the Agent row,
-compares both the expected candidate and previous live deployment, revalidates
-the immutable artifact, current authoring fingerprint, evidence hash, and
-durable Chat Turn, then changes the live pointer atomically. No direct
-productive publish-and-activate path exists.
+compares both the expected candidate and previous live deployment, then locks
+the candidate plus every referenced Playbook, Data Resource, Connector-
+operation, Connector-environment, Knowledge-source, and Knowledge-generation
+head before recomputing the current authoring fingerprint. It revalidates the
+immutable artifact, release-test evidence, and
+durable Chat Turn. Required Candidate Quality runs and every ordered quality
+turn are HMAC-attested, locked, and re-bound to their exact terminal durable
+Chat Turns and server-attested test conversations before the live pointer is
+changed atomically. No direct productive publish-and-activate path exists.
 
 `AgentDeploymentRepository` resolves and verifies the deployment selected for
 the durable turn. A missing, foreign, mutable, or hash-invalid deployment fails
@@ -152,14 +157,24 @@ native batch owning its list input inside that call and the published
 input policies are Playbook-only and make an operation ineligible as a direct
 tool.
 
-Calls remain separate evidence records with redacted grounded and canonical
-inputs. Ambiguous resolver candidates produce a deterministic clarification,
-not a failed-lookup answer. Provider partial results and explicit call failures
-cannot be presented as complete evidence. The evidence guard also prevents the
-model from claiming that it searched a connected source when no such execution
-trace exists. Each model-visible result is bounded to 16 KB and all Connector
-results in one turn share a 48 KB budget; truncation becomes incomplete evidence
-rather than a silently shortened success.
+Calls remain separate evidence records with an exact evidence identity,
+capability identity, redacted requested and grounded input provenance, and the
+payload actually delivered to the model. Successful and replayed execution
+traces must bind back to that same record; several calls cannot be justified by
+one flattened union of unrelated values. A missing call evidence identity is
+incomplete even when capability names or redacted inputs match. The response
+guard preserves payload
+record boundaries and checks field and entity co-occurrence, including fan-out
+and native-batch answers, before accepting factual relations in model prose.
+This is a deterministic anti-misattribution guard, not a universal proof of
+natural-language truth. Ambiguous resolver candidates produce a deterministic
+clarification, not a failed-lookup answer. Provider partial results, missing
+records, and explicit call failures cannot be presented as complete evidence.
+The evidence guard also prevents the model from claiming that it searched a
+connected source when no such execution trace exists. Each model-visible
+result is bounded to 16 KB and all Connector results in one turn share a 48 KB
+budget; truncation becomes incomplete evidence rather than a silently
+shortened success.
 
 When different direct-read capabilities compete for the same literal visitor
 evidence, a candidate-free rejection is treated as route ambiguity rather than
@@ -218,6 +233,26 @@ message only as proposed input to the current typed waitpoint. A Playbook
 result is projected back through `AgentPlaybookResultProjector`; the graph does
 not become a second general-chat owner.
 
+`AgentPlaybookOutcomePresenter` is the shared, provider-free public outcome
+projection for normal turns, terminal recovery, and delayed delivery.
+`WorkflowResultEvidence` captures bounded, HMAC-attested capability receipts
+inside the authoritative graph task after canonical redaction. Result field
+references select those receipts; `AgentPlaybookResultComposer` renders only
+their verified data, including mapped child results and For Each iterations.
+This is presentation evidence, not a second capability ledger or execution
+authority. It is bound to the conversation, run, exact Agent/Playbook releases,
+graph contract and terminal turn. Failed steps, truncated evidence and unknown
+outcomes cannot be hidden by a later success. A pending operator-review receipt
+can only be replaced by that same review's authoritative outcome.
+
+A Result step's literal internal prose, mutable inputs, headers and transport
+metadata cannot supply visitor text, sources, cards, buttons, or visibility.
+Unverifiable evidence falls back to the existing public status answer; process
+completion alone does not prove that an external write succeeded. Unknown
+outcomes remain explicitly uncertain and non-retryable. The delayed-delivery ledger still commits its message and
+delivery completion atomically before emitting an event. Presentation never
+redispatches a graph or changes its canonical state.
+
 At most one open Playbook run (`running`, `halted`, or `delayed`) may exist for
 a conversation, enforced both transactionally and by a database constraint.
 Continuation and recovery resolve the historical Agent deployment recorded on
@@ -240,6 +275,16 @@ AgentGraph owns checkpoint, interrupt, resume, delay, task, structured child
 execution, and cancellation state. `WorkflowRun` and pending-interaction rows
 are operational projections and indexes. Recovery verifies graph, thread, run,
 deployment, checkpoint, and interrupt identity before projecting or resuming.
+Before an interactive resume, the new durable Chat Turn is correlated to the
+run without changing its projected execution status. Only the exact current
+turn identity in an AgentGraph checkpoint or the SDK's atomic
+`pending_resume` acceptance record counts as persisted dispatch evidence. A
+database-only correlation written before SDK acceptance remains safely
+retryable; an accepted dispatch with no definitive result remains blocked as
+unknown. Local projection code never invents a `running`, `failed`, delayed, or
+cancelled graph transition. A Sub-Playbook's failed, unknown, or cancelled
+semantic result terminates the parent as failure; it cannot fall through a
+success edge.
 When a typed capability precondition fails before the first graph checkpoint,
 the terminal projection is allowed only from matching persisted AgentGraph run
 input and error envelopes; it carries no resumable graph progress and never
@@ -279,16 +324,55 @@ Playbook waitpoint and AgentGraph state determine whether input can resolve an
 interrupt; unexpected text therefore produces an Agent answer or clarification
 instead of falling through a router/planner taxonomy.
 
+Textual approval or rejection additionally requires the complete latest visitor
+message to match a bounded explicit-response grammar, independently of the
+model's proposed resolution and quoted span. Negated, quoted, conditional,
+mixed, or otherwise unsupported wording cannot authorize either branch. The
+waitpoint stays open for clarification or the existing bound widget controls.
+Accepted textual resolutions retain the whole attested utterance as evidence;
+operator-review and typed widget authority remain separate and unchanged.
+
 Playbook node-level AI tasks may interpret bounded input for that node. Their
 output remains untrusted data checked by the node contract and deterministic
 policy. They do not plan the outer chat turn.
+
+## Explicit Guardrail Policy Releases
+
+Optional `runtime_config.agent.guardrail_policy_ids.input` and `.output` select
+at most 16 authorized, enabled policies per direction. Publication normalizes
+and freezes their identities, content hashes, modes, structured checks and safe
+fallback text into `contract.safety` (`agent_guardrails.v1`). Publication and
+activation lock policy heads; productive changes invalidate candidate evidence.
+Unassigned artifacts retain their original baseline-only meaning and hashes.
+
+`WorkflowSafetyBoundary` remains the only enforcer. It combines baseline safety
+with the exact acquired Agent deployment's input/output pins before model work
+and canonical message persistence. Recovery and delayed messages use the run's
+historical pin, not the latest live Agent or mutable policy records. Blocking
+policies reject matching text; advisory policies attach findings. A custom
+fallback is used only if it passes the complete output checks.
+
+Policies check banned/required phrases, length, and email/phone/URL patterns in
+text. They do not inspect attachments or replace capability authorization,
+confirmation or idempotency. Opaque legacy Rules JSON has no executable schema
+and is rejected at both save and publication. Disabling/deleting an authoring
+policy prevents new publication, but cannot revoke a frozen live release;
+activate a tested replacement to change live protection.
 
 ## Durability, Safety, And Operations
 
 - One durable `ChatTurn` owns client-turn idempotency and the selected Agent
   deployment.
 - A completed turn replays from its canonical persisted outcome across JSON and
-  SSE, including after its deployment is no longer active.
+  SSE, including after its deployment is no longer active. Replay rechecks the
+  same canonical input hash and expires stale pre-dispatch leases before it
+  returns. Channel replay uses provider attachment descriptors and therefore
+  does not redownload an attachment merely to recognize a duplicate.
+- New channel conversations are created only after a valid active deployment
+  has been resolved. An unpublished Agent cannot create empty durable
+  conversations as a side effect of a failed request.
+- Response format and delayed-message Agent/Playbook attribution come from the
+  deployment bound to the turn or run, never from mutable current Bot settings.
 - Before an active turn is reported as busy, blocks a new client-turn ID, or is
   projected by the turn-status endpoint, the application checks its bound
   AgentGraph authority. A terminal graph result is committed idempotently into
@@ -306,9 +390,12 @@ policy. They do not plan the outer chat turn.
 - Unknown post-dispatch outcomes block automatic replay and require
   reconciliation.
 - Usage preflight covers instructions, retained history, current input, tool
-  schemas, and conservative local-attachment size before transport. It prunes
-  oldest history to the effective input/context boundary, enforces the
-  provider-profile output maximum on the request, and records provider-reported
+  schemas, and conservative local-attachment size before transport. Internal
+  Playbook messages are removed before the public history limit is applied;
+  history is retained and pruned as complete visible user/assistant turns, not
+  as orphaned individual messages. The bounded scan and token preflight prune
+  oldest whole turns to the effective input/context boundary, enforce the
+  provider-profile output maximum on the request, and record provider-reported
   input, output, reasoning, cache-read, and cache-write buckets exactly once.
 - Usage and cost accounting retain Agent deployment, Playbook deployment, run,
   stage, and parent-turn attribution without persisting prompts in operational
@@ -317,6 +404,9 @@ policy. They do not plan the outer chat turn.
 - Provider compatibility is evaluated separately from deterministic local
   release contracts; missing credentials are reported as blocked or skipped,
   never as passed.
+- Per-Agent provider configuration uses invocation-scoped temporary aliases.
+  Long-lived workers cannot overwrite another Agent invocation's credentials,
+  and each alias is removed after its owning invocation.
 
 ## Authoring Surface
 
@@ -366,6 +456,10 @@ conversation, so compound requests and elliptical follow-ups exercise the real
 history path. Each turn may require the complete exact route set; a missing
 route or any extra attempt fails it. Results are bound to the scenario
 fingerprint and deployment hash. A newer deployment therefore makes them stale.
+Candidate-role runs additionally sign the finalized run and every ordered turn
+with the application key. Activation locks and verifies those signatures and
+their referenced durable Chat Turns again; unsigned pre-migration evidence or
+evidence invalidated by application-key rotation cannot authorize release.
 Playbook-draft scenarios remain separately bound to the draft fingerprint and
 compiled artifact. Historical captured turns can remain immutable run evidence,
 but cannot be created as executable scenario targets.

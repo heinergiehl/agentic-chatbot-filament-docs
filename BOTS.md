@@ -44,6 +44,7 @@ Each Agent owns its own:
 - context areas
 - widget branding and prompts
 - linked sources
+- explicitly assigned input and output Guardrail Policies
 
 In practice, this means you can create:
 
@@ -74,12 +75,32 @@ After saving an Agent, use the edit page as your rollout checklist before you pu
 
 - **Overview** is the first stop. It summarizes Agent readiness, the active deployment, knowledge coverage, assigned Playbooks, and the most useful next actions.
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the Agent.
-- **Production readiness** also surfaces widget signing/domain posture and knowledge chunk readiness so public rollout issues are visible before you copy the embed snippet.
-- **Live Preview** renders the current widget theme, copy, and area-specific styling choices directly inside the Agent form.
+- **Production readiness** also surfaces widget signing/domain posture and the verified Knowledge generations pinned to the live release. A failed new indexing attempt does not by itself invalidate a usable pinned generation.
+- **Appearance preview** renders sample messages with the current widget theme, copy, and area-specific styling. It does not run the Agent or provide release-test evidence.
 - **Test behavior** runs the live Agent path so you can spot provider, prompt, knowledge, capability, or Playbook issues early.
 - **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker.
 - **Embed Snippet** gives you a ready-to-paste script tag for the Agent's default area and signing mode.
 - **Analytics** becomes the next stop once you have live conversations, because it surfaces feedback, citation coverage, traffic, and knowledge gaps.
+
+### Assigning Guardrail Policies
+
+In **Behavior**, assign enabled Guardrail Policies separately to incoming and
+outgoing text. Up to 16 policies per direction can be selected. An enabled policy
+record alone protects no Agent: **Publish candidate** freezes the assignments
+and policy contents, **Test release candidate** checks that exact candidate, and
+**Make candidate live** activates it through the normal release gates.
+
+Editing, disabling, or deleting an authoring policy does not rewrite an existing
+release. Historical and resumed turns use their pinned policy snapshot. Publish,
+test, and activate a new candidate to change live protection; a policy edit also
+invalidates candidate evidence based on the old policy contents.
+
+The policy list distinguishes enabled authoring records from verified live
+assignments and reports changed, unavailable, or restricted evidence honestly.
+The existing runtime safety boundary remains active. These deterministic text
+checks do not inspect image/PDF/file contents and are not a general semantic
+safety guarantee. Opaque Rules JSON has no productive interpreter and cannot be
+published as an assigned policy.
 
 ## Important Agent Fields
 

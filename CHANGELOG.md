@@ -6,6 +6,9 @@ All notable changes to this package will be documented in this file.
 
 ### Added
 
+- Added deterministic, evidence-bound Playbook result composition for selected capability fields, bounded iterations, and mapped child results without another model call; partial and unknown outcomes remain explicit.
+- Added immutable per-Agent input/output Guardrail Policy assignments through candidate publication, exact-candidate testing, and activation, including historical resume protection.
+- Added an authorized read-only channel Delivery view with accepted chunk IDs and explicit unknown-outcome guidance.
 - Added an evidence-backed conversation-outcome ledger with encrypted evidence references, immutable Agent/Playbook attribution, source-scoped idempotency, an after-commit event, and a supported host recording contract.
 - Added automatic human-handoff outcomes, authorized operator recording from Conversation Review, and an Agent Analytics Outcomes tab with explicit success, handoff, and currency-safe attributed-value reporting.
 - Added app-aware Solution Kits with a strict versioned provider contract, atomic/idempotent draft installation, immutable actor-attributed evidence, verified model and mapping selection, and an Agent Overview release path.
@@ -28,6 +31,8 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 
+- Bound protected release jobs and the commercial archive/SBOM to one retained, source- and hash-verified Composer resolution; ordinary compatibility jobs retain their distinct target resolutions.
+- Made Agent onboarding distinguish appearance samples from behavior tests, show direct-read setup before optional Playbooks, retain Knowledge navigation context, and evaluate live pinned Knowledge separately from a newer failed index.
 - Restored stable Gemini 2.5 Flash-Lite to the verified model selector and capability/pricing catalogs so Integration Studio can use the lowest-cost structured-output model without a host-only override.
 - Made Slack and Mailtrap Email real-provider-tested but explicit deployment opt-ins, and kept WhatsApp Cloud API and Mailgun Email fail closed behind separate default-off provider flags until each completes its real-account acceptance run; Telegram remains available by default.
 - Hardened the `0.17.0` candidate around the Agent-first production boundary: immutable Knowledge, Connector, Data Resource, and Playbook authority is pinned at publication and runtime drift fails closed.
@@ -35,6 +40,10 @@ All notable changes to this package will be documented in this file.
 
 ### Fixed
 
+- Persisted Telegram chunk progress before dispatch and after provider acknowledgment, preventing known retries from resending accepted chunks or rerunning the Agent; uncertain delivery stops for reconciliation.
+- Prevented busy channel turns from consuming a second accepted inbound message; ordered admission retries the same durable turn identity and keeps staged attachments until terminal handling.
+- Removed sensitive default headers from Connector duplicates, made Bridge/preview failures visible without exposing diagnostics, checked participant commands against Agent access, and stopped displaying unpriced usage as zero cost.
+- Extended Doctor's release-quality schema checks and synchronized public documentation and archive-safe links with the canonical package contracts.
 - Bound Mailtrap webhook-secret selection to the explicit `inbound_receiving` event type so Email Sending delivery events that also contain `inbox_id` are authenticated with the distinct Sending webhook secret.
 - Made advanced Channel Connection JSON validation compile as Laravel rules instead of being evaluated as Filament dependency-injected UI closures, so guided provider connections can be saved reliably.
 - Reconciled terminal AgentGraph chat turns before returning `busy`, prevented unmaterialized side-effect success from replaying a fabricated result, and persisted only sources actually cited by an Agent answer.
@@ -44,6 +53,7 @@ All notable changes to this package will be documented in this file.
 
 ### Migration
 
+- Added `2026_08_30_000005_add_channel_delivery_progress.php`. It adds nullable delivery progress without inventing historical receipts; rollback refuses to erase recorded delivery evidence.
 - Added `2026_08_28_000001_create_bot_conversation_outcomes_table.php`. Existing history is not inferred or backfilled; run migrations before recording outcomes.
 - Added `2026_08_28_000002_create_agent_solution_kit_installations_table.php`. Existing Agents are not changed; run migrations before using the Solution Kit wizard.
 - Added `2026_08_28_000003_create_integration_studio_installations.php`. Existing Connectors are not changed; run migrations before using Integration Studio.
@@ -246,7 +256,7 @@ All notable changes to this package will be documented in this file.
 
 - Added `2026_05_26_000001_cancel_legacy_workflow_runs_for_agentgraph_cutover`, which cancels in-flight legacy workflow runs that never received an AgentGraph `run_id` (irreversible).
 
-> **Note:** The `v0.12.0` git tag marked an early preview commit. `v0.13.0` is the first recommended release that ships the documented agent-first runtime together with the AgentGraph workflow platform. See [docs/RELEASE_NOTES_v0.13.0.md](docs/RELEASE_NOTES_v0.13.0.md).
+> **Note:** The `v0.12.0` git tag marked an early preview commit. `v0.13.0` is the first recommended release that ships the documented agent-first runtime together with the AgentGraph workflow platform. See [docs/RELEASE_NOTES_v0.13.0.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.13.0.md).
 
 ## [0.12.0] - 2026-05-18
 

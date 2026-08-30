@@ -115,6 +115,10 @@ New connections stay inactive until the operator deliberately activates them. Fo
 The **Channels** table includes operational actions:
 
 - **Diagnostics** checks Agent/link/token readiness, the active Agent deployment and its Playbook pins, provider credentials, webhook URL shape, webhook verification, raw payload storage, private attachment storage, queue mode, saved provider errors, and provider-specific state such as Telegram webhook info, Slack `auth.test`, WhatsApp phone-number metadata, Mailtrap inbox access, or Mailgun domain state.
+- **Delivery** opens the authorized connection's read-only event log, including
+  accepted chunk IDs, errors and unknown outcomes. New inbound traffic does not
+  clear a previous outbound error. Provider acceptance is not delivery or read
+  confirmation, and an empty log does not imply a successful send.
 - **Test Send** sends a provider-native test message and records the outbound delivery event.
 - **Set Telegram Webhook** configures Telegram with `message`, `edited_message`, and `callback_query` updates.
 - **Set Telegram Commands** publishes `/start`, `/help`, `/status`, and `/reset` to Telegram clients.
@@ -195,8 +199,27 @@ Telegram replies send a `sendChatAction` activity indicator before Agent executi
 | ------- | -------- |
 | `/start` | Shows the short channel start prompt without running the bot or workflow |
 | `/help` | Shows the channel command list |
-| `/status` | Runs local channel diagnostics and returns the summary |
+| `/status` | Confirms permitted channel access without exposing operator diagnostics |
 | `/reset` | Starts a fresh channel session for the thread without deleting historical conversations |
+
+All built-in commands pass the same connection/token access admission before
+replying or resetting a conversation. Revoked or denied credentials do not
+bypass authorization through `/start`, `/help`, `/status`, or `/reset`.
+
+### Durable Telegram replies
+
+Before each outbound chunk, the delivery journal records the bound message
+plan and pending chunk. A valid provider acknowledgement stores its message ID;
+a known rate-limit retry resumes with the next unacknowledged chunk, without
+rerunning the Agent or resending accepted chunks. Raw message bodies and
+credentials are not copied into this journal.
+
+A lost response, malformed acknowledgement, unresolved in-flight chunk, changed
+message plan or legacy possibly-dispatched event without a journal is
+**unknown**. It is not automatically retried. Check the provider conversation
+and accepted IDs in **Delivery**, reconcile what arrived, and only then decide
+whether a separate send is needed. The inbound Agent turn can be completed even
+while its outbound delivery failed; these are distinct operational states.
 
 ## Slack
 
@@ -412,6 +435,37 @@ Inbound webhooks dispatch `ProcessChannelInboundMessage`. In production, run a q
 php artisan queue:work
 ```
 
+After webhook verification, the existing inbound Delivery Event reserves its
+place in the channel thread before queue handoff. Workers admit the oldest open
+event first. A busy conversation, in-progress turn, or explicit Agent-token
+rate limit leaves the same input waiting with the same provider-derived turn ID;
+it is not converted into a completed reply or a new Agent request. Staged
+attachments remain available while waiting. Ordinary waits do not consume the
+three-exception failure budget, and the asynchronous job has a 24-hour retry
+deadline fixed when it is queued. Existing attachment retention still applies.
+
+A synchronous queue cannot promise a later retry. If admission must wait, the
+webhook returns HTTP 503 with `Retry-After` instead of acknowledging acceptance.
+This also applies to custom queue connections whose configured driver is
+`sync`. A connection disabled after admission terminates its waiting event
+without running the Agent, so reactivation cannot leave later messages blocked
+behind an abandoned queue slot.
+
+The initial reply handoff is distinct from Agent execution. A server-owned,
+encrypted, size-bounded snapshot binds one completed reply to its inbound event,
+connection, thread, provider, and outbound event. After that handoff exists,
+worker recovery uses it rather than invoking the Agent or repeating a channel
+command. The inbound event is completed only after a saved send outcome or a
+real retry handoff. Dispatch uncertainty is retained for reconciliation, not
+converted into permission to resend.
+
+The snapshot is limited to 1 MiB before encryption and contains the server-owned
+outbound message, not a raw webhook. Keep the application encryption key available
+while deliveries are pending. A missing or invalid saved snapshot fails closed;
+it never grants permission to recreate the answer with another Agent turn.
+`/reset` and its saved reply binding commit together, so replay does not reset the
+conversation a second time.
+
 Optional queue overrides:
 
 ```env
@@ -424,7 +478,19 @@ AGENTIC_CHATBOT_CHANNELS_PROCESSING_TIMEOUT_SECONDS=300
 
 Repeated Telegram typing indicators require a real async queue connection. When the channel queue resolves to Laravel's `sync` driver, the first `sendChatAction` is still sent, but no background heartbeat is scheduled.
 
-If a provider returns a retry-after response while sending a channel reply, the inbound event is marked completed and the outbound delivery event stays in `processing`. The queued outbound retry sends the saved reply text again later, so the Agent, knowledge search, Playbook execution, budgets, and usage accounting are not run twice for the same inbound message.
+If a provider returns a known retry-after rejection while sending a channel
+reply, the durable handoff retains that waiting state. With an asynchronous
+queue, the inbound event is completed after the outbound retry has been handed
+off, while the outbound delivery event stays in `processing`. The retry uses
+the saved reply and, for Telegram, the accepted-chunk journal; it does not rerun
+the Agent, knowledge search, Playbook, budgets, or usage accounting. A lost
+Mailgun send response is an unknown outcome without automatic retry, not proof
+that no email was accepted.
+
+The earliest retry time is persisted with the handoff. A synchronous webhook
+retry before that time returns backpressure again; after it is due, only the
+saved reply is retried. Production deployments should still use an asynchronous
+queue so recovery does not depend on the provider retrying its webhook.
 
 Ingress rate-limit overrides:
 

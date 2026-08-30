@@ -232,10 +232,12 @@ The Agent can already handle ordinary conversation. A canvas is not required.
 ### 2. Connect only what the Agent needs
 
 - Add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md) for grounded answers.
-- Approve [Data Resources](DATA_RESOURCES.md) when a bounded Playbook must query
-  live application records.
-- Publish exact [API Connector](API_CONNECTORS.md) operations before selecting
-  them in a Capability step.
+- Approve read-only [Data Resources](DATA_RESOURCES.md) for live application
+  records and select them on the Agent under **Behavior**. A Playbook is not
+  required for a direct read.
+- Publish exact read [API Connector](API_CONNECTORS.md) operations and select
+  their immutable revisions on the Agent. Use a Playbook Capability step only
+  when the operation belongs to a controlled process.
 - To start from an API description, open **Connect > API Connectors**, choose
   **Import integration**, and follow [Integration Studio](INTEGRATION_STUDIO.md).
   Its optional AI step reuses an existing centrally configured provider key;
@@ -253,8 +255,8 @@ workflow pointer grants no authority.
 ### 4. Publish, test, and activate a release candidate
 
 Save the Agent and choose **Publish candidate**. Publication snapshots the Agent
-behavior, model policy, knowledge, capability mode, budgets, and exact assigned
-Playbook deployments into one hash-verified contract without changing live
+behavior, model policy, knowledge, capability mode, budgets, explicitly assigned
+guardrail policies, and exact Playbook deployments into one hash-verified contract without changing live
 traffic. Run **Test release candidate** with a representative request. The test
 uses the real persistent chat/runtime path and real reads, but the capability
 gateway blocks productive writes. Only after that exact deployment hash and
@@ -265,11 +267,20 @@ new candidate and test.
 ### 5. Verify the live Agent
 
 1. Confirm the active Agent deployment hash and attached capabilities.
-2. Run normal, unexpected, and ambiguous wording through **Test live Agent** or Live Preview.
+2. Run normal, unexpected, and ambiguous wording through **Test live Agent**.
 3. Check a grounded knowledge answer when sources are attached.
 4. If a Playbook is assigned, test its branch, input waitpoint, approval, and
    result path.
 5. Confirm usage and any Playbook execution or write evidence in Observe.
+
+**Appearance preview** displays sample messages only; it neither calls the Agent
+nor supplies release-test evidence. Add the exact production hosts to **Allowed
+Domains** before embedding: an empty list blocks public widget access.
+
+Knowledge status distinguishes the live deployment's verified pinned generation
+from the latest indexing attempt. A failed replacement index does not remove
+still-valid live knowledge. New indexed content becomes live only after a new
+Agent candidate is published, tested, and activated.
 
 ## 8. Advanced: Playbook Building
 

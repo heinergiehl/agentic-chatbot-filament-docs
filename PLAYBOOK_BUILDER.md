@@ -54,6 +54,37 @@ publishing. AI Draft can propose structure but cannot grant dependencies.
 - Give For Each a finite `maxItems` value.
 - Use Note for documentation only. Notes never become prompts or runtime nodes.
 
+AI Task instructions are fixed authoring text in both plain and structured
+output modes. Additional system rules supplement that task; they do not replace
+it. Put visitor input and workflow references in the input template, not in task
+instructions or system rules. Republish affected Playbooks and their owning
+Agent release after correcting an existing task: an immutable deployment does
+not silently acquire new compiler behavior.
+
+## Returning useful results
+
+Use the Result template to select verified capability fields, for example
+`{{lookup.data.name}}` and `{{lookup.data.balance}}` for an API Connector, or
+`{{action_result.receipt}}` for an Action. Leaving the template empty selects
+the last unchanged capability output. For Each retains the verified result of
+each iteration; Sub-Playbook output mappings retain the child's verified fields.
+
+The Agent composes a provider-free public answer from those fields. The literal
+Result template and internal model prose are not copied to visitors; arbitrary
+inputs, overwritten variables, connector headers, execution metadata, and
+unverified AI Task/Transform output cannot become asserted facts. Select the
+original capability fields when a transform or AI step is only presentation
+work. Unverified generated prose is not published by this composer; an existing
+explicit user-facing Result contract remains a separate authoring choice, not a
+general proof that generated prose is true.
+
+The response reports partial/unverified steps and truncation, and never turns an
+unknown write into success or a retry invitation. Evidence is bounded to 64
+receipts, 16 KB per receipt, and 48 KB per run; exceeding a bound degrades the
+answer explicitly. It is pinned to the run, conversation, Agent and Playbook
+releases, and signed with the application key. A missing or changed key makes
+old evidence unverifiable; presentation falls back safely without re-execution.
+
 ## Responsive behavior
 
 Use rules and the process canvas are peer authoring surfaces. Catalog, checks,

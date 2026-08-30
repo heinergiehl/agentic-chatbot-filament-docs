@@ -448,6 +448,17 @@ writes, approvals, waits, and dependent multi-step work require a Playbook. If
 an operation or environment binding changes before dispatch or confirmation,
 execution fails closed and the owning deployment must be republished.
 
+Workbench tests do not save the operation form implicitly. Save contract or
+connection changes before opening the test. The dialog binds the saved
+operation ID, compiled contract, connection/environment, operator and trusted
+tenant context; these are checked again before execution. WRITE confirmation
+also binds the current input values. Editing those inputs clears confirmation,
+and a changed candidate, expired dialog or substituted input requires a new
+confirmation. Expected candidate and staging-binding hashes reach the staging
+test service as well. WRITE publication still requires successful staging
+evidence for the exact saved candidate; its persistent publication gate is
+unchanged.
+
 ## Owner-scoped connectors
 
 A connector may be global, bot-scoped, or additionally scoped by
@@ -463,6 +474,15 @@ authority the operation is omitted from discovery and exact resolution fails
 closed. Playbook execution carries the same server-attested authority through
 the resolver and gateway. A global or
 bot-scoped connector with blank owner fields retains its normal bot visibility.
+
+The confirmed staging WRITE test creates an isolated, marked admin-test
+conversation and attests the authenticated operator through the same authority
+factory. Tenant-owned connectors additionally require the host middleware's
+`filament_agentic_chatbot.tenant_context` request attribute. The admin action
+passes only that server-side attribute; ordinary request parameters, modal
+inputs and connector owner fields cannot supply tenant authority. This context
+is preserved through planning, confirmation and the capability gateway. The
+generic connection/read test does not gain owner authority from this path.
 
 ## Canonical result envelope
 
