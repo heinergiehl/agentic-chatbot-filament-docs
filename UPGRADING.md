@@ -2,6 +2,111 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Curated Connector answers
+
+Connector operations now publish `response.agent_output` (`mapped` or
+`response`) and optional `presentation` metadata on their existing
+`response.output_mapping` fields. New forms and imported drafts start in mapped
+mode. Removing every selected field shares no result values; it does not enable
+raw response access. Hidden fields are excluded before the model, repair and
+delivered-evidence boundary, including semantic role aliases. Workflow values
+remain available under the workflow contract.
+
+No database migration or rewrite of existing revisions is required. Absent
+mode/metadata is interpreted without changing the signed payload: an existing
+nonempty mapping is curated with summary fields; an empty mapping retains its
+previous selected-response exposure. Read-only review can identify that latter
+case with `response.output_mapping` empty and `response.agent_output` missing
+or `response`. Review those operations before enabling sensitive APIs.
+
+Configure labels, units, standard/detail/hidden visibility and required context
+in the operation's Mapping tab, then test and publish a new operation revision.
+Publish, test and activate a replacement Agent candidate to use those new pins.
+Do not edit historical revisions, rewrite deployment hashes or mutate stored
+chat answers. Retain the previous deployment and reviewed draft/export for
+rollback through the normal tested release process.
+
+Nonempty mappings that produce no approved values no longer fall back to full
+provider data. Explicit null, empty string/list and zero values remain distinct;
+mapping no longer silently clips long strings or lists. Oversized model results
+use the existing incomplete-evidence boundary. A role alias cannot populate a
+different declared mapping field when its own provider path is absent. Invalid
+colliding keys, unknown presentation fields and missing/hidden context targets
+are rejected rather than interpreted ambiguously.
+
+Positive answer fixtures may use `fields: ["field_key"]` or `detail: "all"` in a
+section. Curated scalar selections retain only their declared context rather
+than every sibling. Labels, units and localized numeric formatting are server-rendered;
+update assertions that expected technical field paths, without weakening value,
+identity, permission, source or replay checks. Programmatic callers of the
+internal form mapper must use its row-based form state, not the removed
+`output_mapping` textarea state; the published JSON contract keeps
+`response.output_mapping`.
+
+## Direct-read answer rendering and source-scoped continuation
+
+Direct-read answers now use a closed evidence-selection document:
+`{"language":"de","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}`.
+This is ordinary model JSON; no native structured-output capability or new
+provider is required. Only actual delivered `/data` references are accepted;
+Knowledge mixed with direct reads may select `/context`. The server renders
+verified values with readable labels and record context instead
+of accepting factual model prose through word-distance or number heuristics.
+No `records`/`items` naming convention is required. Visitor input and public
+chat transport remain unchanged. Update positive model test fixtures to select
+ledger IDs also present in their execution trace; do not change failing quality
+assertions to accept `safe_evidence_fallback`.
+
+An invalid selection permits one output-only repair on the same immutable
+Agent deployment, provider, and model. It has no tools, conversation history,
+or attachments, a 20-second timeout, and usage stage `agent_answer_repair`.
+Failure or a usage-budget refusal preserves the bounded evidence fallback and
+available sources, without another API call or a visitor understanding
+question. Entire rendered answers include markup and provenance in their
+UTF-8 byte budget: `short` 3,000, `balanced` 8,000, `detailed` 16,000, with
+visible truncation. Pure conversation and Knowledge answers remain prose;
+source identity is not proof of semantic truth. Committed evidence remains
+v5 with additive, allowlisted `evidence_guard`/`answer_repair` diagnostics and
+no raw model/provider payloads.
+
+The required migration is
+`2026_08_30_000006_scope_direct_read_continuations_to_source_messages.php`.
+Treat it as an authority change, not a schema change to run under live writers:
+
+1. Quiesce public chat, channel/webhook ingress, Scheduler, and production
+   workers; drain or reconcile in-flight work. Take and verify a restorable
+   database backup, including schema and data. Preserve the matching package,
+   host lockfile/config, and application encryption key.
+2. Install the matching package and run `php artisan migrate --force` while
+   writers remain stopped. The migration adds `binding_version` with default
+   `1`, creates the unique source-message scope, and removes the old broader
+   uniqueness constraint. It does not rewrite ciphertext or modify Agent
+   deployments.
+3. Verify migration status and controlled read/follow-up conversations before
+   reopening traffic. New bindings use `binding_version: 2` and include
+   `source_message_id` in the conversation/deployment/capability scope. A read
+   in the current turn must preserve the prior turn's binding. Different
+   targets for the same capability and source create a sticky empty `[]`
+   binding; later reads must not select the last target automatically.
+4. Run the relevant routing/quality checks and canonical JSON/SSE replay check.
+   Require complete expected task coverage and an `answer` decision; a safe
+   fallback is not passing release evidence. Resume workers/Scheduler and
+   traffic only after the applicable checks pass.
+
+Existing version-1 rows are intentionally not executable: they may have lost
+earlier targets under the old uniqueness scope. They remain encrypted and
+unchanged until normal TTL cleanup; do not re-sign, convert, or infer missing
+targets from them. Fresh successful reads create version-2 authority under
+their own source message. Deployment snapshots are not automatically rebuilt;
+any intentional changes to published input or response contracts still use the
+normal candidate/test/activation path.
+
+There is no automatic `down()` for this migration. Do not collapse source rows,
+drop the version column, or use `migrate:rollback` to reintroduce last-target
+selection. Rollback requires restoring the verified pre-migration database
+schema **and data** together with the matching package release, host config,
+and encryption key. Code-only rollback is not a supported recovery procedure.
+
 ## Guardrail, result, and channel-delivery hardening
 
 Run the pending package migrations before restarting workers. The additive
@@ -87,7 +192,8 @@ the backup. Retain restricted operator access for the release steps below.
 6. Run `php artisan migrate --force` again. The final cutover now removes the
    retired pointer column, obsolete workflow `is_active` flag, old
    entry-clarification/work-event tables and continuation-clarification rows.
-   The subsequent channel-delivery progress migration then completes normally.
+   The subsequent channel-delivery progress and source-scoped direct-read
+   continuation migrations then complete normally.
    Verify migration status, then run
    `php artisan filament-agentic-chatbot:doctor` and
    `php artisan agent-graph:doctor`. Reopen traffic and resume workers/Scheduler

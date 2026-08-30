@@ -360,6 +360,18 @@ such as `42` is not accepted merely because the latest message contains `-42`,
 and `1` is not accepted from `1.5`; signs, decimal fractions, exponents, and
 adjacent numeric separators remain part of the number being matched.
 
+A scalar read input may explicitly publish
+`continuation_mode: exact_previous_success`. Only the immediately preceding
+persisted user message's successful, server-attested value may fill an omitted
+field, subject to the bounded follow-up grammar and expiry. Version-2 bindings
+include `source_message_id` in their conversation/deployment/capability scope;
+a current turn does not overwrite the previous turn's binding. Different
+targets for the same capability and source leave a sticky empty `[]` binding,
+so a later call cannot silently choose the last target. Version-1 rows stay
+encrypted until TTL cleanup and cannot execute. See [Upgrading](../UPGRADING.md)
+for the required source-scope migration. This opt-in does not authorize the
+model to copy arbitrary historical values into arguments.
+
 For direct calls, `fanout_safe` authorizes repeated per-item requests only up to
 the smaller of `max_items` and the Agent's five-call per-turn budget; the sixth
 model step remains available for the final answer. `single_only` and
@@ -374,6 +386,35 @@ a distinct-item slot. Model-visible Connector results are limited to 16 KB per
 call and 48 KB across the turn. Truncation is recorded as incomplete evidence,
 so a large provider payload cannot crowd out the final answer or be presented
 as a complete result.
+
+Direct-read answers use a generic evidence-selection contract. The model emits
+ordinary JSON, not API-specific prose or a native structured-output response:
+
+```json
+{"language":"de","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}
+```
+
+The document is closed: only `language` and `sections`, with `evidence_id`
+and `pointer` per section and optional `fields` or `detail: "all"`. Every complete successful direct result needs a
+selection. RFC 6901 pointers resolve actual `/data` fields and array indices;
+Knowledge mixed into the answer may select `/context`, not source metadata.
+The server renders approved original values with readable labels, units and
+record context for that exact call. Field paths and request JSON stay internal.
+It does not infer record structure
+from names such as `records` or `items`, match nearby numbers in model prose,
+or invent an entity label when the provider omitted it. Provider strings are
+escaped as literal data. Identity, useful units, and stable labels should
+therefore be present in the published response or its `output_mapping`.
+
+One output-only repair may correct invalid selections using the same pinned
+deployment/provider/model and already delivered evidence. It has no tools,
+history, or attachments, a 20-second timeout, and the usage stage
+`agent_answer_repair`. Failure or exhausted usage budget preserves a bounded,
+server-rendered evidence fallback and available sources without repeating API
+calls or asking the visitor to clarify an otherwise valid request. The complete
+rendered answer, including markup and provenance, is limited to 3,000/8,000/
+16,000 UTF-8 bytes for `short`/`balanced`/`detailed`, with visible truncation.
+See [Runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md) for the full boundary.
 
 Connector routing quality is evaluated explicitly rather than inferred with a
 global vocabulary. In **Test live bot**, an operator may select one or more
@@ -390,14 +431,27 @@ catches weak-model omissions such as answering only Berlin when Berlin and New
 York were requested without pretending that a generic runtime heuristic can
 understand every future API domain.
 
+`safe_evidence_fallback` is not a passing answer in these checks. Optional
+allowlisted `evidence_guard` and `answer_repair` fields in committed v5 evidence
+explain format/reference failures and the repair outcome without exposing raw
+provider data. Regressions should verify distinct returned values in their
+actual call and nested-record context, including APIs that do not echo inputs.
+
 `response.schema` validates the full decoded provider response before
 `response.json_path` selects the value exposed as result `data`. Schema
 mismatches fail closed (`failed` for reads, `unknown` with reconciliation for
 claimed writes), and the public error envelope contains only bounded violation
 metadata rather than the provider payload. `response.output_mapping` selects
-small, stable semantic facts for workflows and direct Agent context; when it is
-non-empty, a direct Agent receives these curated facts rather than the complete
-provider object. A numeric mapping may declare bounded `scale`, `offset`, and
+stable semantic facts for workflows and a separate, closed Agent projection.
+`response.agent_output: "mapped"` shares only approved mapped values, including
+when the mapping is empty or every value is missing/hidden. There is no fallback
+from an empty mapped result to the provider object. `"response"` explicitly
+permits the full selected response and cannot coexist with a nonempty mapping.
+An absent mode preserves existing published meaning: nonempty mappings are
+curated, otherwise the selected response is exposed. New operation forms and
+Integration Studio imports default to `mapped`.
+
+A numeric mapping may declare bounded `scale`, `offset`, and
 `precision` values so provider units are normalized deterministically before a
 model sees them. For example, `{"path":"response.height","scale":0.1,
 "precision":1}` can publish a `height_meters` fact from a decimeter source.
@@ -405,14 +459,67 @@ Invalid or non-numeric transformations omit that semantic fact instead of
 silently publishing a mislabeled raw value. The operation does not own an
 output variable; that presentation/state name belongs to each Playbook step.
 
+In **Mapping → Fields the Agent may answer with**, edit selected fields rather
+than a raw output JSON document. A field has a stable key, source path, readable
+label, unit and visibility. Optional details include a description for relevance
+selection, labels for `de`/`en`/`fr`/`es`, numeric conversion and explicit context
+fields. `summary` is the default overview; `detail` remains available for a
+specific question; `hidden` never reaches the Agent. These are published
+operation settings, not visitor-selectable permissions. A label does not perform
+a unit conversion, and hiding a field from the Agent does not remove its
+workflow value, audit retention or host authorization requirements.
+
+For example, this response policy answers a temperature question without also
+displaying humidity, while retaining the place that the reading belongs to:
+
+```json
+{
+  "agent_output": "mapped",
+  "output_mapping": {
+    "place": {
+      "path": "response.location.name",
+      "presentation": {"label": "Location", "labels": {"de": "Ort"}, "visibility": "detail"}
+    },
+    "temperature": {
+      "path": "response.current.temperature_c",
+      "presentation": {"label": "Temperature", "labels": {"de": "Temperatur"}, "unit": "°C", "visibility": "summary", "context": ["place"]}
+    },
+    "humidity": {
+      "path": "response.current.humidity",
+      "presentation": {"label": "Humidity", "labels": {"de": "Luftfeuchtigkeit"}, "unit": "%", "visibility": "detail", "context": ["place"]}
+    }
+  }
+}
+```
+
+Context references are visible sibling mapping keys, never arbitrary paths or
+expressions. Missing context removes the dependent fact. Containers may inherit
+context from their parent scope. For an object or record collection, declare
+`fields` on its mapping definition and use relative child paths, for example
+`{"path":"response.products","fields":{"sku":{"path":"sku"},"price":{"path":"price","presentation":{"context":["sku"]}}}}`.
+Every record keeps its original index; objects cannot expose unlisted children,
+and wildcard columns cannot stand in for record mappings. Existing string path
+shorthand, path aliases and numeric transforms remain supported; workflow roles
+cannot fill another declared field or widen Agent disclosure.
+
+The model receives only the approved values and bounded, revision-owned field
+metadata. It selects an exact field for a narrow question, an object for the
+summary, `fields` for several literal child keys, or `detail: "all"` for a full
+approved overview. The server adds required context and renders readable labels
+and units, without request JSON or internal `/data/...` paths. Output validation,
+the existing evidence hash, bounded repair and canonical JSON/SSE replay remain
+in force. Useful relevance selection still requires representative model tests;
+this contract does not prove that arbitrary model intent interpretation is right.
+
 Every server-owned object is closed: the top-level document plus `request`,
 `response`, `effect`, `execution`, `retry`, `strategies`, `auth`, `metadata`,
 `metadata.capability`, and the write-integrity objects reject unknown fields.
 This rule is enforced both by publication and by direct immutable-revision
 persistence. Provider payload templates, response mappings, and registered
-strategy policy objects remain intentionally extensible. Static credential
+strategy policy objects remain intentionally extensible; the nested
+`presentation` object is closed and bounded. Static credential
 material is nevertheless rejected recursively from request templates, schema
-defaults/constants/examples/enums and annotations, capability presentation,
+defaults/constants/examples/enums and annotations, capability and output-field presentation,
 and from outcome, pagination, async-completion, and write-integrity policies.
 Authentication values belong only to encrypted connector configuration;
 operation contracts may declare redaction names but never store credentials.

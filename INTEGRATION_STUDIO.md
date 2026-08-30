@@ -11,14 +11,16 @@ gateway, confirmation, idempotency, and reconciliation path.
 Open **Agentic Chatbot > Connect > API Connectors** and choose **Import
 integration**.
 
-1. **Import source** uploads or pastes OpenAPI 3.x JSON/YAML, Postman Collection
+1. **Source** uploads or pastes OpenAPI 3.x JSON/YAML, Postman Collection
    v2.0/v2.1 JSON, or one cURL request.
-2. **Choose operations** starts with the largest supported authentication group
+2. **Operations** starts with the largest supported authentication group
    selected and keeps between 1 and 50 operations with one exact compatible
    authentication contract. Import other groups as separate connectors.
 3. **AI assistant** optionally improves only customer-facing names,
-   descriptions, intent examples, and synthetic test input.
-4. **Configure drafts** sets Agent/global scope and the imported service's
+   descriptions, intent examples, and synthetic test input. Choose **Generate
+   suggestions** to send one request to the selected central provider; **Next**
+   keeps the current wording and never calls AI.
+4. **Drafts** sets Agent/global scope and the imported service's
    encrypted credential.
 5. **Review** shows the exact inactive draft plan and requires explicit
    approval.
@@ -27,6 +29,17 @@ Installation creates one inactive, untested connector plus inactive,
 unpublished operation drafts in one database transaction. It never contacts
 the imported API, activates a connector, creates a revision, publishes a
 capability, or changes a live Agent.
+
+Back/Next navigation preserves the parsed source, reviewed wording, and valid
+AI provenance. Returning to the source does not require uploading it again;
+supplying a new source replaces the drafts. Changing the operation selection
+invalidates AI provenance and review approval for the previous selection.
+
+Generation shows pending, success, or recoverable error feedback. Replacing
+edited wording or regenerating suggestions requires confirmation. A failed
+generation leaves the existing drafts untouched, and **Next** remains available.
+Provider/model changes apply only to the next explicit generation; existing
+suggestions retain the provider/model authenticated by their AI receipt.
 
 ## Filament Capability Bridge
 
@@ -133,7 +146,9 @@ back every artifact.
 For each operation:
 
 1. inspect the locked technical request and editable presentation metadata;
-2. finish required write-integrity and result-identity policy;
+2. select the fields the Agent may use in **Mapping > Fields the Agent may
+   answer with**, including readable labels, units, standard/detail visibility
+   and required context, then finish write-integrity and result-identity policy;
 3. activate the draft only when it is ready to test;
 4. review the optional synthetic test input and run the governed read or
    isolated staging WRITE test;
@@ -144,6 +159,13 @@ For each operation:
 
 A WRITE import intentionally remains unpublishable until its complete
 write-integrity contract and isolated staging evidence are configured.
+
+Imported operations start with `response.agent_output: "mapped"` and no
+selected fields. No provider facts reach the Agent until fields are approved;
+an empty selection never falls back to the full response. Approving the whole
+selected response is a separate explicit option, suitable only after reviewing
+its exposure. See [API Connectors](API_CONNECTORS.md) for nested records and
+the published presentation contract.
 
 ### Offline fixture replay
 
@@ -183,9 +205,9 @@ draft-hash-bound synthetic fixtures and the secret-free append-only replay
 ledger. Existing Connector publication evidence remains a separate table and
 authority.
 
-Provider failures affect only the optional metadata step. Turn AI off to use
-the deterministic importer. Missing or unsupported central provider
-credentials are not replaced by a wizard key field.
+Provider failures affect only the optional metadata action. Use **Next** to
+continue with the current drafts without another AI request. Missing or unsupported
+central provider credentials are not replaced by a wizard key field.
 
 See [API Connectors](API_CONNECTORS.md) for the publication/runtime contract and
 [Security and Privacy](SECURITY_AND_PRIVACY.md) for host authorization,

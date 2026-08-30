@@ -148,6 +148,16 @@ a different conversation/capability/deployment, non-scalar inputs, writes, and
 model-proposed historical values all fail closed. Expired ciphertext is pruned
 by the package scheduler.
 
+Continuation bindings use `binding_version: 2`; their uniqueness scope includes
+`source_message_id`. A successful read in the current turn cannot overwrite the
+previous turn's binding while that earlier source is still needed. Different
+targets for the same capability and source message produce an empty `[]`
+binding: ambiguity remains sticky for that source, even if another successful
+call follows. The runtime never selects the last target of a fan-out as an
+implicit continuation. Legacy version-1 rows remain encrypted and unchanged
+until TTL cleanup, but are not executable. The source-scope migration requires
+a quiesced host and a verified backup; see [Upgrading](../UPGRADING.md).
+
 A read tool may be repeated for independent items only when the immutable
 operation contract declares `fanout_safe`; `max_items` and the global five-call
 budget both apply, leaving the sixth model step available for the final answer.
@@ -162,19 +172,90 @@ capability identity, redacted requested and grounded input provenance, and the
 payload actually delivered to the model. Successful and replayed execution
 traces must bind back to that same record; several calls cannot be justified by
 one flattened union of unrelated values. A missing call evidence identity is
-incomplete even when capability names or redacted inputs match. The response
-guard preserves payload
-record boundaries and checks field and entity co-occurrence, including fan-out
-and native-batch answers, before accepting factual relations in model prose.
-This is a deterministic anti-misattribution guard, not a universal proof of
-natural-language truth. Ambiguous resolver candidates produce a deterministic
-clarification, not a failed-lookup answer. Provider partial results, missing
-records, and explicit call failures cannot be presented as complete evidence.
-The evidence guard also prevents the model from claiming that it searched a
-connected source when no such execution trace exists. Each model-visible
-result is bounded to 16 KB and all Connector results in one turn share a 48 KB
-budget; truncation becomes incomplete evidence rather than a silently
-shortened success.
+incomplete even when capability names or redacted inputs match. Each
+model-visible result is bounded to 16 KB and all Connector results in one turn
+share a 48 KB budget; truncation becomes incomplete evidence rather than a
+silently shortened success. Provider partial results, missing records, and
+explicit call failures cannot be presented as complete evidence. Ambiguous
+resolver candidates still produce an input clarification.
+
+For complete direct reads, the model selects evidence instead of writing the
+factual answer. `AgentEvidenceAnswer` accepts this closed JSON document as
+ordinary model text; native provider structured-output support is not required:
+
+```json
+{"language":"de","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}
+```
+
+Only `language` (`de`, `en`, `fr`, or `es`) and `sections` are allowed. A section
+contains `evidence_id` and `pointer`, optionally `fields` (one to 32 distinct,
+literal child keys) or `detail: "all"`, never both. It contains no generated
+labels, values, units, claims, or prose. A complete JSON code fence is also accepted. Every
+available complete successful direct result must be covered. References must
+match the delivered ledger and execution trace, and pointers must resolve
+exactly under `/data` using RFC 6901 escaping. Mixed Knowledge results may
+select `/context`, never `/sources` or source metadata. Invalid, duplicate, or
+missing selections fail closed.
+
+`ConnectorOutputContract` uses the verified operation's `response.output_mapping`
+for both workflow mapping and an explicit Agent projection. `response.agent_output`
+is `mapped` or `response`. A mapped projection is a closed field allowlist even
+when every mapped value is absent or hidden. It never falls back to the raw
+response. A missing mode preserves the existing published choice: a nonempty
+mapping is curated, an empty mapping exposes the selected response. New form
+and Integration Studio drafts default to `mapped`; clearing every field keeps
+that mode. The `response` option is an explicit advanced choice and cannot
+bypass a nonempty mapping.
+
+Each mapping can publish `presentation` labels, language-specific labels,
+description, unit, `summary`/`detail`/`hidden` visibility and sibling `context`
+dependencies. Hidden fields and workflow-only role aliases do not reach the
+Agent. Objects and record collections require explicit nested `fields`; records
+retain their actual indices, and parallel wildcard arrays are never zipped.
+Missing required context removes the dependent fact. Projection precedes model
+context construction, while result identity verification still uses the full
+provider result. Presentation metadata comes from the verified revision, never
+from a provider property named `presentation`, and is redacted and budgeted with
+the projected data. The complete envelope participates in the existing evidence
+hash and exact in-turn replay.
+
+The model selects relevant facts within that projection. Selecting an object
+uses its published summary fields; an exact scalar or `fields` selection may
+include detail fields, and `detail: "all"` selects all approved facts. Explicit
+context is added without unrelated siblings. `AgentEvidenceRenderer` formats
+readable labels, units, localized decimal separators, and call-specific subjects;
+JSON pointers and raw request JSON remain internal. Each record and its complete
+context (including an explicitly inherited parent currency or timestamp) render
+atomically under the output budget. Uncurated results retain their containing
+record because no field-level context contract exists. No field-name convention
+such as `records` or `items`, flattened value pool, or word-distance/number
+heuristic establishes identity. Strings are escaped as literal data, so API
+content cannot supply active Markdown or HTML or alter the response contract.
+Execution/source metadata and `data_preview` are not factual payloads.
+
+The immutable answer-length profile bounds the entire rendered answer in UTF-8
+bytes, including markup, labels, and provenance: `short` is 3,000, `balanced`
+is 8,000, and `detailed` is 16,000. The renderer budgets sections and fields
+within that total and visibly marks omitted data. These presentation limits are
+separate from the tool-result and provider-usage budgets.
+
+An invalid answer selection permits at most one output-only repair. It uses
+the same immutable Agent deployment, provider, and model, a 20-second timeout,
+and usage stage `agent_answer_repair`. It receives the current request and
+already delivered redacted evidence and its exact presentation metadata as
+untrusted data, with no tools, conversation history, or attachments. It cannot repeat capability execution or
+restart the normal turn loop. Rejection, timeout, provider failure, or a usage
+budget refusal preserves the server-rendered evidence and available sources in
+`safe_evidence_fallback`; an output-format failure does not become a visitor
+understanding question. Genuine input ambiguity and incomplete execution remain
+the evidence guard's responsibility.
+
+Conversation without direct reads and pure Knowledge answers remain prose;
+Knowledge citations are checked against the actual delivered source identities.
+Neither a valid source identity nor this output contract proves the semantic
+truth of free prose, the correctness of external data, or that the model chose
+every capability the visitor intended. Routing coverage remains an explicit
+quality check.
 
 When different direct-read capabilities compete for the same literal visitor
 evidence, a candidate-free rejection is treated as route ambiguity rather than
@@ -204,6 +285,13 @@ values and provider results are not copied into durable operator evidence. This
 makes routing an explicit weak-model eval rather than a false universal runtime
 guarantee. New follow-up values are still admitted only from the latest visitor
 message; only the preceding server-attested exception may be carried.
+
+`chat_turn_execution_evidence.v5` adds optional, allowlisted `evidence_guard`
+and `answer_repair` diagnostics. They record bounded reason codes and one
+repair's attempt count, outcome, and initial guard reason, never raw prompts,
+model drafts, or provider results. Existing v5 evidence without these fields
+remains readable. A useful `safe_evidence_fallback` is not a passing `answer`
+for routing, Quality Lab, or release evidence.
 
 One per-turn sequence guard deterministically prevents a weak model from mixing
 a direct read and a Playbook. Whichever productive capability class runs

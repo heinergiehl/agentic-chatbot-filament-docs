@@ -18,6 +18,53 @@ The review card reports a deterministic verdict (`no_regression`, `improved`, `r
 
 Enable **Require candidate pass before activation** only for release-critical scenarios. Candidate activation then retains the normal signed representative-turn and capability-manifest requirements and additionally requires the latest complete passing candidate run for every enabled scenario, bound to the exact candidate and current scenario fingerprint. Archived scenarios do not gate activation. Knowledge-gap regressions enable this candidate gate automatically; resolving the gap still separately requires a passing run against the current live Agent and an active Knowledge Source.
 
+## Direct-read response regressions and diagnostics
+
+Direct-read models select existing evidence with closed JSON containing only
+`language` and `sections: [{evidence_id, pointer}]`, with optional `fields` or
+`detail: "all"` per section. The server renders approved `/data` values with
+published readable labels and units, retaining record indices and required
+context. Technical paths stay internal; mixed Knowledge may select `/context`.
+Native structured-output
+support is not required. Positive model fixtures must use actual ledger IDs
+that also match the execution trace. Free factual prose is not a valid positive
+direct-read fixture. See [Runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md).
+
+Quality assertions still require the exact route set, item coverage, complete
+execution evidence, and an `answer` decision. `safe_evidence_fallback` can
+preserve useful facts and sources for a visitor but is not a quality pass or
+passing release evidence. Exercise different values for different targets,
+responses without input echoes, and nested or native-batch records; assert
+values within their own call and record context. Include malformed pointers,
+missing references, injected labels/values, and markup in provider strings in
+deterministic regression tests rather than checking success phrases alone.
+Also cover default versus requested detail fields, empty and hidden allowlists,
+missing required context, nested records, and metadata changes after publication.
+Both model context and output must exclude hidden values; a valid selection
+does not by itself prove that the selected fields answer the visitor's intent.
+
+Committed `chat_turn_execution_evidence.v5` has additive optional diagnostics:
+`evidence_guard` is an allowlisted reason such as `response_contract_missing`,
+`response_contract_invalid`, `response_evidence_reference_invalid`, or
+`response_evidence_coverage_incomplete`. `answer_repair` contains `attempts: 1`,
+an `outcome` of `accepted`, `rejected`, or `failed`, and the allowlisted
+`initial_evidence_guard`. Older v5 evidence without these fields remains valid.
+These diagnostics contain no model draft, raw provider result, or prompt.
+
+There is at most one output-only repair, using the same deployment/provider/
+model, no tools/history/attachments, and a 20-second timeout. Usage and cost
+belong to `agent_answer_repair`. A rejected repair, provider failure, or budget
+refusal retains the already verified fallback facts and available sources;
+it must not repeat tools or turn a format error into a visitor understanding
+question. Check that canonical JSON/SSE replay also causes no second repair.
+
+Conversation and pure Knowledge answers retain prose. Citation identity proves
+which source was delivered, not the semantic truth of its summary. Review
+representative answers as well as deterministic routing checks, and rerun
+relevant scenarios after runtime or provider changes; a deployment hash alone
+does not certify changed runtime code. Missing credentials leave a required
+provider gate blocked, or an optional gate skipped, never passed.
+
 ## Verified knowledge-gap detection
 
 The detector never treats “no citation” alone as a knowledge gap. A case is created only when all of these durable facts are present:
