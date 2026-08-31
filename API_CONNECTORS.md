@@ -638,6 +638,7 @@ only after the requested and observed canonical identities match.
 | --- | ---: | ---: | --- |
 | `succeeded` | true | true | The contract completed successfully. |
 | `replayed` | true | true | A previously committed idempotent result was returned. |
+| `pending` | false | false | A durable job was accepted; its final result is not yet available. |
 | `partial` | false | true | Bounded useful data exists, but completion was incomplete. |
 | `failed` | false | false | A terminal transport, protocol, schema, or provider failure occurred. |
 | `blocked` | false | false | Validation, policy, authorization, or safety prevented dispatch. |
@@ -664,7 +665,7 @@ user copy, provider diagnostics, and retry hints:
 Provider messages, response bodies, links, and mapped values remain bounded,
 redacted, untrusted data and are never promoted to instructions.
 
-## Bounded continuations, not a scheduler
+## Inline continuations and durable background jobs
 
 Pagination and async polling use a durable continuation journal. The next
 target, checkpoint, and final outcome are encrypted at rest; only hashes,
@@ -679,11 +680,18 @@ random lease token whose hash is stored; an expired lease may be reclaimed only
 for the same continuation identity and exact next step.
 
 The journal is not an autonomous queue and its repository does not schedule
-work or own workflow state. The bounded continuation runner performs polling or
-pagination inside the owning connector invocation. A retry of that invocation
-may resume an expired leased checkpoint; no scheduler wakes a journal row by
-itself. AgentGraph remains the authority for workflow checkpoint, wait, resume,
-delay, and task semantics.
+work or own workflow state. Existing contracts without an explicit durable mode
+retain bounded inline polling/pagination and their original hashes. A retry may
+resume an expired inline lease only for the same authorized invocation.
+
+An operation may instead publish `execution.async_completion.mode: durable`
+and run inside a Playbook. The initial acceptance is committed before yielding;
+the existing AgentGraph delay/resume path then performs bounded status reads
+through `CapabilityExecutionGateway`. An optional signed webhook accelerates
+that same path. Pending is not usable output, and accepted writes remain
+protected from resubmission. See [Durable Connectors](DURABLE_CONNECTORS.md) for
+the completion protocol, structured backend controls, signatures, diagnostic
+limits and recovery behavior.
 
 ## Write integrity, fencing, and reconciliation
 

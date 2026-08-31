@@ -31,7 +31,8 @@ HTTP / widget / channel
 -> AgentTurnModel
    -> answer or clarify directly
    -> optionally invoke one or more exact deployment-pinned read tools
-   -> or invoke an exact deployment-pinned Playbook tool
+   -> optionally invoke at most one exact deployment-pinned Playbook tool
+-> verified read evidence and canonical Playbook outcome composition
 -> canonical ChatTurnResult
 -> durable outcome and assistant-message commit
 -> JSON / SSE renderer
@@ -42,6 +43,25 @@ HTTP / widget / channel
 clarification, provider failures, and Playbook results. Provider exceptions are
 mapped to bounded errors and localized safe answers; raw exception text is not
 returned to visitors.
+
+Independent direct reads may coexist with one Playbook in the same turn. The
+single-open-Playbook rule and all approval, wait, cancellation and unknown-write
+semantics remain authoritative. `AgentAnswerFinalizer` composes verified read
+evidence with the canonical Playbook presentation. Bounded encrypted
+`ChatTurnPresentationReceipts` persist completed reads and the exact Playbook
+observation before recovery can need them. Observing a busy, delayed or terminal
+Playbook projects an authorized AgentGraph snapshot; it never dispatches or
+resumes the graph just to reconstruct an answer. Uncertain writes retain their
+terminal error and retry lock, with independent read evidence in `read_answer`.
+
+For a long-running external operation, an immutable Connector completion
+contract returns a typed pending reference through the same capability gateway.
+AgentGraph owns the delay/checkpoint and its existing resume-delivery mechanism
+owns polling. Signed completion notifications are deduplicated wake-up hints;
+the gateway retrieves authoritative results. There is no second job scheduler,
+conversation loop, or webhook-controlled graph transition. See
+[Durable Connectors](DURABLE_CONNECTORS.md) and
+[ADR 0009](adr/0009-durable-external-operations.md).
 
 Transport resolves access, bot, area, conversation, and client-turn identity.
 It does not select a Playbook, mutate workflow state, or authorize a

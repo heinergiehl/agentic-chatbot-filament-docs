@@ -27,6 +27,51 @@ If pending items do not move for several minutes, verify worker health and provi
 
 Source deletion also uses the queue when the backend needs an external vector delete call. Keep workers running after bulk deletes so `CleanupKnowledgeSourceVectorsJob` can remove Chroma vectors by collected chunk ID. The job is idempotent and safe to retry.
 
+## Durable Connector Completion
+
+Long-running Connector operations use the existing AgentGraph delay/resume
+queue. Keep a supervised worker on the host's default queue and an additional
+worker on the completion-notification queue when webhooks are enabled:
+
+```bash
+php artisan queue:work database --queue=default
+php artisan queue:work database --queue=connector-completions
+```
+
+Replace connection/queue names with the effective host configuration. Supported
+persistent drivers are `database`, `redis`, `sqs`, and `beanstalkd`; `sync`,
+`null`, `deferred`, and in-process/background-only drivers cannot provide durable
+completion. Queue tables belong to the queue connection, which may differ from
+the package's PostgreSQL connection. Configure worker timeouts and retry/visibility
+windows to exceed the permitted status-request duration.
+
+```env
+CONNECTOR_COMPLETION_WEBHOOKS_ENABLED=true
+CONNECTOR_COMPLETION_QUEUE_CONNECTION=database
+CONNECTOR_COMPLETION_QUEUE=connector-completions
+```
+
+Keep Laravel Scheduler running. The package registers inbox recovery every
+minute; the command can also be invoked directly:
+
+```bash
+php artisan filament-agentic-chatbot:maintain-connector-completions --limit=500
+php artisan filament-agentic-chatbot:doctor
+```
+
+Doctor checks schema, persistent queue configuration, immutable completion
+contracts, registered signature verifiers, referenced encrypted credentials,
+and overdue work. Passing Doctor does not prove worker health or provider
+callback delivery. Monitor queued/failed jobs, old pending completion events,
+overdue continuations and unknown side effects. Use a stable public HTTPS
+`APP_URL`, synchronize clocks, and retain the encryption key on every worker.
+
+Restart workers after deploying new code/configuration. Do not delete an active
+job or retry an uncertain write to make the queue look healthy. Local Playbook
+cancellation does not establish remote cancellation; verify the external
+outcome and use the existing operator reconciliation action. See
+[Durable Connectors](DURABLE_CONNECTORS.md).
+
 ## Outbound Webhook Recovery
 
 Signed outcome and handoff webhooks use a transactional outbox plus a durable

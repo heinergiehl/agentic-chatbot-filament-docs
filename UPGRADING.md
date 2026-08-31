@@ -2,6 +2,50 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Durable Connector jobs and mixed Playbook answers
+
+Run these three additive migrations before restarting the application and
+queue workers:
+
+- `2026_08_30_000007_add_durable_connector_continuations.php`
+- `2026_08_30_000008_create_connector_completion_events.php`
+- `2026_08_30_000009_add_chat_turn_presentation_receipts.php`
+
+Quiesce writers, take and verify a restorable schema/data backup, and preserve
+the matching package, host configuration and encryption key first. The
+migrations classify existing continuation rows as `inline`, add durable job
+correlation and notification indexes, and add encrypted mixed-turn presentation
+receipts. They do not rewrite Connector revisions, Agent deployment hashes, or
+existing messages. An unchanged operation form also preserves its saved
+completion policy without injecting new defaults into the contract.
+
+This release changes the hash-bound core authentication and continuation
+implementations. Operations pinned to those previous implementations must be
+tested and published again, and their dependent Agent/Playbook deployments must
+be rebuilt and tested before traffic resumes. This also applies to ordinary
+read operations: unchanged business settings do not authorize changed runtime
+code. Do not rewrite old hashes or weaken the strategy verification. Finish
+in-flight work on its matching release, or reconcile it before the cutover.
+
+Durable completion is opt-in through a newly published operation and pinned
+Playbook deployment. Existing HTTP operations do not acquire webhook or
+background-job semantics automatically. Configure persistent queues, supervised
+workers, Scheduler, a public HTTPS callback origin and encrypted signing
+credentials as described in [Durable Connectors](docs/DURABLE_CONNECTORS.md).
+Run Doctor and verify representative read/write pending, completion, failure,
+cancellation and JSON/SSE replay behavior before reopening traffic.
+
+The public chat result may now retain independent verified reads in
+`read_answer` alongside a terminal Playbook error. Custom clients must preserve
+that error's retry lock and display its status even when read results exist.
+The bundled widget does so. See [Public API](docs/PUBLIC_API.md).
+
+Do not use a code-only rollback or discard active job/receipt state.
+Continuation rollback refuses any durable rows, callback rollback refuses
+active events, and receipt rollback is intentionally blocked. Restore the
+verified database backup and matching package/configuration/key as a unit;
+first reconcile any external writes accepted after that backup.
+
 ## Curated Connector answers
 
 Connector operations now publish `response.agent_output` (`mapped` or

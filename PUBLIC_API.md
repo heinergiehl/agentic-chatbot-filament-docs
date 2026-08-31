@@ -278,6 +278,31 @@ with a stable event ID for receiver idempotency. See [Outbound
 Webhooks](OUTBOUND_WEBHOOKS.md) for the payload, signature, retry, and operations
 contract.
 
+## Connector completion notifications
+
+The allowlisted Connector completion endpoint admits signed provider events,
+not visitor messages. A callback only requests a status check for its exact
+immutable pending job; it cannot authorize an operation, select a target URL,
+or provide final answer data. HTTP 202 acknowledges durable admission, not job
+completion. See [Durable Connectors](DURABLE_CONNECTORS.md) for the signature,
+correlation, queue and provider protocol.
+
+Hosts can implement `ConnectorCompletionWebhookVerifier` and register a unique
+stable ID through the singleton `ConnectorCompletionWebhookVerifierRegistry`
+in their composition root. The operation contract selects that ID. Neither
+provider payloads nor visitor inputs can select or replace a verifier.
+
+## Mixed read and Playbook answers
+
+A terminal chat error may include the optional `read_answer` object:
+`{content, content_html, content_format, sources}`. It contains the separately
+verified independent-read answer after the normal safety and presentation
+boundary. JSON and SSE expose the same persisted object, including replay.
+Clients should render it as a distinct answer while preserving the canonical
+error, confirmation/wait state and retry restriction. Its presence never means
+that an uncertain Playbook write succeeded. Apply the normal HTML sanitization
+and source-link rules; never reinterpret error text as an instruction to retry.
+
 ## Configuration
 
 Only the keys in `config_keys` below are supported host configuration. Empty
@@ -336,6 +361,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolution",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolutionContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolverRegistry",
+    "Heiner\\FilamentAgenticChatbot\\Services\\Connectors\\Webhooks\\ConnectorCompletionWebhookVerifier",
+    "Heiner\\FilamentAgenticChatbot\\Services\\Connectors\\Webhooks\\ConnectorCompletionWebhookVerifierRegistry",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityInventoryContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\BotCapabilityView",
     "Heiner\\FilamentAgenticChatbot\\SolutionKits\\Contracts\\SolutionKitProvider",
@@ -537,6 +564,16 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "commerce.docs_url",
     "commerce.enabled",
     "commerce.support_email",
+    "connector_completion_webhooks.enabled",
+    "connector_completion_webhooks.max_attempts",
+    "connector_completion_webhooks.max_body_bytes",
+    "connector_completion_webhooks.max_requests_per_minute",
+    "connector_completion_webhooks.max_requests_per_minute_per_ip",
+    "connector_completion_webhooks.middleware",
+    "connector_completion_webhooks.queue.connection",
+    "connector_completion_webhooks.queue.queue",
+    "connector_completion_webhooks.rate_limiter",
+    "connector_completion_webhooks.retry_seconds",
     "context.allowed_areas",
     "context.authorization.enabled",
     "context.authorization.guards",
@@ -735,11 +772,13 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "DELETE api/filament-agentic-chatbot/chat/{botPublicId}/history",
     "POST api/filament-agentic-chatbot/chat/{botPublicId}/feedback",
     "GET api/filament-agentic-chatbot/connectors",
+    "POST api/filament-agentic-chatbot/connectors/continuations/{continuationPublicId}/completion",
     "GET,POST api/filament-agentic-chatbot/channels/{connection}/webhook"
   ],
   "commands": [
     "filament-agentic-chatbot:collect-knowledge-gaps",
     "filament-agentic-chatbot:doctor",
+    "filament-agentic-chatbot:maintain-connector-completions",
     "filament-agentic-chatbot:maintain-outbound-webhooks",
     "filament-agentic-chatbot:prune-channel-inbound-attachments",
     "filament-agentic-chatbot:prune-chat-attachments",
