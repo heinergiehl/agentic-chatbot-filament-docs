@@ -1,26 +1,28 @@
 # Agentic Chatbot for Filament
 
-A Laravel/Filament plugin for building, validating, publishing, and operating source-grounded AI chatbots with explicit agentic workflows in your own application.
+A Laravel and Filament package for building, testing, publishing, and operating governed AI Agents in your own application. Knowledge, live data, registered capabilities, and visual Playbooks are attached only when an Agent needs them.
+
+This repository is the complete public documentation source used by HeliDocs. The Filament marketplace has a separate entry point: configure its `docs_url` to the raw [`FILAMENT_PLUGIN_PAGE.md`](FILAMENT_PLUGIN_PAGE.md), not this README. That standalone page uses absolute GitHub links because Filament does not resolve repository-relative documentation links in the same way as HeliDocs or GitHub.
 
 The documentation target is `v0.17.0`. **Release status:** Candidate. A tag may ship only after the governed contract is approved and every protected exact-source and exact-artifact job passes. Do not treat documentation availability as proof that a package version has been published.
 
-## Why this product
+## What the package provides
 
-- Native Filament management for bots, sources, Data Resources, workflows, connectors, quality checks, conversations, handoffs, usage, privacy, and traces
-- Guided local OpenAPI/Postman/cURL import into inactive Connector drafts, with optional AI metadata suggestions that reuse central provider credentials
-- Scheduled Published Agent regressions and a verified Knowledge Operations inbox that require durable runtime evidence and passing current tests
-- One understandable production path: one immutable verified Agent deployment is live for each bot; Playbooks are optional pinned process tools
-- One explicit rollout sequence: publish an immutable candidate, test that exact candidate through the persistent runtime, activate it atomically, then verify the live chat and trace
-- AgentGraph-owned workflow state and one guarded external-capability boundary
-- Tokenless public widget bootstrap and conversation credentials instead of permanent browser secrets
-- Exact release artifact, SHA-256, per-entry manifest, embedded CycloneDX SBOM, clean Laravel 12/13 installs, and PostgreSQL/pgvector upgrade/rollback evidence
+- Filament administration for Agents, knowledge, approved live data, capabilities, optional Playbooks, conversations, quality, handoff, usage, privacy, and traces
+- A deliberate release path in which an immutable candidate is tested through the persistent chat runtime before it becomes live
+- Source-grounded answers with citations and controlled reads from approved Eloquent resources or published API operations
+- Versioned Solution Kits, a Production Handoff Desk, evidence-backed outcomes, and exact candidate-versus-live quality comparisons
+- Integration Studio for importing OpenAPI, Postman, or cURL definitions into inactive Connector drafts for review
+- A tokenless public widget bootstrap, typed SDK, private attachments, suggested messages, and bounded page context instead of permanent browser credentials
+- Telegram, Slack, WhatsApp Cloud API, Mailtrap Email, and Mailgun Email with explicit availability and acceptance boundaries
+- Versioned compatibility, upgrade, security, operations, support, and release-assurance documentation
 
 ## Supported target
 
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.2+
-- `heiner/agent-graph` `^0.15.1`
+- `heiner/agent-graph` `0.16.0-rc.2` for the current integration candidate
 - PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
 - Supervised asynchronous queue worker for production ingestion, delays, and background work
 
@@ -29,14 +31,18 @@ Docker is used for reproducible release validation, not imposed as a customer de
 ## Install after publication
 
 ```bash
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot:^0.17
-php artisan vendor:publish --tag=filament-agentic-chatbot-config
-php artisan migrate
-php artisan filament-agentic-chatbot:doctor
+```
+
+Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel before running the installer:
+
+```bash
+php artisan filament-agentic-chatbot:install
 php artisan queue:work
 ```
 
-Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel. Custom Filament themes must include the package views in their source scan as shown in the [Quickstart](QUICKSTART.md).
+The installer checks panel registration before publishing configuration, running migrations, and executing Doctor. Custom Filament themes must include the package views in their source scan as shown in the [Quickstart](QUICKSTART.md).
 
 ## Public widget
 

@@ -6,11 +6,15 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `^0.15.1`
+- Current plugin constraint: `0.16.0-rc.2` (exact integration candidate)
+- The consuming host must explicitly select the same candidate and complete the
+  coordinated store migration and deployment publication before accepting work.
 - The required public surface is enforced by
   `AgentGraphPublicApiCompatibilityTest`.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
   cancellation, projection-authority, and side-effect fault-injection tests.
+- The bounded 0.16 integration evidence and remaining host gate are recorded in
+  [the RC2 integration record](AGENTGRAPH_0_16_RC2_INTEGRATION.md).
 
 ## Ownership boundary
 
@@ -88,6 +92,11 @@ authority.
 
 ## Recovery invariants
 
+- Recovering the same committed delay reuses its delivery receipt, authority,
+  due time, and projection revision. An unchanged, fully attested wait does not
+  become a new projection revision merely because transport delivery was retried.
+  A new checkpoint still requires the next revision. Claimed, unknown, and
+  terminal receipts are never reset by repeated scheduling.
 - Resume, cancel, delay, and recovery use the installed SDK's public atomic
   transitions; the plugin does not perform a second best-effort interrupt
   mutation.
@@ -108,3 +117,15 @@ authority.
 After changing the SDK constraint or any adapter boundary, run the public API
 compatibility test, the targeted interrupted-resume/confirmation tests, and
 Doctor. Missing required SDK methods are blocking compatibility failures.
+
+The database adapters forward the SDK task attempt and node claim token without
+alteration while keeping durable error redaction. Child selection and delayed
+child interrupt validation use the SDK implementations. The plugin still owns
+its ancestor authorization, cancellation policy, external capability gateway,
+and immutable deployment checks; those are not removed by an SDK upgrade.
+
+The 0.16 claim-token migration must run on the configured AgentGraph database
+while old workers are drained. Existing immutable 0.15 Playbook artifacts are
+not widened or rewritten: publish new Playbooks and then obtain new,
+hash-bound Agent candidate evidence through the normal release lifecycle before
+activation. A test with a different model cannot certify an unchanged candidate.

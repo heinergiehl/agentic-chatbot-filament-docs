@@ -213,7 +213,7 @@ The built-in `bots` resource is scoped to the current Agent by default. Expose a
 
 ### Natural Data Questions
 
-The Behavior tab also includes **Understand natural data questions**. This is the admin-friendly layer above the same closed `query_data_resource` contract.
+The **Tools & Data** tab also includes **Understand natural data questions**. This is the admin-friendly layer above the same closed `query_data_resource` contract.
 
 Admins choose:
 

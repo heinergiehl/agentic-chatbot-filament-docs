@@ -4,6 +4,8 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.0] - 2026-09-02
+
 ### Added
 
 - Added deterministic, evidence-bound Playbook result composition for selected capability fields, bounded iterations, and mapped child results without another model call; partial and unknown outcomes remain explicit.
@@ -40,6 +42,7 @@ All notable changes to this package will be documented in this file.
 
 ### Fixed
 
+- Made the external-host workflow-editor E2E cleanup remove immutable Connector publication evidence in foreign-key order and fail visibly on cleanup errors, and froze the token-backpressure TTL assertion so the release suite cannot fail at a one-second boundary.
 - Persisted Telegram chunk progress before dispatch and after provider acknowledgment, preventing known retries from resending accepted chunks or rerunning the Agent; uncertain delivery stops for reconciliation.
 - Prevented busy channel turns from consuming a second accepted inbound message; ordered admission retries the same durable turn identity and keeps staged attachments until terminal handling.
 - Removed sensitive default headers from Connector duplicates, made Bridge/preview failures visible without exposing diagnostics, checked participant commands against Agent access, and stopped displaying unpriced usage as zero cost.
@@ -63,8 +66,6 @@ All notable changes to this package will be documented in this file.
 - Added `2026_08_29_000004_create_channel_inbound_attachments.php`. It creates idempotent, short-lived private ingress staging for queued channel uploads; existing channels are not backfilled.
 - Added `2026_08_29_000007_add_widget_display_context_to_chat_turns.php`. It adds encrypted, nullable storage for bounded visitor-visible page context; existing turns are not backfilled.
 - Added `2026_08_29_000008_add_candidate_quality_comparisons.php`. It adds opt-in candidate release gates and deployment-role/comparison bindings to quality runs; existing Published Agent runs are classified as live and remain valid under the prior hash-based current-run contract.
-
-## [0.17.0] - 2026-08-19
 
 ### Breaking
 

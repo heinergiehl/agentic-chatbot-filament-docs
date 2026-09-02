@@ -1,7 +1,7 @@
 # Filament Agentic Chatbot 0.17.0
 
 **Release status:** Candidate<br>
-**Target date:** 2026-08-19<br>
+**Target date:** 2026-09-02<br>
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
@@ -18,10 +18,16 @@ Do not publish or install this candidate as a production release until `scripts/
 ## What buyers gain
 
 - A guided readiness flow from Agent setup through candidate publication, persistent real-chat testing, atomic live activation, optional Playbook validation, and turn/run/trace inspection.
+- Versioned Solution Kits for reviewed starting configurations, including a built-in Customer Support & Human Handoff Kit that still requires explicit data, Connector, model, and Playbook choices before publication.
 - Tokenless browser snippets with origin-checked bootstrap, short-lived in-memory tokens, renewal before expiry, and a separate anonymous conversation credential.
+- A typed widget SDK, verified private chat attachments, suggested-message and bounded visible-page-context APIs, and privacy-minimized outcome, capability, and handoff events.
 - Durable turn idempotency and serialization, explicit unknown-outcome reconciliation, immutable deployment/capability pins, and bounded external-call handling.
 - A safer editor: raw HTTP inspection is read-only (`GET`/`HEAD`), host-policy checked, DNS pinned, and response-size bounded; connector writes remain behind the productive execution gateway.
 - A full-page Integration Studio that imports OpenAPI, Postman, or cURL locally into inactive Connector drafts, optionally improves only presentation metadata through an existing central AI key, and records atomic actor-attributed installation evidence.
+- A Production Handoff Desk with one-active-case enforcement, SLA and assignment state, encrypted internal notes, same-thread operator replies, immutable activity, and deterministic Agent handback.
+- Scheduled Published Agent checks, exact candidate-versus-live Quality Lab comparisons, and a Knowledge Operations inbox for turning cited knowledge gaps into durable regression coverage.
+- Production Telegram, Slack, WhatsApp Cloud API, Mailtrap Email, and Mailgun Email adapters with explicit per-adapter availability and acceptance boundaries in the compatibility matrix.
+- An evidence-backed conversation-outcome ledger and Agent Analytics reporting for success, handoff, and currency-safe attributed value without treating model output as business authority.
 - Fail-closed sensitive Filament surfaces and a shared privacy lifecycle for conversation inspection, export, and deletion.
 - Bounded ingestion downloads, secret-aware operational logging, and dependency constraints that exclude audited vulnerable Guzzle/PSR-7/CommonMark versions while supporting Laravel 13's native Guzzle 8/PSR-7 3 line.
 - Exact commercial artifact evidence: deterministic ZIP, whole-file SHA-256, per-entry sidecar, embedded release manifest, and CycloneDX 1.6 production-dependency SBOM.
@@ -43,14 +49,14 @@ Read `UPGRADING.md` completely before running migrations. In particular, rotate 
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.2+
-- AgentGraph ^0.15.1
+- AgentGraph 0.16.0-rc.2 as the exact integration candidate
 - PostgreSQL 16 with pgvector and a supervised asynchronous queue worker for release certification
 
 Docker is used to make the release host reproducible; customers do not have to deploy with Docker. ChromaDB and the documented provider/channel adapters remain available, but exact live certification is limited to the provider/model/profile rows and infrastructure named by the retained protected release evidence.
 
-## Release evidence required before approval
+## Release evidence required before publication
 
-The release is blocked until the protected workflow has green evidence for the exact candidate commit: locked Composer and npm dependency audits, Pint, the full PHPUnit suite, PHPStan, workflow-editor `test:ci` plus a zero asset diff, the deterministic runtime release gate, calibrated multilingual retrieval plus real pgvector integration, the complete live provider profile matrix including Knowledge citation retention, restricted-capability rejection, the 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, the 0.16.1 upgrade and rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
+Publication is blocked until the release contract is approved and the protected workflow has green evidence for the exact commit: locked Composer and npm dependency audits, Pint, the full PHPUnit suite, PHPStan, workflow-editor `test:ci` plus a zero asset diff, the deterministic runtime release gate, calibrated multilingual retrieval plus real pgvector integration, the complete live provider profile matrix including Knowledge citation retention, restricted-capability rejection, the 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, the 0.16.1 upgrade and rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
 
 No unavailable credential, skipped external check, path install, or static checklist is counted as passing evidence.
 

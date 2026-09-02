@@ -281,12 +281,13 @@ version effective when the call started. Provider failures, missing usage, and
 settlement failures become `reconciliation_required`. Queued retries and the
 scheduled `filament-agentic-chatbot:reconcile-ai-usage` sweep make unresolved
 calls observable; an expired unknown call is released exactly once without
-fabricating actual usage. Reports treat a group containing any unpriced call as
-unknown cost, never as a free or partial aggregate.
+fabricating actual usage. Reports label groups containing unpriced calls as
+incomplete and may show an explicitly labelled known subtotal, never a free or
+complete aggregate.
 
-Costs and hard limits use integer micro-minor-units throughout. Cost budgets require an effective, versioned pricing entry under `filament-agentic-chatbot.usage.pricing`; missing pricing fails closed with `ai_cost_budget_pricing_missing`.
+Costs and hard limits use integer micro-minor-units throughout. Cost budgets require an effective, versioned, exact canonical `provider:model` pricing entry under `filament-agentic-chatbot.usage.pricing`; provider-wide or model-wide fallbacks are ignored, and missing pricing fails closed with `ai_cost_budget_pricing_missing`.
 
-The internal catalog includes effective-dated Google Gemini standard-paid text rates for the release-verified 3.7 Flash, 3.6 Flash, and 3.5 Flash Lite models. Through December 31, 2026, Gemini 3.7/3.6 Flash are `$0.75` per million uncached input tokens, `$0.075` per million cached input tokens, and `$3.75` per million output tokens including thinking; the catalog automatically switches to the published January 1, 2027 rates at that boundary. Gemini 3.5 Flash Lite is `$0.30`, `$0.03`, and `$2.50` for the same buckets. Google resource-name aliases are normalized before lookup. Explicit cache storage is not converted into a per-call token price; when Google reports a cache-write bucket, cost-budgeted settlement becomes `reconciliation_required` rather than undercounting it. See the [official Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
+The internal catalog includes effective-dated Google Gemini standard-paid text rates for the release-verified 3.7 Flash, 3.6 Flash, and 3.5 Flash Lite models. Through December 31, 2026, Gemini 3.7/3.6 Flash are `$0.75` per million uncached input tokens, `$0.075` per million cached input tokens, and `$3.75` per million output tokens including thinking; the catalog automatically switches to the published January 1, 2027 rates at that boundary. Gemini 3.5 Flash Lite is `$0.30`, `$0.03`, and `$2.50` for the same buckets. Google resource-name aliases are normalized before lookup. Explicit cache storage is not converted into a per-call token price; when Google reports a cache-write bucket, the known token receipt settles without a guessed cost and later calls in the affected hard cost-budget scope fail closed until the unpriced ledger entry is operationally resolved. See the [official Gemini API pricing](https://ai.google.dev/gemini-api/docs/pricing).
 
 Host-provided action contracts include a hash of the directly reflected handler
 source. A code change invalidates existing deployment pins and requires

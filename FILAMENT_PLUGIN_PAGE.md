@@ -1,109 +1,133 @@
 # Agentic Chatbot for Filament
 
-A Filament-native control plane for building, validating, publishing, and operating governed conversational Agents with optional source-grounded knowledge and bounded visual Playbooks inside your Laravel application.
+Build and operate governed AI Agents inside your Laravel application.
 
-The documented target is `v0.17.0`. **Release status:** Candidate. A tag may ship only after the governed contract is approved and every protected exact-source and exact-artifact job passes. After publication, copy the private Composer repository URL from the buyer's Anystack page and install with:
+Connect each Agent to approved knowledge, selected live application data, and registered capabilities. Add a visual Playbook only when a request needs a bounded process. Test an immutable release candidate before it receives live traffic.
 
-```bash
-composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.17
-```
+**Commercial Early Access** · **Filament 5** · **Laravel 12 and 13**
 
-Composer authenticates with the buyer email and Anystack license key; an enabled activation policy appends the Anystack-provided fingerprint to the key with `:`. Credentials never belong in committed `composer.json` or `auth.json` files.
+The documented target is `v0.17.0`. **Release status:** Candidate. Version v0.17.0 has not been published. Review this page against the final package, the release-matched demo, and fresh screenshots before making it buyer-visible.
 
-## Product promise
+- [Try the current live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
+- [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
+- [Read the 0.17 upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md)
 
-Build a useful support, onboarding, qualification, or internal-operations chatbot without handing your application state to an opaque hosted builder. Administrators work in Filament; the Laravel host keeps ownership of users, tenancy, business data, policies, queues, credentials, and deployment.
+## What you can build
 
-The shortest production path is intentionally explicit:
+### Grounded support and onboarding
 
-1. Create an Agent and configure its conversation behavior and provider/model.
-2. Add only the knowledge and approved capabilities that Agent needs.
-3. Optionally create a Playbook for a bounded multi-step process, resolve its readiness issues, and publish it.
-4. Assign any published Playbooks to the Agent.
-5. Use **Publish candidate** to create one immutable, hash-verified release candidate without changing live traffic.
-6. Run **Test release candidate** through the persistent runtime; productive writes remain blocked during candidate testing.
-7. Use **Make candidate live** only after the exact deployment hash and saved Agent fingerprint have passing durable evidence.
-8. Verify the live Agent through a real behavior check or public widget chat.
-9. Inspect the conversation and, when one ran, its Playbook run and trace.
+Answer questions from sources that an administrator has attached and ingested. Responses can include citations, and operators can review the conversation, feedback, and source use in Filament.
 
-An Agent without one verified live Agent deployment stays blocked. A Playbook is never required for ordinary or knowledge-grounded chat, and draft edits do not silently change live behavior.
+### Assistants that use approved application data
 
-## What ships
+Let an Agent read selected Eloquent resources or published API operations without giving it broad access to the host application. The deployment records the exact fields, filters, limits, scopes, revisions, and environments that are allowed.
 
-### Filament control plane
+### Bounded processes
 
-- Multi-Agent management for identity, provider/model, prompt behavior, retrieval, widget presentation, access, and readiness
-- Guided setup and launch status with permission-aware actions and direct links to the next fix
-- Knowledge source ingestion for URLs, files, text, and bounded API-fed JSON
-- Approved Eloquent Data Resources with returned/filterable/sortable fields, tenant/actor scope, result limits, and query budgets
-- Integration Studio for locally importing OpenAPI, Postman, or cURL into reviewed inactive Connector drafts, with optional central-key AI metadata suggestions
-- Capability Bridge inspection for explicit host-registered action contracts, plus encrypted exact-draft Connector response fixtures and network-free canonical replay
-- Conversation review with citations, feedback, handoff, privacy export/deletion, and lifecycle guards
-- Scheduled Published Agent regressions plus a verified Knowledge Operations inbox with evidence-backed resolution
-- Usage, quality, provider diagnostics, Doctor checks, reconciliation queues, and run/trace inspection
+Use an optional visual Playbook when a request needs several controlled steps, such as collecting input, checking a condition, requesting approval, calling a capability, waiting for a result, or handing work to a person.
 
-### Visual Playbook Builder
+## How it works
 
-- Draft, validation, quality scenarios, immutable publication, and deployment history
-- Twelve semantic process steps: Entry, Request Input, Capability, Decision, Approval, Wait, AI Task, Transform, For Each, Sub-Playbook, Result, and Note
-- Governed capability configuration for knowledge, Data Resources, API Connectors, host actions, memory, and raw read-only HTTP without exposing runtime-only node taxonomies
-- Focus mode, minimap, zoom/fit, searchable step catalog, structured field editors, keyboard operation, dark mode, and responsive Filament integration
-- AI-assisted Playbook generation that always produces a draft and must pass deterministic validation before publication
-- Read-only node inspection for raw HTTP (`GET`/`HEAD`) with allowlist, DNS-pinned transport, and streaming response-size limits
+1. Create an Agent and define its behavior, response policy, provider, and model.
+2. Attach only the knowledge, Data Resources, Connector operations, host capabilities, and optional Playbooks that it needs.
+3. Test ordinary chat, expected capability choices, failure behavior, and any Playbook paths.
+4. Use **Publish candidate**, run **Test release candidate** through the persistent runtime, then use **Make candidate live** only after the exact candidate has passing evidence.
 
-### Production runtime
+Draft edits do not change live behavior. A live Agent uses one immutable, verified deployment with exact dependency pins. A Playbook is never required for ordinary or knowledge-grounded chat.
 
-- One immutable, hash-verified Agent deployment per live Agent, with an exact optional Playbook dependency closure
-- Agent-owned conversation and intent understanding; AgentGraph owns only Playbook checkpoints, interrupts, resume, delay, cancellation, and task semantics through `heiner/agent-graph` `^0.15.1`
-- One productive external capability boundary with authorization, exact payload binding, confirmation, idempotency, encrypted ledgers, secret-aware redaction, unknown-outcome handling, and operator reconciliation
-- Durable chat turns with client idempotency, per-conversation serialization, committed JSON/SSE replay, and crash-safe terminal recovery
-- API Connector v3 contracts with exact revision/schema/environment pins, bounded pagination/polling, typed outcomes, and fail-closed write handling
-- Retrieval strategies for vector, hybrid, and lexical-only search with evidence/status contracts and index identity checks
+## What is included
 
-### Public widget and channels
+### Agent control plane
 
-- Tokenless browser snippet: an origin-checked `/bootstrap` call issues a short-lived token kept in memory and renewed before expiry
-- Separate high-entropy conversation credentials so a leaked or guessed session ID alone cannot read, export, mutate, or delete anonymous production history
-- Configurable template, accent, typography, size, copy, starter prompts, citations, source visibility, context area, and responsive layout
-- Supported Telegram plus real-provider-tested Slack and Mailtrap Email package drivers, alongside fail-closed opt-in WhatsApp Cloud API and Mailgun Email implementations; every enabled provider routes verified webhooks and inbound files through the same Agent/capability/usage boundaries
-- Agent Access Tokens for trusted server-to-server API integrations; they are never browser widget credentials
+- Agent identity, behavior, provider, model, retrieval, access, widget presentation, and readiness in Filament
+- Versioned Solution Kits for reviewed starting configurations, including Customer Support & Human Handoff
+- Candidate publication, candidate testing, deliberate activation, and deployment inspection
+- Conversation review, evidence-backed outcomes, feedback, handoff, usage, privacy actions, and traces
 
-## Supported Golden Path
+### Knowledge and live data
 
-| Component | Supported / certified target |
+- URL, file, text, and bounded API-fed knowledge sources
+- Source-grounded answers with citations
+- Approved Eloquent Data Resources with field, filter, sort, scope, result, and query-budget controls
+- PostgreSQL with pgvector as the certified database path, with ChromaDB available as a buyer-staged alternative
+
+### Integrations and capabilities
+
+- API Connectors with versioned operation and environment bindings
+- Integration Studio for importing OpenAPI, Postman, or cURL definitions into inactive drafts for review
+- Explicit host-registered capabilities governed by Laravel authorization and package execution policy
+- Confirmations, idempotency, redaction, and reconciliation for productive side effects
+
+### Optional visual Playbooks
+
+- A Filament-integrated canvas for bounded multi-step processes
+- Semantic steps for input, capabilities, decisions, approvals, waits, AI tasks, transforms, bounded iteration, sub-Playbooks, and results
+- Deterministic validation before publication
+- Immutable deployments, run inspection, checkpoints, interrupts, delays, cancellation, and traces
+
+### Delivery and operations
+
+- Embeddable browser widget with a tokenless bootstrap
+- Typed widget SDK, private attachments, suggested messages, bounded page context, and lifecycle events
+- Trusted server access through Agent Access Tokens
+- Telegram, Slack, WhatsApp Cloud API, Mailtrap Email, and Mailgun Email with the supported and opt-in boundaries in the versioned compatibility matrix
+- Production Handoff Desk with assignment, SLA, encrypted notes, operator replies, and deterministic Agent handback
+- Scheduled quality scenarios, exact candidate-versus-live comparisons, knowledge-gap operations, provider diagnostics, Doctor checks, and operational queues
+
+## Best fit
+
+This plugin is a good fit when:
+
+- your product already runs on Laravel and Filament;
+- you want assistant administration inside the application you operate;
+- answers should use approved sources or selected live data;
+- application actions need explicit authorization, confirmation, and audit evidence;
+- some requests need a bounded process, but ordinary conversation should remain ordinary conversation;
+- your team is prepared to stage provider, queue, database, and integration behavior before production use.
+
+## Not the best fit
+
+Choose another product if you need:
+
+- a hosted chatbot SaaS with no Laravel application;
+- a general-purpose workflow automation platform;
+- a mature no-code platform with a large template marketplace;
+- an autonomous system that may call arbitrary application code;
+- a product that operates providers, queues, databases, backups, and incident response for you.
+
+## Operating boundaries
+
+- The package runs inside your Laravel application. Model traffic goes to the provider that you configure.
+- Provider fees, infrastructure, queues, databases, vector storage, backups, and monitoring are not included.
+- AI output can be wrong. Saved tests, candidate evidence, review, and application policy remain necessary.
+- Adapter availability is not a blanket certification of every provider, model, region, or account profile.
+- Write behavior is limited to published capabilities and the policies, confirmations, and payload contracts that authorize them.
+- The buyer remains responsible for tenancy, privacy terms, retention, provider agreements, and final production policy.
+
+## Requirements
+
+| Surface | Supported target |
 | --- | --- |
 | PHP | 8.3+ |
 | Laravel | 12.61.1+ or 13.12.0+ |
 | Filament | 5.2+ |
-| Workflow SDK | AgentGraph ^0.15.1 |
-| Certified database path | PostgreSQL 16 + pgvector |
-| Alternative vector store | ChromaDB, buyer-staged |
-| Background work | Supervised asynchronous Laravel queue worker |
+| Certified database path | PostgreSQL 16 with pgvector |
+| Alternative vector store | ChromaDB, staged by the buyer |
+| Background work | A supervised asynchronous Laravel queue worker |
+| AI access | At least one configured provider and model |
 
-Docker is used by the release process to reproduce clean Laravel 12/13 PostgreSQL hosts. Docker is not a customer deployment requirement. The plugin can be installed in any Laravel/Filament host that satisfies the supported Composer, extension, storage, queue, and network contracts.
+Docker is used for reproducible release checks. Customers do not have to deploy the package with Docker.
 
-Provider adapters are available for Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible chat gateways. Embedding adapters include Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI. Availability is not a blanket live-certification claim: only provider/model/profile rows present in the retained successful protected release report are certified for that artifact. Stage your exact account, model, region, and structured-output/tool profile.
+## Install after publication
 
-## Install
-
-After `v0.17.0` is published:
+Copy the private Composer repository URL from the buyer's Anystack page, then install the released package:
 
 ```bash
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot:^0.17
 ```
 
-Register `FilamentAgenticChatbotPlugin::make()` in the target Filament panel provider, configure the provider and vector backend in `.env`, then finish the idempotent setup:
-
-```bash
-php artisan filament-agentic-chatbot:install
-php artisan queue:work
-```
-
-The installer verifies panel registration first and fails before publishing config or running migrations when the plugin is missing. After that preflight, it publishes config, runs package and AgentGraph migrations, and executes Doctor. Treat any `FAIL` as blocking.
-
-Register the plugin in the desired Filament panel:
+Register `FilamentAgenticChatbotPlugin::make()` in the target Filament panel before running the installer:
 
 ```php
 use Heiner\FilamentAgenticChatbot\FilamentAgenticChatbotPlugin;
@@ -116,15 +140,18 @@ public function panel(Panel $panel): Panel
 }
 ```
 
-If the host uses a custom Filament theme, include the package views in the theme source scan and rebuild the host assets:
+Finish setup and start a supervised worker:
 
-```css
-@source '../../../../vendor/heiner/filament-agentic-chatbot/resources';
+```bash
+php artisan filament-agentic-chatbot:install
+php artisan queue:work
 ```
+
+The installer checks panel registration before it publishes configuration, runs package migrations, and executes Doctor. Treat every Doctor failure as blocking.
 
 ## Embed the widget
 
-Copy the generated snippet from the Agent editor. It contains public presentation settings but no long-lived credential:
+Copy the generated snippet from the Agent editor. It contains presentation settings but no permanent browser credential:
 
 ```html
 <script
@@ -138,60 +165,29 @@ Copy the generated snippet from the Agent editor. It contains public presentatio
 ></script>
 ```
 
-Production requires widget signing, a dedicated signing key, and an exact Allowed Domains entry for every browser origin. The loader obtains and renews its access token through tokenless bootstrap. It may retry safe reads after renewal; it never automatically replays chat sends or other writes.
+The loader calls the origin-checked `/bootstrap` endpoint, keeps the short-lived token in memory, and renews it before expiry. Production requires a dedicated signing key and an exact Allowed Domains entry for every browser origin.
 
-## Security and privacy boundaries
+## Upgrading from 0.16.1
 
-- Sensitive Filament pages and actions authorize server-side; hiding navigation is not treated as access control.
-- Raw HTTP editor inspection is read-only. Productive writes use published connector/action contracts and the capability gateway.
-- External responses and ingestion downloads are bounded while streaming, before full payload materialization where the transport supports it.
-- Logs and UI error events use bounded/redacted diagnostics rather than raw provider exception messages.
-- Conversation inspect/export/delete share one privacy lifecycle authority. Active, waiting, unknown, or unreconciled work blocks destructive deletion, and deletion reports retained record classes/counts instead of claiming unverifiable total erasure.
-- The buyer remains responsible for application authorization, tenant policy, retention periods, privacy notices, provider data-processing terms, backups, queue supervision, secrets, and incident response.
+Version 0.17 is a breaking Agent-first cutover, not a drop-in patch. It removes the Compound Request subsystem, old runtime modes, legacy environment aliases, static widget tokens, obsolete Connector execution contracts, and the old live-workflow pointer.
 
-## Important 0.17 upgrade boundary
+Back up first. Use a maintenance window, rotate affected credentials, run the documented migrations and Doctor commands, republish replacement Agent deployments, recopy widget snippets, and verify a real live conversation before reopening traffic.
 
-This is not a drop-in patch update from 0.16.1:
-
-- the old top-level Compound Request subsystem and engine modes are removed;
-- the old `loop` runtime node is removed in favor of bounded `batchMap`;
-- API Connector v1/v2 execution compatibility is removed in favor of v3 publication pins;
-- legacy environment aliases and runtime mode switches are removed;
-- static widget tokens in HTML are removed;
-- legacy live-workflow pointers are removed and require explicit Agent republishing;
-- cutover migrations include irreversible cleanup.
-
-Back up the database, read the 0.17.0 upgrade guide and release notes, use a maintenance window, rotate affected credentials, run migrations and both Doctor commands, republish replacement Agent deployments, test the live Agent and every assigned Playbook, and only then reopen traffic.
-
-## What this product is not
-
-- It is not a hosted no-code SaaS; you operate it inside your Laravel application.
-- It does not make arbitrary LLM-generated actions safe. Deterministic contracts and host policy remain authoritative.
-- It does not promise every model exposed by every adapter behaves identically.
-- It does not replace queue/database monitoring, backups, staging, privacy/legal review, or incident response.
-- It is pre-1.0. Minor releases may be breaking and require the documented upgrade procedure.
-
-## Release assurance
-
-The sold ZIP is generated from a clean commit, byte-hashed, self-verified, and shipped with an embedded release manifest and CycloneDX SBOM plus an external per-entry manifest. Protected jobs install the same downloaded bytes into clean Laravel 12 and Laravel 13 PostgreSQL/pgvector hosts, exercise the supported upgrade and migration rollback/re-apply, run deterministic and live-provider gates, and run a sustained concurrency/budget soak.
-
-A missing credential, skipped external check, stale public document, path-only install, or committed checklist is not passing evidence. The governed contract remains blocking until its status is explicitly approved and every required protected job succeeds for the same source commit and artifact.
+[Read the complete 0.17 upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
 ## Documentation and support
 
 - [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
-- [Quickstart and Golden Path](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
-- [Agents and Playbooks](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md)
-- [Chat widget](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md)
-- [API Connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md)
-- [Integration Studio](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/INTEGRATION_STUDIO.md)
-- [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
-- [Compatibility and certification](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md)
+- [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
+- [Compatibility and provider boundaries](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
-- [Release notes v0.17.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v0.17.0.md)
+- [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
 - [Support policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
-- [Refund and license terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md)
 
-Support contact: `webdevislife2021@gmail.com`. First-response targets and version/EOL rules are defined in the support policy; they are not resolution guarantees unless a written agreement says otherwise.
+Support contact: `webdevislife2021@gmail.com`. Published response targets are first-response targets, not a resolution guarantee.
 
-This is commercial proprietary software. The purchase record defines the licensed scope. Unless a broader tier is stated, the default is one legal entity and one Licensed Application, including its development/staging/production environments. SaaS use of that application is allowed; redistribution or resale of the plugin or a general-purpose hosted builder is not.
+## License
+
+This is commercial proprietary software. Unless the purchase record grants a broader tier, the default scope is one legal entity and one Licensed Application, including its development, staging, and production environments. SaaS use of that application is allowed. Redistribution of the plugin or resale of a general-purpose hosted builder is not.
+
+[Read the refund and license terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).

@@ -304,6 +304,14 @@ been materialized; it is required whenever a body template is configured. These
 schemas are intentionally different when ergonomic chat inputs map to a nested
 provider payload.
 
+Some model providers append a convenience field to an otherwise valid native
+tool call. Direct read execution discards undeclared top-level fields without
+interpreting, persisting, or forwarding their values. The remaining declared
+fields still have to satisfy source binding, input policy, the closed published
+schema, and the independent execution-gateway check. An ignored field can never
+supply a required input or alter the HTTP request; undeclared fields inside a
+declared nested object remain invalid.
+
 `request.path_template` contains a path only. It starts with one `/` and cannot
 contain a scheme, host, query, or fragment; repeated and ordinary query values
 belong in `query_pairs` or `query_params`. The provider request/response schema
@@ -391,12 +399,15 @@ Direct-read answers use a generic evidence-selection contract. The model emits
 ordinary JSON, not API-specific prose or a native structured-output response:
 
 ```json
-{"language":"de","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}
+{"language":"de","layout":"auto","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}
 ```
 
-The document is closed: only `language` and `sections`, with `evidence_id`
+The document is closed: `language`, optional presentation-only `layout`, and
+`sections`, with `evidence_id`
 and `pointer` per section and optional `fields` or `detail: "all"`. Every complete successful direct result needs a
-selection. RFC 6901 pointers resolve actual `/data` fields and array indices;
+selection. `layout` can only be `auto`, `paragraph`, `bullets`, `numbered`, or
+`table`, and is honored only when the published operation permits a visitor's
+explicit layout request. RFC 6901 pointers resolve actual `/data` fields and array indices;
 Knowledge mixed into the answer may select `/context`, not source metadata.
 The server renders approved original values with readable labels, units and
 record context for that exact call. Field paths and request JSON stay internal.
@@ -462,12 +473,35 @@ output variable; that presentation/state name belongs to each Playbook step.
 In **Mapping → Fields the Agent may answer with**, edit selected fields rather
 than a raw output JSON document. A field has a stable key, source path, readable
 label, unit and visibility. Optional details include a description for relevance
-selection, labels for `de`/`en`/`fr`/`es`, numeric conversion and explicit context
-fields. `summary` is the default overview; `detail` remains available for a
+selection, labels for `de`/`en`/`fr`/`es`, exact localized labels for returned
+enum/code values, numeric conversion and explicit context fields. `summary` is
+the default overview; `detail` remains available for a
 specific question; `hidden` never reaches the Agent. These are published
 operation settings, not visitor-selectable permissions. A label does not perform
 a unit conversion, and hiding a field from the Agent does not remove its
 workflow value, audit retention or host authorization requirements.
+
+**Answer presentation** defaults to **Automatic** and requires no template.
+The deterministic renderer adapts one fact, one object, and record collections,
+adds a short localized intro when useful, and falls back from Markdown tables to
+a readable channel-safe layout. It is available only for `mapped` output because
+the visible semantic fields are its validation and evidence boundary; full
+response mode keeps its basic generic rendering. **Precise presentation controls** can bind the
+subject to an exact input or visible response field, choose a semantic record
+title such as `books.title`, lock or allow an explicit visitor layout request,
+configure localized intro/closing text, or publish an exact safe template.
+The semantic selectors come from this operation's input schema and nested output
+mapping, so the mechanism is provider-independent and does not contain
+Pokémon-, weather-, or book-specific code.
+
+Safe templates support only `{{subject}}`, `{{count}}`, `{{input:key}}`, and
+`{{field:semantic.path}}`. Publication rejects unknown or hidden references,
+malformed placeholders, credential literals, oversized text, and unknown
+configuration keys. Dynamic values always come from the admitted input or the
+verified evidence envelope; provider strings and template text are escaped as
+literal output. A misconfigured static sentence can still be misleading, so
+Automatic remains the recommended default and representative preview/live tests
+remain required before activation.
 
 For example, this response policy answers a temperature question without also
 displaying humidity, while retaining the place that the reading belongs to:
@@ -488,6 +522,13 @@ displaying humidity, while retaining the place that the reading belongs to:
       "path": "response.current.humidity",
       "presentation": {"label": "Humidity", "labels": {"de": "Luftfeuchtigkeit"}, "unit": "%", "visibility": "detail", "context": ["place"]}
     }
+  },
+  "answer_presentation": {
+    "version": 1,
+    "mode": "auto",
+    "allow_user_layout": true,
+    "subject": {"source": "input", "key": "city"},
+    "intro": {"mode": "auto"}
   }
 }
 ```

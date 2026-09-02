@@ -2,6 +2,21 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Existing conversations after runtime upgrades
+
+A compatible live Agent does not make an older conversation-bound deployment
+compatible. When an open Playbook is bound to an unsupported Agent runtime
+contract, the chat now commits clear, non-retryable advice before any model
+dispatch. It does not cancel, rebind, migrate, delete, or replay that old work.
+Operators must review unfinished work under the existing reconciliation and
+cutover procedures. Starting a new conversation is appropriate for new requests,
+not proof that a previous external action failed or can be repeated.
+
+This change adds no database migration. Compatible published Playbooks need no
+rebuild solely because of the new conversation error handling. Structured widget
+and operator waitpoints keep their existing authorized controls while no longer
+offering an unusable textual continuation to the model.
+
 ## Durable Connector jobs and mixed Playbook answers
 
 Run these three additive migrations before restarting the application and
@@ -31,20 +46,45 @@ Durable completion is opt-in through a newly published operation and pinned
 Playbook deployment. Existing HTTP operations do not acquire webhook or
 background-job semantics automatically. Configure persistent queues, supervised
 workers, Scheduler, a public HTTPS callback origin and encrypted signing
-credentials as described in [Durable Connectors](docs/DURABLE_CONNECTORS.md).
+credentials as described in [Durable Connectors](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DURABLE_CONNECTORS.md).
 Run Doctor and verify representative read/write pending, completion, failure,
 cancellation and JSON/SSE replay behavior before reopening traffic.
 
 The public chat result may now retain independent verified reads in
 `read_answer` alongside a terminal Playbook error. Custom clients must preserve
 that error's retry lock and display its status even when read results exist.
-The bundled widget does so. See [Public API](docs/PUBLIC_API.md).
+The bundled widget does so. See [Public API](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PUBLIC_API.md).
 
 Do not use a code-only rollback or discard active job/receipt state.
 Continuation rollback refuses any durable rows, callback rollback refuses
 active events, and receipt rollback is intentionally blocked. Restore the
 verified database backup and matching package/configuration/key as a unit;
 first reconcile any external writes accepted after that backup.
+
+## Historical references to displayed records
+
+This addition uses the existing encrypted `presentation_receipts` column; it
+does not require another migration, change deployment hashes, or rewrite old
+messages. `chat_turn_presentation_receipts.v1` has optional private
+`scope_fingerprint`, `source_question_sha256` and `answer_presentation` members.
+The nested proof uses `agent_answer_presentation.v1` and is finalized only at
+the normal canonical outcome commit. `chat_turn_execution_evidence.v5` has
+optional bounded `historical_sources` diagnostics and historical decision codes.
+Public JSON/SSE message shapes and external capability contracts are unchanged.
+
+Existing receipts remain readable for their original recovery purpose. Without
+the new displayed-record proof and scope fingerprint they cannot ground a new
+historical factual answer. The original question is usable as source metadata
+only when its new hash matches. No upgrade job reconstructs facts or ordering
+from old prose, summaries, traces or current API results.
+
+Deploy matching readers and writers together. Older package readers may reject
+these additional private fields; do not perform a code-only rollback across
+unfinished turns with new receipts. Finish or reconcile those turns on the
+matching version, and follow the existing verified database/package/config/key
+restore procedure when a rollback is necessary. Do not delete or backfill
+receipt fields to make an older runtime accept them. Completed canonical
+responses remain replayable without rerunning historical selection.
 
 ## Curated Connector answers
 
@@ -87,12 +127,41 @@ internal form mapper must use its row-based form state, not the removed
 `output_mapping` textarea state; the published JSON contract keeps
 `response.output_mapping`.
 
+### Per-operation answer presentation
+
+Mapped Connector operations may now publish the optional, versioned
+`response.answer_presentation` policy and exact localized `value_labels` on
+visible output fields. Omission keeps the existing automatic behavior without
+rewriting the signed contract. The policy can bind a subject, list record title,
+layout, localized intro or closing, and bounded allowlisted templates to the
+same verified input and output selectors. It cannot be combined with
+`agent_output: "response"` because full response mode has no closed semantic
+field boundary for those references.
+
+No database migration or historical-revision rewrite is required. To enable a
+policy, save and publish a new immutable operation revision, then publish and
+test a replacement Agent deployment that pins its exact revision and hash.
+Existing revisions without the field remain readable. The literal admitted
+visitor input is now included, redacted, in new direct-read evidence identities
+so an alias such as a localized product name can be presented while the
+canonical value is sent to the API. Existing evidence and presentation receipts
+without that optional member remain verifiable; do not backfill them.
+
+This addition changes the closed Connector v3 schema definition. A runtime that
+predates this policy can reject a newly published revision even though it can
+still read older revisions. Do not perform a code-only downgrade after activating
+new pins. Roll back by activating the retained, tested Agent deployment whose
+operation revisions match the older package, or restore the verified package,
+database, configuration, and encryption key together under the normal rollback
+procedure.
+
 ## Direct-read answer rendering and source-scoped continuation
 
 Direct-read answers now use a closed evidence-selection document:
-`{"language":"de","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}`.
+`{"language":"de","layout":"auto","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}`.
 This is ordinary model JSON; no native structured-output capability or new
 provider is required. Only actual delivered `/data` references are accepted;
+the optional closed layout enum changes presentation only when the visitor asks.
 Knowledge mixed with direct reads may select `/context`. The server renders
 verified values with readable labels and record context instead
 of accepting factual model prose through word-distance or number heuristics.
@@ -350,9 +419,9 @@ The built-in `query_data_resource` capability result contract is version 2. It r
 
 Data Resource query contracts are now version 3 and pin an estimated-row budget plus a cross-driver statement timeout. Run the package migrations to add `agentic_data_resources.query_safety`, review **Allow text search** and **Database query budget** for every UI-managed resource, then republish workflows that bind those resources. Doctor fails when the migration is missing, an active deployment still pins a stale Data Resource hash, or an active production resource uses a database without supported plan/timeout budgets, so run it before reopening chat traffic. The runtime now rejects PostgreSQL/MySQL/MariaDB plans above that budget before execution; SQLite is limited to local/testing Data Resource queries.
 
-## AgentGraph v0.15.1 runtime adoption
+## AgentGraph 0.16.0 rc2 integration candidate
 
-Current source builds require `heiner/agent-graph:^0.15.1`:
+Current source builds require the exact `heiner/agent-graph:0.16.0-rc.2` integration candidate:
 
 ```bash
 composer update heiner/agent-graph heiner/filament-agentic-chatbot --with-all-dependencies
@@ -360,9 +429,9 @@ php artisan filament-agentic-chatbot:doctor
 php artisan agent-graph:doctor
 ```
 
-No database migration is required for this SDK patch. Resume acceptance is now recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancel atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
+Run all pending package and AgentGraph migrations before reopening traffic. Resume acceptance is recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancellation atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
 
-The plugin Doctor now treats `AgentGraphManager::recover()` as required SDK surface. Existing graph versions and persisted v0.14/v0.15 runs remain readable.
+The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface. Old validly hashed 0.15 artifacts remain inspectable but are not executable under the 0.16 runtime contract. Recompile and republish affected Playbooks before activating a replacement Agent deployment.
 
 ## Current release status
 

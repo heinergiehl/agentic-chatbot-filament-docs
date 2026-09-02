@@ -233,7 +233,7 @@ The Agent can already handle ordinary conversation. A canvas is not required.
 
 - Add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md) for grounded answers.
 - Approve read-only [Data Resources](DATA_RESOURCES.md) for live application
-  records and select them on the Agent under **Behavior**. A Playbook is not
+  records and select them on the Agent under **Tools & Data**. A Playbook is not
   required for a direct read.
 - Publish exact read [API Connector](API_CONNECTORS.md) operations and select
   their immutable revisions on the Agent. Use a Playbook Capability step only

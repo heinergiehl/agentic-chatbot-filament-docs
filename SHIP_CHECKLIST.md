@@ -12,7 +12,8 @@ This is an operator sequence, **not release evidence**. Do not commit completion
 6. Synchronize the canonical package files named by `scripts/release/docs-drift-check.php` byte-for-byte into the public docs checkout, then run `composer assurance:docs-drift` with `AGENTIC_CHATBOT_REQUIRE_PUBLIC_DOCS=true`. Locally the default authoritative checkout is `../agentic-chatbot-filament-docs`; protected CI freshly checks out `heinergiehl/agentic-chatbot-filament-docs` into `${{ github.workspace }}/public-docs`.
 7. Review `CHANGELOG.md`, `UPGRADING.md`, versioned release notes, known limitations, compatibility, support, refund, and license terms against the release contract.
 8. Review the canonical `docs/FILAMENT_PLUGIN_PAGE.md`; synchronize it byte-for-byte to the public marketplace source.
-9. Execute the Docker/PostgreSQL reference-host Golden Path and retain the redacted evidence report.
+9. Deploy the exact candidate to the public demo, capture fresh Agent-first screenshots from that release-matched host, and verify that every visible label and claim matches the candidate.
+10. Execute the Docker/PostgreSQL reference-host Golden Path and retain the redacted evidence report.
 
 ## Approval and protected workflow
 

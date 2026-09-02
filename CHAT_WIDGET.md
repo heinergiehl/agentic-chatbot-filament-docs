@@ -380,6 +380,16 @@ The shipped widget exposes **Start new chat** and **Delete history and memory** 
 
 History deletion remains an explicit, confirmed operation. A successful deletion immediately opens a fresh chat. If the lifecycle guard refuses deletion, the widget localizes the typed reason, keeps the old chat intact, and offers only safe recovery actions: retry when the response is retryable, or start a separate new chat while the prior conversation remains available for resolution or support.
 
+History also preserves committed turn failures when no assistant message was
+created. The existing visible user or assistant message carries a bounded
+`terminal_error` projection; message IDs and pagination remain unchanged. Reload
+uses the same localized error presentation and retry policy as the original
+response. A safe explicit retry creates a new turn, while an unknown external
+outcome still cannot retry. Attachment summaries cannot reconstruct browser
+uploads, so reload does not offer an automatic retry that would drop files.
+Reading history never creates messages, recovers a turn, or exposes exception
+details and operator diagnostics.
+
 ### Human Handoff Continuity
 
 When a conversation enters the Handoff Desk, the history response exposes only
