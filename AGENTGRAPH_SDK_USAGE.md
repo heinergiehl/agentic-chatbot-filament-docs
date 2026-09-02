@@ -6,7 +6,7 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `0.16.0` (exact stable release)
+- Current plugin constraint: `0.16.1` (exact stable patch release)
 - The consuming host must explicitly select the same stable release and complete the
   coordinated store migration and deployment publication before accepting work.
 - The required public surface is enforced by

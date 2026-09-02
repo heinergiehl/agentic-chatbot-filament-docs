@@ -36,6 +36,7 @@ All notable changes to this package will be documented in this file.
 
 - Made direct Agent reads require exact latest-message purpose evidence across Knowledge, Connectors, and Data Resources; explicit named opt-outs hide and block those tools, while a bounded adjacent Connector follow-up requires an immediately preceding attested successful read and one uniquely eligible pinned operation.
 - Promoted the exact AgentGraph runtime dependency from `0.16.0-rc.2` to the stable `0.16.0` release after the unchanged runtime tree passed PHP 8.3/8.4 with Laravel 12/13 and a fresh public Composer install.
+- Advanced the exact AgentGraph runtime dependency to `0.16.1`, whose idempotent schema migration tolerates already-present runtime columns without silently marking an incomplete migration as applied.
 - Raised the Filament security floor to `5.7.6`, excluding releases affected by the audited MFA-bypass, MFA-code-reuse, and panel-login disclosure advisories published before release.
 - Bound protected release jobs and the commercial archive/SBOM to one retained, source- and hash-verified Composer resolution; ordinary compatibility jobs retain their distinct target resolutions.
 - Made Agent onboarding distinguish appearance samples from behavior tests, show direct-read setup before optional Playbooks, retain Knowledge navigation context, and evaluate live pinned Knowledge separately from a newer failed index.

@@ -52,7 +52,7 @@ Read `UPGRADING.md` completely before running migrations. In particular, rotate 
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.7.6+
-- AgentGraph 0.16.0 as the exact stable runtime dependency
+- AgentGraph 0.16.1 as the exact stable runtime dependency, including the idempotent existing-schema migration repair
 - PostgreSQL 16 with pgvector and a supervised asynchronous queue worker for release certification
 
 Docker is used to make the release host reproducible; customers do not have to deploy with Docker. ChromaDB and the documented provider/channel adapters remain available, but exact live certification is limited to the provider/model/profile rows and infrastructure named by the retained protected release evidence.

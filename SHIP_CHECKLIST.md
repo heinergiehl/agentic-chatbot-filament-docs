@@ -18,12 +18,13 @@ This is an operator sequence, **not release evidence**. Do not commit completion
 
 ## Approval and protected workflow
 
-1. After all candidate gates pass, change `release_status` in `scripts/release/release-contract.json` from `candidate` to `approved` and change every release-contract status marker from `**Release status:** Candidate` to `**Release status:** Approved` in the same reviewed commit. Remove the candidate-only warning from the versioned release notes; `composer assurance:release-contract` rejects a mixed status.
-2. Run the protected release workflow for that exact commit and target version.
-3. Require every protected job. A skipped provider, artifact, install, upgrade, rollback, soak, or contract job is blocking.
-4. Confirm the tag workflow created the GitHub Release only after `release-ready` and attached the same verified ZIP, sidecar, and checksum consumed by the exact-artifact jobs. A GitHub Actions artifact or source archive is not the Anystack distribution proof.
-5. Confirm the workflow re-downloaded the draft ZIP byte-for-byte before publication and verified the immutable release attestation afterward. Independently download the published ZIP and sidecar before announcing the version to buyers.
-6. Publish the marketplace listing, public docs snapshot, checksum, and support/EOL dates as one coordinated operation.
+1. After all candidate gates pass, change `release_status` in `scripts/release/release-contract.json` from `candidate` to `approved` and change every release-contract status marker from `**Release status:** Candidate` to `**Release status:** Approved`. Remove the candidate-only warning from the versioned release notes; `composer assurance:release-contract` rejects a mixed status.
+2. Before committing the approved package candidate, synchronize the canonical files named by `scripts/release/docs-drift-check.php` into the public docs checkout again, commit and push that exact approved snapshot, and write its full commit SHA to `public_docs_commit` in `scripts/release/release-contract.json`. Run the required public-docs drift gate against that pinned commit. The protected workflow must never follow a moving public-docs branch.
+3. Commit the approved package status and pinned public-docs commit together, then run the protected release workflow for that exact package commit and target version.
+4. Require every protected job. A skipped provider, artifact, install, upgrade, rollback, soak, or contract job is blocking.
+5. Confirm the tag workflow created the GitHub Release only after `release-ready` and attached the same verified ZIP, sidecar, and checksum consumed by the exact-artifact jobs. A GitHub Actions artifact or source archive is not the Anystack distribution proof.
+6. Confirm the workflow re-downloaded the draft ZIP byte-for-byte before publication and verified the immutable release attestation afterward. Independently download the published ZIP and sidecar before announcing the version to buyers.
+7. Publish the marketplace listing, public docs snapshot, checksum, and support/EOL dates as one coordinated operation.
 
 ## Conditional integration evidence
 

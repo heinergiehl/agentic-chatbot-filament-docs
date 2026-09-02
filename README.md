@@ -22,7 +22,7 @@ The documentation target is `v0.17.0`. **Release status:** Candidate. A tag may 
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.7.6+
-- `heiner/agent-graph` `0.16.0` as the exact stable runtime dependency
+- `heiner/agent-graph` `0.16.1` as the exact stable runtime dependency
 - PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
 - Supervised asynchronous queue worker for production ingestion, delays, and background work
 
