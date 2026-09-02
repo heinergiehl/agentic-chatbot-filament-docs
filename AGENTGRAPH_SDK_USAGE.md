@@ -6,15 +6,15 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `0.16.0-rc.2` (exact integration candidate)
-- The consuming host must explicitly select the same candidate and complete the
+- Current plugin constraint: `0.16.0` (exact stable release)
+- The consuming host must explicitly select the same stable release and complete the
   coordinated store migration and deployment publication before accepting work.
 - The required public surface is enforced by
   `AgentGraphPublicApiCompatibilityTest`.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
   cancellation, projection-authority, and side-effect fault-injection tests.
-- The bounded 0.16 integration evidence and remaining host gate are recorded in
-  [the RC2 integration record](AGENTGRAPH_0_16_RC2_INTEGRATION.md).
+- The bounded 0.16 integration evidence is preserved in
+  [the historical RC2 integration record](AGENTGRAPH_0_16_RC2_INTEGRATION.md).
 
 ## Ownership boundary
 

@@ -98,6 +98,7 @@ Choose another product if you need:
 ## Operating boundaries
 
 - The package runs inside your Laravel application. Model traffic goes to the provider that you configure.
+- The package is bring-your-own-key (BYOK). The Composer distribution contains no maintainer-owned AI credential; every installation must use the buyer's own provider account and keys.
 - Provider fees, infrastructure, queues, databases, vector storage, backups, and monitoring are not included.
 - AI output can be wrong. Saved tests, candidate evidence, review, and application policy remain necessary.
 - Adapter availability is not a blanket certification of every provider, model, region, or account profile.
@@ -110,7 +111,7 @@ Choose another product if you need:
 | --- | --- |
 | PHP | 8.3+ |
 | Laravel | 12.61.1+ or 13.12.0+ |
-| Filament | 5.2+ |
+| Filament | 5.7.6+ |
 | Certified database path | PostgreSQL 16 with pgvector |
 | Alternative vector store | ChromaDB, staged by the buyer |
 | Background work | A supervised asynchronous Laravel queue worker |

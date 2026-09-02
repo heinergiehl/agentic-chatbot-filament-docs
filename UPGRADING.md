@@ -419,9 +419,9 @@ The built-in `query_data_resource` capability result contract is version 2. It r
 
 Data Resource query contracts are now version 3 and pin an estimated-row budget plus a cross-driver statement timeout. Run the package migrations to add `agentic_data_resources.query_safety`, review **Allow text search** and **Database query budget** for every UI-managed resource, then republish workflows that bind those resources. Doctor fails when the migration is missing, an active deployment still pins a stale Data Resource hash, or an active production resource uses a database without supported plan/timeout budgets, so run it before reopening chat traffic. The runtime now rejects PostgreSQL/MySQL/MariaDB plans above that budget before execution; SQLite is limited to local/testing Data Resource queries.
 
-## AgentGraph 0.16.0 rc2 integration candidate
+## AgentGraph 0.16.0 stable runtime
 
-Current source builds require the exact `heiner/agent-graph:0.16.0-rc.2` integration candidate:
+Current source builds require the exact stable `heiner/agent-graph:0.16.0` release:
 
 ```bash
 composer update heiner/agent-graph heiner/filament-agentic-chatbot --with-all-dependencies
@@ -431,7 +431,7 @@ php artisan agent-graph:doctor
 
 Run all pending package and AgentGraph migrations before reopening traffic. Resume acceptance is recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancellation atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
 
-The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface. Old validly hashed 0.15 artifacts remain inspectable but are not executable under the 0.16 runtime contract. Recompile and republish affected Playbooks before activating a replacement Agent deployment.
+The stable package contains the reviewed RC2 runtime tree, but the immutable runtime pin intentionally changes from `0.16.0-rc.2` to `0.16.0`. Artifacts compiled with either 0.15 or the RC2 constraint remain inspectable but are not executable under the stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
 
 ## Current release status
 

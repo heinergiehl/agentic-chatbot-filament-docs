@@ -44,4 +44,4 @@ Support lifetime does not extend marketplace access, downloads, or updates beyon
 
 ## Supported runtime
 
-The authoritative install and certification ranges are in [Compatibility and Certification Matrix](COMPATIBILITY.md). In short: PHP 8.3+, Laravel 12.61.1+ or 13.12.0+, Filament 5.2+, and a production-capable vector store/queue. Third-party providers, models, SDKs, browsers, Telegram, Slack, WhatsApp, Mailtrap, Mailgun, ChromaDB, and host infrastructure remain subject to their own behavior and must be staged with the buyer's exact configuration.
+The authoritative install and certification ranges are in [Compatibility and Certification Matrix](COMPATIBILITY.md). In short: PHP 8.3+, Laravel 12.61.1+ or 13.12.0+, Filament 5.7.6+, and a production-capable vector store/queue. Third-party providers, models, SDKs, browsers, Telegram, Slack, WhatsApp, Mailtrap, Mailgun, ChromaDB, and host infrastructure remain subject to their own behavior and must be staged with the buyer's exact configuration.

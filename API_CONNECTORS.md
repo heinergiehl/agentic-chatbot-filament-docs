@@ -340,6 +340,15 @@ evidence. These are generic operation contracts, not API-specific planner code.
 Tool descriptions can expose purpose, effect, and confirmation requirements,
 but not connector secrets, private headers, base URLs, or request templates.
 
+Every direct Connector call carries an exact purpose phrase from the visitor's
+latest message. A named request not to use or read through that Connector hides
+and blocks it, and an unrelated phrase cannot be borrowed merely because it
+contains one of the operation's input values. After one committed successful
+read, a short adjacent follow-up such as `and Dortmund?` may target the same
+Connector only when persisted turn evidence, the published single-input schema,
+and the immutable binder identify exactly one eligible operation. Current or
+live data is never answered from stale conversation history.
+
 Direct Agent tools accept only `literal`, schema-backed `enum`, published alias
 map (`local_resolver`), or a host-registered `capability_resolver` source. A
 published input may opt into `typo_tolerance: safe_v1`. That versioned local

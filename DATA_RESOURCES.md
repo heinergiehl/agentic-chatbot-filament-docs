@@ -4,6 +4,8 @@ Data Resources define which live application records an Agent may read through a
 
 The chat engine can also answer safe meta questions such as "what data resources can you access?" without running a database query. That answer comes from the generic capability catalog and uses the same bot-approved Data Resource policy described here. It lists approved resources and safe fields, but it does not expose table names, model classes, hidden scope values, or sensitive fields.
 
+A direct Agent query also has to match an exact purpose from the visitor's latest message. Generic words such as `name`, `status`, or `id` cannot authorize an unrelated default read, an explicit request not to use the named resource hides and blocks its tool, and a duplicate call for the same completed purpose reuses the already delivered evidence instead of querying again. The model can select only the modes, fields, filters, sort argument, and limits frozen into the immutable Agent deployment; runtime upgrades do not silently rename an older deployment's pinned tool arguments.
+
 They are different from Knowledge Sources:
 
 | Concept | Use It For | Managed In |

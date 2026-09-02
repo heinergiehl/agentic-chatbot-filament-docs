@@ -36,6 +36,8 @@ It helps you ship AI assistants inside your product faster. It does not replace 
 - PostgreSQL with `pgvector` (default/recommended) plus PHP `ext-pdo_pgsql`, or ChromaDB as an optional backend
 - A supported chat provider API key such as `GEMINI_API_KEY`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `XAI_API_KEY`, `OPENROUTER_API_KEY`, `DEEPSEEK_API_KEY`, `GROQ_API_KEY`, `MISTRAL_API_KEY`, or `AZURE_OPENAI_API_KEY`
 
+The package is bring-your-own-key (BYOK). Composer installs only the plugin code; it never includes a maintainer-owned AI key or grants access to the maintainer's provider account. Add your own provider credential to the host application's environment or encrypted per-Agent settings, and never commit it to the application or package repository.
+
 The package supports Laravel 12 and 13, but Composer blocks framework versions below `12.61.1` and Laravel 13 versions below `13.12.0`. Upgrade the host app first if Composer reports a conflict against those patch levels.
 
 ## 3. Choose Your Start Path
@@ -73,7 +75,7 @@ use Heiner\FilamentAgenticChatbot\FilamentAgenticChatbotPlugin;
 ```bash
 composer create-project laravel/laravel my-app
 cd my-app
-composer require filament/filament "^5.2"
+composer require filament/filament "^5.7.6"
 php artisan filament:install --panels --no-interaction
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
 composer require heiner/filament-agentic-chatbot

@@ -8,6 +8,7 @@ All notable changes to this package will be documented in this file.
 
 ### Added
 
+- Added a fail-closed release credential scanner for every release-eligible source file and every text file in the exact commercial ZIP. Findings expose only SHA-256 fingerprints, exact exceptions are path/line/rule/fingerprint bound, and the shipped allowlist starts empty.
 - Added deterministic, evidence-bound Playbook result composition for selected capability fields, bounded iterations, and mapped child results without another model call; partial and unknown outcomes remain explicit.
 - Added immutable per-Agent input/output Guardrail Policy assignments through candidate publication, exact-candidate testing, and activation, including historical resume protection.
 - Added an authorized read-only channel Delivery view with accepted chunk IDs and explicit unknown-outcome guidance.
@@ -33,6 +34,9 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 
+- Made direct Agent reads require exact latest-message purpose evidence across Knowledge, Connectors, and Data Resources; explicit named opt-outs hide and block those tools, while a bounded adjacent Connector follow-up requires an immediately preceding attested successful read and one uniquely eligible pinned operation.
+- Promoted the exact AgentGraph runtime dependency from `0.16.0-rc.2` to the stable `0.16.0` release after the unchanged runtime tree passed PHP 8.3/8.4 with Laravel 12/13 and a fresh public Composer install.
+- Raised the Filament security floor to `5.7.6`, excluding releases affected by the audited MFA-bypass, MFA-code-reuse, and panel-login disclosure advisories published before release.
 - Bound protected release jobs and the commercial archive/SBOM to one retained, source- and hash-verified Composer resolution; ordinary compatibility jobs retain their distinct target resolutions.
 - Made Agent onboarding distinguish appearance samples from behavior tests, show direct-read setup before optional Playbooks, retain Knowledge navigation context, and evaluate live pinned Knowledge separately from a newer failed index.
 - Restored stable Gemini 2.5 Flash-Lite to the verified model selector and capability/pricing catalogs so Integration Studio can use the lowest-cost structured-output model without a host-only override.
@@ -42,6 +46,9 @@ All notable changes to this package will be documented in this file.
 
 ### Fixed
 
+- Prevented generic Data Resource field words from authorizing unrelated default reads, preserved the exact sort argument frozen into older immutable deployments, suppressed duplicate reads for an already completed purpose, and removed query/resource metadata from model-facing answer payloads.
+- Rendered selected records and record lists as deterministic visitor-facing fields instead of leaking internal JSON paths, and routed malformed or empty Knowledge/direct-read answer contracts through one tool-free evidence repair or a safe fallback.
+- Synchronized the isolated sandbox with the published configuration and current Playbook/Handoff state contracts, restoring a clean Fresh install, seed, Doctor, and route smoke.
 - Made the external-host workflow-editor E2E cleanup remove immutable Connector publication evidence in foreign-key order and fail visibly on cleanup errors, and froze the token-backpressure TTL assertion so the release suite cannot fail at a one-second boundary.
 - Persisted Telegram chunk progress before dispatch and after provider acknowledgment, preventing known retries from resending accepted chunks or rerunning the Agent; uncertain delivery stops for reconciliation.
 - Prevented busy channel turns from consuming a second accepted inbound message; ordered admission retries the same durable turn identity and keeps staged attachments until terminal handling.

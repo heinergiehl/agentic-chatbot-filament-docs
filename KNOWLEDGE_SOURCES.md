@@ -22,6 +22,8 @@ Examples:
 
 The bot does not answer from "the internet in general". It answers from the sources you attach and ingest.
 
+At runtime, a Knowledge search must be grounded in the visitor's latest request and the exact sources pinned into the live Agent deployment. An explicit request not to read or search a named source hides and blocks that capability. Retrieved claims are rendered only from delivered evidence with retained citations; malformed provider prose or an internal evidence-selection envelope is repaired once without tools or replaced by a safe evidence fallback.
+
 ## Which Source Types You Can Ingest
 
 Filament Agentic Chatbot supports four source types:

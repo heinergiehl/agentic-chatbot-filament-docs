@@ -31,6 +31,9 @@ Do not publish or install this candidate as a production release until `scripts/
 - Fail-closed sensitive Filament surfaces and a shared privacy lifecycle for conversation inspection, export, and deletion.
 - Bounded ingestion downloads, secret-aware operational logging, and dependency constraints that exclude audited vulnerable Guzzle/PSR-7/CommonMark versions while supporting Laravel 13's native Guzzle 8/PSR-7 3 line.
 - Exact commercial artifact evidence: deterministic ZIP, whole-file SHA-256, per-entry sidecar, embedded release manifest, and CycloneDX 1.6 production-dependency SBOM.
+- Bring-your-own-key distribution with a fail-closed credential scan over release-eligible source and the exact commercial ZIP; no maintainer-owned provider key is shipped to buyers.
+- Safer Agent reads: exact latest-message purpose evidence, named opt-outs, duplicate-read suppression, bounded adjacent Connector follow-ups, and Data Resource intent matching that cannot be authorized by generic field words alone.
+- Deterministic, visitor-ready evidence rendering for approved record lists and selected values, with one tool-free repair attempt for malformed Knowledge or direct-read answer contracts.
 
 ## Breaking runtime and authoring changes
 
@@ -48,15 +51,15 @@ Read `UPGRADING.md` completely before running migrations. In particular, rotate 
 
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
-- Filament 5.2+
-- AgentGraph 0.16.0-rc.2 as the exact integration candidate
+- Filament 5.7.6+
+- AgentGraph 0.16.0 as the exact stable runtime dependency
 - PostgreSQL 16 with pgvector and a supervised asynchronous queue worker for release certification
 
 Docker is used to make the release host reproducible; customers do not have to deploy with Docker. ChromaDB and the documented provider/channel adapters remain available, but exact live certification is limited to the provider/model/profile rows and infrastructure named by the retained protected release evidence.
 
 ## Release evidence required before publication
 
-Publication is blocked until the release contract is approved and the protected workflow has green evidence for the exact commit: locked Composer and npm dependency audits, Pint, the full PHPUnit suite, PHPStan, workflow-editor `test:ci` plus a zero asset diff, the deterministic runtime release gate, calibrated multilingual retrieval plus real pgvector integration, the complete live provider profile matrix including Knowledge citation retention, restricted-capability rejection, the 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, the 0.16.1 upgrade and rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
+Publication is blocked until the release contract is approved and the protected workflow has green evidence for the exact commit: locked Composer and npm dependency audits, platform requirements, source and exact-ZIP credential scans, dead-code gates, Pint, the full PHPUnit suite, PHPStan, workflow-editor `test:ci` plus a zero asset diff, the deterministic runtime release gate, calibrated multilingual retrieval plus real pgvector integration, the complete live provider profile matrix including Knowledge citation retention, restricted-capability rejection, the 1,000-iteration soak, byte-identical artifact rebuild, Laravel 12 and 13 exact-ZIP installs, the 0.16.1 upgrade and rollback/re-apply, synchronized public marketplace docs, and a clean Docker/PostgreSQL reference-host flow ending in a real chat and inspectable trace.
 
 No unavailable credential, skipped external check, path install, or static checklist is counted as passing evidence.
 
