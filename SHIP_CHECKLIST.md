@@ -8,12 +8,13 @@ This is an operator sequence, **not release evidence**. Do not commit completion
 2. Confirm the Anystack PHP product points at this GitHub repository, its Composer distribution is enabled, and auto-publish is configured for GitHub Releases.
 3. Enable [GitHub release immutability](https://docs.github.com/en/code-security/how-tos/secure-your-supply-chain/establish-provenance-and-integrity/prevent-release-changes) for this repository. It applies only to future releases; the protected workflow deliberately fails if the published release is not immutable.
 4. Run `composer release:marketplace-check` on the exact candidate commit.
-5. Confirm `composer audit --no-dev --locked` and the workflow-editor `npm audit` report no high or critical production advisory.
-6. Synchronize the canonical package files named by `scripts/release/docs-drift-check.php` byte-for-byte into the public docs checkout, then run `composer assurance:docs-drift` with `AGENTIC_CHATBOT_REQUIRE_PUBLIC_DOCS=true`. Locally the default authoritative checkout is `../agentic-chatbot-filament-docs`; protected CI freshly checks out `heinergiehl/agentic-chatbot-filament-docs` into `${{ github.workspace }}/public-docs`.
-7. Review `CHANGELOG.md`, `UPGRADING.md`, versioned release notes, known limitations, compatibility, support, refund, and license terms against the release contract.
-8. Review the canonical `docs/FILAMENT_PLUGIN_PAGE.md`; synchronize it byte-for-byte to the public marketplace source.
-9. Deploy the exact candidate to the public demo, capture fresh Agent-first screenshots from that release-matched host, and verify that every visible label and claim matches the candidate.
-10. Execute the Docker/PostgreSQL reference-host Golden Path and retain the redacted evidence report.
+5. Confirm `composer assurance:content-secret-scan` passes with no unreviewed finding, then require the protected workflow to repeat the scan over every text file in the exact commercial ZIP. Never put a maintainer-owned provider key into source, fixtures, CI, or the release environment to satisfy a buyer installation.
+6. Confirm `composer audit --no-dev --locked` and the workflow-editor `npm audit` report no high or critical production advisory.
+7. Synchronize the canonical package files named by `scripts/release/docs-drift-check.php` byte-for-byte into the public docs checkout, then run `composer assurance:docs-drift` with `AGENTIC_CHATBOT_REQUIRE_PUBLIC_DOCS=true`. Locally the default authoritative checkout is `../agentic-chatbot-filament-docs`; protected CI freshly checks out `heinergiehl/agentic-chatbot-filament-docs` into `${{ github.workspace }}/public-docs`.
+8. Review `CHANGELOG.md`, `UPGRADING.md`, versioned release notes, known limitations, compatibility, support, refund, and license terms against the release contract.
+9. Review the canonical `docs/FILAMENT_PLUGIN_PAGE.md`; synchronize it byte-for-byte to the public marketplace source.
+10. Deploy the exact candidate to the public demo, capture fresh Agent-first screenshots from that release-matched host, and verify that every visible label and claim matches the candidate.
+11. Execute the Docker/PostgreSQL reference-host Golden Path and retain the redacted evidence report.
 
 ## Approval and protected workflow
 
