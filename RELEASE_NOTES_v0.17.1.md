@@ -1,7 +1,7 @@
 # Filament Agentic Chatbot 0.17.1
 
 **Release status:** Superseded source tag, not published<br>
-**Release date:** 2026-09-03<br>
+**Source tag date:** 2026-09-03<br>
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
