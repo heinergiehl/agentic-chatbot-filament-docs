@@ -431,11 +431,11 @@ php artisan agent-graph:doctor
 
 Run all pending package and AgentGraph migrations before reopening traffic. Resume acceptance is recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancellation atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
 
-The stable package contains the reviewed RC2 runtime tree, but the immutable runtime pin intentionally changes from `0.16.0-rc.2` to `0.16.0`. Artifacts compiled with either 0.15 or the RC2 constraint remain inspectable but are not executable under the stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
+The package pins AgentGraph `0.16.1`. Artifacts compiled against 0.15 or a 0.16.0 release candidate remain inspectable but are not executable under the current stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
 
 ## Current release status
 
-The target Commercial Early Access release is **`v0.17.0`**. **Release status:** Candidate. A tag may ship only after the governed contract is explicitly approved and every exact-source and exact-artifact job in the protected workflow passes.
+The current Commercial Early Access release is **`v0.17.0`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
