@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.2] - 2026-09-03
+
+### Fixed
+
+- Aligned the protected live-provider gate with the runtime's documented deterministic evidence fallback. The gate now accepts that fallback only after the exact expected reads succeeded, the evidence guard identifies a repairable response-contract failure, and the single tool-free repair attempt was rejected.
+- Added deterministic release-eval coverage proving that the bounded fallback is accepted while unrelated provider failures remain release failures.
+- Superseded the `v0.17.0` and `v0.17.1` source tags. Neither tag was promoted to an immutable GitHub release after its protected workflow exposed a stale release assertion.
+
 ## [0.17.1] - 2026-09-03
 
 ### Fixed
