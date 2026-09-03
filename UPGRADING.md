@@ -435,11 +435,11 @@ The package pins AgentGraph `0.16.1`. Artifacts compiled against 0.15 or a 0.16.
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.17.0`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
+The current Commercial Early Access release is **`v0.17.1`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. Do not stay on that tag; after `v0.17.0` is published, install `^0.17` instead.
+> The git tags `v0.12.0` and `v0.17.0` were not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
 
 When upgrading, always:
 
@@ -614,6 +614,18 @@ secrets; Mailgun uses its Webhook Signing Key, not its API key.
 See [Channel Integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md).
 
 ---
+
+## Upgrading to v0.17.1
+
+Version 0.17.1 has no database, configuration, or runtime behavior delta from the 0.17.0 source tag. It corrects the protected live-provider assurance contract so one immutable replay is accepted for each distinct successful fanout item. Repeated replay loops remain a release failure.
+
+If you installed the 0.17.0 source tag, update to `^0.17`, run both Doctor commands, and then continue with the complete v0.17.0 cutover guide below.
+
+```bash
+composer update heiner/filament-agentic-chatbot heiner/agent-graph --with-all-dependencies
+php artisan filament-agentic-chatbot:doctor
+php artisan agent-graph:doctor
+```
 
 ## Upgrading to v0.17.0
 

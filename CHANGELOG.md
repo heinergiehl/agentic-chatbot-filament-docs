@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.1] - 2026-09-03
+
+### Fixed
+
+- Aligned the protected live-provider release gate with the runtime's bounded fanout replay contract. Each distinct successful read may be replayed once from immutable evidence, while repeated replay loops still fail the release.
+- Added regression coverage proving that two distinct fanout items can both be reused without issuing another external request.
+- Superseded the `v0.17.0` source tag, which was not promoted to an immutable GitHub release after its tag workflow exposed the stale gate assertion.
+
 ## [0.17.0] - 2026-09-03
 
 ### Added
