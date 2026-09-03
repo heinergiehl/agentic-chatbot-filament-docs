@@ -439,7 +439,7 @@ The current Commercial Early Access release is **`v0.17.1`**. **Release status:*
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
-> The git tags `v0.12.0` and `v0.17.0` were not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
+> The git tag `v0.12.0` points to an early preview commit. The `v0.17.0` source tag was not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
 
 When upgrading, always:
 
