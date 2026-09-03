@@ -1,7 +1,7 @@
 # Filament Agentic Chatbot 0.17.0
 
-**Release status:** Candidate<br>
-**Target date:** 2026-09-02<br>
+**Release status:** Approved<br>
+**Release date:** 2026-09-03<br>
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
@@ -12,8 +12,6 @@ pinned Knowledge, query only its pinned read capabilities, or invoke an exact
 pinned Playbook. AgentGraph owns Playbook state, and every external capability
 call passes through the authorization, confirmation, idempotency, redaction,
 and reconciliation gateway.
-
-Do not publish or install this candidate as a production release until `scripts/release/release-contract.json` is changed to `approved` in a reviewed commit and all protected release jobs pass for the exact commercial ZIP.
 
 ## What buyers gain
 
