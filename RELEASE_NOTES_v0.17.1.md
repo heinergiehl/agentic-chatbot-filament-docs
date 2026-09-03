@@ -5,7 +5,7 @@
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
-Version 0.17.1 is the verified patch release for the 0.17 Agent-first runtime cutover. It carries the complete 0.17.0 runtime, security, authoring, and migration changes while correcting one stale assertion in the protected live-provider release gate.
+Version 0.17.1 is the approved patch release for the 0.17 Agent-first runtime cutover. It carries the complete 0.17.0 runtime, security, authoring, and migration changes while correcting one stale assertion in the protected live-provider release gate.
 
 ## Release certification correction
 
