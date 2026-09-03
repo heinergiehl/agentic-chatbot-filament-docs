@@ -4,11 +4,13 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
-## [0.17.2] - 2026-09-03
+## [0.17.2] - 2026-09-04
 
 ### Fixed
 
 - Aligned the protected live-provider gate with the runtime's documented deterministic evidence fallback. The gate now accepts that fallback only after the exact expected reads succeeded, the evidence guard identifies a repairable response-contract failure, and the single tool-free repair attempt was rejected.
+- Bound one non-executed Data Resource grounding rejection to its exact fail-closed runtime contract, while malformed rejections and repeated proposal loops remain release failures.
+- Made contextual follow-up assertions count only productive capability executions; separately bounded evidence replays remain visible and must still reference a unique successful result without another external request.
 - Added deterministic release-eval coverage proving that the bounded fallback is accepted while unrelated provider failures remain release failures.
 - Superseded the `v0.17.0` and `v0.17.1` source tags. Neither tag was promoted to an immutable GitHub release after its protected workflow exposed a stale release assertion.
 
