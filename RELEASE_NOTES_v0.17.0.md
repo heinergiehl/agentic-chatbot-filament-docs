@@ -1,11 +1,13 @@
 # Filament Agentic Chatbot 0.17.0
 
-**Release status:** Approved<br>
+**Release status:** Superseded source tag, not published<br>
 **Release date:** 2026-09-03<br>
 **Upgrade baseline:** 0.16.1<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
-Version 0.17.0 is a breaking, security-focused Agent-first runtime cutover. It
+The protected workflow did not promote `v0.17.0` to an immutable GitHub release. Its source tag is retained for audit history; install `v0.17.2` or use the Composer constraint `^0.17`.
+
+Version 0.17.0 was the breaking, security-focused Agent-first runtime cutover candidate. It
 has one production entrypoint: every live bot executes one immutable,
 hash-verified Agent deployment. That Agent may answer normally, search only its
 pinned Knowledge, query only its pinned read capabilities, or invoke an exact
