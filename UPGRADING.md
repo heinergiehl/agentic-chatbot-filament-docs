@@ -2,6 +2,39 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Unreleased: Connector contracts and editor/runtime corrections
+
+This candidate changes the hash-bound authentication and pagination code and
+adds request construction and parameter serialization to the request-codec
+implementation binding. Every previously published Connector operation needs
+a fresh test and publication, including operations using a custom request
+codec. Old revisions remain immutable and fail implementation verification;
+their hashes must not be rewritten to make them appear current.
+
+Before switching traffic, finish or reconcile in-flight external operations on
+their matching release. Install the matching package dependencies, then:
+
+1. Open each used operation in the workbench, review its request and allowed
+   output fields, and test the current draft. Publish the new revision.
+2. Select the new operation revisions in dependent Playbooks, review and publish
+   them, including parents of republished Sub-Playbooks.
+3. Update Agent dependencies, publish and test each new candidate, then activate
+   it. Existing conversation-bound deployments do not adopt these new pins.
+4. Refresh the shipped Filament editor assets and start fresh test conversations
+   before reopening traffic.
+
+These corrections add no database migration. Existing compiled Playbooks retain
+their saved input semantics; changing an authoring input type takes effect only
+after republishing. Free text now needs an Agent interpretation before resolving
+a text waitpoint. Typed and configured Choice answers keep their deterministic
+shortcut, and approvals keep their existing bound controls. Terminal provider
+completion errors remain errors even when accompanied by nonempty text.
+
+OpenAPI imports now report unsupported parameter/schema forms explicitly. Review
+those diagnostics instead of treating an imported operation as ready to run.
+Response nullability is preserved; nullable tool inputs and ambiguous unions
+require an explicitly reviewed supported mapping.
+
 ## Existing conversations after runtime upgrades
 
 A compatible live Agent does not make an older conversation-bound deployment

@@ -97,6 +97,17 @@ does not install global CSS or Tailwind preflight.
 Keyboard focus, canvas zoom/pan, drag/drop, connection handles, undo/redo,
 autosave, and unsaved-state warnings remain part of the editor contract.
 
+Invocation rule edits enter the saved document while typing. Changing a Request
+Input type removes inactive form settings; the selected type controls the
+compiled waitpoint. Renaming a Decision matching value updates its connected
+transitions in the same edit. Disconnect a connected path before deleting it.
+
+API arguments follow the published input schema: numbers remain numbers,
+Boolean and enum fields offer their declared values, and lists and objects use
+individual JSON fields. The variable picker remains available for values from
+earlier steps. Invalid literal input remains visible for correction instead of
+silently restoring a previous valid value.
+
 ## Publication
 
 Save updates only the mutable draft. Review, AI Draft completion, and Publish
@@ -106,6 +117,14 @@ dependency pinning, and the published contract. Publish then creates the
 immutable deployment. The invocation contract is frozen with that deployment.
 The Agent can use it only after an explicit assignment is included in a newly
 published Agent deployment.
+
+Editor saves compare the caller's draft and published fingerprints while holding
+the Playbook row lock on the package connection. A stale session must load the
+latest draft before saving again. Publication checks the fingerprint of the
+exact normalized payload that was just saved, together with the previously
+reviewed published fingerprint, under the release lock. A concurrent save or
+publication cannot substitute its payload. If release validation fails, the
+saved draft remains available for correction; no new deployment is selected.
 
 See [Agents and Playbooks](AGENTIC_WORKFLOWS.md) and
 [Playbook JSON Schema](WORKFLOW_JSON_SCHEMA.md).

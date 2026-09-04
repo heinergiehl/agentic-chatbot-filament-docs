@@ -70,9 +70,11 @@ HTTP enforcement covers the native Laravel HTTP gateways on the productive
 synchronous path; direct AWS Bedrock transport and deferred native SDK streaming
 are not claimed to have equivalent per-request deadline enforcement.
 
-If model completion times out after verified reads, Knowledge excerpts or
-historical evidence are available, `AgentAnswerFinalizer` preserves their guarded
-rendering with a localized incompleteness notice. Unfinished model prose is
+If model completion times out, is truncated, or ends with a filtering, provider,
+incomplete-tool or unknown-completion error after verified reads, Knowledge
+excerpts or historical evidence are available, `AgentAnswerFinalizer` preserves
+their guarded rendering with a localized incompleteness notice. The native
+finish reason is classified even when the provider returned text. Unfinished model prose is
 discarded and no answer repair is attempted. Space for the notice is reserved
 within the existing answer limit, and the presentation proof is rebound to the
 full committed text before JSON/SSE rendering. With no usable evidence, the
@@ -622,12 +624,14 @@ An evidence excerpt that only repeats one supplied input value from a larger tur
 cannot dispatch either: a source-bound value is not proof that the visitor
 requested the capability's job. A complete short value reply remains eligible
 for a contextual clarification such as “Which city?” → “Berlin”.
-When the complete latest utterance itself satisfies a text or Choice waitpoint,
-the runtime applies that same deterministic source-binding admission before
-model dispatch. This keeps ordinary short replies on the active Playbook and
-avoids a billable routing call. Questions, mixed acts, cancellations, invalid
-typed values, approvals, operator reviews and widget-only inputs remain outside
-this shortcut and retain their existing explicit boundaries.
+When the complete latest utterance itself satisfies an email, number, date,
+time or configured Choice waitpoint, the runtime applies that same deterministic
+source-binding admission before model dispatch. Free text requires a semantic
+Agent proposal even when the message is short: an acknowledgement, side request
+or pause must not become a field value automatically. A valid proposed answer
+still needs exact current-message evidence and the existing input validation.
+Questions, mixed acts, cancellations, invalid typed values, approvals, operator
+reviews and widget-only inputs retain their existing explicit boundaries.
 Rejected direct-read and Playbook-start proposals remain in the shared operator
 trace but do not count as executed attempts or turn an otherwise safe
 conversational answer into a fictitious lookup failure.

@@ -4,6 +4,28 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Bound editor saves and publications to the reviewed draft and published revisions. Concurrent editors cannot silently overwrite a newer draft or publish a replacement payload.
+- Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.
+- Allowed registered authentication strategies to return headers without query parameters.
+- Preserved OpenAPI response nullability and reported unsupported unions instead of selecting a branch silently.
+- Kept short free-text acknowledgements and side requests out of automatic Playbook continuation. Valid free-text answers still use source-bound Agent proposals.
+- Preserved terminal provider completion errors even with nonempty text, retained verified facts and canonical Playbook outcomes, and prevented unfinished prose or whole-turn retries from replacing them.
+- Made Request Input type changes consistent across authoring and compilation. Decision path renames preserve connected transitions, and connected paths require explicit disconnection before deletion.
+- Saved changes to Playbook invocation rules while typing, with consistent autosave and undo behavior.
+
+### Changed
+
+- Added schema-aware API argument controls for numbers, booleans, enums, lists and objects, retaining variable mappings and visible invalid input.
+- Added explicit OpenAPI query parameter serialization through the existing immutable request contract.
+- Distinguished existing releases that need attention from unpublished Playbook drafts in the list.
+
+### Migration
+
+- Connector implementation bindings changed. Test and republish operations, then dependent Playbooks and Agent candidates before resuming traffic; see [Upgrading](UPGRADING.md#unreleased-connector-contracts-and-editorruntime-corrections).
+- No database migration is added. Refresh the compiled Filament editor assets in the host application.
+
 ## [0.18.0] - 2026-09-04
 
 ### Added

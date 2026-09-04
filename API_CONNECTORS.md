@@ -318,6 +318,54 @@ belong in `query_pairs` or `query_params`. The provider request/response schema
 dialect is closed to the constraints the runtime actually enforces, so an
 unknown keyword cannot masquerade as validation or hide static credentials.
 
+### Query parameter serialization
+
+Use `request.query_pairs` when an API requires an ordered, repeated, or
+structured parameter. Each pair has `name` and `value`; collection parameters
+also declare `serialization`. The value may be a literal or an exact input
+expression. For example, this sends `tag=red&tag=blue` for `tags: ["red", "blue"]`:
+
+```json
+{
+  "query_pairs": [
+    {
+      "name": "tag",
+      "value": "{{tags}}",
+      "serialization": { "type": "array", "style": "form", "explode": true }
+    }
+  ]
+}
+```
+
+The supported collection shapes are flat arrays or objects with finite scalar
+values. Names and values are percent-encoded separately from structural
+delimiters; booleans are serialized as `true` and `false`. Object properties use
+a canonical key order so equivalent values produce identical bound requests;
+array item order is preserved.
+
+| Type | Style | `explode` | Example |
+| --- | --- | --- | --- |
+| Array | `form` | `true` | `tag=red&tag=blue` |
+| Array | `form` | `false` | `tag=red,blue` |
+| Array | `spaceDelimited` | `false` | `tag=red%20blue` |
+| Array | `pipeDelimited` | `false` | `tag=red%7Cblue` |
+| Object | `form` | `true` | `color=red&size=large` |
+| Object | `form` | `false` | `filter=color,red,size,large` |
+| Object | `deepObject` | `true` | `filter%5Bcolor%5D=red&filter%5Bsize%5D=large` |
+
+Empty collections produce no query pair. Nested collections, null collection
+members, unsupported style combinations, literal spaces in space-delimited
+items, literal pipes in pipe-delimited items, and brackets in deep-object names
+are rejected with an explicit mapping error. Configure an API-specific mapping
+or registered strategy for those cases. Review imported optional parameters
+manually; the importer does not send missing optional values as literals.
+
+Serialization belongs to the immutable operation contract. Materialized
+parameters retain their exact shape through authentication, signing,
+confirmation, and continuation. Changes require a new test and publication.
+
+### Capability discovery and input policy
+
 Publication derives `metadata.capability` from the operation name,
 description, intent examples, ability aliases, and entity types. These fields
 are the model-visible discovery contract when a published read is assigned
@@ -728,6 +776,22 @@ policy, runtime owner authority, and current environment binding. Page, item,
 attempt, response-size, and elapsed-time budgets are hard ceilings. Claims use a
 random lease token whose hash is stored; an expired lease may be reclaimed only
 for the same continuation identity and exact next step.
+
+Pagination accumulates accepted items at the configured concrete `items_path`
+and reapplies the published output mapping to that combined result. Hidden
+fields remain hidden. If a later response fails HTTP, schema, or mapped-context
+validation, previously accepted items remain available as a partial result;
+the failed page does not contribute records. Page and item truncation are also
+partial results. A provider's accepted partial response retains its partial
+status even when it occurs after the first page or before a journal resume.
+
+Map only stable business context outside the item collection. If an approved
+global context value changes between pages, pagination stops with
+`pagination_context_changed`; it cannot label later records with the first
+page's currency, scope, or other metadata. Page counters and next links should
+remain pagination controls rather than global answer context. Transport,
+policy, and lease exceptions continue through the gateway's failure and
+unknown-outcome handling instead of becoming successful partial responses.
 
 The journal is not an autonomous queue and its repository does not schedule
 work or own workflow state. Existing contracts without an explicit durable mode

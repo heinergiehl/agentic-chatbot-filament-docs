@@ -95,6 +95,24 @@ OpenAPI, Postman, and cURL are import formats, not execution formats. The
 deterministic importer produces the same closed package operation contract
 regardless of source.
 
+Required OpenAPI query collections preserve their declared serialization:
+flat arrays support `form` with either `explode` value and `spaceDelimited` or
+`pipeDelimited` with `explode=false`; flat objects support `form` with either
+value and `deepObject` with `explode=true`. Compound path/header parameters,
+nested query collections, `content`, `allowReserved`, and unsupported styles
+produce a specific import diagnostic instead of a request that silently changes
+the source semantics. Optional parameters remain explicitly reported for manual
+mapping. See [Query parameter serialization](API_CONNECTORS.md#query-parameter-serialization).
+
+OpenAPI 3.0 `nullable: true` and OpenAPI 3.1 types such as
+`["string", "null"]` are preserved in response schemas. Nullable tool inputs
+require a manually reviewed supported mapping. `oneOf`/`anyOf` and ambiguous
+multi-type schemas are reported as unsupported; the importer never chooses an
+arbitrary branch. Unsupported input schemas block import of that operation.
+An unsupported response schema is left unset with a visible warning. Supply a
+reviewed response schema before testing and publication; an installed draft
+does not establish response validation.
+
 ## AI Authority Boundary
 
 The optional assistant receives the selected secret-free operation catalog and
