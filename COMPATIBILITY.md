@@ -1,10 +1,10 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.17.5`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
+Target release: `0.18.0`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 
-| Surface | Supported range | Protected release evidence |
+| Surface | Supported range | Release evidence |
 | --- | --- | --- |
 | PHP | `8.3+` | CI covers PHP 8.3 and 8.4; the protected artifact path uses PHP 8.4. |
 | Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The same byte-verified ZIP is installed into separate Laravel 12 and 13 hosts. |

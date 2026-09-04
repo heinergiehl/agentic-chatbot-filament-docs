@@ -435,11 +435,11 @@ The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGr
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.17.5`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
+The current Commercial Early Access target is **`v0.18.0`**. **Release status:** Approved. Only the local exact-source and exact-artifact release authority may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. The `v0.17.0`, `v0.17.1`, and `v0.17.3` source tags were not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
+> The git tag `v0.12.0` points to an early preview commit. The `v0.17.0`, `v0.17.1`, and `v0.17.3` source tags were not promoted to buyer-visible releases. Continue installing `^0.17` until the locally verified `v0.18.0` release is published.
 
 When upgrading, always:
 
@@ -450,6 +450,40 @@ When upgrading, always:
    `php artisan filament-agentic-chatbot:doctor` to verify the upgraded environment.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Upgrading to v0.18.0
+
+Version 0.18.0 adds structured Widget conversation starters, a permission-checked read-only Playbook viewer, and responsive Widget and Playbook Builder improvements. It does not add a database migration, change Composer dependencies, or change the productive Agent or Playbook deployment ABI.
+
+Existing Bot settings that still contain `quick_prompts` are normalized in memory and remain usable. The next administrator save persists the structured representation. Custom widget clients must read `conversation_starters` instead of `quick_prompts`. Each starter contains a short `label`, the exact `prompt` submitted as the visitor message, and an optional safe `icon` key.
+
+Host-defined Solution Kits must replace string prompts:
+
+```php
+'conversation_starters' => [
+    [
+        'label' => 'Track an order',
+        'prompt' => 'Where is my order?',
+        'icon' => 'search',
+    ],
+],
+```
+
+The built-in Customer Support and Human Handoff Kit advances from `1.0.0` to `1.1.0`. Existing installed authoring state is not modified automatically. Review the Kit upgrade plan before applying the newer definition.
+
+No new Agent or Playbook is required solely for this upgrade. After installation, clear caches, refresh Filament assets, run both Doctor commands, and verify the public Widget plus the Playbook viewer in the real host application.
+
+```bash
+composer update heiner/filament-agentic-chatbot:^0.18 --with-all-dependencies
+php artisan config:clear
+php artisan view:clear
+php artisan route:clear
+php artisan filament:assets
+php artisan filament-agentic-chatbot:doctor
+php artisan agent-graph:doctor
+```
 
 ---
 
@@ -769,7 +803,7 @@ Public configuration and API changes:
 | `WorkflowRun.meta.__workflow_snapshot` | `workflow_runs.workflow_snapshot` |
 | workflow-first planning/interpreter configuration | removed; the Agent interprets the turn and may invoke only deployment-pinned Playbooks and capabilities |
 
-Prompt-JSON structured output remains available only for provider profiles that declare that transport capability. It is an external provider-format adapter and never grants routing, policy, or execution authority. The protected release matrix continues to test native structured tools, prompt-JSON tools, and restricted no-tools profiles.
+Prompt-JSON structured output remains available only for provider profiles that declare that transport capability. It is an external provider-format adapter and never grants routing, policy, or execution authority. The local release matrix continues to test native structured tools, prompt-JSON tools, and restricted no-tools profiles.
 
 After migration, clear cached configuration and run the Doctor again. Old environment names, per-bot modes, and engine switches are ignored rather than translated at request time. An Agent without one verified live deployment fails closed.
 

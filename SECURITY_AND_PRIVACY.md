@@ -48,7 +48,7 @@
 - Provider-authenticated Telegram, Slack, WhatsApp, Mailtrap, and Mailgun webhooks; bounded provider-host-only file downloads; and path-free durable email ingress staging
 - Agent-bound outbound webhooks with public HTTPS/DNS pinning, no redirects, exact-body HMAC signatures, transactional outbox/idempotency evidence, encrypted payload storage, and PII-minimized outcome/handoff schemas
 - Raw channel payload capture disabled by default; when explicitly enabled for debugging, secret-key values are redacted and strings, object breadth, nesting, and invalid UTF-8 are bounded before queue or database persistence
-- Protected release credential scans over both release-eligible source files and every text file in the exact commercial ZIP; findings expose only SHA-256 fingerprints, and the release allowlist has no wildcard mechanism
+- Local release credential scans over both release-eligible source files and every text file in the exact commercial ZIP; findings expose only SHA-256 fingerprints, and the release allowlist has no wildcard mechanism
 
 Connector fixture inputs and bodies are encrypted and deliberately excluded
 from replay evidence, logs, notifications, visitor output, and model context.

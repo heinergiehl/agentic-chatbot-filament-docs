@@ -89,7 +89,7 @@ You still need to provide the rest of the product stack that depends on your bus
 - One-script embed for websites
 - Typed, framework-free NPM lifecycle SDK for SPA frameworks (`ready`, open/close/toggle, safe state, events, refresh, teardown)
 - Short-lived signed customer/tenant context bound to Agent, area, and exact browser origin, with memory-only renewal and deterministic authority scopes
-- Style templates, accent colors, titles, subtitles, quick prompts, welcome text, and live preview inside the bot editor
+- Distinct style templates, accent colors, titles, subtitles, welcome guidance, structured conversation starters, safe icon choices, and live preview inside the bot editor
 
 ### Analytics and Operator Confidence
 

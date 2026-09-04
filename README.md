@@ -4,7 +4,7 @@ A Laravel and Filament package for building, testing, publishing, and operating 
 
 This repository is the complete public documentation source used by HeliDocs. The Filament marketplace has a separate entry point: configure its `docs_url` to the raw [`FILAMENT_PLUGIN_PAGE.md`](FILAMENT_PLUGIN_PAGE.md), not this README. That standalone page uses absolute GitHub links because Filament does not resolve repository-relative documentation links in the same way as HeliDocs or GitHub.
 
-The documentation target is `v0.17.5`. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish the buyer-visible release; the GitHub release and attached archive are authoritative.
+The documentation target is `v0.18.0`. **Release status:** Approved. Only the local exact-source and exact-artifact release authority may publish the buyer-visible release; the GitHub release and attached archive are authoritative.
 
 ## What the package provides
 
@@ -33,7 +33,7 @@ Docker is used for reproducible release validation, not imposed as a customer de
 
 ```bash
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.17
+composer require heiner/filament-agentic-chatbot:^0.18
 ```
 
 Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel before running the installer:
@@ -84,16 +84,20 @@ Set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10`, use a dedicated signing key
 - [Compatibility and certification](COMPATIBILITY.md)
 - [Known limitations](KNOWN_LIMITATIONS.md)
 - [Upgrade guide](UPGRADING.md)
-- [Release notes v0.17.5](RELEASE_NOTES_v0.17.5.md)
+- [Release notes v0.18.0](RELEASE_NOTES_v0.18.0.md)
 - [Support](SUPPORT_POLICY.md)
 - [Refund and license terms](REFUND_AND_LICENSE.md)
 
-## Important 0.17 boundary
+## Important 0.18 boundary
+
+Version 0.18 replaces the public `quick_prompts` widget payload with structured `conversation_starters` that carry a label, the exact submitted prompt, and an optional safe icon key. Existing saved Bot settings remain readable and are normalized when edited. Custom widget clients and host-defined Solution Kits must migrate to the structured field. The release also adds a permission-checked read-only Playbook viewer and responsive Widget and Playbook Builder improvements. It does not require a new Agent, a new Playbook, or a database migration by itself.
+
+## Earlier 0.17 runtime boundary
 
 Version 0.17 removes the Compound Request runtime/modes, the legacy `loop` node, connector v1/v2 execution compatibility, old environment aliases, and static widget tokens. It adds the bounded `batchMap` primitive, connector v3 publication pins, and the tokenless widget bootstrap. This is a breaking minor release: back up, read the upgrade guide, use a maintenance window, migrate, republish retired workflows, run Doctor, and verify a real live conversation before reopening production traffic.
 
 ## Support and license
 
-Support: `webdevislife2021@gmail.com`. Response targets, supported release lines, and `0.16` EOL are defined in [Support Policy](SUPPORT_POLICY.md).
+Support: `webdevislife2021@gmail.com`. Response targets, supported release lines, and `0.17` EOL are defined in [Support Policy](SUPPORT_POLICY.md).
 
 The plugin is commercial proprietary software. The purchase record defines project/entity scope. Unless a broader tier is stated, the default is one legal entity and one Licensed Application, including its non-production environments. SaaS use of that application is allowed; plugin redistribution and resale of a general-purpose hosted builder are not.

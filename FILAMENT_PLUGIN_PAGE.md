@@ -6,11 +6,11 @@ Connect each Agent to approved knowledge, selected live application data, and re
 
 **Commercial Early Access** · **Filament 5** · **Laravel 12 and 13**
 
-The documented release is `v0.17.5`. **Release status:** Approved. The GitHub release and Composer listing are authoritative for buyer-visible availability.
+The documented release is `v0.18.0`. **Release status:** Approved. The approved artifact becomes buyer-visible only through the local release authority. The GitHub release and Composer listing remain authoritative for availability.
 
 - [Try the current live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
 - [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
-- [Read the 0.17 upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md)
+- [Read the upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md)
 
 ## What you can build
 
@@ -126,7 +126,7 @@ Copy the private Composer repository URL from the buyer's Anystack page, then in
 
 ```bash
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.17
+composer require heiner/filament-agentic-chatbot:^0.18
 ```
 
 Register `FilamentAgenticChatbotPlugin::make()` in the target Filament panel before running the installer:

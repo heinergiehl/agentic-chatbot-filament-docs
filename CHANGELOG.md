@@ -4,6 +4,26 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.18.0] - 2026-09-04
+
+### Added
+
+- Added structured Widget conversation starters with separate labels, exact submitted prompts, and optional allowlisted icon aliases.
+- Added a permission-checked read-only Playbook viewer for inspecting published process structure without exposing mutation controls.
+
+### Changed
+
+- Refined all Widget themes, empty and welcome states, composer behavior, responsive layout, and preview fidelity.
+- Closed Widget dialogs are removed from the accessibility tree, expose their expanded state on the launcher, and return keyboard focus to that launcher.
+- Simplified the responsive Playbook Builder shell, sidebar, checks, settings, and review presentation while preserving the existing authoring and runtime contracts.
+- Advanced the built-in Customer Support and Human Handoff Solution Kit to `1.1.0` for its structured Widget starter definition.
+
+### Migration
+
+- Existing saved Bot settings using `quick_prompts` remain readable and are normalized to structured `conversation_starters` when edited. Custom widget clients must consume the new response field.
+- Host-defined Solution Kits must replace `quick_prompts` with `conversation_starters` objects containing `label`, `prompt`, and an optional supported `icon`.
+- No database migration, dependency change, Agent recreation, or Playbook republish is required solely for this release. Run both Doctor commands, refresh Filament assets, and smoke-test the Widget and Playbook viewer in the host application.
+
 ## [0.17.5] - 2026-09-04
 
 ### Fixed

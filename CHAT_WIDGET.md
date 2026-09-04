@@ -22,8 +22,10 @@ Per bot, you can customize all of these from the Filament panel:
 | --------------------- | -------------------------------------------- | ------------------------------- |
 | **Title**             | Header text in the chat panel                | "Support Assistant"             |
 | **Subtitle**          | Smaller text below the title                 | "Always here to help"           |
-| **Welcome message**   | First message shown when the chat opens      | "Hi! How can I help you today?" |
-| **Quick prompts**     | Suggested starter questions shown as buttons | "How do I reset my password?"   |
+| **Welcome message**   | Main heading in an empty conversation        | "Hi! How can I help you today?" |
+| **Empty-state hint**  | Short guidance below the welcome heading     | "Choose a topic or ask freely." |
+| **Conversation starters** | Up to four titled prompts with optional icons | "Track my order"              |
+| **Avatar**            | Agent image or the built-in fallback         | `/images/support-agent.png`      |
 | **Accent color**      | Primary color for the header and send button | `#f97316` (orange)              |
 | **Template**          | Visual style preset (see below)              | `aurora`                        |
 | **Font preset**       | Typography style                             | `modern-sans`                   |
@@ -33,6 +35,31 @@ Per bot, you can customize all of these from the Filament panel:
 | **Response format**   | `markdown` or `plain_text`                   | `markdown`                      |
 | **Language**          | Widget UI language code                      | `en`, `de`, `fr`, `es`          |
 | **Attachments**       | Allow verified private image/document uploads | `true` / `false`                |
+
+### Conversation Starters And Icons
+
+A conversation starter has three fields:
+
+- `label`: the short title visible in the empty state
+- `prompt`: the exact visitor message sent when the starter is selected
+- `icon`: an optional semantic key from the safe icon list
+
+The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. The widget renders at most four starters, uses native buttons, and sends the selected prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
+
+Developers can extend the safe list in the published configuration. The icon value is a registered Blade icon alias, not arbitrary markup:
+
+```php
+'widget' => [
+    'conversation_starter_icons' => [
+        'billing' => [
+            'label' => 'Billing',
+            'icon' => 'heroicon-o-credit-card',
+        ],
+    ],
+],
+```
+
+Existing `quick_prompts` string lists are accepted when an older bot is loaded. The next save writes the structured `conversation_starters` format.
 
 ## File Attachments
 
@@ -71,18 +98,18 @@ The widget ships with twelve visual themes:
 
 | Template     | Description                            |
 | ------------ | -------------------------------------- |
-| `clean`      | Neutral and professional (default)     |
-| `glass`      | Frosted-glass translucent panels       |
-| `bold`       | High-contrast, saturated colors        |
-| `neo-brutal` | Thick borders, raw geometric look      |
-| `noir`       | Dark background, minimal chrome        |
-| `aurora`     | Soft gradients and warm tones          |
-| `control-plane` | Product-grade panel styling for operational SaaS demos |
-| `minimal`    | Maximum whitespace, understated UI     |
-| `x-dark`     | Bold dark surface inspired by X        |
-| `imessage`   | Bubble-forward chat styling            |
-| `openai`     | Clean assistant UI inspired by ChatGPT |
-| `solar`      | Warm, high-contrast light palette      |
+| `clean`      | Balanced cards and a connected compact composer |
+| `glass`      | Translucent layers and a floating pill composer |
+| `bold`       | Large typography and stacked action rows |
+| `neo-brutal` | Hard corners, thick borders, and offset shadows |
+| `noir`       | Editorial rows on warm paper or a near-black night surface |
+| `aurora`     | Colorful gradients, organic corners, and luminous depth |
+| `control-plane` | Dense command rows for operational product surfaces |
+| `minimal`    | Text-led links with almost no chrome   |
+| `x-dark`     | Black social surface with outline chips |
+| `imessage`   | Centered contact treatment and suggestion pills |
+| `openai`     | Quiet neutral prompt cards and a floating composer |
+| `solar`      | Warm cream daylight and solarized night palettes |
 
 ## Font Presets
 
@@ -143,6 +170,7 @@ Add a single `<script>` tag to any HTML page:
     data-accent="#f97316"
     data-title="Support Assistant"
     data-subtitle="Always here to help"
+    data-empty-state-hint="Choose a topic or ask freely."
     data-compact="false"
     data-size="comfortable"
     data-font="modern-sans"
@@ -172,6 +200,7 @@ Common optional attributes:
 | `data-title` | Chat panel title |
 | `data-subtitle` | Chat panel subtitle |
 | `data-welcome` | Welcome message |
+| `data-empty-state-hint` | Short guidance below the empty-state heading |
 | `data-compact` | `true` or `false` |
 | `data-size-preset` | `compact`, `comfortable`, or `spacious` |
 | `data-font-preset` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |

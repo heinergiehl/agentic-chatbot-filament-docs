@@ -251,7 +251,8 @@ Each Agent can have its own:
 - title
 - subtitle
 - welcome message
-- quick prompts
+- empty-state hint
+- up to four structured conversation starters with optional safe icons
 - accent color
 - style template
 - compact mode
@@ -298,7 +299,7 @@ For example:
 
 - a vague Agent title creates confusion
 - a clear subtitle explains why the Agent is on the page
-- strong quick prompts help users ask better questions
+- focused conversation starters help users reach a useful first turn
 
 ## When To Create A Separate Agent
 
@@ -349,7 +350,7 @@ Use when you need:
 - Use different Agents when source quality or permissions differ.
 - Write a system prompt that explains exactly what the Agent is for.
 - Give the widget title and subtitle a clear user-facing purpose.
-- Add quick prompts that reflect real user intent.
+- Add conversation starters that reflect real user intent. Give each one a short visible label and a complete prompt to send.
 - Test retrieval after adding or changing sources.
 - Keep every answer and capability inside the published Agent contract.
 - Start without a Playbook for general help and source-grounded replies.
