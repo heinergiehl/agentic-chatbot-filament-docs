@@ -4,7 +4,7 @@ A Laravel and Filament package for building, testing, publishing, and operating 
 
 This repository is the complete public documentation source used by HeliDocs. The Filament marketplace has a separate entry point: configure its `docs_url` to the raw [`FILAMENT_PLUGIN_PAGE.md`](FILAMENT_PLUGIN_PAGE.md), not this README. That standalone page uses absolute GitHub links because Filament does not resolve repository-relative documentation links in the same way as HeliDocs or GitHub.
 
-The documentation target is `v0.17.5`. **Release status:** Candidate. This version is not buyer-visible until the protected exact-source and exact-artifact workflow publishes an immutable GitHub release.
+The documentation target is `v0.17.5`. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish the buyer-visible release; the GitHub release and attached archive are authoritative.
 
 ## What the package provides
 

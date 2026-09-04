@@ -1,11 +1,9 @@
 # Filament Agentic Chatbot 0.17.5
 
-**Release status:** Candidate<br>
-**Target release date:** 2026-09-04<br>
+**Release status:** Approved<br>
+**Release date:** 2026-09-04<br>
 **Upgrade baseline:** 0.17.4<br>
 **Previous-line security/critical EOL:** 2026-11-17
-
-> Do not publish or install this candidate as a production release. Only the protected exact-source and exact-artifact workflow may publish the immutable release.
 
 Version 0.17.5 corrects continuation of active Playbook waitpoints without broadening the Agent's authority.
 

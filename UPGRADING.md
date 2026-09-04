@@ -435,7 +435,7 @@ The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGr
 
 ## Current release status
 
-The current Commercial Early Access target is **`v0.17.5`**. **Release status:** Candidate. It is not buyer-visible until the protected exact-source and exact-artifact workflow publishes an immutable GitHub release.
+The current Commercial Early Access release is **`v0.17.5`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 

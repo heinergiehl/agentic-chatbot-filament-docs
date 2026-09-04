@@ -1,6 +1,6 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.17.5`. **Release status:** Candidate. This matrix separates installable support from evidence produced for one exact release artifact. The candidate is not buyer-visible until the protected release workflow publishes it.
+Target release: `0.17.5`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 

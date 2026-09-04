@@ -6,9 +6,7 @@ Connect each Agent to approved knowledge, selected live application data, and re
 
 **Commercial Early Access** · **Filament 5** · **Laravel 12 and 13**
 
-The documented release is `v0.17.5`. **Release status:** Candidate. The candidate is not buyer-visible until the protected release workflow publishes it; the GitHub release and Composer listing remain authoritative for availability.
-
-Version v0.17.5 has not been published. Do not install this candidate in production.
+The documented release is `v0.17.5`. **Release status:** Approved. The GitHub release and Composer listing are authoritative for buyer-visible availability.
 
 - [Try the current live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
 - [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
