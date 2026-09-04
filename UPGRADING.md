@@ -435,11 +435,11 @@ The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGr
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.17.3`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
+The current Commercial Early Access release is **`v0.17.4`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
-> The git tag `v0.12.0` points to an early preview commit. The `v0.17.0` and `v0.17.1` source tags were not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
+> The git tag `v0.12.0` points to an early preview commit. The `v0.17.0`, `v0.17.1`, and `v0.17.3` source tags were not promoted by the protected release workflow. Install `^0.17` so Composer selects the latest verified patch release.
 
 When upgrading, always:
 
@@ -614,6 +614,20 @@ secrets; Mailgun uses its Webhook Signing Key, not its API key.
 See [Channel Integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md).
 
 ---
+
+## Upgrading to v0.17.4
+
+Version 0.17.4 has no database migration or dependency change. It makes each Data Resource tool state the exact argument names from its immutable deployment, including `sort_by` for current deployments and `sort_field` for compatible older pins. An undeclared alias remains blocked before execution; the model may correct only the same proposal using the exact published schema.
+
+Run both Doctor commands and repeat the saved candidate tests that exercise Data Resources. Existing live deployments remain immutable and do not need to be republished solely for this patch.
+
+```bash
+composer update heiner/filament-agentic-chatbot --with-all-dependencies
+php artisan filament-agentic-chatbot:doctor
+php artisan agent-graph:doctor
+```
+
+The `v0.17.3` source tag was not promoted to an immutable GitHub release because its protected native Gemini routing gate correctly blocked an undeclared sort alias. Install `^0.17` to select the latest verified patch.
 
 ## Upgrading to v0.17.3
 

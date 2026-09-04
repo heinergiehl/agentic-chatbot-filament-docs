@@ -4,6 +4,19 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.4] - 2026-09-04
+
+### Fixed
+
+- Made Data Resource tool descriptions name their exact immutable arguments, including the deployment-pinned `sort_by` or legacy `sort_field` contract, so native structured-tool providers do not need to guess aliases.
+- Kept undeclared Data Resource arguments fail closed while returning bounded, field-specific diagnostics that permit only one correction with the exact published schema. The rejected proposal never reaches the database or capability gateway.
+- Added regression coverage for current and legacy immutable Data Resource pins and for the safe correction response after an undeclared `order_by` argument.
+- Superseded the `v0.17.3` source tag, which was not promoted to an immutable GitHub release after its protected native Gemini routing gate rejected an undeclared sort alias.
+
+### Migration
+
+- No database migration, dependency change, or republish is required when upgrading from a completed v0.17.3 candidate. Run both Doctor commands and repeat the saved Data Resource candidate tests before activation.
+
 ## [0.17.3] - 2026-09-04
 
 ### Changed
