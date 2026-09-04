@@ -67,6 +67,14 @@ resumes only when it validates against the current interrupt contract. A side
 question remains an Agent turn and does not consume or corrupt the pending
 waitpoint.
 
+A short, unambiguous whole-message answer to an active text or choice waitpoint
+is admitted and resumed deterministically before model dispatch. The original
+visitor text remains the submitted value. Questions, quoted text, conditions,
+uncertainty, negation, cancellation, multiline input, and mixed statements do
+not use this fast path; they remain Agent turns so the pending waitpoint is not
+consumed accidentally. Approval, form, and operator-review interrupts retain
+their dedicated typed paths.
+
 ## Capabilities
 
 A Capability step selects one backend contract. Common forms are:

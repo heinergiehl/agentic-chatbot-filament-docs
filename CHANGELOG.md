@@ -4,6 +4,18 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.5] - 2026-09-04
+
+### Fixed
+
+- Resumed active text and choice Playbook waitpoints deterministically for short, unambiguous whole-message replies before model dispatch.
+- Kept side questions, cancellation, conditional or uncertain statements, quoted text, multiline input, mixed statements, approvals, forms, and operator reviews on their existing guarded paths.
+- Avoided an unnecessary provider request for admitted standalone waitpoint answers while preserving the visitor's exact submitted text.
+
+### Migration
+
+- No database migration, configuration key, dependency change, or Playbook republish is required when upgrading from 0.17.4. Run both Doctor commands and repeat a saved candidate test for each live Playbook waitpoint path.
+
 ## [0.17.4] - 2026-09-04
 
 ### Fixed

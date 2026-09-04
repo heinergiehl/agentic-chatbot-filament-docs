@@ -435,7 +435,7 @@ The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGr
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.17.4`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
+The current Commercial Early Access target is **`v0.17.5`**. **Release status:** Candidate. It is not buyer-visible until the protected exact-source and exact-artifact workflow publishes an immutable GitHub release.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
@@ -450,6 +450,20 @@ When upgrading, always:
    `php artisan filament-agentic-chatbot:doctor` to verify the upgraded environment.
 4. Clear caches: `php artisan config:clear && php artisan view:clear && php artisan route:clear`.
 5. Re-publish config if needed: `php artisan vendor:publish --tag=filament-agentic-chatbot-config`.
+
+---
+
+## Upgrading to v0.17.5
+
+Version 0.17.5 has no database migration, configuration key, dependency change, or Playbook republish requirement. It deterministically resumes short, unambiguous whole-message answers to active text and choice waitpoints before model dispatch. Questions, cancellation, conditions, uncertainty, quoted or multiline input, mixed statements, approvals, forms, and operator reviews retain their existing guarded paths.
+
+Run both Doctor commands and repeat saved candidate tests for each live Playbook waitpoint path before activation. An admitted standalone answer no longer requires a provider call, but the complete Playbook still requires its normal capability, policy, and failure-path verification.
+
+```bash
+composer update heiner/filament-agentic-chatbot --with-all-dependencies
+php artisan filament-agentic-chatbot:doctor
+php artisan agent-graph:doctor
+```
 
 ---
 

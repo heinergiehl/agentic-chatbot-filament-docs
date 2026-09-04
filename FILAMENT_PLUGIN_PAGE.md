@@ -6,7 +6,7 @@ Connect each Agent to approved knowledge, selected live application data, and re
 
 **Commercial Early Access** · **Filament 5** · **Laravel 12 and 13**
 
-The documented release is `v0.17.4`. **Release status:** Approved. The GitHub release and Composer listing are authoritative for buyer-visible availability.
+The documented release is `v0.17.5`. **Release status:** Candidate. The candidate is not buyer-visible until the protected release workflow publishes it; the GitHub release and Composer listing remain authoritative for availability.
 
 - [Try the current live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
 - [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
@@ -62,6 +62,7 @@ Draft edits do not change live behavior. A live Agent uses one immutable, verifi
 
 - A Filament-integrated canvas for bounded multi-step processes
 - Semantic steps for input, capabilities, decisions, approvals, waits, AI tasks, transforms, bounded iteration, sub-Playbooks, and results
+- Deterministic continuation for short, unambiguous replies to active text and choice waitpoints, without another provider call
 - Deterministic validation before publication
 - Immutable deployments, run inspection, checkpoints, interrupts, delays, cancellation, and traces
 
