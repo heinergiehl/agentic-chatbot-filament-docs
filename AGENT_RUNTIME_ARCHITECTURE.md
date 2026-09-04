@@ -622,6 +622,12 @@ An evidence excerpt that only repeats one supplied input value from a larger tur
 cannot dispatch either: a source-bound value is not proof that the visitor
 requested the capability's job. A complete short value reply remains eligible
 for a contextual clarification such as “Which city?” → “Berlin”.
+When the complete latest utterance itself satisfies a text or Choice waitpoint,
+the runtime applies that same deterministic source-binding admission before
+model dispatch. This keeps ordinary short replies on the active Playbook and
+avoids a billable routing call. Questions, mixed acts, cancellations, invalid
+typed values, approvals, operator reviews and widget-only inputs remain outside
+this shortcut and retain their existing explicit boundaries.
 Rejected direct-read and Playbook-start proposals remain in the shared operator
 trace but do not count as executed attempts or turn an otherwise safe
 conversational answer into a fictitious lookup failure.
