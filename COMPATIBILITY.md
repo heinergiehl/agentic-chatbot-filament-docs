@@ -1,6 +1,6 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.17.2`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
+Target release: `0.17.3`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 
@@ -9,7 +9,8 @@ Target release: `0.17.2`. **Release status:** Approved. This matrix separates in
 | PHP | `8.3+` | CI covers PHP 8.3 and 8.4; the protected artifact path uses PHP 8.4. |
 | Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The same byte-verified ZIP is installed into separate Laravel 12 and 13 hosts. |
 | Filament | `5.7.6+` within Composer's resolved 5.x line | The minimum excludes the audited MFA and login vulnerabilities fixed in 5.7.6; package UI and assets are tested without requiring buyers to compile package source. |
-| AgentGraph | `0.16.1` | Exact stable patch release installed transitively and used as the sole productive workflow-state authority. |
+| Laravel AI | `^0.11.2` | Shared multi-step tool loop with provider continuation state and package-owned accounting and authorization boundaries. |
+| AgentGraph | `0.16.2` | Exact stable patch release installed transitively and used as the sole productive workflow-state authority. |
 | HTTP stack | Guzzle `^7.15.2` / PSR-7 `^2.13` or Guzzle `^8.0.2` / PSR-7 `^3.0` | Security floors reject the audited vulnerable line; Laravel 13 can retain its native current major. |
 | Database | PostgreSQL 16 + `pgvector` is the certified Golden Path | Fresh install, migration, upgrade, rollback, re-apply, and retrieval checks use real PostgreSQL/pgvector. |
 | Alternative vector store | ChromaDB | Supported adapter; not part of the exact-artifact PostgreSQL certification and must be staged by the buyer. |

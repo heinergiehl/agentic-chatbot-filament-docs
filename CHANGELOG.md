@@ -4,6 +4,23 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.17.3] - 2026-09-04
+
+### Changed
+
+- Raised the Laravel AI SDK requirement to `^0.11.2` and the exact AgentGraph runtime dependency to `0.16.2`.
+- Moved Gemini Connector tool-name recovery to Laravel AI's shared multi-step generation loop while retaining exact-match and ambiguity rejection rules.
+
+### Fixed
+
+- Preserved Gemini thought signatures across tool-result continuations so Gemini 2.5 Flash-Lite can complete Knowledge, Connector, Data Resource, and Playbook turns after a tool call instead of returning an empty terminal answer.
+- Retained disjoint Gemini cache, prompt, tool-use, completion, and reasoning usage accounting on the updated SDK gateway.
+- Kept Laravel AI approval continuations outside the productive authorization surface; AgentGraph interrupts and the capability gateway remain the only approval and write authorities.
+
+### Migration
+
+- No plugin database migration is added. Stop workers, update the package and AgentGraph together, run both Doctor commands, then recompile and republish Playbooks and their Agent candidates because productive artifacts pin the exact AgentGraph runtime release.
+
 ## [0.17.2] - 2026-09-04
 
 ### Fixed

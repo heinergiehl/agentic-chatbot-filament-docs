@@ -1,6 +1,6 @@
 # Known Limitations
 
-> **Version**: 0.17.2<br>
+> **Version**: 0.17.3<br>
 > **Last updated**: 2026-09-04
 
 This page documents known constraints, upstream limitations, and workarounds.
@@ -9,7 +9,7 @@ This page documents known constraints, upstream limitations, and workarounds.
 
 ## 1. `laravel/ai` provider behavior varies by version
 
-The plugin depends on [`laravel/ai`](https://github.com/laravel/ai) at `^0.7 || ^1.0`.
+The plugin depends on [`laravel/ai`](https://github.com/laravel/ai) at `^0.11.2`.
 Provider and gateway support can still vary across SDK and upstream provider versions.
 
 **Impact**:

@@ -4,7 +4,7 @@ A Laravel and Filament package for building, testing, publishing, and operating 
 
 This repository is the complete public documentation source used by HeliDocs. The Filament marketplace has a separate entry point: configure its `docs_url` to the raw [`FILAMENT_PLUGIN_PAGE.md`](FILAMENT_PLUGIN_PAGE.md), not this README. That standalone page uses absolute GitHub links because Filament does not resolve repository-relative documentation links in the same way as HeliDocs or GitHub.
 
-The documentation target is `v0.17.2`. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish the buyer-visible release; the GitHub release and attached archive are authoritative.
+The documentation target is `v0.17.3`. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish the buyer-visible release; the GitHub release and attached archive are authoritative.
 
 ## What the package provides
 
@@ -22,7 +22,8 @@ The documentation target is `v0.17.2`. **Release status:** Approved. Only the pr
 - PHP 8.3+
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.7.6+
-- `heiner/agent-graph` `0.16.1` as the exact stable runtime dependency
+- `laravel/ai` `^0.11.2` for provider and multi-step tool execution
+- `heiner/agent-graph` `0.16.2` as the exact stable runtime dependency
 - PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
 - Supervised asynchronous queue worker for production ingestion, delays, and background work
 
@@ -83,7 +84,7 @@ Set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10`, use a dedicated signing key
 - [Compatibility and certification](COMPATIBILITY.md)
 - [Known limitations](KNOWN_LIMITATIONS.md)
 - [Upgrade guide](UPGRADING.md)
-- [Release notes v0.17.2](RELEASE_NOTES_v0.17.2.md)
+- [Release notes v0.17.3](RELEASE_NOTES_v0.17.3.md)
 - [Support](SUPPORT_POLICY.md)
 - [Refund and license terms](REFUND_AND_LICENSE.md)
 

@@ -419,9 +419,9 @@ The built-in `query_data_resource` capability result contract is version 2. It r
 
 Data Resource query contracts are now version 3 and pin an estimated-row budget plus a cross-driver statement timeout. Run the package migrations to add `agentic_data_resources.query_safety`, review **Allow text search** and **Database query budget** for every UI-managed resource, then republish workflows that bind those resources. Doctor fails when the migration is missing, an active deployment still pins a stale Data Resource hash, or an active production resource uses a database without supported plan/timeout budgets, so run it before reopening chat traffic. The runtime now rejects PostgreSQL/MySQL/MariaDB plans above that budget before execution; SQLite is limited to local/testing Data Resource queries.
 
-## AgentGraph 0.16.0 stable runtime
+## AgentGraph 0.16.2 stable runtime
 
-Current source builds require the exact stable `heiner/agent-graph:0.16.0` release:
+Current source builds require the exact stable `heiner/agent-graph:0.16.2` release:
 
 ```bash
 composer update heiner/agent-graph heiner/filament-agentic-chatbot --with-all-dependencies
@@ -431,11 +431,11 @@ php artisan agent-graph:doctor
 
 Run all pending package and AgentGraph migrations before reopening traffic. Resume acceptance is recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancellation atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
 
-The package pins AgentGraph `0.16.1`. Artifacts compiled against 0.15 or a 0.16.0 release candidate remain inspectable but are not executable under the current stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
+The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGraph release remain inspectable but are not executable under the current stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.17.2`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
+The current Commercial Early Access release is **`v0.17.3`**. **Release status:** Approved. Only the protected exact-source and exact-artifact workflow may publish its buyer-visible artifact.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
@@ -614,6 +614,21 @@ secrets; Mailgun uses its Webhook Signing Key, not its API key.
 See [Channel Integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md).
 
 ---
+
+## Upgrading to v0.17.3
+
+Version 0.17.3 requires Laravel AI `^0.11.2` and AgentGraph `0.16.2`. It fixes Gemini multi-step tool completion by preserving provider continuation state, including thought signatures, while keeping Connector recovery exact and fail closed. It adds no plugin database migration.
+
+Treat the dependency update as a maintenance-window cutover because productive Playbook artifacts pin the exact AgentGraph release. Stop queue workers and schedulers, back up the package and AgentGraph stores, update both packages together, run migrations and both Doctor commands, then recompile and republish every live Playbook and its Agent candidate before reopening traffic. Candidate tests must exercise the exact Knowledge, Data Resource, Connector, and Playbook routes that the Agent exposes.
+
+```bash
+composer update heiner/filament-agentic-chatbot heiner/agent-graph laravel/ai --with-all-dependencies
+php artisan migrate --force
+php artisan filament-agentic-chatbot:doctor
+php artisan agent-graph:doctor
+```
+
+Laravel AI's own tool-approval continuation is not a productive authorization path in this plugin. Do not replace AgentGraph approval interrupts or capability-gateway confirmation with SDK approval decisions.
 
 ## Upgrading to v0.17.2
 
