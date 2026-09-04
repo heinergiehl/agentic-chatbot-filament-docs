@@ -5,7 +5,7 @@
 **Upgrade baseline:** 0.17.4<br>
 **Previous-line security/critical EOL:** 2026-11-17
 
-> This candidate is not buyer-visible. Only the protected exact-source and exact-artifact workflow may publish the immutable release.
+> Do not publish or install this candidate as a production release. Only the protected exact-source and exact-artifact workflow may publish the immutable release.
 
 Version 0.17.5 corrects continuation of active Playbook waitpoints without broadening the Agent's authority.
 
