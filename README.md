@@ -23,7 +23,7 @@ The documentation target is `v0.19.0`. **Release status:** Approved. Only the lo
 - Laravel 12.61.1+ or 13.12.0+
 - Filament 5.7.6+
 - `laravel/ai` `^0.11.2` for provider and multi-step tool execution
-- `heiner/agent-graph` `0.16.2` as the exact stable runtime dependency
+- `heiner/agent-graph` `0.16.3` as the exact stable runtime dependency
 - PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
 - Supervised asynchronous queue worker for production ingestion, delays, and background work
 

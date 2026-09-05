@@ -6,7 +6,7 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `0.16.2` (exact stable patch release)
+- Current plugin constraint: `0.16.3` (exact stable patch release)
 - The consuming host must explicitly select the same stable release and complete the
   coordinated store migration and deployment publication before accepting work.
 - The required public surface is enforced by
@@ -49,6 +49,9 @@ cannot start until the current run is terminal.
   metadata, and coarse side-effect annotations are declared on this graph.
 - `AgentNode` executes bounded Playbook AI Tasks. It does not own general chat
   or choose capabilities.
+- Native Laravel AI tool approvals raise `AgentApprovalRequiredException`.
+  The plugin adapter preserves that failure without a synchronous fallback or
+  another model attempt. Productive approvals use the existing graph interrupts.
 - `SubgraphNode` executes deployment-pinned Sub-Playbooks with isolated state,
   bounded depth, parent identity, interrupt bubbling, and declared output
   mapping.

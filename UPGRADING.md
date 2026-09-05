@@ -452,9 +452,9 @@ The built-in `query_data_resource` capability result contract is version 2. It r
 
 Data Resource query contracts are now version 3 and pin an estimated-row budget plus a cross-driver statement timeout. Run the package migrations to add `agentic_data_resources.query_safety`, review **Allow text search** and **Database query budget** for every UI-managed resource, then republish workflows that bind those resources. Doctor fails when the migration is missing, an active deployment still pins a stale Data Resource hash, or an active production resource uses a database without supported plan/timeout budgets, so run it before reopening chat traffic. The runtime now rejects PostgreSQL/MySQL/MariaDB plans above that budget before execution; SQLite is limited to local/testing Data Resource queries.
 
-## AgentGraph 0.16.2 stable runtime
+## AgentGraph 0.16.3 stable runtime
 
-Current source builds require the exact stable `heiner/agent-graph:0.16.2` release:
+Current source builds require the exact stable `heiner/agent-graph:0.16.3` release:
 
 ```bash
 composer update heiner/agent-graph heiner/filament-agentic-chatbot --with-all-dependencies
@@ -464,7 +464,11 @@ php artisan agent-graph:doctor
 
 Run all pending package and AgentGraph migrations before reopening traffic. Resume acceptance is recoverable across process loss, queued frontiers can be redriven after dispatch loss, and SDK cancellation atomically resolves a pending interrupt. Remove any application-level best-effort interrupt cleanup performed after `AgentGraphManager::cancel()`; duplicate resolution is no longer part of the integration contract.
 
-The package pins AgentGraph `0.16.2`. Artifacts compiled against another AgentGraph release remain inspectable but are not executable under the current stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
+The package pins AgentGraph `0.16.3`. Artifacts compiled against another AgentGraph release remain inspectable but are not executable under the current stable contract. Recompile and republish affected Playbooks, then publish and verify replacement Agent deployments before reopening traffic. The plugin Doctor treats `AgentGraphManager::recover()` as required SDK surface.
+
+The 0.16.2 to 0.16.3 update adds no database migration or public method signature change. Stop long-lived workers while updating and restart them on the same installed dependency set. Resume now rejects expired, mismatched, or substituted interrupt responses and preserves complete checkpoint schedules and local Send inputs. Input already lost from an older wait checkpoint must be reconciled from trusted application records; republication cannot reconstruct it.
+
+Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequiredException`. The plugin adapter does not convert that failure into a synchronous fallback or another model attempt. Use the existing graph approval interrupts; native Laravel AI approval resumption is not implemented by `AgentNode`. Memory writes return their receipt without counting as a read, including when the saved item has already expired.
 
 ## Current release status
 
