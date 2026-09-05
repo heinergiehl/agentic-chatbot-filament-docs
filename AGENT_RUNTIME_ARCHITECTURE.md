@@ -55,6 +55,18 @@ adapter correction changes neither tool authority nor retry behavior. Its
 overrides can be removed when Laravel AI preserves this distinction throughout
 parsing, history, and function-response serialization.
 
+For Gemini 2.5 Flash Lite, a bare tool-result follow-up receives a short system
+continuation cue. Tool results and the original visitor messages remain intact;
+the cue does not become a new visitor message or change the response language.
+
+`DeployedAgent` enables Laravel AI's `RepairToolCalls` handling. An unknown tool
+name produces a failed tool result naming the tools actually available in the
+turn. The model may correct its proposal within the existing step and usage
+budgets; the unknown tool never executes and no additional capability is
+introduced. Exceptions from an executed handler still propagate through the
+existing failure and reconciliation paths. Knowledge-search instructions are
+included only when that turn actually provides the pinned knowledge tool.
+
 General questions about what the Agent can do are answered before provider or
 tool dispatch from the immutable deployment's published capability and Playbook
 labels. This manifest-backed overview cannot invent tools, execute a capability,
