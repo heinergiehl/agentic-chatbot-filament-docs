@@ -6,6 +6,9 @@ All notable changes to this package will be documented in this file.
 
 ### Fixed
 
+- Preserved distinct repair targets for equally named Playbook steps, combined duplicate reports of the same repair, and kept nonblocking checks out of blocker counts.
+- Made Playbook panel widths depend on the editor container, preserving preferred widths and focused fields through drawer changes.
+- Preserved canvas framing when panels resize and kept nested control shortcuts from clearing the selected step.
 - Bound editor saves and publications to the reviewed draft and published revisions. Concurrent editors cannot silently overwrite a newer draft or publish a replacement payload.
 - Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.
 - Allowed registered authentication strategies to return headers without query parameters.
@@ -17,6 +20,9 @@ All notable changes to this package will be documented in this file.
 
 ### Changed
 
+- Replaced the Playbook status map with a compact step finder linked to Review. Removed the duplicate Suggested catalog and repeated inspector status panels.
+- Added visual form-field and verified-result authoring, with advanced fallbacks for unsupported structures and explicit references.
+- Added guarded process starters and separated direct process tests from Agent conversation tests. Versions now reports the current release's actual active-Agent assignment.
 - Added schema-aware API argument controls for numbers, booleans, enums, lists and objects, retaining variable mappings and visible invalid input.
 - Added explicit OpenAPI query parameter serialization through the existing immutable request contract.
 - Distinguished existing releases that need attention from unpublished Playbook drafts in the list.

@@ -12,7 +12,7 @@ recovery rules must be controlled.
 
 The editor therefore has two deliberately separate layers:
 
-1. **Use** defines the immutable invocation contract: bounded outcome, positive
+1. **Setup > When to use** defines the immutable invocation contract: bounded outcome, positive
    start rule, exclusions, and realistic matching requests.
 2. **Steps** defines what happens only after the Agent has chosen the Playbook.
 
@@ -34,10 +34,16 @@ no separate recipe runtime or expert node architecture.
 
 A new Playbook starts with Entry only. From there:
 
-- define **Use** before publication so the Agent has an unambiguous routing
+- define **When to use** before publication so the Agent has an unambiguous routing
   contract;
-- choose **AI Draft** to generate a schema-v2 proposal from a description; or
-- add one of the twelve process steps manually.
+- choose **Add first step** to open the catalog, or start with **Retrieve data**
+  or **Approve before writing**;
+- use **More Playbook tools > Create draft with AI** for a generated proposal.
+
+Starters insert ordinary semantic steps as one undoable edit. They do not select
+resources or grant permissions. Choose the approved operation and complete its
+required fields. The main catalog shows Request Input, Run Operation, Decision,
+Approval, and Result; less common process controls remain under Advanced.
 
 Review generated capabilities, branches, waitpoints, and write approvals before
 publishing. AI Draft can propose structure but cannot grant dependencies.
@@ -63,7 +69,11 @@ not silently acquire new compiler behavior.
 
 ## Returning useful results
 
-Use the Result template to select verified capability fields, for example
+Use the Result field picker to select original outputs from earlier capabilities.
+When the editor has a pinned field suggestion, it offers that field; otherwise
+it offers the whole returned value. The optional preview uses samples from a
+pinned test run or trace, not evidence of a new execution. The advanced Result template remains available
+for explicit references, for example
 `{{lookup.data.name}}` and `{{lookup.data.balance}}` for an API Connector, or
 `{{action_result.receipt}}` for an Action. Leaving the template empty selects
 the last unchanged capability output. For Each retains the verified result of
@@ -88,14 +98,27 @@ old evidence unverifiable; presentation falls back safely without re-execution.
 ## Responsive behavior
 
 Use rules and the process canvas are peer authoring surfaces. Catalog, checks,
-navigation, and the step inspector adapt as drawers at narrow widths without
-introducing page-level horizontal scrolling. Build-tool labels collapse to
-accessible icon buttons with tooltips when the rail is too narrow. The editor
+navigation, and the step inspector adapt to the editor container. Docked panels
+share the available width and keep room for the canvas. At smaller widths, one
+panel opens as a drawer while preserving its fields and keyboard focus. The
+editor remembers preferred desktop widths separately from temporary limits.
+Step labels wrap rather than becoming an icon-only catalog. The editor
 uses the existing `--fi-wf-*` and Filament tokens in light and dark modes; it
 does not install global CSS or Tailwind preflight.
 
 Keyboard focus, canvas zoom/pan, drag/drop, connection handles, undo/redo,
 autosave, and unsaved-state warnings remain part of the editor contract.
+
+**Find step** searches existing canvas steps and opens the selected inspector.
+It links to **Review** for validation instead of maintaining a second readiness
+dashboard. Review shows publication blockers, optional warnings, and saved-test
+attention with explicit repair actions. Setup, Review, and Test remember their
+last subpage. Versions live in Review; publication settings live in Setup.
+
+Request Input forms use a visual field list for names, labels, types, choices,
+ordering, and required flags. Existing unsupported structures remain available
+in the advanced JSON editor. Editing supported fields preserves additional
+field metadata.
 
 Invocation rule edits enter the saved document while typing. Changing a Request
 Input type removes inactive form settings; the selected type controls the
@@ -116,7 +139,10 @@ step validation, explicit write approvals, exact capability materialization,
 dependency pinning, and the published contract. Publish then creates the
 immutable deployment. The invocation contract is frozen with that deployment.
 The Agent can use it only after an explicit assignment is included in a newly
-published Agent deployment.
+published Agent deployment. Versions reports whether the current Playbook
+release is actually pinned by the active Agent. The editor's process test starts
+the Playbook directly; test Agent selection and conversation in the Agent's
+candidate and live tests.
 
 Editor saves compare the caller's draft and published fingerprints while holding
 the Playbook row lock on the package connection. A stale session must load the
