@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.18.0<br>
-> **Last updated**: 2026-09-04
+> **Version**: 0.19.0<br>
+> **Last updated**: 2026-09-05
 
 This page documents known constraints, upstream limitations, and workarounds.
 

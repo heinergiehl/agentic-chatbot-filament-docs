@@ -154,3 +154,9 @@ saved draft remains available for correction; no new deployment is selected.
 
 See [Agents and Playbooks](AGENTIC_WORKFLOWS.md) and
 [Playbook JSON Schema](WORKFLOW_JSON_SCHEMA.md).
+
+## Names and save feedback
+
+**Settings → Rename** changes the internal Playbook name used in the editor and lists. **Title shown to visitors** is separate draft content and reaches chat only after the Playbook and its dependent Agent are published. Renaming does not replace process edits or deployment pins.
+
+Save feedback describes the current operation. Errors retain local edits, and a delayed timeout from an earlier save cannot change a newer save's status. Native Filament dialogs leave canvas focus mode and hide floating editor controls while open.

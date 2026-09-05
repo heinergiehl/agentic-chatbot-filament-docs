@@ -6,7 +6,7 @@ Connect each Agent to approved knowledge, selected live application data, and re
 
 **Commercial Early Access** · **Filament 5** · **Laravel 12 and 13**
 
-The documented release is `v0.18.0`. **Release status:** Approved. The approved artifact becomes buyer-visible only through the local release authority. The GitHub release and Composer listing remain authoritative for availability.
+The documented release is `v0.19.0`. **Release status:** Approved. The approved artifact becomes buyer-visible only through the local release authority. The GitHub release and Composer listing remain authoritative for availability.
 
 - [Try the current live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
 - [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
@@ -62,8 +62,9 @@ Draft edits do not change live behavior. A live Agent uses one immutable, verifi
 
 - A Filament-integrated canvas for bounded multi-step processes
 - Semantic steps for input, capabilities, decisions, approvals, waits, AI tasks, transforms, bounded iteration, sub-Playbooks, and results
-- Deterministic continuation for short, unambiguous replies to active text and choice waitpoints, without another provider call
-- Deterministic validation before publication
+- Typed and configured Choice answers can resume deterministically; free-text replies require a source-bound Agent interpretation and validation against the pending input
+- Actionable validation and direct repair links before publication
+- Visual Form and Result controls, a compact step finder, and panels that adapt to the available editor width
 - Immutable deployments, run inspection, checkpoints, interrupts, delays, cancellation, and traces
 
 ### Delivery and operations
@@ -126,7 +127,7 @@ Copy the private Composer repository URL from the buyer's Anystack page, then in
 
 ```bash
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.18
+composer require heiner/filament-agentic-chatbot:^0.19
 ```
 
 Register `FilamentAgenticChatbotPlugin::make()` in the target Filament panel before running the installer:

@@ -1,12 +1,12 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.18.0`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
+Target release: `0.19.0`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 
 | Surface | Supported range | Release evidence |
 | --- | --- | --- |
-| PHP | `8.3+` | CI covers PHP 8.3 and 8.4; the protected artifact path uses PHP 8.4. |
+| PHP | `8.3+` | The local artifact assurance path uses PHP 8.4; PHP 8.3 remains within the supported Composer range. |
 | Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The same byte-verified ZIP is installed into separate Laravel 12 and 13 hosts. |
 | Filament | `5.7.6+` within Composer's resolved 5.x line | The minimum excludes the audited MFA and login vulnerabilities fixed in 5.7.6; package UI and assets are tested without requiring buyers to compile package source. |
 | Laravel AI | `^0.11.2` | Shared multi-step tool loop with provider continuation state and package-owned accounting and authorization boundaries. |
@@ -32,4 +32,4 @@ An available adapter is not automatically a release-certified provider/model pai
 
 ## What “certified” means
 
-For a release to be called certified, all protected jobs must pass for the exact source commit and the exact ZIP hash: deterministic runtime gate, dependency audits, complete provider profile matrix, live evals, restricted-capability rejection, Laravel 12/13 PostgreSQL installs, supported upgrade, migration rollback/re-apply, 1,000-iteration soak, and the reference-host Golden Path. A skipped or unavailable external credential is reported as untested, never as passed.
+For a release to be called certified, all required local gates must pass for the exact source commit and the exact ZIP hash: deterministic runtime gate, dependency audits, complete provider profile matrix, live evals, restricted-capability rejection, Laravel 12/13 PostgreSQL installs, supported upgrade, migration rollback/re-apply, 1,000-iteration soak, and the reference-host Golden Path. A skipped or unavailable external credential is reported as untested, never as passed.

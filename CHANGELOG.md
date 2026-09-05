@@ -4,12 +4,17 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-09-05
+
 ### Fixed
 
+- Kept save and validation feedback tied to its own operation, including successive requests and editor sessions. Long messages wrap on narrow screens; native dialogs leave canvas focus mode so they and their notifications remain visible.
+- Added a direct Rename action in Playbook settings and clarified the separate title shown to visitors.
+- Bounded Widget initialization and history requests so stalled connections show a retry action instead of an indefinite loading state. Late responses cannot replace a newer chat session.
 - Preserved distinct repair targets for equally named Playbook steps, combined duplicate reports of the same repair, and kept nonblocking checks out of blocker counts.
 - Made Playbook panel widths depend on the editor container, preserving preferred widths and focused fields through drawer changes.
 - Preserved canvas framing when panels resize and kept nested control shortcuts from clearing the selected step.
-- Bound editor saves and publications to the reviewed draft and published revisions. Concurrent editors cannot silently overwrite a newer draft or publish a replacement payload.
+- Bound editor saves and publications to the reviewed draft and published revisions. Conflicts keep autosave and mutations paused until the current draft is loaded, preventing stale tabs from silently overwriting it.
 - Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.
 - Allowed registered authentication strategies to return headers without query parameters.
 - Preserved OpenAPI response nullability and reported unsupported unions instead of selecting a branch silently.
@@ -29,7 +34,7 @@ All notable changes to this package will be documented in this file.
 
 ### Migration
 
-- Connector implementation bindings changed. Test and republish operations, then dependent Playbooks and Agent candidates before resuming traffic; see [Upgrading](UPGRADING.md#unreleased-connector-contracts-and-editorruntime-corrections).
+- Connector implementation bindings changed. Test and republish operations, then dependent Playbooks and Agent candidates before resuming traffic; see [Upgrading](UPGRADING.md#0190-connector-contracts-and-editorruntime-corrections).
 - No database migration is added. Refresh the compiled Filament editor assets in the host application.
 
 ## [0.18.0] - 2026-09-04

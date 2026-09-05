@@ -405,6 +405,8 @@ Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The
 
 ### New Chat And History Deletion
 
+Widget initialization and history requests have a 15-second deadline, including response-body loading. A stalled request shows the localized loading error and an explicit retry action. Late responses cannot update a newer session or its history. Host context-provider callbacks receive an optional `signal` for cancellation. Productive chat turns and external operations retain their own runtime deadlines; initialization recovery never replays a productive write.
+
 The shipped widget exposes **Start new chat** and **Delete history and memory** as separate actions. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Playbook is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
 
 History deletion remains an explicit, confirmed operation. A successful deletion immediately opens a fresh chat. If the lifecycle guard refuses deletion, the widget localizes the typed reason, keeps the old chat intact, and offers only safe recovery actions: retry when the response is retryable, or start a separate new chat while the prior conversation remains available for resolution or support.

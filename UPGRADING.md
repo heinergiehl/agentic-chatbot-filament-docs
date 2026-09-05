@@ -2,9 +2,9 @@
 
 This document covers required steps when upgrading between public releases.
 
-## Unreleased: Connector contracts and editor/runtime corrections
+## 0.19.0: Connector contracts and editor/runtime corrections
 
-This candidate changes the hash-bound authentication and pagination code and
+Version 0.19.0 changes the hash-bound authentication and pagination code and
 adds request construction and parameter serialization to the request-codec
 implementation binding. Every previously published Connector operation needs
 a fresh test and publication, including operations using a custom request
