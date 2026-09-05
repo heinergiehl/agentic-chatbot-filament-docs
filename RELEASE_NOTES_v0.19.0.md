@@ -21,6 +21,8 @@ Widget initialization and history requests have a 15-second deadline. Stalled re
 
 Connector requests support explicit OpenAPI query parameter serialization and preserve response nullability. Unsupported unions and parameter forms produce import diagnostics. Registered authentication strategies may return headers without query parameters.
 
+HTTP destination pinning retains all validated DNS addresses in one cURL resolve entry. An unreachable IPv6 address no longer replaces an available IPv4 address; private-network rejection and proxy restrictions remain in force.
+
 Pagination aggregates approved output fields, retains verified earlier pages when a later response is rejected, and marks page or item limits as partial results. Conflicting page context cannot relabel records from another page.
 
 Terminal provider completion errors remain errors even when accompanied by text. Verified facts and canonical Playbook outcomes survive those failures; unfinished prose and whole-turn retries cannot replace them. Short free-text acknowledgements and side requests do not automatically resume a Playbook waitpoint.

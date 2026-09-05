@@ -17,6 +17,7 @@ All notable changes to this package will be documented in this file.
 - Bound editor saves and publications to the reviewed draft and published revisions. Conflicts keep autosave and mutations paused until the current draft is loaded, preventing stale tabs from silently overwriting it.
 - Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.
 - Allowed registered authentication strategies to return headers without query parameters.
+- Kept all validated DNS addresses in one cURL resolve entry, allowing reachable IPv4 or IPv6 addresses to be used without weakening destination pinning.
 - Preserved OpenAPI response nullability and reported unsupported unions instead of selecting a branch silently.
 - Kept short free-text acknowledgements and side requests out of automatic Playbook continuation. Valid free-text answers still use source-bound Agent proposals.
 - Preserved terminal provider completion errors even with nonempty text, retained verified facts and canonical Playbook outcomes, and prevented unfinished prose or whole-turn retries from replacing them.
