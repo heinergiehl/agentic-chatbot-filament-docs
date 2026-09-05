@@ -611,6 +611,18 @@ Playbook waitpoint and AgentGraph state determine whether input can resolve an
 interrupt; unexpected text therefore produces an Agent answer or clarification
 instead of falling through a router/planner taxonomy.
 
+Before model dispatch, the runtime captures the current question, input type,
+resolution mode, and bounded choice options from the authoritative AgentGraph
+interrupt of the exact pinned open Playbook. This presentation snapshot is
+redacted and wrapped as untrusted data. It contains no future steps and does
+not depend on conversation history or a stale pending-interaction projection.
+An unavailable, absent, or mismatched Graph interrupt contributes no snapshot.
+The context describes the waitpoint at turn start; it grants no authority and
+does not save an answer. A canonical continuation result replaces it. The Agent
+must use the available continuation tool to apply an unambiguous current answer
+and must not invent the next process question. Side questions, clarification,
+explicit approval, widget inputs, and operator review retain their boundaries.
+
 Choice continuations expose the published labels and canonical values in their
 answer schema. System and tool guidance both require a current request for the
 published Playbook job and values supplied for use in that job; a literal mention

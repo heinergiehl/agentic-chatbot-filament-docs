@@ -13,7 +13,9 @@ All notable changes to this package will be documented in this file.
 - Bounded Widget initialization and history requests so stalled connections show a retry action instead of an indefinite loading state. Late responses cannot replace a newer chat session.
 - Preserved distinct repair targets for equally named Playbook steps, combined duplicate reports of the same repair, and kept nonblocking checks out of blocker counts.
 - Made Playbook panel widths depend on the editor container, preserving preferred widths and focused fields through drawer changes.
+- Kept the mobile inspector closed when no step is selected, including after reload, while retaining desktop width preferences.
 - Made focus mode fill the viewport in the published Playbook viewer and linked its step explorer to the actual process steps.
+- Matched step finder labels and search terms to the capability types shown on canvas cards, including Search knowledge.
 - Preserved canvas framing when panels resize and kept nested control shortcuts from clearing the selected step.
 - Bound editor saves and publications to the reviewed draft and published revisions. Conflicts keep autosave and mutations paused until the current draft is loaded, preventing stale tabs from silently overwriting it.
 - Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.
@@ -21,6 +23,7 @@ All notable changes to this package will be documented in this file.
 - Kept all validated DNS addresses in one cURL resolve entry, allowing reachable IPv4 or IPv6 addresses to be used without weakening destination pinning.
 - Preserved OpenAPI response nullability and reported unsupported unions instead of selecting a branch silently.
 - Kept short free-text acknowledgements and side requests out of automatic Playbook continuation. Valid free-text answers still use source-bound Agent proposals.
+- Supplied the current verified Playbook question to the Agent before interpreting a reply, without relying on chat history or exposing future steps. Only an authorized continuation can save that reply and advance the process.
 - Preserved terminal provider completion errors even with nonempty text, retained verified facts and canonical Playbook outcomes, and prevented unfinished prose or whole-turn retries from replacing them.
 - Made Request Input type changes consistent across authoring and compilation. Decision path renames preserve connected transitions, and connected paths require explicit disconnection before deletion.
 - Saved changes to Playbook invocation rules while typing, with consistent autosave and undo behavior.

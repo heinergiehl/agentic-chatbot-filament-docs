@@ -11,7 +11,7 @@ Version 0.19.0 improves Playbook authoring, Connector request and response contr
 
 The editor uses a compact step finder and one Review panel with repair links. Duplicate reports for the same repair are combined, while equally named steps retain separate targets. Panels respond to the editor's available width and preserve field focus and canvas framing as they dock, collapse, or become drawers.
 
-The published Playbook viewer uses the same full-screen focus mode. Its step explorer opens the actual process steps and their details, including on narrow screens.
+The published Playbook viewer uses the same full-screen focus mode. Its step explorer opens the actual process steps and their details, including on narrow screens. The mobile inspector stays closed when no step is selected, including after reload. Step finder labels and search terms match the capability types shown on the canvas.
 
 Forms and verified results have visual field controls. Common processes can start from a small template that remains editable through ordinary steps and undo. Advanced JSON controls appear only for structures that the visual editor cannot represent. Direct process tests and Agent conversation tests are presented separately; release history shows whether the exact published Playbook is included in the live Agent.
 
@@ -28,6 +28,8 @@ HTTP destination pinning retains all validated DNS addresses in one cURL resolve
 Pagination aggregates approved output fields, retains verified earlier pages when a later response is rejected, and marks page or item limits as partial results. Conflicting page context cannot relabel records from another page.
 
 Terminal provider completion errors remain errors even when accompanied by text. Verified facts and canonical Playbook outcomes survive those failures; unfinished prose and whole-turn retries cannot replace them. Short free-text acknowledgements and side requests do not automatically resume a Playbook waitpoint.
+
+The Agent receives the current verified Playbook question before interpreting a reply, even when chat history is unavailable. This bounded, redacted context comes from the active AgentGraph interrupt and excludes future steps. Only an authorized continuation can save the answer and advance the process; a later canonical tool result replaces the initial question context.
 
 ## Required upgrade
 
