@@ -13,6 +13,7 @@ All notable changes to this package will be documented in this file.
 - Bounded Widget initialization and history requests so stalled connections show a retry action instead of an indefinite loading state. Late responses cannot replace a newer chat session.
 - Preserved distinct repair targets for equally named Playbook steps, combined duplicate reports of the same repair, and kept nonblocking checks out of blocker counts.
 - Made Playbook panel widths depend on the editor container, preserving preferred widths and focused fields through drawer changes.
+- Made focus mode fill the viewport in the published Playbook viewer and linked its step explorer to the actual process steps.
 - Preserved canvas framing when panels resize and kept nested control shortcuts from clearing the selected step.
 - Bound editor saves and publications to the reviewed draft and published revisions. Conflicts keep autosave and mutations paused until the current draft is loaded, preventing stale tabs from silently overwriting it.
 - Aggregated approved Connector output fields across pagination, preserved verified earlier pages when a later response is rejected, and reported item/page limits as partial results. Later partial responses keep their status through continuation recovery. Conflicting page context cannot label records with another page's metadata.

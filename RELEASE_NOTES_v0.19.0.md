@@ -11,6 +11,8 @@ Version 0.19.0 improves Playbook authoring, Connector request and response contr
 
 The editor uses a compact step finder and one Review panel with repair links. Duplicate reports for the same repair are combined, while equally named steps retain separate targets. Panels respond to the editor's available width and preserve field focus and canvas framing as they dock, collapse, or become drawers.
 
+The published Playbook viewer uses the same full-screen focus mode. Its step explorer opens the actual process steps and their details, including on narrow screens.
+
 Forms and verified results have visual field controls. Common processes can start from a small template that remains editable through ordinary steps and undo. Advanced JSON controls appear only for structures that the visual editor cannot represent. Direct process tests and Agent conversation tests are presented separately; release history shows whether the exact published Playbook is included in the live Agent.
 
 Playbook settings distinguish the internal name used in the editor from the title shown to visitors. Rename opens the existing permission-checked details dialog. Save and validation feedback is bound to its own operation, so an earlier timeout cannot erase or fail a later save. A conflicting editor keeps autosave and mutations paused until the current draft is explicitly loaded.
