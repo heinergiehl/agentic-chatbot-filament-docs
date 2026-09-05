@@ -24,6 +24,7 @@ All notable changes to this package will be documented in this file.
 - Preserved OpenAPI response nullability and reported unsupported unions instead of selecting a branch silently.
 - Kept short free-text acknowledgements and side requests out of automatic Playbook continuation. Valid free-text answers still use source-bound Agent proposals.
 - Supplied the current verified Playbook question to the Agent before interpreting a reply, without relying on chat history or exposing future steps. Only an authorized continuation can save that reply and advance the process.
+- Preserved Gemini's original tool-call IDs in both conversation history and tool results. Internal correlation IDs are no longer sent as provider IDs for calls that originally had none.
 - Preserved terminal provider completion errors even with nonempty text, retained verified facts and canonical Playbook outcomes, and prevented unfinished prose or whole-turn retries from replacing them.
 - Made Request Input type changes consistent across authoring and compilation. Decision path renames preserve connected transitions, and connected paths require explicit disconnection before deletion.
 - Saved changes to Playbook invocation rules while typing, with consistent autosave and undo behavior.

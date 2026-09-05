@@ -47,6 +47,14 @@ returned to visitors. Typed transport failures distinguish
 requires typed or structured transport evidence. This does not add retries or
 change unknown-outcome reconciliation.
 
+The Gemini compatibility gateway preserves provider-supplied function-call IDs
+in both model history and the matching function response. Laravel AI's internal
+correlation ID remains available for every call, but an originally ID-less
+provider call contributes no ID to either side of the wire exchange. This
+adapter correction changes neither tool authority nor retry behavior. Its
+overrides can be removed when Laravel AI preserves this distinction throughout
+parsing, history, and function-response serialization.
+
 General questions about what the Agent can do are answered before provider or
 tool dispatch from the immutable deployment's published capability and Playbook
 labels. This manifest-backed overview cannot invent tools, execute a capability,

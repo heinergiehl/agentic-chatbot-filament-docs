@@ -31,6 +31,8 @@ Terminal provider completion errors remain errors even when accompanied by text.
 
 The Agent receives the current verified Playbook question before interpreting a reply, even when chat history is unavailable. This bounded, redacted context comes from the active AgentGraph interrupt and excludes future steps. Only an authorized continuation can save the answer and advance the process; a later canonical tool result replaces the initial question context.
 
+Gemini tool continuations preserve provider-supplied call IDs in both conversation history and results. Calls without a provider ID remain ID-free in the API exchange; internal correlation IDs stay internal.
+
 ## Required upgrade
 
 This is a breaking minor release. Connector implementation bindings change. Before reopening traffic:
