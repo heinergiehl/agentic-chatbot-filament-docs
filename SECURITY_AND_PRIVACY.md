@@ -309,8 +309,10 @@ cache-read, and cache-write tokens from provider usage and pin the pricing
 version effective when the call started. Provider failures, missing usage, and
 settlement failures become `reconciliation_required`. Queued retries and the
 scheduled `filament-agentic-chatbot:reconcile-ai-usage` sweep make unresolved
-calls observable; an expired unknown call is released exactly once without
-fabricating actual usage. Reports label groups containing unpriced calls as
+calls observable. Expiry without a complete receipt changes the call to
+`awaiting_evidence` and retains its reservation; unknown spend is not released
+as available budget. A later complete receipt can settle the original call
+without fabricating actual usage. Reports label groups containing unpriced calls as
 incomplete and may show an explicitly labelled known subtotal, never a free or
 complete aggregate.
 
