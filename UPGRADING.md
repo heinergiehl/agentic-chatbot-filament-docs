@@ -2,6 +2,198 @@
 
 This document covers required steps when upgrading between public releases.
 
+## Unreleased: private knowledge source uploads
+
+Older published configurations may contain only `knowledge_sources.authorization`.
+Missing upload settings now resolve to disk `local`, visibility `private`, and
+directory `filament-agentic-chatbot/knowledge-sources`. This fallback applies only
+to absent keys. Explicit null, blank, malformed, public, or unconfigured storage
+settings remain invalid. Text, URL, and API source forms work independently;
+invalid file setup shows repair guidance and blocks file-source submission.
+
+Review the host's `local` disk and merge this block into the existing
+`knowledge_sources` section of `config/filament-agentic-chatbot.php` to select a
+different private disk or honor the upload environment variables:
+
+```php
+'uploads' => [
+    'disk' => env('AGENTIC_CHATBOT_KNOWLEDGE_SOURCE_UPLOAD_DISK', 'local'),
+    'visibility' => env('AGENTIC_CHATBOT_KNOWLEDGE_SOURCE_UPLOAD_VISIBILITY', 'private'),
+    'directory' => env('AGENTIC_CHATBOT_KNOWLEDGE_SOURCE_UPLOAD_DIRECTORY', 'filament-agentic-chatbot/knowledge-sources'),
+],
+```
+
+Keep the existing authorization settings. Uploads require a configured disk
+other than `public`, private visibility, and a safe relative directory. Ensure
+the host does not expose that directory through a public storage link or URL.
+Rebuild the configuration cache and run `php artisan filament-agentic-chatbot:doctor`.
+Its `Knowledge source uploads` check validates the effective configuration;
+verify an actual upload to check storage permissions.
+
+For pre-1.0 file sources that still use `meta.path` on the public disk, run package
+migrations, configure private storage, and inspect the migration dry run:
+
+```bash
+php artisan filament-agentic-chatbot:migrate-knowledge-source-files
+php artisan filament-agentic-chatbot:migrate-knowledge-source-files --source=123
+```
+
+Back up the source files and database before adding `--execute`. Execution copies
+active legacy files to private source-owned storage, commits their ownership,
+and removes the public originals. For soft-deleted sources it removes the legacy
+public file. Ambiguous ownership or invalid paths fail without adopting the file.
+Existing source-owned files are skipped when their private contract is valid.
+See [Knowledge source file storage](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#knowledge-source-file-storage)
+for ongoing checks.
+
+## Unreleased: remote MCP connections
+
+Run package migrations before opening Connector administration. The additive
+MCP migration adds `api_connectors.transport` (existing rows default to `http`)
+and an optional provider-profile key. MCP connections use encrypted credentials
+and the existing operation/release tables; no provider accounts are connected
+automatically. HTTP environment serialization remains unchanged, while MCP binds
+the exact endpoint including its trailing slash and the selected transport.
+
+This version changes shared Connector implementation bindings. Re-test and
+republish affected Connector operations, their Playbooks and Agent candidates
+through the normal release lifecycle before activation. Existing deployment
+records are not rewritten or silently upgraded. The package continues to reject
+stale implementation fingerprints.
+
+MCP is now restricted to reviewed data reads, including inside Playbooks. There
+is no additional schema migration for this restriction. Existing MCP write
+operations are blocked before dispatch and are not converted to reads; preserve
+their histories and reconcile any prior unknown outcomes. Use a separately
+governed API Connector when an application requires writes.
+
+Existing custom MCP reads must be explicitly reviewed again in **MCP data sources
+> Review read functions**, tested and republished before use. Their signed review
+binds the exact server, definition and request scope; changing those values or
+the application key requires another review. Curated GitHub reads require the
+official endpoint, an approved read tool, and fixed owner/repository arguments.
+Guided setup now offers image and screenshot links without a visitor-supplied
+path. Add this function to the Agent draft and test the resulting candidate
+before activation. Existing drafts and deployments are never silently expanded.
+
+MCP operations may now publish compact `metadata.mcp_source` for the source name,
+configured scope and optional HTTPS source link. This additive contract field
+needs no database migration. Guided GitHub setup fills it from the bound
+repository; other MCP imports and the operation workbench offer optional public
+source fields. Existing operations keep their metadata until explicitly edited
+and reviewed. Re-test and republish the operation and Agent to expose these facts
+in chat. The runtime deduplicates source context and retains normal input budgets.
+The configured model can answer source-link questions directly from this context;
+verify its tool selection and follow-up answers in candidate tests. Source metadata
+never grants access or changes the signed data-read review.
+
+OAuth connections can now register a public client automatically when the MCP
+server advertises RFC 7591 registration, S256 PKCE and token authentication
+`none`. Save the connection and select **Connect account**. Existing client IDs
+and connected accounts remain unchanged; providers requiring their own client
+registration use **Manual OAuth settings**. This addition needs no database
+migration and does not approve any read functions or change live Agent grants.
+
+The MCP declaration, document projection and answer redaction fixes change the
+pinned `core/mcp` implementation binding. Retest and republish existing MCP
+operation drafts, then publish, test and activate their dependent Agent
+candidates before using the updated implementation. Existing data scopes and
+source metadata can remain unchanged; old implementation pins are never accepted
+as the new implementation.
+
+Rollback refuses to drop MCP transport columns while MCP connections exist.
+Remove their deployment dependencies and connections first, or restore a verified
+backup with its matching package version. See [MCP Data Sources](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md)
+for setup, provider-specific prerequisites and the supported protocol subset.
+
+## Unreleased: verifiable usage and configured token costs
+
+New calls retain the exact tariff, provider/model identity, currency, unit scale
+and integrity hash in `AiUsageCall.meta.pricing_snapshot` before dispatch.
+Settlement uses this snapshot. Editing a tariff under the same version name
+does not reprice an existing call. Missing or invalid input/output prices no
+longer mean free usage. A zero rate must be explicit; an unconfigured reasoning
+or cache rate makes the cost unknown when that category is reported.
+
+Configure non-negative integer rates in micro-minor-units per million tokens.
+Declare `currency_code` and `minor_units_per_unit` on each tariff when its
+currency differs from the global setting. No currency conversion occurs. Fixed
+bundled USD prices now retain their USD identity even if the display currency
+changes. A hard cost reservation requires a known upper bound for every token
+category that it may use; configure those rates before enabling a cost budget.
+
+Dashboards and reports count all recorded calls, including pending, failed and
+reconciliation-required calls. Full totals are nullable when usage or pricing
+is incomplete; known subtotals are separately labelled. Consumers must handle
+these nullable totals. Historical rows without a verifiable currency-bound
+pricing snapshot retain their stored amounts, but those amounts are excluded
+from current-currency totals. This change does not invent or backfill historical
+tariffs. Unknown or incompatible historical costs in the current monthly budget
+scope prevent new calls under a hard cost limit. New expiry transitions retain
+the reservation in `awaiting_evidence`; legacy failed/released rows remain
+explicitly reconcilable.
+
+Package adapters now preserve complete native streaming receipts and account
+for each model step through the same owner as synchronous calls. Unsupported
+protocols, missing terminal events and zero-token embedding DTOs without presence
+evidence remain unknown. A successful answer or positive partial counter alone
+does not establish a complete receipt. Native SDK aggregates remain transport
+data, not a source for reported token costs.
+
+Run package migrations before enabling this version's AI transports. The new
+`ai_provider_receipt_claims` and `ai_usage_reconciliations` tables enforce shared
+native/operator request uniqueness and retain encrypted audit evidence. Enable
+the explicit AI Usage management gate only for operators authorized to verify
+provider receipts. The review action and existing reconciliation command can
+settle verified missing usage without replaying a provider call.
+
+Flat standard-text tariffs remain supported. Use V2 variants for context bands,
+service tiers, modality-specific rates or cache-write lifetimes. Bundled Gemini
+tariffs now declare input modalities and the distinct 2.5 audio-input/cache
+rates. Complete previously frozen tariffs remain immutable; historical evidence
+can supply missing tariffs or additive unpriced dimensions while preserving all
+known rates. See [AI usage accounting](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AI_USAGE_ACCOUNTING.md).
+
+Calculated token costs describe the
+configured tariff applied to recorded plugin calls. They are not imported
+provider invoices or a claim to include account credits, taxes, storage,
+provider-hosted tool fees or other charges. See
+[AI usage reconciliation](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#ai-usage-reconciliation).
+
+## Unreleased: explicit task context and model-step budgets
+
+The runtime now supplies capability-specific instructions only when those tools
+are available. Conversation summaries preserve their newest bounded turn records.
+An output-only answer repair can receive the two newest complete admitted public
+turns as a request-bound snapshot of at most 3,000 UTF-8 bytes. This is untrusted
+task wording, not factual evidence, input values or execution authority; repair
+still has no tools and does not reload history or attachments.
+
+Review AI Tasks that implicitly depended on a preceding node's `context`,
+`kb_context` or `knowledge_context`. The plain AI executor no longer imports
+those variables automatically. Reference each required value explicitly in the
+AI Task input template, or in an explicitly configured context source for a
+supported custom node. Republish affected Playbooks and dependent Agents using
+the normal candidate/test/activation path. Existing artifacts and hashes are not
+rewritten. The editor continues to compile AI Tasks with conversation memory off.
+
+Playbook text input admission now checks the complete utterance. A model cannot
+save `Berlin` from “Bitte nicht Berlin.” Unsupported surrounding wording keeps
+the question open. Exact valid values and explicit supported affirmative or
+correction forms remain usable. Bound widget and approval controls retain their
+existing authority.
+
+Synchronous and supported streaming invocations reserve and settle usage per native SDK model
+step. Consumers of operational usage rows must not assume one `AiUsageCall` per
+whole tool loop; correlate step rows through `meta.invocation_id` and
+`meta.model_step`, with the existing turn and deployment attribution. A rejected
+follow-up step retains already delivered evidence and does not rerun tools.
+Both paths preserve monthly reservation checks and conservative token admission.
+Apply the receipt-claim migrations described above before enabling traffic.
+
+These are local runtime changes, not a claim that the Gemini empty-completion
+cause has been established or that provider routing quality has been certified.
+
 ## 0.19.0: Connector contracts and editor/runtime corrections
 
 Version 0.19.0 changes the hash-bound authentication and pagination code and
@@ -326,7 +518,7 @@ the backup. Retain restricted operator access for the release steps below.
    **Test release candidate** with representative paths; it uses the persistent
    runtime while blocking productive writes. Run any required candidate-quality
    comparisons again; unsigned historical runs are not passing release evidence.
-5. Use **Make candidate live** only after the exact deployment hash, current
+5. Use **Select tested release** only after the exact deployment hash, current
    authoring fingerprint and required capability/quality coverage pass the
    existing release gates. Verify a controlled live conversation and its
    run/trace while ingress remains closed. For each old pointer, record the
@@ -589,7 +781,7 @@ No existing Agent is modified or backfilled. A Kit installation creates a new
 inactive Agent, unpublished Playbook drafts, and saved quality scenarios in one
 transaction. It does not publish or activate deployments. After installation,
 follow the Kit release path in Agent Overview and retain the existing **Publish
-candidate**, **Test release candidate**, and **Make candidate live** separation.
+candidate**, **Test release candidate**, and **Select tested release** separation.
 
 Hosts that register custom Kits must implement and tag the public
 `SolutionKitProvider` contract. Definitions are strict: every Playbook needs an

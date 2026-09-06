@@ -245,16 +245,89 @@ user/assistant turns rather than leaving an orphaned half-turn. The database
 scan remains bounded even when a conversation contains many internal messages.
 Remote URL or provider-ID attachments whose token footprint cannot be known
 fail closed. The provider-profile output maximum is sent as the real per-round
-generation cap. Tool-enabled calls reserve the verified worst-case
-context/output envelope for every permitted model step; an unknown context
-window cannot start a multi-step call. This conservative reservation is
-intentional: it keeps monthly token and cost limits hard even when the provider
-performs several tool rounds internally.
+generation cap. Synchronous package agents check and reserve each native SDK
+model request, including its growing tool-result history, and settle that step
+before executing tools. `meta.invocation_id` and `meta.model_step` correlate those
+usage rows without recording the aggregate response twice. Rejected follow-up
+requests preserve completed usage and create no new reservation. Native SDK
+streams retain the verified worst-case context/output reservation for the whole
+permitted loop; an unknown context window cannot start such a multi-step stream.
+Both paths apply monthly reservation checks and conservative input admission.
 
 Provider usage is normalized once into disjoint input, output, reasoning,
 cache-read, and cache-write buckets. Dashboard and report token totals include
-all five. If any settled call lacks pricing, aggregate cost is shown as
-unpriced/unknown rather than as zero or a partial total.
+all five. A complete total requires every call in the selected scope to have
+verified usage and a compatible price. Pending, failed and reconciliation-required
+calls remain in that scope. The interface labels known subtotals as incomplete,
+shows how many calls lack data, and never uses reserved or estimated tokens as
+actual consumption. An explicitly reported zero is distinct from missing usage.
+
+Native synchronous and supported streaming receipts are checked before the
+SDK's zero-default usage DTO can turn missing counters into apparent zero usage.
+Both paths reserve and settle each model step through the same owner. An
+unsupported streaming protocol or incomplete terminal receipt remains unknown.
+A partial positive counter is not proof of a complete receipt. This also applies to zero-token embedding responses
+whose SDK DTO cannot distinguish a provider-reported zero from missing metadata.
+Normal chat calls with later SSE rendering use synchronous provider receipts.
+
+### Configured token costs and provider bills
+
+Each reservation stores the selected provider/model tariff, version, effective
+date, currency, unit scale and integrity hash in `meta.pricing_snapshot`.
+Settlement verifies and uses this snapshot instead of looking up a mutable
+configuration entry again. A changed provider/model, missing snapshot, invalid
+snapshot or used category without a price leaves cost unknown while preserving
+the available token receipt. A display-currency change does not convert or
+relabel old money. Historical amounts without a verifiable snapshot remain
+stored but are not included in current-currency totals.
+
+Rates are non-negative integers in micro-minor-units per million tokens. Flat
+standard-text tariffs require input and output rates, including an explicit zero
+for a free category. V2 variants bind operation, service tier, prompt-size bands,
+modalities and cache lifetimes. Every used or reserved category needs a rate.
+Arithmetic uses checked
+integers and rounds each call upward to the next micro-minor-unit after adding
+all token categories; it does not round each category to a cent. For USD with
+100 minor units per unit, a micro-minor-unit is USD 0.00000001. This is the
+package's calculation rule, not an assertion about a provider's invoice rounding.
+Hard cost reservations additionally require a known upper bound for all possible
+categories. Unknown or incompatible costs in the current monthly authority scope
+block new cost-budgeted calls, even after reservation expiry.
+
+The package's Gemini GenerateContent gateway does not create a cache and reports
+no cache-write token bucket. Its prompt reservation therefore excludes cache
+creation without assigning it a fictional zero price. Explicit cache-write
+reservations or receipts still need their own price. This exception is a gateway
+contract, not a caller-controlled context option. Other providers retain the
+conservative requirement for every possible category.
+
+The budget check compares the locked monthly counters with recorded call sums
+and rejects unmatched historical amounts. Database aggregates and distinct
+tariff bindings keep this check from hydrating every monthly call for each new
+model step. Bot and access-token reports also flag historical period counters
+that lack receipts; they cannot infer how many calls are missing or assign them
+to a day. Global usage cards explicitly describe recorded calls within their
+existing permission scope.
+
+The UI's calculated token cost means the configured tariff applied to recorded
+plugin calls. The provider invoice can differ because of tariff changes,
+service tiers, credits, taxes, storage or provider-hosted tool charges. V2 token
+tariffs can cover explicit tiers, modality rates and cache lifetimes; observed
+uncovered fees keep the cost unknown. Use an explicit compatible rate or leave
+the amount unknown; do not advertise
+the displayed amount as a reconciled provider bill.
+
+Provider billing reconciliation is a separate, currently unimplemented
+integration. OpenAI's [Costs API](https://developers.openai.com/api/reference/resources/admin/subresources/organization/subresources/usage/methods/costs)
+supports project and API-key grouping with administrative credentials.
+Anthropic's [Usage and Cost API](https://platform.claude.com/docs/en/manage-claude/usage-cost-api)
+also requires administrative access; cost grouping and service-tier coverage
+differ from its token-usage endpoint. A shared API key does not identify which
+application caused an aggregate charge. A dedicated provider project/workspace
+and key make a future reconciliation more useful. Provider account totals must
+never replace plugin-attributed call totals without a matching scope.
+
+### Reconciliation operation
 
 The package registers this idempotent command with Laravel Scheduler every minute by default:
 
@@ -268,7 +341,18 @@ Keep both the scheduler and queue worker running. Per-call reconciliation retrie
 AGENTIC_CHATBOT_USAGE_RECONCILIATION_SCHEDULE_ENABLED=false
 ```
 
-Monitor `ai_usage_calls.status = reconciliation_required`, reconciliation event/log volume, and the age of `reserved` calls. Expiry is idempotent and releases only the still-reserved monthly aggregate; it does not invent provider usage.
+Monitor `reconciliation_required`, `awaiting_evidence`, reconciliation event/log
+volume, and the age of `reserved` calls. Expiry without a complete receipt is
+idempotent and retains the monthly reservation until evidence arrives. Legacy
+failed calls whose reservations were released can still be reconciled.
+
+AI Usage offers an explicitly authorized manager a receipt review and application
+flow. Trusted CLI operators can preview a bounded per-request receipt with
+`--call=<public-uuid> --evidence=<local-json-path>` and apply that reviewed version
+with the required operator, reason and force options. The same transaction owns
+settlement, unique provider receipt claims and the encrypted audit. It never
+re-executes a model request or a tool. See [AI usage accounting](AI_USAGE_ACCOUNTING.md)
+for the receipt schema, pricing variants and complete operating procedure.
 
 ## Human Review Retention
 
@@ -359,6 +443,28 @@ AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS=
 Browser embeds are tokenless at rest: the loader obtains an origin-bound token from `POST .../bootstrap`, keeps it in memory, renews it before expiry, and sends it in `X-filament-agentic-chatbot-Token`. It retries only safe reads after renewal. The separate anonymous conversation credential comes from `POST .../session` and never appears in a URL; production enforces this authority even if stale published config omits it. Keep query/body token compatibility disabled, configure explicit production Allowed Domains, and monitor bootstrap `429` responses separately from chat traffic.
 
 Signed customer context is optional. Its key falls back to `AGENTIC_CHATBOT_WIDGET_SIGNING_KEY`; set `AGENTIC_CHATBOT_WIDGET_CONTEXT_SIGNING_KEY` only when independent rotation is operationally useful. Areas listed in `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS` fail closed when the context is missing, expired, origin-mismatched, or invalid. Never log the `X-Filament-Agentic-Chatbot-Context` header; the token is integrity-protected, not encrypted.
+
+## Knowledge source file storage
+
+File sources use `filament-agentic-chatbot.knowledge_sources.uploads.disk`,
+`.visibility`, and `.directory`. Defaults are `local`, `private`, and
+`filament-agentic-chatbot/knowledge-sources`; missing keys in older published
+configurations inherit these defaults. Explicit invalid values remain errors.
+The host must configure the selected disk and keep its upload directory out of
+public storage links and public URL handlers.
+
+The Doctor check `Knowledge source uploads` reports an invalid disk, visibility,
+or directory as `FAIL` with the configuration repair path. It does not create a
+test file or certify write permissions. After a storage change, rebuild the
+configuration cache and verify a file upload and ingestion with the application
+and worker identities used in production. Existing owned files remain tied to
+their recorded disk and path; changing configuration does not relocate them.
+
+The source form displays setup guidance when File Upload is selected and the
+configuration is invalid. File submission stays blocked until repaired; Manual
+Text, URL, and API Source remain usable. Pre-1.0 public files require the explicit
+`filament-agentic-chatbot:migrate-knowledge-source-files` dry run and reviewed
+`--execute` cutover described in [UPGRADING.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#unreleased-private-knowledge-source-uploads).
 
 ## Health Check
 
@@ -523,7 +629,7 @@ Before production launch:
 - Queue worker process is supervised (systemd/Supervisor/Horizon)
 - Database queue installs have migrated `jobs`, `failed_jobs`, and `job_batches`
 - Laravel scheduler calls `filament-agentic-chatbot:sync-knowledge-sources` if API source auto sync is used
-- Laravel Scheduler is supervised for automated Quality Lab runs and Knowledge Operations
+- Laravel Scheduler is supervised for automated Quality Tests runs and Knowledge Operations
 - Quality automation uses an asynchronous supervised queue connection, not `sync`
 - `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` with a strong signing key
 - If `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, set `AGENTIC_CHATBOT_ANYSTACK_ID`, `AGENTIC_CHATBOT_DOCS_URL`, and `AGENTIC_CHATBOT_SUPPORT_EMAIL`
@@ -591,6 +697,6 @@ release-gated Candidate Quality scenario before activation. Existing rows have
 no integrity signature and are intentionally ineligible; the same applies after
 rotating `APP_KEY`. Do not backfill or copy signatures between environments.
 
-Protected tags additionally require the complete native structured-tools, prompt-JSON tools, and restricted/no-tools provider matrix, live provider evals for the two supported profiles, capability rejection for the restricted profile, PostgreSQL fresh-install/upgrade/rollback evidence, and the 1,000-iteration soak. See [Runtime Release Assurance](RELEASE_ASSURANCE.md) for the environment contract and release decision.
+Protected tags additionally require the complete native structured-tools, prompt-JSON tools, and restricted/no-tools provider matrix, live provider evals for the two supported profiles, capability rejection for the restricted profile, PostgreSQL fresh-install/upgrade/rollback evidence, and the 1,000-iteration soak. For host upgrade checks, see [supported-upgrade smoke and recovery evidence](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#supported-upgrade-smoke-and-recovery-evidence).
 
 `filament-agentic-chatbot:doctor` reports removed runtime-mode and engine environment variables by name. Delete those variables; there is no replacement mode selector. Values are never printed. Doctor also reports an active Agent that lacks one verified Agent deployment and fails invalid deployment or Playbook pins.

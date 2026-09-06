@@ -1,10 +1,10 @@
 # Quality Operations
 
-Quality Operations turns the existing Quality Lab into a continuous, auditable improvement loop without adding another runtime or provider path.
+Quality Operations turns the existing Quality Tests into a continuous, auditable improvement loop without adding another runtime or provider path.
 
 ## Automated Published Agent tests
 
-Open **Improve > Quality Lab**, edit a **Published Agent** test, enable automation, and choose its cadence. The package scheduler claims due scenarios every five minutes and dispatches one queued job per claim. Each job runs the existing `AgentQualityConversationRunner`, so it crosses the persistent chat path and retains the same deployment hash, conversation-turn checks, route evidence, source citations, zero-write assertions, latency, token, and cost evidence as a manual run.
+Open **Improve > Quality Tests**, edit a **Published Agent** test, enable automation, and choose its cadence. The package scheduler claims due scenarios every five minutes and dispatches one queued job per claim. Each job runs the existing `AgentQualityConversationRunner`, so it crosses the persistent chat path and retains the same deployment hash, conversation-turn checks, route evidence, source citations, zero-write assertions, latency, token, and cost evidence as a manual run.
 
 Automation is unavailable for Playbook drafts and archived tests. A claim token prevents overlapping dispatch. Stale claims are recoverable after the configured lease; unsuccessful dispatches and runs retain a bounded error code and failure count. The next due time advances only through the claim owner.
 
@@ -12,7 +12,7 @@ No separate AI credential is requested or stored. The run uses the Agent's exist
 
 ## Candidate-versus-live release evidence
 
-For an active **Published Agent** scenario, publish a release candidate and choose **Compare candidate**. Quality Lab runs the saved conversation twice in separate server-attested no-write sessions: once against the exact live deployment when one exists, and once against the exact candidate. Each run is bound to its deployment ID, immutable deployment hash, scenario fingerprint, role, and a shared comparison UUID. Candidate-only capabilities and pinned Playbooks are available when authoring the scenario, while a live deployment that lacks a newly introduced target fails that baseline deterministically.
+For an active **Published Agent** scenario, publish a release candidate and choose **Compare candidate**. The Quality Tests page runs the saved conversation twice in separate server-attested no-write sessions: once against the exact live deployment when one exists, and once against the exact candidate. Each run is bound to its deployment ID, immutable deployment hash, scenario fingerprint, role, and a shared comparison UUID. Candidate-only capabilities and pinned Playbooks are available when authoring the scenario, while a live deployment that lacks a newly introduced target fails that baseline deterministically.
 
 The review card reports a deterministic verdict (`no_regression`, `improved`, `regressed`, `still_failing`, `candidate_passed`, `candidate_failed`, or `inconclusive`), score/latency/cost deltas, and newly introduced versus resolved failed checks. It does not ask a model to judge whether another model was correct. A changed Agent draft, candidate pointer, deployment hash, scenario contract, incomplete turn set, unknown external outcome, or mismatched comparison binding makes the evidence stale or inconclusive.
 

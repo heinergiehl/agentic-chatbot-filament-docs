@@ -1,5 +1,12 @@
 # API Connectors
 
+Remote [MCP data sources](MCP_CONNECTIONS.md) use the same saved operation,
+test/publication and Agent/Playbook execution boundaries. Their tools are
+discovered through MCP and use an explicit protocol transport; ordinary API
+Connectors continue to define HTTP operations. MCP is restricted to reviewed
+data reads, including inside Playbooks; separately governed HTTP writes retain
+their existing execution contracts.
+
 API Connectors turn an approved HTTP API operation into a versioned chatbot and
 workflow capability. The connector owns the remote service
 boundary: base URL, authentication, allowed methods and paths, network policy,
@@ -433,7 +440,7 @@ include `source_message_id` in their conversation/deployment/capability scope;
 a current turn does not overwrite the previous turn's binding. Different
 targets for the same capability and source leave a sticky empty `[]` binding,
 so a later call cannot silently choose the last target. Version-1 rows stay
-encrypted until TTL cleanup and cannot execute. See [Upgrading](../UPGRADING.md)
+encrypted until TTL cleanup and cannot execute. See [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md)
 for the required source-scope migration. This opt-in does not authorize the
 model to copy arbitrary historical values into arguments.
 

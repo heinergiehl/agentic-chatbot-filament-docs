@@ -57,11 +57,11 @@ In practice, this means you can create:
 
 1. Open **Agentic Chatbot > Build > Agents** in your Filament panel.
 2. Choose **Use Solution Kit** for a versioned use-case starting point, or **Create manually** for a blank Agent.
-3. Follow the guided setup steps: identity, provider/model, capabilities, widget basics, then review.
-4. Save the Agent.
+3. Complete **Essentials** (name, job, boundaries, and availability), **AI setup** (provider and model), and **Review**. Optional access, permissions, and widget settings remain available in collapsed sections; conversation starters are optional.
+4. Save the Agent to open **Overview** and follow its next release step.
 5. Follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment) to test, publish, and activate the Agent. Add a Playbook only when the job needs a bounded process.
 
-Creating the Agent is only the first step. It can answer after its verified deployment is live.
+Creating the Agent saves its settings. Visitor access also requires a verified active release, enabled availability, and valid channel access. Selecting a tested release keeps a paused Agent paused.
 
 ### Creating From A Solution Kit
 
@@ -73,11 +73,11 @@ Installation is atomic and idempotent. It does not publish, activate, call an ex
 
 After saving an Agent, use the edit page as your rollout checklist before you publish or embed it widely.
 
-- **Overview** is the first stop. It summarizes Agent readiness, the active deployment, knowledge coverage, assigned Playbooks, and the most useful next actions.
+- **Overview** is the first stop. It shows availability (**Enabled** or **Paused**), active release integrity, and live-test evidence separately, alongside Knowledge, assigned Playbooks, and the next action. Saved draft setup is checked separately from the selected release.
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the Agent.
 - **Production readiness** also surfaces widget signing/domain posture and the verified Knowledge generations pinned to the live release. A failed new indexing attempt does not by itself invalidate a usable pinned generation.
 - **Appearance preview** renders sample messages with the current widget theme, copy, and area-specific styling. It does not run the Agent or provide release-test evidence.
-- **Test behavior** runs the live Agent path so you can spot provider, prompt, knowledge, capability, or Playbook issues early.
+- **Test release candidate** tests the published candidate. **Test live Agent** always tests the selected active release, including when a different candidate exists. Both use real provider calls and reads while blocking productive writes; neither enables availability.
 - **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker.
 - **Embed Snippet** gives you a ready-to-paste script tag for the Agent's default area and signing mode.
 - **Analytics** becomes the next stop once you have live conversations, because it surfaces feedback, citation coverage, traffic, and knowledge gaps.
@@ -88,7 +88,7 @@ In **Behavior**, assign enabled Guardrail Policies separately to incoming and
 outgoing text. Up to 16 policies per direction can be selected. An enabled policy
 record alone protects no Agent: **Publish candidate** freezes the assignments
 and policy contents, **Test release candidate** checks that exact candidate, and
-**Make candidate live** activates it through the normal release gates.
+**Select tested release** selects it through the normal release gates without changing availability.
 
 Editing, disabling, or deleting an authoring policy does not rewrite an existing
 release. Historical and resumed turns use their pinned policy snapshot. Publish,

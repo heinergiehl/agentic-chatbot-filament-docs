@@ -67,6 +67,16 @@ introduced. Exceptions from an executed handler still propagate through the
 existing failure and reconciliation paths. Knowledge-search instructions are
 included only when that turn actually provides the pinned knowledge tool.
 
+`AgentPromptInstructions` composes the conversation contract from the actual
+tools available in this turn. Connector, Data Resource, knowledge and Playbook
+rules are included only for their corresponding capabilities; a tool-free
+conversation does not receive direct-read JSON selection or tool-routing rules.
+An open Playbook is identified from verified runtime state, independently of
+whether its current status has a textual input snapshot. The closed deployment
+manifest still determines tool availability. This composition does not add a
+semantic tool shortlist or another routing authority. Instructions and schemas
+remain fixed within the native SDK invocation.
+
 General questions about what the Agent can do are answered before provider or
 tool dispatch from the immutable deployment's published capability and Playbook
 labels. This manifest-backed overview cannot invent tools, execute a capability,
@@ -187,6 +197,29 @@ owner.
 
 ## Direct Read Capability Invocation
 
+Remote MCP tools are Connector operations with an explicit `mcp` transport.
+Discovery creates only drafts. Published operation revisions pin tool declarations,
+input/output contracts and the `core/mcp` implementation closure; Agent releases
+pin those revisions through the existing closed Connector manifest. Execution
+passes through `CapabilityExecutionGateway`, the typed Connector dispatcher and
+the existing bounded transport. The MCP client verifies the selected declaration
+before calling it. It never injects a live remote catalog into the model. MCP
+permits only reviewed data reads, including inside Playbooks. Its data policy
+blocks writes and unreviewed functions before dispatch or write-ledger claims;
+custom approvals bind the exact server, definition and request scope. See
+[MCP Data Sources](MCP_CONNECTIONS.md) for authentication and supported protocol.
+
+Optional published `metadata.mcp_source` is pinned with each MCP capability. The
+turn exposes a compact catalogue containing each available source's public name,
+configured scope and optional exact URL once, referenced by its tools. Catalogue
+facts can answer source-link and scope questions without an external read; actual
+source contents still require approved evidence. No mutable connection metadata,
+raw server instructions or server diagnostic identity enter this catalogue. It is
+presentation data, never execution authority. The catalogue is bounded to 8,192
+UTF-8 bytes at publication and runtime and counted by the existing routing and
+input budgets. It uses the already selected turn tools, with no extra routing
+model or mid-invocation schema changes.
+
 `AgentConnectorTurn` and `AgentDataResourceTurn` project only exact immutable
 entries from the verified Agent deployment into model-visible tools. A direct
 tool is eligible only when its published effect is `read`; every write,
@@ -249,11 +282,19 @@ binding: ambiguity remains sticky for that source, even if another successful
 call follows. The runtime never selects the last target of a fan-out as an
 implicit continuation. Legacy version-1 rows remain encrypted and unchanged
 until TTL cleanup, but are not executable. The source-scope migration requires
-a quiesced host and a verified backup; see [Upgrading](../UPGRADING.md).
+a quiesced host and a verified backup; see [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
 A read tool may be repeated for independent items only when the immutable
 operation contract declares `fanout_safe`; `max_items` and the global five-call
 budget both apply, leaving the sixth model step available for the final answer.
+The native gateway requests no tool selection in that final SDK step for a
+deployed Agent, using the provider's native tool-choice option. The SDK already
+refuses to execute tools at that point; the
+request options now reserve it for composing the answer from available evidence.
+This consumes the existing step, adds no model or capability calls, and leaves
+the normal evidence validation and incomplete-completion handling in place.
+Providers must support the native option; the current Ollama adapter does not
+map tool choice and therefore retains the SDK's existing completion behavior.
 `single_only` and `native_batch` permit one call, with a
 native batch owning its list input inside that call and the published
 `max_items` bound constraining every declared array. Server-owned or prior-task
@@ -284,6 +325,10 @@ descriptions without executing them and to focus input clarifications on the
 unresolved part of a request. These semantic instructions are not independent
 proof of correct intent selection; representative candidate dialogue evidence
 is still required. They do not introduce another router or execution authority.
+One final language instruction applies to natural answers, capability limits,
+clarifications and the evidence-selection language field. The evidence format
+does not override this language choice; technical keys and identities stay
+unchanged.
 
 For complete direct reads, the model selects evidence instead of writing the
 factual answer. `AgentEvidenceAnswer` accepts this closed JSON document as
@@ -305,6 +350,15 @@ match the delivered ledger and execution trace, and pointers must resolve
 exactly under `/data` using RFC 6901 escaping. Mixed Knowledge results may
 select `/context`, never `/sources` or source metadata. Invalid, duplicate, or
 missing selections fail closed.
+
+Normal selection and output-only repair instructions preserve the requested
+number of records. A single example should select one matching record or leaf;
+covering every successful call does not require displaying every returned record.
+The repair coverage example supplies evidence identities without requiring root
+container selections. Both curated and raw renderers keep HTTP(S) URL scalar
+values intact. If a complete record and its required context cannot fit, they
+omit that record and retain the output-limit notice instead of shortening its
+URL. Omitted records do not receive visible-fact presentation receipts.
 
 `ConnectorOutputContract` uses the verified operation's `response.output_mapping`
 for both workflow mapping and an explicit Agent projection. `response.agent_output`
@@ -370,15 +424,22 @@ the same immutable Agent deployment, provider, and model, a maximum 20-second
 timeout further bounded by the remaining turn budget,
 and usage stage `agent_answer_repair`. It receives the current request and
 already delivered redacted evidence and its exact presentation metadata as
-untrusted data. It may also receive the rejected answer draft in a separate
+untrusted data. `AgentAnswerContext` also captures at most the two newest complete
+public user/assistant turns already admitted by conversation-memory settings,
+before token compaction. The snapshot is bound to the latest request and limited
+to 3,000 UTF-8 bytes. Whole turns are retained; an oversized newer turn is neither
+cut mid-utterance nor replaced by stale older context. The repair receives this
+snapshot as untrusted task wording, even when the failed completion has no draft.
+It may also receive the rejected answer draft in a separate
 untrusted block, limited to 4,096 UTF-8 bytes without splitting a code point;
 empty or invalid UTF-8 drafts are omitted. This correction context can preserve
 an intended record selection after a short input follow-up, but is not a factual
 source or input/execution authority. The latest visitor request takes precedence;
 draft instructions, invented facts, and unverified success claims grant no
 authority. The repaired selection passes the same evidence validator unchanged.
-No tools, conversation history, or attachments are included, and repair cannot
-repeat capability execution or restart the normal turn loop. Rejection, timeout,
+Repair has no tools or attachments, does not reload conversation storage or
+replay the native message history, and cannot repeat capability execution or
+restart the normal turn loop. Rejection, timeout,
 provider failure, or a usage budget refusal preserves the server-rendered evidence
 and available sources in
 `safe_evidence_fallback`; an output-format failure does not become a visitor
@@ -389,7 +450,8 @@ Repair instructions and native-schema-capable profiles request sections with
 exactly `evidence_id` and `pointer`. Record pointers select published summaries;
 leaf pointers select particular facts, including published details. Multiple
 leaf selections retain the same renderer-owned record context. Repair is instructed
-to preserve a clear time, record, or fact selection in the rejected draft after
+to preserve a clear time, record, or fact selection in the bounded task snapshot
+or rejected draft after
 a short input follow-up when the current request and delivered evidence still
 support it. This instruction does not prove semantic selection quality.
 The normal answer contract still supports `fields` and `detail`; repair does
@@ -481,7 +543,7 @@ the selected capability's purpose. This limit requires explicit routing tests.
 
 The runtime deliberately does not use a keyword list to infer which tool
 arbitrary prose must invoke. Such a classifier would be capability-specific,
-multilingual, and brittle. Instead, **Test live bot** and the Agent Quality Lab
+multilingual, and brittle. Instead, **Test live Agent** and the Agent Quality Tests
 can assert one exact set of routes per turn: answer without a tool, knowledge
 search, one or more Data Resources or API Connectors, one Playbook, or
 clarification. API checks may also require an exact distinct item count.
@@ -497,7 +559,7 @@ and `answer_repair` diagnostics. They record bounded reason codes and one
 repair's attempt count, outcome, and initial guard reason, never raw prompts,
 model drafts, or provider results. Existing v5 evidence without these fields
 remains readable. A useful `safe_evidence_fallback` is not a passing `answer`
-for routing, Quality Lab, or release evidence.
+for routing, Quality Tests, or release evidence.
 Optional `historical_sources` records only bounded original turn IDs, evidence
 hashes and record ordinals. Historical decisions never fabricate current
 `capability_executions`, and this private diagnostic is not public chat output.
@@ -668,12 +730,16 @@ Rejected direct-read and Playbook-start proposals remain in the shared operator
 trace but do not count as executed attempts or turn an otherwise safe
 conversational answer into a fictitious lookup failure.
 
-Admission remains conservative when a recognized question accompanies an answer:
-the waitpoint stays open and the tool result directs the Agent to answer without
-claiming that the value was saved. Quoted answer spans, multiple published Choice
-options in one message, and an answer followed by another independent statement
-also remain unapplied. These deterministic checks close common lossy projections;
-they are not a universal semantic proof for every conditional or negated wording.
+Standalone input and model-selected answers share the same complete-message
+admission. When the proposed value is an excerpt, every surrounding word must
+fit a closed affirmative response grammar. Unknown surrounding prose, questions,
+conditions, refusals and quoted examples leave the waitpoint open. A closed
+correction grammar may retract one contract-valid prior typed value, for example
+“Nicht Berlin, sondern Hamburg.” Multiple unretracted choices remain ambiguous.
+A complete valid free-text answer can itself contain negation as data; text
+still requires an Agent proposal. These checks authorize supported response
+forms rather than claiming universal semantic interpretation. Unsupported forms
+require clarification or the existing bound input controls.
 
 Before model dispatch, an open run's bound Agent deployment is verified. If its
 runtime contract is incompatible, the turn commits localized, non-retryable
@@ -692,7 +758,11 @@ operator-review and typed widget authority remain separate and unchanged.
 
 Playbook node-level AI tasks may interpret bounded input for that node. Their
 output remains untrusted data checked by the node contract and deterministic
-policy. They do not plan the outer chat turn.
+policy. They do not plan the outer chat turn. The editor compiles AI Tasks with
+conversation memory off and explicit empty `contextSources`; their input template
+selects the required variables. The plain AI executor reads only explicitly
+declared context sources. Missing or empty sources never fall back to ambient
+`context`, `kb_context` or `knowledge_context` variables from another node.
 
 ## Explicit Guardrail Policy Releases
 
@@ -755,10 +825,47 @@ activate a tested replacement to change live protection.
   oldest whole turns to the effective input/context boundary, enforce the
   provider-profile output maximum on the request, and record provider-reported
   input, output, reasoning, cache-read, and cache-write buckets exactly once.
+- Conversation summaries use their own summary bounds instead of the generic
+  scalar-memory prefix limit. Both prompt readers retain the newest complete
+  summary records. Each record has bounded excerpts of both sides of the turn;
+  optional topic and retrieval notes cannot displace them.
+- Synchronous and native streaming `BaseConversationalAgent` invocations admit
+  and reserve each native SDK model step before dispatch, using its current
+  messages, including tool calls, results, provider replay blocks, fixed schemas
+  and attachment allowances. Completed steps settle before tool execution, so
+  nested AI Tasks see the correct remaining monthly budget. Only an uncertain
+  failed provider step retains its own reconcilable reservation. Expired deadlines
+  and rejected input budgets create no reservation for an undispatched step.
+  The SDK owns the loop; the usage listener never executes tools or transitions
+  workflow state. Conservative byte upper bounds remain in force. Deferred
+  streams reserve only when iterated; interrupted iteration cannot redispatch
+  the transport. Provider-specific adapters preserve each terminal receipt.
+- If a later model step exceeds context or usage limits after verified reads,
+  `agent_context_limit_reached` or `agent_usage_limit_reached` preserves the
+  evidence with an incomplete-answer notice and suppresses output repair. It
+  does not retry completed capabilities or spend another model request.
 - Usage and cost accounting retain Agent deployment, Playbook deployment, run,
   stage, and parent-turn attribution without persisting prompts in operational
-  summaries. Any unpriced settled call makes aggregate cost unknown rather than
-  displaying a misleading zero or partial total.
+  summaries. All model-step records include `meta.invocation_id` and the
+  one-based `meta.model_step`; they are not aggregate whole-loop usage rows.
+  Native synchronous and supported streaming receipts establish completeness before SDK DTO
+  defaults are accepted. Missing or partial receipts, including native streams
+  without complete usage evidence, remain reconcilable. Each call pins its
+  tariff rates, provider/model, currency and unit scale in a verified pricing
+  snapshot before dispatch; later configuration changes cannot reprice it.
+  Full totals include every recorded call in scope and become unknown when any
+  call lacks verified usage or a compatible price. Clearly labelled known
+  subtotals remain available. Calculated token costs are not provider invoices;
+  reservation expiry does not attest zero cost or repair a missing receipt.
+- Expired unknown calls enter `awaiting_evidence` and keep their reservations.
+  A later native receipt or authorized per-request evidence settles against the
+  original month and scopes. Unique provider receipt claims apply to both paths.
+  Operator application records an encrypted audit atomically, verifies the
+  reviewed version, and never retries a model, tool or Playbook. Known receipt
+  facts and complete frozen tariffs cannot be erased or repriced by evidence.
+  V2 tariff snapshots cover explicit context bands, service tiers, modality
+  partitions and cache lifetimes. Missing dimensions or uncovered fees remain
+  unknown. See [AI usage accounting](AI_USAGE_ACCOUNTING.md).
 - Provider compatibility is evaluated separately from deterministic local
   release contracts; missing credentials are reported as blocked or skipped,
   never as passed.
@@ -773,6 +880,13 @@ select direct published Connector reads, and attach optional Playbooks on the
 Agent form. Connector operation authoring
 captures purpose, realistic request examples, ability aliases, entity types,
 input grounding/aliases, and optional result identity in structured fields.
+
+Live provider readiness uses the verified active deployment's exact provider,
+model, driver and base URL, together with the current stored Agent credential
+or that exact provider's host credential. Draft and candidate setup are evaluated
+separately; editing their provider settings cannot attest or invalidate the
+unchanged live provider binding. Channel availability and exact-deployment test
+evidence remain separate checks.
 
 Playbooks are optional advanced process automation. The existing React Flow
 island is retained as the Playbook editor, including its Filament tokens,
@@ -809,7 +923,7 @@ tool, rejects contradictory matching/exclusion phrases, and
 rejects duplicate model tool names or identical normalized routing phrases
 across tools.
 
-Published-Agent Quality Lab scenarios run every saved turn through
+Published-Agent Quality Tests run every saved turn through
 `ChatTurnApplicationService`, using one fresh test conversation per scenario
 and the exact verified active `AgentDeployment`. Ordered turns share that
 conversation, so compound requests and elliptical follow-ups exercise the real
@@ -832,7 +946,7 @@ capability path so routing evidence remains representative without allowing a
 test to mutate productive systems.
 
 `AgentRoutingEvidenceEvaluator` owns the shared exact-route contract used by
-both the live test and Agent Quality Lab. The protected
+both the live test and Agent Quality Tests. The protected
 `evals/AgentRoutingProviderEvalTest.php` suite supplies real-provider confidence
 for English, German, typo, negative, ambiguous, knowledge, Data Resource, API,
 Playbook, compound-read, and contextual elliptical-follow-up routing. Missing

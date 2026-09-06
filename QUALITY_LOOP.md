@@ -2,9 +2,9 @@
 
 The quality loop turns real conversations and draft workflow tests into repeatable improvement work. It is intentionally deterministic: operators define expected behavior, run scenarios, review failures, and convert negative feedback into new checks.
 
-## Quality Lab
+## Quality Tests
 
-Use **Agentic Chatbot > Quality Lab** to create saved scenarios for an Agent or
+Use **Improve > Quality Tests** to create saved scenarios for an Agent or
 Playbook.
 
 Each scenario stores:
@@ -28,7 +28,7 @@ response excerpts, latency, cost, and the latest failure summary.
 
 Published Agent scenarios can optionally run hourly, every 6 or 12 hours,
 daily, or weekly. The scheduler atomically claims due scenarios and sends them
-to the normal asynchronous queue; each job reuses the exact Quality Lab runner
+to the normal asynchronous queue; each job reuses the exact Quality Tests runner
 and the Agent's existing provider/model credential resolution. There is no
 separate automation API key. Claims recover after a bounded stale lease, and
 the scenario records only bounded failure codes and counters.
@@ -99,7 +99,7 @@ explicit return to the Agent.
 
 ## Feedback To Improvement
 
-The Agent Analytics feedback inbox includes **Create Scenario** for negative assistant-message feedback. The action creates a non-blocking Quality Lab scenario from the previous user question, links it to the feedback message, and attaches the matching Playbook run when turn metadata is available.
+The Agent Analytics feedback inbox includes **Create Scenario** for negative assistant-message feedback. The action creates a non-blocking Quality Test from the previous user question, links it to the feedback message, and attaches the matching Playbook run when turn metadata is available.
 
 If the feedback comment contains clear terms, the scenario is active and uses those terms as required text. If the comment is empty or too vague, the scenario is created inactive for manual review so it cannot produce a false green quality run.
 
@@ -111,3 +111,17 @@ If the feedback comment contains clear terms, the scenario is active and uses th
 4. Update knowledge sources, Agent behavior, Playbook structure, or variables.
 5. Re-run scenarios against the current target before publishing or resolving a gap.
 6. Keep blocking scenarios focused on release-critical behavior.
+
+## Conversation review
+
+Open **Observe > Conversations** to find recent requests by Agent and last activity.
+The list shows the latest user request as a bounded, redacted text preview, only
+when the operator can view that conversation. It does not preview assistant,
+tool, source, or diagnostic content. Expand a conversation’s details to see and
+copy its full Session ID, view message and submission counts, and check when it
+was created. Session IDs remain searchable. **Agent test** and **Playbook test** contexts
+distinguish recognized test conversations from **Visitor**, **Member**, and
+**Admin** conversations.
+
+Open **Observe > Action Reviews** for actions awaiting an operator decision.
+Approval permissions and execution confirmation still govern each action.

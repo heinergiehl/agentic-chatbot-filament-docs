@@ -226,10 +226,10 @@ Playbooks.
 ### 1. Create the Agent
 
 1. Open **Agentic Chatbot > Build > Agents** and create an Agent.
-2. Define its role, instructions, provider, model, access, and widget basics.
-3. Choose the narrowest capability mode that covers its job, then save.
+2. Complete **Essentials**, **AI setup**, and **Review**. Choose its name, job, boundaries, provider, model, and availability. Review the host defaults for access and permissions; optional sections remain available.
+3. Choose the narrowest capability mode that covers its job, then save to open **Overview**. Conversation starters and widget styling are optional.
 
-The Agent can already handle ordinary conversation. A canvas is not required.
+Ordinary conversation needs no Playbook canvas. Publish and test a candidate, select the tested release, and enable availability when visitor access should begin.
 
 ### 2. Connect only what the Agent needs
 
@@ -258,18 +258,16 @@ workflow pointer grants no authority.
 
 Save the Agent and choose **Publish candidate**. Publication snapshots the Agent
 behavior, model policy, knowledge, capability mode, budgets, explicitly assigned
-guardrail policies, and exact Playbook deployments into one hash-verified contract without changing live
-traffic. Run **Test release candidate** with a representative request. The test
+guardrail policies, and exact Playbook deployments into one hash-verified contract. The active release stays selected; the action saves form changes, including availability, website access, and credentials. Run **Test release candidate** with a representative request. The test
 uses the real persistent chat/runtime path and real reads, but the capability
 gateway blocks productive writes. Only after that exact deployment hash and
-saved Agent fingerprint have passing durable evidence can **Make candidate
-live** atomically replace the previous live deployment. Later edits require a
+saved Agent fingerprint have passing durable evidence can **Select tested release** atomically replace the previous active release. Availability stays unchanged, so a paused Agent remains paused. Later edits require a
 new candidate and test.
 
 ### 5. Verify the live Agent
 
 1. Confirm the active Agent deployment hash and attached capabilities.
-2. Run normal, unexpected, and ambiguous wording through **Test live Agent**.
+2. Run normal, unexpected, and ambiguous wording through **Test live Agent**. This action always uses the active release, even when another candidate exists; candidate evidence is kept separate.
 3. Check a grounded knowledge answer when sources are attached.
 4. If a Playbook is assigned, test its branch, input waitpoint, approval, and
    result path.
@@ -352,8 +350,8 @@ Use this before publishing:
 3. `php artisan filament-agentic-chatbot:doctor` has no `FAIL`.
 4. pgvector installs show `ext-pdo_pgsql` enabled and `CREATE EXTENSION vector` available, or ChromaDB health is green.
 5. Any source used by the Agent ingests to `completed`.
-6. The Agent publishes one immutable candidate without changing live traffic.
-7. **Test release candidate** records passing durable evidence for the exact deployment hash and saved Agent fingerprint before **Make candidate live** activates it.
+6. The Agent publishes one immutable candidate while retaining its active release; saved availability and access changes take effect independently.
+7. **Test release candidate** records passing durable evidence for the exact deployment hash and saved Agent fingerprint before **Select tested release** selects it. Availability remains unchanged.
 8. The widget answers ordinary and unexpected wording through that verified live Agent deployment.
 9. Optional Playbook execution appears in `Playbook Runs`, and any approved `store_submission` output appears in `Submissions`.
 

@@ -31,9 +31,9 @@ Use an optional visual Playbook when a request needs several controlled steps, s
 1. Create an Agent and define its behavior, response policy, provider, and model.
 2. Attach only the knowledge, Data Resources, Connector operations, host capabilities, and optional Playbooks that it needs.
 3. Test ordinary chat, expected capability choices, failure behavior, and any Playbook paths.
-4. Use **Publish candidate**, run **Test release candidate** through the persistent runtime, then use **Make candidate live** only after the exact candidate has passing evidence.
+4. Use **Publish candidate**, run **Test release candidate** through the persistent runtime, then use **Select tested release** only after the exact candidate has passing evidence. Availability stays unchanged.
 
-Draft edits do not change live behavior. A live Agent uses one immutable, verified deployment with exact dependency pins. A Playbook is never required for ordinary or knowledge-grounded chat.
+Saved behavior changes require a tested replacement release. Availability, website access, and credential changes take effect when saved. The active Agent release remains immutable with exact dependency pins. A Playbook is never required for ordinary or knowledge-grounded chat.
 
 ## What is included
 

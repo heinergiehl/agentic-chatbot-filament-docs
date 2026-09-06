@@ -117,6 +117,21 @@ replayed with different bytes. Conversation deletion purges the files before
 deleting their metadata. The scheduled retention command purges expired file
 content while retaining bounded audit metadata marked `purged`.
 
+Follow-up Agent requests can include original private files on their retained
+historical user messages. Selection is limited to the same Agent, conversation,
+and area and the published session-history window. Current uploads take priority
+within the shared file-count and byte limits; remaining space admits the newest
+historical sources. Each invocation rechecks private storage, exact ownership
+and path binding, expiry, size, SHA-256, detected content type and the current
+published model's media support, then snapshots the verified bytes for SDK
+serialization. Missing, purged, expired, unsupported or unverifiable files are
+omitted with a bounded incomplete-context cue asking for the source again if
+needed. Retention expiry applies even before scheduled pruning. Original files
+remain untrusted user data and never become instructions or capability authority.
+Input-token preflight counts historical files and removes them with their whole
+turn when compacting history. Disabled session memory and answer repair do not
+load historical files; summaries do not recreate omitted attachment contents.
+
 External-channel files use the same content validation, published-model media
 capability check, canonical turn hash, and final private chat storage. Telegram,
 Slack, WhatsApp, and Mailtrap provider references are downloaded only over HTTPS

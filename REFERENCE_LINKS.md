@@ -32,12 +32,14 @@ Use the `filament-rag` links when discussing the earlier RAG-only plugin, and th
 - AgentGraph SDK usage: AGENTGRAPH_SDK_USAGE.md
 - Database and breaking changes: DATABASE_AND_BREAKING_CHANGES.md
 - API connectors: API_CONNECTORS.md
+- MCP data sources: MCP_CONNECTIONS.md
 - API source roadmap: API_SOURCE_ROADMAP.md
 - Agentic workflows: AGENTIC_WORKFLOWS.md
 - Workflow prompt templates: WORKFLOW_PROMPT_TEMPLATES.md
 - Workflow JSON schema: WORKFLOW_JSON_SCHEMA.md
 - Chat widget: CHAT_WIDGET.md
 - Operations: OPERATIONS.md
+- AI usage accounting: AI_USAGE_ACCOUNTING.md
 - Security and privacy: SECURITY_AND_PRIVACY.md
 - Known limitations: KNOWN_LIMITATIONS.md
 - Support policy: SUPPORT_POLICY.md
