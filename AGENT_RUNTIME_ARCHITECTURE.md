@@ -77,10 +77,32 @@ manifest still determines tool availability. This composition does not add a
 semantic tool shortlist or another routing authority. Instructions and schemas
 remain fixed within the native SDK invocation.
 
+Deterministic Agent failures, incomplete-answer notices, evidence fallbacks and
+Playbook outcome prose share `ChatLanguageResolver::forAgentTurn`. The existing
+Agent `assistant_profile.languages` field is published as
+`behavior.profile.languages`; a one-entry list restricts deterministic prose to
+that language. Within the supported built-in locales, a recognized explicit
+response-language request takes precedence over clear English or German wording
+in the latest visitor message. An empty language list permits every built-in locale.
+Quoted text, code, links, email addresses, model output, retrieved evidence and
+prior conversation messages do not select that language. Ambiguous, mixed,
+unsupported or over-8,000-character input keeps the immutable published default,
+or the first supported built-in locale if that default is excluded. With no
+built-in translation in the declared locale set, the published default remains
+the safe translation fallback. This conservative inference adds no model call;
+French and Spanish remain available through recognized English/German language
+requests and defaults. The existing workflow `forTurn` fixed-language policy is
+unchanged; there is no new Agent fixed-language field.
+Changing draft settings or later conversation language cannot relocalize a
+committed turn: JSON and SSE replay retain its stored content and presentation
+proof. Evidence, graph transitions, error codes and retry authority are unchanged.
+
 General questions about what the Agent can do are answered before provider or
 tool dispatch from the immutable deployment's published capability and Playbook
 labels. This manifest-backed overview cannot invent tools, execute a capability,
-or expose mutable authoring state; specific requests still use the normal Agent
+or expose mutable authoring state. Its prose and the model's final language
+instructions honor the same published supported-language restriction; a visitor
+request cannot expand that set. Specific requests still use the normal Agent
 turn path.
 
 The synchronous deployed-model path shares one ephemeral, monotonic
@@ -91,6 +113,16 @@ than receiving another full timeout. An exhausted admission budget has the
 distinct bounded code `agent_execution_timeout`. The execution scope is restored
 on exceptions and isolated between PHP Fibers; unrelated HTTP requests keep
 their original options. The model, deployment pins and payloads are unchanged.
+
+HTTP execution through `ChatTurnApplicationService`, including admin candidate
+tests and Quality runs, applies the configured `api.max_execution_time` PHP
+limit (120 seconds by default) before durable turn admission. Public API
+controllers also apply it before context setup. This leaves room beyond the
+shared model budget for canonical terminal persistence; it does not increase
+that budget, retry allowance or lease. Nonpositive settings opt out, and CLI
+workers retain their own process limit. PHP execution limits remain process
+settings, separate from Fiber-local model deadlines; hosts must also align
+their web server, proxy and worker limits with the supported execution path.
 
 This is cooperative admission, not cancellation authority. A new model-requested
 tool cannot start after expiry, but an already admitted capability keeps its own
@@ -470,6 +502,19 @@ Neither a valid source identity nor this output contract proves the semantic
 truth of free prose, the correctness of external data, or that the model chose
 every capability the visitor intended. Routing coverage remains an explicit
 quality check.
+
+Each Knowledge attempt can retain a bounded private `knowledge_retrieval`
+diagnostic in canonical execution evidence and the existing encrypted
+presentation receipt. It records retrieval status, strategy, evidence quality,
+returned/delivered chunk counts, index-compatible candidate counts and
+allowlisted failure codes. Counts are integers limited to 0 through 1,000,000.
+Query text or fingerprints, vectors, source content, raw errors and credentials
+are excluded. The checkpoint survives model failure, empty delivery, mixed
+Playbook composition and receipt restoration; successful retrieval checkpoints
+once. The operator debugger can display these facts, while visitor JSON/SSE
+exposes only the separate generic capability status. Older receipts remain
+readable without inventing missing diagnostics. These diagnostics do not change
+retrieval thresholds, capability authority or candidate acceptance.
 
 Historical references to previously displayed direct-read records have a
 separate admission rule inside this same answer/evidence boundary. The normal

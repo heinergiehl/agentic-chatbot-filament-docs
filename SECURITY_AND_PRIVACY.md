@@ -196,6 +196,18 @@ If a configured view or manage Gate is record-aware, bind `Contracts\AdminAuthor
 
 The SQL scope and the record Gate are one authorization contract: the scope prevents list, filter, option, and aggregate disclosure, while the Gate still authorizes direct record routes and mutations. A record-aware Gate without this binding makes the affected list or assignment selector empty. A scope that throws or returns a different builder also fails closed. The package does not scan every conversation, usage event, or other admin row and invoke a Gate in PHP; large installations must use database/global tenant scopes rather than an unbounded per-record authorization pass.
 
+Agent Analytics uses the same Resource SQL scopes for conversation, message,
+Knowledge, usage, token and outcome reads. Class denial produces unavailable
+states; an authorized empty scope can legitimately contain zero records.
+Related drill-down links additionally recheck the record Gate. Whole-Agent
+usage totals and budget assessments are unavailable under restricted usage
+access; visible receipt subsets cannot establish a complete monthly total.
+Token tables do not execute the Resource's usage projection callbacks when
+usage access is restricted. Cached Knowledge-gap totals, timing and excerpts
+combine conversations, so their widgets are unavailable with denied or
+record-scoped conversation access. These are admin reporting boundaries;
+runtime accounting and budget enforcement retain their original authority.
+
 ## Handoff Desk Authorization And Privacy
 
 Production should register the configured

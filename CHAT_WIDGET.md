@@ -284,6 +284,15 @@ Display context is **not signed authority**. It is encrypted with the durable tu
 
 The SDK supports `outcome`, `capability`, and `handoff` in addition to the basic widget lifecycle events. The server freezes a minimal lifecycle projection into the committed turn so JSON, SSE, turn polling, and replay return the same evidence. The runtime deduplicates outcomes per turn, capabilities per opaque event ID, and handoffs per public state transition for the lifetime of the mounted conversation. These payloads expose only public turn status, declared business outcome data, generic capability kind/status, and the existing safe handoff projection. They never expose internal IDs, exact capability keys, inputs/results, secrets, operator identity, notes, or SLA data.
 
+For new Knowledge capability events, status describes the search operation,
+not answer quality or evidence delivery. Retrieval `success`, `empty`,
+`insufficient_evidence` and `degraded` map to `succeeded`; `unavailable` and
+`failed` map to `failed`. Missing or unrecognized diagnostics map to `unknown`.
+A completed search can therefore succeed even when no context was delivered.
+Private retrieval counts and failure details are never part of the event.
+Previously committed lifecycle envelopes keep their original status and event
+identity during replay.
+
 ## Event Stream And Failure Behavior
 
 The widget consumes committed chat outcomes over server-sent events. Workflow execution and canonical persistence finish before the response is projected. The package emits `init`, `message_complete`, and `error` events, then closes with `data: [DONE]`; it does not manufacture token deltas from an already completed message.

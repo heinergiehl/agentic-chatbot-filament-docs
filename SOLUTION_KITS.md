@@ -68,8 +68,8 @@ After installation, the Agent Overview shows a Kit-specific release path:
    fingerprint;
 3. publish the Playbook as a verified immutable deployment;
 4. assign that published Playbook under the Agent's tools;
-5. use **Publish candidate**, **Test release candidate**, and **Make candidate
-   live** for the Agent; and
+5. use **Publish candidate**, **Test release candidate**, and **Select tested
+   release** for the Agent; selection preserves its current availability; and
 6. enable public Agent traffic only after the normal channel/embed checks pass.
 
 Changing a tested draft makes its old evidence stale. Publishing a Playbook
@@ -194,5 +194,6 @@ migration instruction and creates nothing.
 
 There is no automatic Kit upgrade or destructive uninstall. After installation,
 the Agent, drafts, tests, and deployments follow their normal resource
-lifecycle. The immutable installation evidence is deleted only when its owning
-Agent is intentionally deleted through the normal cascade.
+lifecycle. Soft-deleting an Agent retains its immutable installation evidence.
+Only permanent deletion of the owning Agent removes that evidence through the
+database cascade, subject to the host's deletion and retention policy.
