@@ -36,6 +36,18 @@ A Playbook is never required for ordinary or knowledge-grounded chat. You can st
 
 Manage multiple Agents from your existing admin panel, with separate instructions, providers, models, knowledge settings, access rules, and widget presentation.
 
+### Customize each chatbot for its role
+
+- **Behavior and answers:** define the Agent's purpose, instructions, tone, and response policy.
+- **AI provider and model:** choose the configured provider and model for each Agent.
+- **Knowledge and tools:** attach the sources, Laravel Data Resources, API Connector operations, and optional Playbooks that serve its role. Developers can register custom application capabilities.
+- **Chat experience:** adjust the widget's style template, colors, title, welcome guidance, suggested messages, and source presentation.
+- **Access:** configure the intended audience and permitted website origins, alongside the permissions enforced by your application.
+
+For example, a public support chatbot can use product documentation and a support Playbook, while an internal assistant uses a different model and selected application data. Each Agent has its own configuration and permitted tools.
+
+### From configuration to a tested chatbot
+
 1. **Create an Agent.** Define its role, response behavior, provider, and model.
 2. **Connect its knowledge and tools.** Attach selected sources, Data Resources, API Connector operations, host capabilities, and optional Playbooks.
 3. **Test representative conversations.** Check answers, tool choices, missing information, and failure behavior.
@@ -65,7 +77,11 @@ Versioned operation bindings, authorization checks, confirmation, duplicate-exec
 
 ## Visual workflow builder with optional Playbooks
 
-Create multi-step conversational workflows on a canvas inside Filament. Playbooks can collect input, branch on conditions, request approvals, call capabilities, wait for a result, perform AI tasks, transform values, and hand work to a person.
+A **Playbook** is a visual workflow for a specific task that needs a defined sequence of steps. You describe when the Agent should use it and build the process on a canvas inside Filament. The Agent invokes it when a matching request needs that process.
+
+For example, a support Playbook could collect an issue description, look up an allowed record, branch on the result, ask for confirmation, and call your configured ticket-creation action. You supply the relevant data access and integration; the Playbook defines how those steps fit together.
+
+Playbooks can collect input, branch on conditions, request approvals, call capabilities, wait for a result, perform AI tasks, transform values, and hand work to a person.
 
 - Combine input, decision, action, and result steps.
 - Use bounded iteration and sub-Playbooks for reusable processes.
