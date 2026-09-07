@@ -97,6 +97,22 @@ Add a chatbot to your website or product frontend using the generated script sni
 
 The browser integration includes streaming responses, private attachments, bounded page context, and a typed widget SDK with lifecycle events for application integration.
 
+After creating and testing an Agent, copy its generated embed snippet into your website layout. It has this form:
+
+```html
+<script
+    src="https://your-app.example/filament-agentic-chatbot/widget"
+    data-bot="YOUR_BOT_PUBLIC_ID"
+    data-area="public"
+    data-size="comfortable"
+    data-font="system"
+    data-show-sources="true"
+    defer
+></script>
+```
+
+Use the URL and Agent ID from your own generated snippet. Widget appearance and welcome settings are managed in the Agent editor.
+
 Production embeds use a **tokenless bootstrap**: the snippet contains no permanent browser credential. The loader calls the origin-checked `/bootstrap` endpoint and keeps short-lived access tokens in memory. Configure a dedicated signing key and an exact Allowed Domains entry for each intended website origin.
 
 [Read the widget setup and integration guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
@@ -107,7 +123,7 @@ Operate your chatbots from Filament with conversation history, feedback, usage r
 
 Versioned Solution Kits provide reviewed starting configurations, including Customer Support & Human Handoff. Quality scenarios and candidate-versus-live comparisons help you check how changes affect representative conversations before rollout.
 
-Agent Access Tokens provide trusted server access. Channel integrations include Telegram, Slack, WhatsApp Cloud API, Mailtrap Email, and Mailgun Email, with different default, opt-in, and acceptance requirements. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) and [channel setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md) before choosing a channel for production.
+Agent Access Tokens provide trusted server access. An optional Mailgun email adapter is included and requires separate provider setup and validation in your deployment before production use. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) and [channel setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md) for its configuration and availability requirements.
 
 ## Requirements and installation
 
@@ -115,10 +131,48 @@ This is a commercial Laravel package installed in your own application. You need
 
 PostgreSQL with pgvector is the documented release-validation database path. ChromaDB is an alternative vector-store adapter that buyers must validate in their own environment. Docker is used for reproducible release checks; it is not a requirement for customer hosting.
 
-1. Purchase a license and obtain your private Composer repository details from Anystack.
-2. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) for the package version you intend to install.
-3. Follow the [quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) to install the available release, register the Filament plugin, run the installer, configure your provider, and start the queue worker.
-4. Resolve setup checks, test an Agent, and configure access before serving users.
+### 1. Install with Composer
+
+After purchasing a license, copy the private Composer repository URL from your Anystack account. Run these commands inside your Laravel application, replacing the example URL with the one Anystack provides:
+
+```bash
+composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
+composer require heiner/filament-agentic-chatbot
+```
+
+Use the buyer credentials shown by Anystack when Composer requests authentication. Keep license credentials out of your application repository. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) before choosing a package release.
+
+### 2. Register the plugin in Filament
+
+Add the plugin to your existing panel provider's `plugins()` list before running the installer. This example shows the relevant registration; keep the rest of your panel configuration and existing plugins:
+
+```php
+use Filament\Panel;
+use Heiner\FilamentAgenticChatbot\FilamentAgenticChatbotPlugin;
+
+public function panel(Panel $panel): Panel
+{
+    return $panel->plugins([
+        FilamentAgenticChatbotPlugin::make(),
+    ]);
+}
+```
+
+### 3. Configure and finish setup
+
+Follow the [quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) to configure your database, vector store, AI provider, and keys. Then run the installer:
+
+```bash
+php artisan filament-agentic-chatbot:install
+```
+
+The installer checks panel registration, publishes configuration, runs migrations, and executes Doctor setup diagnostics. Resolve reported failures before serving users. Start an asynchronous queue worker for ingestion and background work:
+
+```bash
+php artisan queue:work
+```
+
+Use a supervised worker in production. Complete the quickstart's theme and website-access setup, then create and test an Agent before embedding it for users.
 
 Available package versions are listed in your Anystack account. The installation guides and compatibility matrix identify their documentation target; confirm that it matches the package you are installing. Before upgrading an existing installation, follow the [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) for backups, migrations, and any breaking changes.
 
