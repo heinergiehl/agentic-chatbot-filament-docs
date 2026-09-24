@@ -4,14 +4,33 @@ Status: implemented in the current development version. Provider profiles are
 connection presets, not certification of third-party accounts or every tool
 offered by those providers.
 
-MCP data sources connect an Agent to reviewed data-reading functions on an
-existing remote MCP server. They do not allow changes to source data, command
-execution or software control, including inside Playbooks. API Connectors remain
-available for separately governed reads and writes. Both use the same operation
-workbench, immutable revisions, Agent/Playbook pins, capability gateway and access
-policy. MCP does not create another Agent runtime.
+MCP connections provide reviewed reads to Agents and separately approved,
+synchronous create/update operations to published Playbooks. Every write needs
+its own operation review, an isolated staging test and confirmation of the
+visitor's concrete action. Direct Agent tools remain read-only. Command
+execution, software control, local processes and asynchronous MCP writes remain
+unsupported. HTTP and MCP use the same operation workbench, immutable revisions,
+Agent/Playbook pins, capability gateway, ledger and access policy. See
+[ADR 0013](adr/0013-reviewed-integration-writes.md) for this bounded expansion and
+[the initial capability matrix](INTEGRATION_WRITE_CAPABILITIES.md).
 
 ## Operator flow
+
+### Official client migration status
+
+The bounded investigation of `laravel/mcp v1.0.0` on 19 September 2026 resulted
+in a documented deferral. Its client excludes the currently supported
+`2025-03-26` profile; stock session-404 and `HEADER_MISMATCH` handling also resend
+one logical tool call without the product's retry admission. The existing guarded
+client remains the sole productive client. No fallback, vendor patch or new
+Composer dependency was introduced.
+
+The public transport injection API is usable, but migration still needs raw tool
+definitions, physical-send receipts, product egress controls and shared response
+limits. See the [Task C evidence and MC gates](plans/refactor-v2-3-review/EXECUTION_HANDOFF.md#task-c-verträge-und-nachweise).
+The offline reproduction is `scripts/qa/mcp-client-spike.php`; it accepts an
+extracted official v1.0.0 source directory and an output JSON path, with all HTTP
+requests intercepted by fixtures.
 
 ### Guided GitHub setup
 
@@ -87,15 +106,16 @@ disabled. The existing step, token and evidence limits still apply.
    copy the displayed callback URI to the provider, enter the client ID, optional
    secret, endpoints and scopes, then save. **Discover OAuth settings** can fill
    endpoints for review. Registration or account consent does not approve tools.
-5. Select **Review read functions** (**Advanced data access** for GitHub).
+5. Select **Review operations** (**Advanced data access** for GitHub).
    Search the importable tools and review the selected
    description. The original input schema is under **Technical details**;
    incompatible or excluded tools and their causes are under **Compatibility details**.
-   Only supported data reads can be prepared. Outside the curated GitHub functions,
-   an authenticated operator must explicitly verify that the exact function only
-   reads data and cannot control software or execute commands, and record its data
-   purpose and review basis. Server hints are not proof. Supply fixed arguments
-   where needed to restrict the accessible data.
+   Choose the operation's effect. Outside the curated GitHub reads, an
+   authenticated operator must verify the exact data function and record its
+   purpose and review basis. A read review permits only reads. A separate write
+   review permits one synchronous create/update operation, its fixed targets,
+   and tenant/actor scope. Both exclude software control and commands. Server
+   hints are not proof. Supply fixed arguments to restrict the accessible data.
    For example, `{"owner":"example","repo":"public-docs"}` binds those declared
    inputs to that repository and removes them from model-visible inputs.
    A tool without separate repository inputs needs its own appropriately scoped
@@ -108,9 +128,10 @@ disabled. The existing step, token and evidence limits still apply.
 6. Import the selected tool as a draft. Review its purpose, matching examples,
    input policies and output mapping in the operation workbench. Test that draft
    and publish its immutable operation revision through the normal lifecycle.
-7. Attach a published read operation in the Agent's Connector tools, or attach a
-   published read to a Playbook Capability step. Publish, test and activate
-   the resulting Agent release. Saving or discovering tools never grants live access.
+7. Attach published reads in the Agent's Connector tools or in a Playbook
+   Capability step. Writes are available only in Playbooks. Publish, test and
+   activate the resulting Agent release. Saving, discovery and operator review
+   never grant direct Agent write access.
 
 Refreshing an imported tool is an explicit draft replacement in the discovery
 dialog. It keeps the operation identity and published revision, replaces the
@@ -228,7 +249,19 @@ and schema subset below, regardless of the preset name.
 Default output mappings include ordinary text blocks and text embedded in resource
 blocks, such as GitHub file contents. Resource URIs and binary payloads are not
 selected by these mappings, and resource links are not fetched. Existing drafts
-receive the new defaults only when explicitly refreshed.
+receive the new defaults only when explicitly refreshed. Structured output titles
+and descriptions are copied into the allowed mapping's `presentation`; hidden
+siblings remain excluded.
+
+New imports keep a draft-only `import_basis`, stripped before publication. Refresh
+compares that basis, local semantic edits and the freshly reviewed source by field
+identity. Unchanged local fields adopt the source; independent local descriptions
+and examples survive; competing edits report the exact path without saving.
+The success notification lists retained local paths. Execution/schema/security
+changes still cross the ordinary review and publication boundary; local execution
+overrides are not semantically merged. Draft/environment locks remain mandatory.
+Without a basis, refresh preserves the draft until the explicit first-adoption
+option is selected. Published revisions never change in place.
 
 MCP mappings may explicitly declare `transform: mcp_json`, `mcp_document`,
 `mcp_content` or `mcp_github_images` on a content-block path with nested `fields`. `mcp_json` strictly
@@ -286,6 +319,66 @@ a declared selection, not a claim to have inspected image content. Existing
 provider trees and oversized sources fail explicitly. No image is downloaded or
 executed, and the Agent does not need to invent an input path.
 
+## Reviewed Playbook writes
+
+Use advanced tool review to select **Create or update through a Playbook**, explicitly approve **Create one record** or
+**Update one record**, and bind at least one precise target in **Fixed arguments**. The
+reviewed target values must be required request-schema constants outside model
+inputs. Approve the actual data operation; neither a tool name nor remote
+read-only, destructive or idempotency hints establish safe permission.
+
+Declare tenant and actor scope separately. **Use the connection owner policy** uses the saved
+connection's Agent/owner policy and connected provider account. It does not
+impersonate a visitor. **Bind an exact fixed tool argument** additionally compares the declared
+identity with the current server-attested tenant or actor; missing or foreign
+identity fails before dispatch. Bind record identifiers as fixed targets when
+only one record is allowed. Restrict writable inputs in the declared tool schema
+and use a narrower server tool when its schema cannot express that boundary.
+
+In the existing operation workbench:
+
+1. Keep confirmation enabled, **Single item only**, invocation identity and
+   Playbook-run scope. Select **Reject duplicate** or **Return saved completed
+   result**. The latter reads an already persisted success for the exact
+   invocation without another provider call. Unknown outcomes require manual
+   reconciliation. No provider-idempotency header or automatic retry is supported.
+2. Configure a business-success predicate and a remote record identity path. For
+   a result envelope containing `structuredContent: {status: "created", id: "T-42"}`,
+   use `{"path":"structuredContent.status","operator":"equals","value":"created"}`
+   as `success_when`. With an empty response extraction path, use
+   `structuredContent.id` for the record identity. If extraction selects
+   `structuredContent`, the identity path is `id`. Keep output mappings limited
+   to approved fields. HTTP 200 or `isError: false` alone is not success evidence.
+3. Save and use **Review operation access** to approve the exact final draft.
+   Meaningful changes to inputs, targets, environment, effect, result or recovery
+   rules require a new review. Display labels do not change execution authority.
+4. Configure a separate staging-only MCP connection using a different origin,
+   environment binding and credentials, with the same Agent/owner scope and
+   tool definition. Run the existing explicitly confirmed staging-write test.
+   An unavailable isolated endpoint or incompatible definition blocks publication.
+5. Publish the successfully evidenced exact operation, select it in a Playbook
+   Capability step after an Approval step, then publish its owning Agent.
+   Ordinary Agent tests, candidate comparisons and workbench read tests cannot
+   perform this write.
+
+The request follows the existing gateway, confirmation, side-effect ledger and
+reconciliation path. Confirmation binds the materialized action and current
+conversation, actor, tenant, deployment, connection/environment and schema.
+The concrete target and arguments are shown before an explicit Approval step
+can grant the write. The saved request remains immutable; a trusted input
+correction or a confirmation older than ten minutes requires a fresh preview
+and confirmation. A changed request or authority cannot reuse the old proof.
+Duplicate execution does not
+repeat an effect. Timeouts, lost responses, process crashes after possible
+send, `isError`, an unmet business-success predicate, missing result identity
+and asynchronous results remain unknown until explicitly reconciled. There is
+no exactly-once guarantee across an arbitrary provider network.
+
+The separate signed review is `mcp_write_access_review.v1`. Existing
+`mcp_data_access_review.v1` approvals and historical write ledgers are preserved;
+neither is automatically upgraded or replayed. Guided GitHub setup and its
+curated read-only endpoint remain read-only.
+
 ## Providers and authentication
 
 | Profile | Endpoint | Setup |
@@ -296,7 +389,7 @@ executed, and the Agent does not need to invent an input path.
 | Notion | `https://mcp.notion.com/mcp` | Save and select **Connect account** for dynamic client registration and OAuth; a standard Notion integration token does not authenticate this endpoint. |
 | Linear | `https://mcp.linear.app/mcp` | Restricted API key as bearer token, or OAuth. |
 | Google Calendar | `https://calendarmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth. |
-| Google Docs | `https://docsmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth; only reviewed reads are eligible. |
+| Google Docs | `https://docsmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth; writes require separate Playbook review and isolated staging evidence. |
 
 Current provider setup references: [GitHub](https://github.com/github/github-mcp-server),
 [Tavily](https://docs.tavily.com/documentation/mcp),
@@ -344,20 +437,28 @@ hints never independently authorize an operation.
 
 Executable MCP requests declare `request.transport: mcp` and
 `request.mcp: {tool_name, definition_hash}` in the existing v3 contract.
-Reviewed custom functions additionally store a signed `request.mcp.data_access`
-record bound to the connection, exact endpoint, tool definition, full request
-contract and read effect. Request-scope changes invalidate the review. Import,
-publication and the execution gateway enforce this policy before dispatch;
-the gateway also blocks historical MCP writes before a write-ledger claim.
+Reviewed custom reads store a signed `request.mcp.data_access` record bound to
+the connection, exact endpoint, tool definition, full request and read effect.
+Writes use the distinct `request.mcp.write_access` contract described above;
+a read review cannot grant a write. Import, publication and the gateway enforce
+these reviews before dispatch or a write-ledger claim. Historical unreviewed
+MCP writes remain blocked.
 An application-key change requires renewed custom-function reviews. Curated
 GitHub approval requires both the exact official endpoint and an allowlisted
 read function with fixed owner/repository outside model inputs.
 `body_template` contains arguments, not a caller-controlled JSON-RPC message.
-The `core/mcp` strategy binding freezes the local protocol and result-processing
-implementation dependencies. Authority and confirmation payloads include the
-exact tool identity. The response mapper consumes the MCP result envelope;
+The `core/mcp` strategy binding freezes the local protocol, dispatcher and
+result-processing implementation dependencies. HTTP outcome bindings do not
+include MCP-only result checks. Authority and confirmation payloads include the
+exact tool identity. The dispatcher checks MCP-only content before the response
+mapper consumes the MCP result envelope;
 default mappings select text and, when an output schema is declared, structured
 content. Curated output, schema validation, size limits and redaction still apply.
+Without a declared structured output schema, a successful tool result containing
+non-text blocks (including image, audio, binary resource or resource link) fails
+as unsupported content instead of appearing as an empty read. A dispatched write
+with that result remains unknown and requires reconciliation. Empty `content`
+is still a valid empty read.
 
 The browser OAuth flow uses S256 PKCE, encrypted short-lived state, one-use
 consumption and bindings to the operator session, connection environment,
@@ -392,10 +493,10 @@ a confidential client remains on the manual setup path.
 - Business result pagination and asynchronous tool completion need a separately
   reviewed contract; HTTP pagination/continuation settings cannot be applied to
   an MCP tool. Catalog pagination is supported.
-- Direct Agent tools remain read-only and input-grounded. Dependent multistep
-  reads use Playbooks. MCP writes and software-control tools are excluded from
-  both paths. Separately governed HTTP writes still use Playbooks and their
-  existing confirmation, staging, idempotency and reconciliation contracts.
+- Direct Agent tools remain read-only and input-grounded. Dependent reads and
+  separately reviewed synchronous create/update operations use Playbooks.
+  Software-control tools, bulk writes, deletes and asynchronous MCP writes are
+  excluded. HTTP writes retain their existing governed Playbook contracts.
 - Existing MCP write histories and unresolved outcomes remain available for
   review and reconciliation; they are not converted to reads or retried.
 

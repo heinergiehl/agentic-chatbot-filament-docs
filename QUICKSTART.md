@@ -190,10 +190,18 @@ The doctor command warns if any of these commercial profile values are missing a
 
 ```bash
 php artisan filament-agentic-chatbot:install
-php artisan queue:work
+php artisan queue:work --queue=agentic-chat,default --timeout=150 --tries=1
 ```
 
 The install command idempotently publishes the config, runs pending migrations, checks panel registration, and runs the setup doctor. If provider credentials will be added later, use `--skip-doctor` once and rerun the doctor after configuring them.
+
+Streaming widget chat uses a persistent queue. Select a database or Redis queue
+connection and set its Laravel `retry_after` above the chat job timeout; use
+360 seconds for the default 120-second chat execution limit. The package's
+`api.chat_queue.connection` defaults to the host queue connection and
+`api.chat_queue.queue` defaults to `agentic-chat`. Keep that worker running
+under your normal process supervisor. A sync queue cannot provide durable
+streaming chat. The synchronous JSON endpoint remains available to server clients.
 
 If the host app uses Laravel's `database` queue driver and has not created queue tables yet, run this first:
 
@@ -224,6 +232,15 @@ immutable Agent deployment with only its published knowledge and optional
 Playbooks.
 
 ### 1. Create the Agent
+
+For a guided support starting point, open **Build > Agents > Use Solution Kit**
+and choose **Customer Support & Human Handoff**. The wizard explains missing
+provider keys and model-profile blockers while keeping your entered Agent name.
+Installation creates an inactive draft with a handoff Playbook and saved tests.
+Add a missing key under the Agent's **AI Setup** or in the host app, then run
+**Setup Check > Test Chat Provider** explicitly if you want a connection test;
+that action makes a billable provider call. Continue through the same candidate
+test and activation gates below. See [Solution Kits](SOLUTION_KITS.md).
 
 1. Open **Agentic Chatbot > Build > Agents** and create an Agent.
 2. Complete **Essentials**, **AI setup**, and **Review**. Choose its name, job, boundaries, provider, model, and availability. Review the host defaults for access and permissions; optional sections remain available.

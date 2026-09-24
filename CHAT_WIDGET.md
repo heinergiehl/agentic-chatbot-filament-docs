@@ -7,12 +7,20 @@ Do not put Agent Access Tokens in widget markup or public JavaScript. Widgets us
 ## What The Widget Does
 
 - Renders a floating chat bubble on any website or product page
-- Opens into a full chat panel with durable message history, committed responses, and source citations
+- Opens into a full chat panel with durable message history, committed responses, and retrieved source cards
 - Connects to your Laravel backend via the plugin's API routes
 - Supports signed tokens for access control
 - Supports bounded image and document attachments when the exact Published Agent model is release-verified for them
 - Supports assistant-message feedback buttons for quick helpful / not-helpful signals
 - Adapts to desktop and mobile screen sizes
+
+Chat requires a persistent Laravel queue and a worker for `agentic-chat` (or
+the configured `CHAT_QUEUE` name). See [upgrade configuration](../UPGRADING.md).
+The widget receives an early `turn_accepted` event, displays saved progress and
+retrieves the final committed answer through authenticated status requests.
+Reloading restores an active turn from history without sending the message
+again. A network interruption stops delivery, not accepted tool execution.
+Uncertain execution remains paused for reconciliation rather than retried.
 
 ## Customization Options
 
@@ -22,7 +30,7 @@ Per bot, you can customize all of these from the Filament panel:
 | --------------------- | -------------------------------------------- | ------------------------------- |
 | **Title**             | Header text in the chat panel                | "Support Assistant"             |
 | **Subtitle**          | Smaller text below the title                 | "Always here to help"           |
-| **Welcome message**   | Main heading in an empty conversation        | "Hi! How can I help you today?" |
+| **Welcome message**   | Greeting in an empty conversation           | "Hi! How can I help you today?" |
 | **Empty-state hint**  | Short guidance below the welcome heading     | "Choose a topic or ask freely." |
 | **Conversation starters** | Up to four titled prompts with optional icons | "Track my order"              |
 | **Avatar**            | Agent image or the built-in fallback         | `/images/support-agent.png`      |
@@ -30,7 +38,7 @@ Per bot, you can customize all of these from the Filament panel:
 | **Template**          | Visual style preset (see below)              | `aurora`                        |
 | **Font preset**       | Typography style                             | `modern-sans`                   |
 | **Compact mode**      | Smaller widget footprint for tight layouts   | `true` / `false`                |
-| **Show sources**      | Whether to display cited source references   | `true` / `false`                |
+| **Show sources**      | Whether to display retrieved source cards    | `true` / `false`                |
 | **Input placeholder** | Placeholder text in the message input        | "Type a message..."             |
 | **Response format**   | `markdown` or `plain_text`                   | `markdown`                      |
 | **Language**          | Widget UI language code                      | `en`, `de`, `fr`, `es`          |
@@ -45,6 +53,12 @@ A conversation starter has three fields:
 - `icon`: an optional semantic key from the safe icon list
 
 The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. The widget renders at most four starters, uses native buttons, and sends the selected prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
+
+Starter titles and prompt descriptions wrap to remain readable. Keep the welcome message and starter labels concise so visitors can scan the choices. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
+
+Long welcome messages appear as body text below the localized “How can I help?” heading. The configured message is preserved in full. Short greetings remain the heading. All twelve templates share this hierarchy and the compact header actions, with template-specific colors and geometry in light and dark mode. The subtitle is descriptive text without an animated availability indicator.
+
+Header titles, subtitles, and action states use the same theme palette in the Appearance preview and public widget. Clean uses an accent tint, Bold uses a deeper accent shade, and Aurora uses a quiet pastel or dark violet gradient. New-chat controls use a subtle theme surface; unavailable menu actions retain readable neutral text. Solar pairs separate day and night composer colors.
 
 Developers can extend the safe list in the published configuration. The icon value is a registered Blade icon alias, not arbitrary markup:
 
@@ -99,7 +113,7 @@ The widget ships with twelve visual themes:
 | Template     | Description                            |
 | ------------ | -------------------------------------- |
 | `clean`      | Balanced cards and a connected compact composer |
-| `glass`      | Translucent layers and a floating pill composer |
+| `glass`      | Left-aligned welcome, quiet translucent cards, and an expanding composer |
 | `bold`       | Large typography and stacked action rows |
 | `neo-brutal` | Hard corners, thick borders, and offset shadows |
 | `noir`       | Editorial rows on warm paper or a near-black night surface |
@@ -266,7 +280,7 @@ The typed, framework-free SDK creates the script element, waits for the runtime,
 | `compactMode`      | boolean               | Enable compact layout                      |
 | `fontPreset`       | string                | Typography preset name                     |
 | `sizePreset`       | string                | Size preset (`compact`, `comfortable`, `spacious`) |
-| `showSources`      | boolean               | Show source citations                      |
+| `showSources`      | boolean               | Show retrieved source cards                |
 | `lang`             | string                | UI language code                           |
 | `contextEndpoint`  | string                | Authenticated endpoint that returns a signed customer-context issuance |
 | `contextTokenProvider` | function           | Async/sync token provider for an existing application API client |
@@ -295,13 +309,33 @@ identity during replay.
 
 ## Event Stream And Failure Behavior
 
-The widget consumes committed chat outcomes over server-sent events. Workflow execution and canonical persistence finish before the response is projected. The package emits `init`, `message_complete`, and `error` events, then closes with `data: [DONE]`; it does not manufacture token deltas from an already completed message.
+In the unreleased runtime-dialogue v2 candidate, the final answer, retrieved
+source cards, and canonical operation status are
+committed before delivery. JSON responses, SSE completion, authenticated turn
+status, and reloaded history show that same outcome. A source card may have no
+public URL; the widget displays its label without inventing a link. Cards
+identify material delivered by an authorized read, including API, Data
+Resource, and Knowledge results. They do not prove each sentence of the
+assistant's prose. Operation completion, failure, and unknown status come from
+the stored execution and Graph or Gateway state, never from that prose.
+
+Streaming admission persists the turn and queues its execution before emitting `init` and `turn_accepted`, followed by `data: [DONE]`. The widget polls the authorized turn projection for persisted progress and the committed outcome. A repeated request for a completed turn delivers its canonical `message_complete` or `error` event without executing it again. Final content is persisted before delivery; the package does not manufacture token deltas from a completed message.
 
 The terminal `message_complete` or `error` projection may contain the frozen `public_chat_turn_lifecycle.v1` envelope consumed by the SDK. It is transport-neutral and replay-stable.
 
-If workflow execution fails after a run has been prepared, the server logs the failure, marks the run failed, emits a safe error event, and closes the stream. JSON `/complete` integrations receive the same safe error code/message shape as a normal chat failure. Stack traces, provider secrets, and raw technical exception messages should stay out of widget responses.
+Execution failures follow the authoritative turn and AgentGraph lifecycle. An uncertain external effect remains unknown for reconciliation; a transport error cannot mark it failed or authorize another dispatch. Terminal failures expose a safe error code and message through the committed projection. JSON `/complete` integrations use the same outcome contracts. Stack traces, provider secrets, and raw technical exception messages stay out of widget responses.
 
-The stream encoder substitutes invalid UTF-8 before sending JSON events. If encoding still fails, the client receives a safe `stream_encoding_failed` error event instead of malformed SSE data.
+The stream encoder substitutes invalid UTF-8 before sending JSON events. If encoding still fails, the client receives a safe error event with code `stream_encoding_failed` instead of malformed SSE data.
+
+The unreleased S6 server contract adds `chat_turn_progress.v2`. Authorized turn
+status and completed JSON include safe `progress.activity`; committed SSE sends
+an `activity` event before the final message/error. Consumers must close active
+indicators when `activity.active` is false or the canonical turn is terminal,
+including waiting, failure, cancellation and unknown outcome. The final answer
+arrives directly in that response. `truncated` indicates omitted intermediate
+events. Only public identity/category/status/time fields are delivered; counters,
+native IDs, reasons and receipt references stay in the authorized admin debugger.
+The unreleased S7 widget consumes v2 and legacy v1 stages. See the [server schema](EXECUTION_ACTIVITY.md).
 
 ## Widget Security
 
@@ -416,7 +450,7 @@ Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The
 
 Widget initialization and history requests have a 15-second deadline, including response-body loading. A stalled request shows the localized loading error and an explicit retry action. Late responses cannot update a newer session or its history. Host context-provider callbacks receive an optional `signal` for cancellation. Productive chat turns and external operations retain their own runtime deadlines; initialization recovery never replays a productive write.
 
-The shipped widget exposes **Start new chat** and **Delete history and memory** as separate actions. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Playbook is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
+The shipped widget exposes **Start new chat** directly in the header and **Delete history and memory** in the **Chat options** disclosure beside it. Escape dismisses the disclosure first and returns focus to its control; pressing Escape again closes the chat. Moving focus or clicking outside the disclosure also dismisses it. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Playbook is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
 
 History deletion remains an explicit, confirmed operation. A successful deletion immediately opens a fresh chat. If the lifecycle guard refuses deletion, the widget localizes the typed reason, keeps the old chat intact, and offers only safe recovery actions: retry when the response is retryable, or start a separate new chat while the prior conversation remains available for resolution or support.
 
@@ -429,6 +463,14 @@ outcome still cannot retry. Attachment summaries cannot reconstruct browser
 uploads, so reload does not offer an automatic retry that would drop files.
 Reading history never creates messages, recovers a turn, or exposes exception
 details and operator diagnostics.
+
+After a failed send, empty or unchanged history and a saved user message without
+an outcome preserve the local question and visible error. Bounded history checks
+can replace that error with a committed assistant response or terminal failure
+that arrives after the transport failed. These checks never resend the turn.
+A stream that closes without a usable response follows the same visible error
+path. The composer waits for reconciliation to finish before another send, while
+starting a new chat excludes the previous send's late history and error updates.
 
 ### Human Handoff Continuity
 
@@ -535,3 +577,45 @@ The bot edit page provides a built-in **Live Preview** section in Filament where
 - [Context Areas](CONTEXT_AREAS.md)
 - [API Integrations](API_INTEGRATIONS.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
+
+### Tool activity display (unreleased S8 candidate)
+
+Enable **Show tool activity** in the existing Agent widget appearance settings,
+or in a widget area override. The package default is
+`widget.default_show_tool_activity` (`WIDGET_DEFAULT_SHOW_TOOL_ACTIVITY`), default
+`false`. Bot `runtime_config.widget.show_tool_activity` overrides that default;
+a selected non-default area's explicit value overrides the Bot, including
+`false`. This follows the existing source-reference configuration pattern.
+`data-show-tool-activity` and SDK `showToolActivity` supply the initial embed
+value; the authoritative fetched Bot/area configuration then replaces it.
+Appearance previews use the same setting. Existing defaults are unchanged.
+
+When enabled, the public widget shows safe names and statuses grouped by
+activity identity, distinguishes Capability execution from Tool handler, and
+marks a partial history. Handler success alone does not prove external execution.
+Names are escaped text. No arguments, private reasons, native IDs, receipt
+references or model reasoning become public through this setting. Turning the
+setting off hides the timeline without changing execution or answer delivery.
+
+Canonical completion closes activity even when terminal telemetry is missing.
+Later GET or SSE progress for the same turn cannot reopen a completed display,
+including an equal or higher progress sequence. A new turn can show its own
+progress. The queued, model, review and Capability phases use fixed localized
+labels. The activity list is not announced on every event; the concise pending
+status is announced politely. Failed and unknown outcomes use fixed public
+guidance without exposing private cause codes.
+Unfinished observations become “Outcome unknown” when their activity closes;
+the widget does not invent success. Completed responses appear automatically.
+Authenticated GET polling/history reconciliation recover interrupted delivery;
+**Check status** remains a recovery action and never starts another execution.
+Long-running recovery and graph waiting do not show a perpetual animated dot.
+Legacy transcripts do not acquire reconstructed tool history.
+
+The authorized turn debugger shows separate model-call, tool-proposal and
+capability-dispatch counters, bounded events and explicit correlation/receipt
+references. Keyboard-operable disclosures expose only existing report fields;
+usage and receipt sections retain their existing authority. The
+[S8 acceptance record](plans/runtime-reliability/S8-result.md) verifies persisted
+JSON/SSE replay on an isolated external-host candidate. Real authenticated
+settings save/reload and a browser-to-worker candidate conversation remain
+unverified; the design preview does not execute an Agent.

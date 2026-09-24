@@ -6,9 +6,18 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `0.16.3` (exact stable patch release)
-- The consuming host must explicitly select the same stable release and complete the
-  coordinated store migration and deployment publication before accepting work.
+- Current plugin constraint: `0.18.1` (exact stable release)
+- The consuming host and isolated `apps/sandbox` harness declare the same exact
+  stable release. A declaration alone does not update an installed lock or
+  certify a host: complete the coordinated store migration and deployment
+  publication before accepting work.
+- Version 0.18.1 validates accepted-resume authority before recovery, queued
+  dispatch and superstep mutations. Its native retry recognition replaces the
+  plugin's duplicate `assertRecoveryBindings` and `matchesAcceptedNodeResume`.
+  The original consumer recovery/projection tests pass before and after their
+  removal; direct-child admission, ancestry and cancellation remain local.
+  This patch adds no consumer migration or ABI change. The exact SDK pin still
+  requires newly published Playbook artifacts and Agent deployments.
 - The required public surface is enforced by
   `AgentGraphPublicApiCompatibilityTest`.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
@@ -55,6 +64,11 @@ cannot start until the current run is terminal.
 - `SubgraphNode` executes deployment-pinned Sub-Playbooks with isolated state,
   bounded depth, parent identity, interrupt bubbling, and declared output
   mapping.
+- `StructuredConcurrencySubgraphNode` admits each child through an explicit,
+  Fiber-local parent-node scope and `NodeContext::assertActive()`. Its runtime
+  adapter overrides only public SDK operations. Removed protected execution and
+  resume-validation hooks are no longer used. Native SDK resume validation and
+  nested-child identity handling remain authoritative.
 - AgentGraph stores are authoritative for graph runs, checkpoints, interrupts,
   delays, and tasks. `WorkflowRun` and `BotPendingInteraction` are package
   projections and operational indexes.
@@ -84,6 +98,14 @@ therefore distinguishes a crash before SDK acceptance (safe retry) from a crash
 after atomic acceptance (unknown until AgentGraph supplies a definitive state
 or an operator reconciles it).
 
+In 0.18, scheduling transfers accepted-resume authority from that temporary
+metadata into durable node receipts for synchronous and queued execution. An
+identical retry may use public recovery only when the receipt and resolved
+interrupt prove the exact response, checkpoint and node. Application recovery
+checks reject changed graph, descendant, interrupt and response bindings before
+scheduling. A claimed receipt stays blocked until its original lease expires;
+recovery never borrows or replaces the current claim token.
+
 ## Capability boundary
 
 Graph nodes never dispatch connectors, actions, Data Resources, HTTP calls, or
@@ -112,6 +134,11 @@ authority.
   convert uncertainty into an automatic retry of a write.
 - Parent cancellation and timeout cascade through supported Sub-Playbook
   ancestry; a child cannot productively outlive its parent.
+- Cancellation revokes the parent through the SDK's revision-fenced public
+  transition before cancelling descendants. It does not hold a root cache lock
+  across node execution. Native ancestor checks block further child admission
+  even if the process stops during the cascade; repeated cancellation repairs
+  remaining active descendants without rewriting terminal records.
 - A child semantic result of `failed`, `unknown`, `cancelled`, or `canceled`
   fails the parent node. Only an explicitly successful child contract can
   reach the parent success edge; child interrupts and delays continue to bubble
@@ -121,14 +148,28 @@ After changing the SDK constraint or any adapter boundary, run the public API
 compatibility test, the targeted interrupted-resume/confirmation tests, and
 Doctor. Missing required SDK methods are blocking compatibility failures.
 
-The database adapters forward the SDK task attempt and node claim token without
-alteration while keeping durable error redaction. Child selection and delayed
-child interrupt validation use the SDK implementations. The plugin still owns
+The database adapters forward the SDK run revision, task attempt and node claim
+token without alteration while keeping durable error redaction. Run error
+normalization intercepts `RunStore::transition`, including native SDK failures
+and callers of the inherited `update` convenience method. Child selection and
+delayed child interrupt validation use the SDK implementations. The plugin still owns
 its ancestor authorization, cancellation policy, external capability gateway,
 and immutable deployment checks; those are not removed by an SDK upgrade.
 
-The 0.16 claim-token migration must run on the configured AgentGraph database
-while old workers are drained. Existing immutable 0.15 Playbook artifacts are
-not widened or rewritten: publish new Playbooks and then obtain new,
-hash-bound Agent candidate evidence through the normal release lifecycle before
+Upgrading from 0.16 requires the additive 0.17 run-revision migration on the
+configured AgentGraph database while all old workers and requests are stopped.
+The earlier claim-token migration must also be present. Synchronous execution
+now requires the node-execution table and its receipt retention policy. 0.18
+adds no migration beyond 0.17. Restart all PHP execution processes on the same
+dependency set. Existing immutable Playbook artifacts are not widened or
+rewritten: publish new Playbooks and then obtain new, hash-bound Agent candidate
+evidence through the normal release lifecycle before
 activation. A test with a different model cannot certify an unchanged candidate.
+
+Diagnostic event listeners cannot abort confirmed execution in 0.18. Recovery
+fault tests therefore suspend and abandon an execution Fiber at a durable
+acceptance event, then rebuild the runtime against the same test database.
+Package checks cover exact retry, lease expiry, tampered bindings, cancellation
+during a suspended child, restart cancellation, confirmation payloads and delay
+recovery. Doctor is exercised on the isolated migrated test database; these
+checks do not certify a host rollout, external provider, or unknown write.

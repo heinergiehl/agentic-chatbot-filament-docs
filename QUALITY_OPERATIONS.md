@@ -4,7 +4,7 @@ Quality Operations turns the existing Quality Tests into a continuous, auditable
 
 ## Automated Published Agent tests
 
-Open **Improve > Quality Tests**, edit a **Published Agent** test, enable automation, and choose its cadence. The package scheduler claims due scenarios every five minutes and dispatches one queued job per claim. Each job runs the existing `AgentQualityConversationRunner`, so it crosses the persistent chat path and retains the same deployment hash, conversation-turn checks, route evidence, source citations, zero-write assertions, latency, token, and cost evidence as a manual run.
+Open **Improve > Quality Tests**, edit a **Published Agent** test, enable automation, and choose its cadence. The package scheduler claims due scenarios every five minutes and dispatches one queued job per claim. Each job runs the existing `AgentQualityConversationRunner`, so it crosses the persistent chat path and retains the same deployment hash, conversation-turn checks, route evidence, retrieved source cards, zero-write assertions, latency, token, and cost evidence as a manual run.
 
 Automation is unavailable for Playbook drafts and archived tests. A claim token prevents overlapping dispatch. Stale claims are recoverable after the configured lease; unsuccessful dispatches and runs retain a bounded error code and failure count. The next due time advances only through the claim owner.
 
@@ -18,52 +18,81 @@ The review card reports a deterministic verdict (`no_regression`, `improved`, `r
 
 Enable **Require candidate pass before activation** only for release-critical scenarios. Candidate activation then retains the normal signed representative-turn and capability-manifest requirements and additionally requires the latest complete passing candidate run for every enabled scenario, bound to the exact candidate and current scenario fingerprint. Archived scenarios do not gate activation. Knowledge-gap regressions enable this candidate gate automatically; resolving the gap still separately requires a passing run against the current live Agent and an active Knowledge Source.
 
+For responses that may use different valid wording, **Must contain one phrase
+from each group** accepts several phrases per required idea. The contract
+stores `response.contains_one_of_each` as a list of
+`{"alternatives":["Preis","price","pricing"]}` objects. Each group needs
+one case-insensitive match; all groups must match. `contains` still requires
+every listed literal, and `excludes` still rejects every listed literal.
+Changing these checks changes the scenario fingerprint, so the next candidate
+needs a fresh run. Phrase checks are bounded examples; review the saved answer
+for unsupported claims and source attribution before treating a scenario as
+complete customer acceptance.
+
 ## Direct-read response regressions and diagnostics
 
-Direct-read models select existing evidence with closed JSON containing only
-`language` and `sections: [{evidence_id, pointer}]`, with optional `fields` or
-`detail: "all"` per section. The server renders approved `/data` values with
-published readable labels and units, retaining record indices and required
-context. Technical paths stay internal; mixed Knowledge may select `/context`.
-Native structured-output
-support is not required. Positive model fixtures must use actual ledger IDs
-that also match the execution trace. Free factual prose is not a valid positive
-direct-read fixture. See [Runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md).
+The v2 candidate uses native assistant text. It does not require Claims JSON, a
+closed direct-read selection document, or a second general answer reviewer.
+Tool input admission, authorization, result shape, source delivery, status, and
+the canonical turn commit remain deterministic.
 
-Quality assertions still require the exact route set, item coverage, complete
-execution evidence, and an `answer` decision. `safe_evidence_fallback` can
-preserve useful facts and sources for a visitor but is not a quality pass or
-passing release evidence. Exercise different values for different targets,
-responses without input echoes, and nested or native-batch records; assert
-values within their own call and record context. Include malformed pointers,
-missing references, injected labels/values, and markup in provider strings in
-deterministic regression tests rather than checking success phrases alone.
-Also cover default versus requested detail fields, empty and hidden allowlists,
-missing required context, nested records, and metadata changes after publication.
-Both model context and output must exclude hidden values; a valid selection
-does not by itself prove that the selected fields answer the visitor's intent.
+A routing case requires the exact set of deployment-pinned choices. The grader
+compares committed capability executions, successful or failed result codes,
+Knowledge retrieval delivery, Playbook run state, and the canonical answer. A
+Decision label is diagnostic only. A typed Connector input clarification may be
+expected alongside independent successful reads. Incomplete, truncated,
+unknown, or unexpected executions cannot become a passing release check through
+an answer marker.
 
-Committed `chat_turn_execution_evidence.v5` has additive optional diagnostics:
-`evidence_guard` is an allowlisted reason such as `response_contract_missing`,
-`response_contract_invalid`, `response_evidence_reference_invalid`, or
-`response_evidence_coverage_incomplete`. `answer_repair` contains `attempts: 1`,
-an `outcome` of `accepted`, `rejected`, or `failed`, and the allowlisted
-`initial_evidence_guard`. Older v5 evidence without these fields remains valid.
-These diagnostics contain no model draft, raw provider result, or prompt.
+Retrieved source cards come only from execution-matched material delivered to
+the Agent. API and Data Resource cards may have no URL. The same committed cards
+appear in JSON, SSE completion, turn status, and history; the widget labels
+them as retrieved sources. Inline citation count records valid numbered markers
+only. Neither a card nor a marker proves that every sentence is correct.
+Operation status comes from the Gateway, Graph, and turn ledger.
 
-There is at most one output-only repair, using the same deployment/provider/
-model, no tools/history/attachments, and a 20-second timeout. Usage and cost
-belong to `agent_answer_repair`. A rejected repair, provider failure, or budget
-refusal retains the already verified fallback facts and available sources;
-it must not repeat tools or turn a format error into a visitor understanding
-question. Check that canonical JSON/SSE replay also causes no second repair.
+Release checks fail closed on degraded turns, provider errors, retryable or
+non-completed results, failed capability executions, and partial or truncated
+read evidence. Old Claim coverage markers do not turn a partial read into a
+complete result. User-answer quality is assessed separately against the task
+and delivered facts. The frozen v2 case set and offline contract grader are in
+evals/runtime-dialogue-v2; they require an independent human answer review
+for a full pass. The N04 candidate has no live dialogue or widget acceptance
+until N05 records the prescribed attempts.
 
-Conversation and pure Knowledge answers retain prose. Citation identity proves
-which source was delivered, not the semantic truth of its summary. Review
-representative answers as well as deterministic routing checks, and rerun
-relevant scenarios after runtime or provider changes; a deployment hash alone
-does not certify changed runtime code. Missing credentials leave a required
-provider gate blocked, or an optional gate skipped, never passed.
+## Production acceptance for mixed requests
+
+Record the exact package commit, host configuration, deployment hash, provider,
+model and effective context budget for each acceptance run. A passing unit suite
+proves its exercised contracts; production answer quality also needs real
+conversations against the integrations and model customers will use.
+
+| Boundary | Required evidence |
+| --- | --- |
+| Request coverage | Every requested concern has a verified result, a useful source-specific question, or an accurate limitation in the same turn. A successful sibling lookup cannot hide an omitted concern. |
+| Input recovery | Missing values, invalid identifiers, corrected values, negation and changed scope retain only verified context. Completed independent work is not dispatched again. |
+| Result fidelity | Displayed values match the correct call and record, including dates, units, currency direction and regional scope. An HTTP success alone is insufficient. |
+| Failure handling | Local rejection, provider validation, no matches, missing resources, authentication, rate limits, timeout and incompatible responses remain distinct. Exercise controlled faults deterministically. |
+| Execution safety | Tenant and actor scope, write confirmation, duplicate delivery, restart and unknown outcomes retain their existing authorization and reconciliation contracts. Run the relevant release assurance checks before claiming these boundaries certified. |
+| Model suitability | Compare identical scenarios, contracts and effective budgets. Record omissions and unnecessary questions separately from software faults, latency and cost. A weak-model failure remains a quality failure. |
+
+Keep a small acceptance set with unrelated integrations and input shapes. The
+opt-in `diverse-apis` browser suite adds currency-pair and holiday-year/country
+requests, mixed clarification, and provider-rejected input recovery. Its per-turn
+checks compare canonical execution inputs and delivered data with visible
+answers. It uses independent fixtures and the normal candidate release gates;
+it does not change the main widget or certify untested integrations.
+
+Critical customer scenarios should be saved as candidate-gated Quality Tests.
+Require passing routing and answer-quality evidence after material runtime,
+model, prompt or Connector changes. Keep provider-dependent probes bounded;
+use deterministic regression tests for a diagnosed software defect before the
+next relevant browser run. The release procedure remains
+[Release assurance](RELEASE_ASSURANCE.md).
+
+The bounded [mixed API acceptance record](audits/2026-09-08-diverse-api-runtime-acceptance.md)
+separates the observed model failures, fixed rendering defect and remaining
+runtime work. Its live conversation quality checks are not all passing.
 
 ## Verified knowledge-gap detection
 

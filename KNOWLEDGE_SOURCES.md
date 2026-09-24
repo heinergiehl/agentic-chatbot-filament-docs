@@ -1,5 +1,14 @@
 # Knowledge Sources
 
+The optional Knowledge scope form stores public operator-authored facts in
+`meta.knowledge_profile`: `summary` (2,000 characters), `topics` and `exclusions`
+(1,000 each), `language` (120), and `validity` (500). Publication validates these
+fields and pins only this allowlist, not the complete mutable source metadata.
+Unknown keys are omitted; invalid or credential-bearing profile values are rejected.
+Republish the Agent to change its profile. Ingestion dates are never presented as
+content validity. All pinned sources remain reachable through the shared search
+tool, including sources beyond the first eight; the complete offer is budgeted.
+
 This is the specific documentation page to share when someone asks:
 
 - what knowledge sources are

@@ -121,6 +121,24 @@ such an amount a complete or reconciled provider bill. Price sources:
 [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing),
 [OpenAI service tiers](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
+## Audited local non-dispatch
+
+A reviewed local middleware throw **before HTTP dispatch** can resolve a
+reservation without a provider receipt only through the separate
+`AiUsageNonDispatchReconciliationService`. The current registered proof covers
+Candidate 165 Row A call 3762: it checks the product-recorded throw-site
+fingerprint, run/row binding and unchanged attempt report with no admitted wire
+request for that call. The service requires an operator, reason and reviewed
+version, then atomically records an encrypted append-only audit and releases
+the reservation as a verified zero-dispatch amount. The operator must inspect
+the source site and attempt report before applying the preview. This path does
+not apply to timeouts, lost provider responses or other calls such as 3714.
+
+Run the additive migration first. The local qualification helper
+`scripts/qualify/ResolveCandidate165NonDispatch.php` provides a read-only
+`PREVIEW` and a version/hash-bound `APPLY` for the registered call. No provider
+request is sent by either command.
+
 ## Operator receipt review
 
 In **AI Usage**, an explicitly authorized manager can open an eligible call and

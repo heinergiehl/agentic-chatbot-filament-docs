@@ -5,6 +5,21 @@ methods, routes, commands, views, configuration keys, tags, or assets not listed
 here are internal implementation details and may change without compatibility
 aliases.
 
+The unreleased capability-metadata change requires Agent runtime/compiler ABI v4
+and fresh Agent publication; see [Upgrading](../UPGRADING.md). It adds no host API
+or compatibility adapter. `import_basis` is MCP authoring data only, never an
+execution contract. Capability Bridge's `definition_valid` means definition
+validation, not assignment, publication, execution testing or dialogue acceptance.
+Its authorized Agent preview shows source pins, canonical and provider tool
+definitions, budgets and explicit configuration-only omissions without dispatch.
+
+The unreleased N01 dialogue contract uses Agent runtime/compiler ABI v12 and
+`agent_tool_projection.v10`; affected Agents require fresh publication. Native
+text answers replace the general Claims answer and review protocol. Historical
+presentation context and correction handles remain internal and confer no
+execution authority. N02–N05 finish input, recovery, migration and live
+acceptance. N01 adds no supported host API entry or adapter.
+
 ## Filament plugin
 
 Register a new plugin instance on each Filament panel. `widgetEnabled()` affects
@@ -182,6 +197,24 @@ can clarify. Resolvers normalize data only—they do not select routes or author
 capability execution. They must be deterministic and side-effect-free; any
 external lookup remains a deployed workflow capability executed through the
 package gateway.
+
+## Isolated Data Resource write tests
+
+The supported host staging interface consists of
+`DataResourceWriteTestRunner::exportCandidate()`, `review()` and
+`executeConfirmed()`, `DataResourceWriteTestReview::summary()` and `reviewHash()`,
+and `DataResourceWriteEvidence::import()`. Resolve the services through Laravel
+and pass the saved Playbook from an authorized administration context. Inspect
+the complete summary before confirming its exact hash. The permit object and
+other service methods remain internal; they are not a transport or queue API.
+
+Configure `data_resources.write_testing.environment_id`, `signing_key` and
+`production_targets` in the host. Evidence signing uses a dedicated secret shared
+only by the trusted production and isolated staging applications. Production
+target overrides are accepted only in staging/testing applications and never
+change an Eloquent connection. The normal Agent test path cannot use these
+permits. See [Data Resource staging evidence](DATA_RESOURCES.md) for the export,
+confirmed test, evidence import and publication sequence.
 
 ## Solution Kit providers
 
@@ -361,6 +394,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolution",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolutionContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityEntityResolverRegistry",
+    "Heiner\\FilamentAgenticChatbot\\Services\\DataResources\\Testing\\DataResourceWriteTestRunner",
+    "Heiner\\FilamentAgenticChatbot\\Services\\DataResources\\Testing\\DataResourceWriteTestReview",
+    "Heiner\\FilamentAgenticChatbot\\Services\\DataResources\\Testing\\DataResourceWriteEvidence",
     "Heiner\\FilamentAgenticChatbot\\Services\\Connectors\\Webhooks\\ConnectorCompletionWebhookVerifier",
     "Heiner\\FilamentAgenticChatbot\\Services\\Connectors\\Webhooks\\ConnectorCompletionWebhookVerifierRegistry",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityInventoryContext",
@@ -587,6 +623,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "data_resources.resources",
     "data_resources.scope_sources",
     "data_resources.scope_values",
+    "data_resources.write_testing.environment_id",
+    "data_resources.write_testing.production_targets",
+    "data_resources.write_testing.signing_key",
     "database.charset",
     "database.connection",
     "database.database",

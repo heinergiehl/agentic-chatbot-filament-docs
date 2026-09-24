@@ -2,6 +2,470 @@
 
 This document covers required steps when upgrading between public releases.
 
+The current conversation/diagnostics work remains an unreleased local candidate on Agent runtime ABI v10. The v9 steps below document the earlier transitional cutover. Current offline evidence uses the locked Laravel AI 0.11.2 graph; Laravel AI 1.0.0 is a separate migration decision, not an implicit upgrade step. The [S10 evidence](docs/plans/2026-09-24-s10-operating-evidence.md) records the compatibility boundary and open host/release gates.
+
+## Unreleased development cutover: source-bound offers and Agent ABI v9
+
+The coordinated conversation-reliability cutover uses Agent runtime/compiler
+ABI v9. S2 supports `published_alias`, `user_literal` and explicitly published
+`verified_resolver` offers; the remaining reliability slices are not
+release-complete. There is no separate reliability
+profile. Portable tool loading from v8 remains part of the contract. Publish
+fresh candidates only for isolated testing; this change does not activate them.
+Hash-valid v8 and earlier deployments are rejected without rewriting their
+contracts, hashes or test evidence. Playbook and AgentGraph ABIs are unchanged.
+
+S5 adds optional `agent.read_dependencies[].canonical: {max_age_seconds: 300}`
+inside this unreleased ABI v9 candidate. It requires both endpoint identity
+contracts and mandatory target proof, with freshness from the source turn.
+The target schema accepts exactly one required identity input, checked with
+exact response identity; additional inputs and composite targets are rejected.
+Existing links remain optional and keep their
+hashes/meaning. Publish new Connector revisions and an isolated Agent candidate
+to opt in; old deployment artifacts and historical evidence gain no authority.
+The Gateway boolean identity verdict now accompanies its execution receipt.
+The [S5 handoff](docs/plans/runtime-reliability/S5-result.md) records the provider
+fixture, verification limits and external-host integration step.
+
+The [S8 integration record](docs/plans/runtime-reliability/S8-result.md) records
+real publication and persisted deterministic tests on a disabled external-host
+candidate. It does not authorize activation. The synthetic location contract is
+not a verified mapping for wttr.in or Open-Meteo. UI persistence and live model
+quality remain separate acceptance gaps; no measured token or cost saving is
+claimed from scripted model responses.
+
+S8d adds opt-in bounded provider selection as a partial integration slice.
+ABI v9 deployments without the new mode remain compatible. The additive
+`read_dependencies[].offer.mode: bounded_selection_v1` requires new operation
+and Agent publication; old runtimes reject this unknown policy. The bundled
+Open-Meteo geocoding decoder is pinned by key/version/implementation hash, so
+adapter changes require fresh Workbench evidence and new revisions/candidates.
+Never rewrite an existing artifact. The shipped profile supports explicit
+public location-ID selection and verification only. Forecast binding and
+model/UI acceptance remain separate prerequisites for a public weather Agent.
+See [ADR 0026](docs/adr/0026-bounded-provider-location-selection.md).
+
+S8e adds opt-in `canonical.mode: request_tuple_v1` and an implementation-pinned
+`request_binding` descriptor for complete required input tuples from one fresh
+verified flat source record. The Open-Meteo forecast profile uses this mode for
+location ID, latitude and longitude. It labels local request provenance
+separately from the provider's forecast grid; it does not fabricate provider
+identity. Existing scalar canonical links retain their stricter single-input
+contract. New code, Workbench evidence, Connector revision and paused Agent
+candidate are required; old artifacts are unchanged. This completes the local
+provider chain, while model/UI acceptance and public activation remain open.
+See [ADR 0027](docs/adr/0027-canonical-request-tuples-and-grid-forecasts.md).
+
+S6 adds private `chat_turn_progress.v2` with bounded `agent_execution_event.v2`
+observations in the existing `progress` column. No migration or backfill is
+required. Old v1 stage progress and v1 activity remain readable; old terminal
+outcomes replay unchanged. The model hides the stored progress column; use the explicit public
+projection. Private presentation/execution receipt versions remain unchanged.
+Reverting to an older candidate loses v2 activity presentation, not canonical
+outcomes; never rewrite receipts or immutable deployments to restore a display.
+
+Direct debugger-service callers now need the same authenticated conversation
+and diagnostics authorization as the existing Filament page. A host with
+record-aware gates must apply its tenant/ownership SQL scope for both
+`bot_conversations.authorization` and
+`bot_conversations.diagnostics.authorization`. Missing scope fails closed.
+There is no browser or runtime argument-logging switch. S7 consumes the new
+public progress/SSE contract; its widget presentation is not part of S6.
+See [bounded activity](docs/EXECUTION_ACTIVITY.md).
+
+The encrypted Connector context is now `chat_turn_connector_context.v3`, with
+`connector_input_offer.v2` source, scope, deployment, expiry and delivery proof.
+Canonical delivery advances the pending revision. Native callers must use the
+next turn's actual revision, not the pre-commit revision. The structured answer
+may propose an optional `questions[].offer_value`; the existing prose review
+and independent source verification both apply. The native confirmation control
+remains `{offer_id}` with the entire visitor reply bound by the server.
+
+Resolver offers require a fresh candidate publication with an explicit
+`agent.read_dependencies[].offer` policy, for example
+`{"max_candidates":12,"max_age_seconds":300}`. Both endpoints must be pinned
+Connector reads; the source requires result identity and the target a public
+literal string. The link's source pointer selects the exact public value; a
+single `/0/` segment may enumerate a bounded candidate collection for offers.
+Other target fields, coordinates and opaque IDs receive no authority from a
+label confirmation. Existing links without `offer` remain invocation-local.
+Source evidence and its successful execution must be checkpointed in the offer's
+own turn and preserved through canonical commit. Earlier historical receipts and
+versioned host-resolver labels are not implicitly upgraded into this authority.
+
+S3a/S3b project `agent_execution_context.v1` from existing committed receipts.
+The same bounded snapshot now travels through response copies, checkpoints and
+review; its optional versioned `execution_context` member is stored in the
+existing private encrypted presentation receipt. Old receipts without that
+member remain readable; no backfill or new task table is needed. Rollback to
+code unaware of that member cannot restore expanded private receipts: preserve
+canonical committed outcomes and drain isolated candidate work before rollback.
+
+`agent_tool_projection.v7` uses the same frozen history and live status offers
+for admission and dispatch. An `execution_status` claim selects only an exact
+`receipt_ref` and `capability_key`; the server supplies status and the published
+label. Historical output explicitly names the original source-turn completion
+time. It does not assert a new observation or admit historical result facts.
+`answer_review.v5` binds bounded execution receipts and pending metadata alongside
+visitor sources. Zero current calls no longer bypass answer admission when
+verified history, pending inputs or technical attempts exist. Invalid/unavailable
+review preserves supported facts/status or the no-verified-current-result notice.
+Ordinary context-free prose retains its deliberate semantic limit.
+
+S4 adds one bounded native correction and two exact candidate assessments per
+invocation. Assessment binding includes deployment/scope, turn/invocation, draft,
+review input, evidence/status, pending/offer revisions and language. The final
+response retains its invocation-local allowance for deterministic finalization;
+there is no cross-turn cache or new durable task state. The shared projection
+includes bounded source-bound feedback, and nested review respects the still-open
+productive reservation. Existing immutable deployments are never rewritten.
+This is still the same unreleased ABI v9 cutover, without a new profile or live
+activation; remaining reliability slices are not release-complete.
+Keep the coordinated candidate isolated until the remaining slices are verified.
+
+No database schema migration or legacy-envelope converter is introduced. Before
+switching workers, classify and drain or explicitly cancel/reclarify incompatible
+open read contexts through their existing owner. Never convert an old question
+into delivery/source proof. Preserve original outcomes for replay. Graph waits
+and unknown external operations retain their exact deployment and block an
+incompatible switch until resolved through the supported path. Never reset them
+or mutate an old deployment to satisfy v9. S8 must test a final newly published
+candidate before any separately authorized activation. See
+[ADR 0025](docs/adr/0025-source-bound-conversation-reliability.md).
+
+## Unreleased: coherent Connector proposals and Agent ABI v7
+
+This earlier cutover introduced Agent runtime/compiler ABI v7, superseded by
+the coordinated v9 development cutover above. Build and test fresh candidates before
+coordinated activation; hash-valid v6 artifacts remain unchanged and fail closed.
+Playbook and AgentGraph ABIs are unchanged. The reviewed runtime is integrated
+on main; package checks do not establish host or release acceptance. See the
+[main integration record](docs/audits/2026-09-20-main-integration.md) for local status.
+
+Connector calls accept sparse `__context` proposals for declared conditions;
+omitted or null fields do not erase retained conditions.
+The optional `__ambiguous_context` list names only declared null-valued fields.
+The existing bounded assessment now verifies the whole proposal and returns
+field feedback without replacement values or visitor questions. Negative and
+unavailable reviews request local argument correction without changing pending
+state. Exact pending selection and independent reads retain their contracts.
+Optional `__rebind` now allows correction of an earlier field assignment within
+one exact open pending revision using action `revise`. It requires an explicit
+published `pending_source_rebinding: true` at each target API policy or context
+field; existing operations remain disabled. Only public scalar visitor literals
+are eligible. Original source identities, task age, dependencies and result
+predicates remain enforced, including independent gateway checks. Enabling the
+flag requires a newly published operation revision and Agent candidate. The
+native input-policy toggle and context JSON retain this metadata without
+rewriting an absent flag during an unchanged edit. See [ADR 0022](docs/adr/0022-coherent-connector-continuations.md).
+
+## Unreleased: natural dialogue and Agent ABI v6
+
+This earlier cutover introduced Agent runtime and compiler ABI v6, superseded
+by v7 above. Publish, test and activate
+fresh compatible Agent candidates before routing live traffic through updated
+workers. Do not modify stored v5 artifacts or relabel their test evidence.
+Existing in-flight turns pinned to an incompatible runtime fail explicitly;
+the widget no longer calls that condition a domain denial.
+
+Natural questions now bind to exact pending IDs/revisions and share the existing
+semantic answer review. Capability descriptions use the model's normal answer
+step instead of the old automatic list. Exact facts and field labels remain
+fallbacks. No new style setting or model-specific prompt tuning is required.
+See [ADR 0021](docs/adr/0021-natural-dialogue-and-context-accounting.md).
+
+Model context admission now uses the existing tokenizer/profile estimate.
+Conservative monetary reservations and configured input quotas are unchanged.
+This does not add automatic large-tool-catalogue search or lossy state compaction.
+
+## Unreleased: complete capability metadata and native interactions
+
+Recreate incompatible resources in this order: import and review Connector/MCP
+operations, test and publish their revisions; review Data Resource fields/scopes
+and Knowledge profiles; repin and publish optional Playbooks; then build and test
+the exact new Agent candidate. Activate only after the host maintenance boundary
+is explicitly approved. Old conversations/pending records are not converted into
+the new interaction format. Resolve running and unknown external effects before
+retiring their deployments, and restart affected workers while idle at cutover.
+
+The existing Run operation inspector now exposes the pinned response schema and
+output mapping, distinguishes MCP transport, and preserves a custom output variable
+when replacing a revision. Review downstream field references against the replacement
+schema. Rebuild/publish matching editor assets with the package PHP source.
+
+That cutover introduced Agent runtime and deployment compiler ABI v5, superseded
+by v6 above. Publish fresh Agent
+deployments after reviewing the imported capability metadata; older ABI pins are
+rejected, never rewritten. Playbook and AgentGraph ABIs are unchanged. No database
+reset, automatic conversion, or live activation is part of this change. Preserve
+and reconcile running or unknown external effects before a host cutover.
+
+Published Connector semantics and admitted tool descriptions retain their complete
+validated text. OpenAPI parameter/schema meanings and typed examples survive import;
+examples are not execution defaults. Oversized annotations fail visibly. Full tool
+schemas count toward routing and request budgets; an oversized offer is rejected
+instead of shortened. The request projection version is `agent_tool_projection.v3`.
+
+MCP drafts store a draft-only `import_basis`. Refresh preserves nonconflicting local
+semantic edits, reports conflicting paths, and retains optimistic draft/environment
+locks. Local execution edits require review. Old drafts without a basis remain
+unchanged until the operator explicitly adopts a discovered definition. Re-test and
+publish the resulting draft; existing published revisions remain immutable.
+
+Knowledge profiles are optional public facts under `meta.knowledge_profile`.
+Republish the Agent to pin edits. Capability Bridge can preview a manageable Agent's
+live or candidate tool offer without model calls, business reads, or pending writes.
+Its configuration token estimate excludes conversation state and provider framing;
+normal runtime budget admission remains required.
+
+## Unreleased: invocation evidence, pending inputs and answer synthesis
+
+The Agent proposes partial domain arguments directly. The server binds the whole
+current visitor message and captures typed tool outcomes before serialization.
+The removed request update tool, request inventory, broad linguistic intent
+ledger and forced direct-read defer/completion protocols have no compatibility
+adapter. Repeated native call identities reuse their result; conflicting arguments
+cannot dispatch again. Published schema, provenance, explicit read opt-out and
+Gateway authorization still govern execution.
+
+`chat_turn_connector_context.v2` owns open direct inputs, including exact revisions,
+source bindings, expiry and current-turn claims. `__pending` selects continuation
+or correction; omission starts a new proposal. Cancellation closes local input
+collection only. `agent_observations.v1` stores current invocation evidence in the
+existing private receipts, never a future request plan. Answer review context is
+`answer_review.v3`; failed-read source receipts are `connector_failed_read_source.v2`
+and encrypted database page payloads use version 2. Graph remains the sole owner
+of Playbook waits, approval, recovery and uncertain external effects.
+
+The source-answer schema carries language and claims, without request IDs or
+open-items. The existing single semantic review and exact-fact fallback remain.
+Rendering failure cannot execute another tool, restore a consumed pending or
+clear Unknown. Displayed selection and order remain bound to committed content.
+
+Before host cutover, drain workers and reconcile open Graph runs and unknown
+effects. Resolve or deliberately retire incompatible direct pending interactions;
+do not replay old checkpoints into this runtime. Recreate and test compatible
+Agent candidates before activation. There is no historical request decoder,
+automatic state conversion or database reset. Task B changes package contracts;
+host integration and activation require the separate cutover work.
+
+Explicitly selected JSON Data Resource columns with pinned `type: json`
+metadata now expose bounded nested facts to answer presentation. No additional
+columns are authorized. Existing MCP operations need a fresh import, normal
+operation test and publication to obtain schema-derived nested output mappings;
+then republish/test their dependent Agent candidates. Existing immutable
+operation contracts are not rewritten and undeclared output fields remain
+excluded.
+
+Widget history now includes a top-level `collect_input` projection for the
+currently open Playbook interaction. The shipped widget matches its pending
+interaction, graph interrupt and payload hash before enabling existing controls,
+including after a provider failure. A completed chat turn does not complete a
+still-open approval. Deploy the updated widget view and clear cached views;
+custom clients should use this authenticated projection instead of inferring
+approval completion from the latest message. This field grants no new authority
+and does not change server-side resolution checks.
+
+The earlier durable-chat prerequisite remains AgentGraph **0.18.1**. Drain
+active workers, back up the configured AgentGraph
+store and run the SDK migration
+`2026_09_12_000000_add_revision_to_agent_graph_runs` on that connection before
+restarting workers. Its revision column deliberately survives rollback.
+Republish and test Agents against this runtime before activation. Previously
+published artifacts are not rewritten or silently treated as compatible.
+The removed conversation checkpoint versions grant no continuation authority in
+the new runtime. Reconcile outstanding work before switching runtimes.
+
+When updating from AgentGraph 0.18.0, install the exact 0.18.1 dependency and
+restart graph/chat workers after draining work. The patch adds no further
+database migration or ABI bump. Republish affected Playbooks through the
+normal release service, then publish and test new Agent candidates against
+those artifacts before activation. Existing 0.18.0 artifacts retain their
+original hashes and are intentionally rejected by the new exact SDK pin.
+The duplicate plugin recovery checks have been removed only after the native
+0.18.1 checks passed the same interrupted-resume and projection tests.
+
+The streaming chat endpoint now accepts durable background work and emits
+`turn_accepted` before closing its SSE response. Run the package migration
+`2026_09_12_000001_add_queued_execution_to_chat_turns`, configure a persistent
+queue connection with `CHAT_QUEUE_CONNECTION`, and start a worker for
+`CHAT_QUEUE` (default `agentic-chat`). Database, Redis, SQS and Beanstalkd are
+supported; synchronous and ephemeral drivers are rejected before admission.
+The queue retry/visibility timeout must exceed the chat worker timeout
+(`max(120, CHAT_MAX_EXECUTION_TIME)` seconds). A value of 360 seconds covers
+the default 300-second turn lease. The connection also needs its normal
+Laravel queue tables or broker setup.
+
+Custom stream clients must handle `turn_accepted` and poll the authenticated
+GET `/chat/{botPublicId}/turn` with the original session and client turn IDs.
+HTTP 202 means pending; final JSON contains the committed projection. History
+includes an authorized `pending_turn` for reconnect. The shipped widget handles
+both. `/complete` stays synchronous and both transports replay the same
+canonical result. Browser disconnects do not cancel accepted execution.
+
+Native Connector partial proposals replace the separate clarification tool;
+final prose cannot create pending input. Playbook text replies use a native
+answer/approve/reject/defer decision against the current waitpoint. Explicit
+widget and operator controls keep their existing authority. Old runtime
+artifacts must be republished; no historical records are rewritten.
+
+Current answers use one internal `claims`/`open_items` format. Mixed historical
+answers add an optional pinned `historical` selection; the old mixed `sections`
+format is removed. Source-backed prose and eligible failed-read questions share
+the existing single review. Internal fixtures must include the actual current
+conversation state rather than relying on historical selection-only examples.
+
+Publication now rejects an explicitly selected Data Resource that the host has
+not registered under the Agent's enabled query policy. Ensure the same resource
+registration runs for web requests, CLI publication and queue workers before
+publishing. Missing registration must not silently remove an Agent capability.
+Restart persistent workers after upgrading code; local `queue:listen` can load a
+fresh worker for each job. Review per-operation field descriptions and mappings,
+then publish and test changed resources through the normal candidate lifecycle.
+
+Review direct Connector schemas before republishing: explicit list bounds above
+25 items and schema `default` annotations now fail direct Agent eligibility.
+The runtime already limited these lists and did not apply these defaults. Use
+published request constants for fixed values, or explicit visitor inputs.
+Empty lists are accepted only when the schema permits them. Regular Connector
+publication and Playbook mapping retain their own supported contracts.
+
+The pagination implementation change also invalidates its older strategy
+bindings, including `core/none`, which shares that implementation. Test and
+republish affected Connector operations first, then publish and test their
+consuming Agents or Playbooks. Do not edit historical strategy hashes or bypass
+the mismatch; a fresh Agent alone cannot make a stale operation executable.
+
+Bounded successful Connector searches can now support reviewed positive answers
+with an explicit selection limitation. Their receipts remain partial; old
+receipts are not backfilled with selection proof. See
+[ADR 0018](docs/adr/0018-bounded-connector-answer-selection.md).
+
+Connector context contracts may publish `input_dependencies`, a map from an
+existing top-level operation input to the context fields on which it depends.
+For example, `{"record_key":["tenant","namespace"]}` invalidates a retained
+record key after an authorized change to either context field. A fresh visitor
+value is required even if that input was originally optional. Equivalent context
+values preserve the input. Republish the operation and consuming Agent to adopt
+this metadata; existing pins without it do not infer dependencies from names.
+
+Source-backed answer claims may omit `request_id` when their current verified
+evidence identifies exactly one request. Explicit invalid references remain
+invalid. Current requests with identical visitor source and quotes share only
+semantic coverage review; their execution authority and evidence stay separate.
+Successful empty database queries carry canonical outcome evidence. Neither
+this evidence nor shared coverage bypasses the normal completion/release gate.
+
+This is an internal runtime contract change. Custom code or test fixtures using
+internal tool schemas, `AgentConnectorDialogue`, or selection-only model
+responses must move to the current request and claim contract. The supported
+host API remains the allowlist in `docs/PUBLIC_API.md`. Historical committed
+answers remain records; the runtime does not infer new request or input
+authority from their text. If an old unpublished resource, deployment or
+conversation is incompatible, recreate it through normal publication and
+candidate testing rather than editing immutable deployment rows or importing
+unverified provenance.
+
+Data Resource filter normalization is opt-in through published
+`resource.filter_input_policies`: exact aliases, declared date formats and
+relative-date expressions with explicit calendar and storage timezones.
+Relative dates bind to the original attested visitor turn. Boolean filters
+also require their visitor source or a published policy. Republish affected
+Data Resources and their consuming Agents after changing these rules.
+Arbitrary translated statuses, guessed dates and model-generated identifiers
+are not accepted as their own evidence.
+
+An Agent may publish up to sixteen acyclic `runtime_config.agent.read_dependencies`.
+Each link names a pinned source and target read capability, result pointer,
+target input, scalar type and entity domain. Both capabilities must belong to
+the same recorded request. Only complete, verified current-turn evidence can
+supply the target input. Selecting the first of several matches is not proof
+of identity. These links cannot populate Playbook inputs or authorize writes.
+Republish the Agent after adding or changing links. Model-facing pagination
+uses opaque query-bound page references; individual later pages do not prove
+a complete collection or total.
+
+Source-backed answers contain request-linked claims and open items. Plain
+conversation does not require a request inventory or a separate claim reviewer. Exact source
+facts and supported sums are checked locally. One additional tool-free call
+to the same deployed model assesses natural wording and complete request
+coverage, within the existing turn deadline. Its result is a semantic
+assessment, not deterministic proof. Usage is recorded under
+`agent_answer_claim_review`, with a one-step, 4,096-output-token and 20-second
+ceiling; lower published or configured output limits still apply. Its lossless
+review payload permits up to 48,000 UTF-8 bytes and 24 claims. This accommodates
+multi-record answers and whole-message coverage without another tool execution.
+Review failure preserves permitted source
+facts while leaving the request open. Include this call in candidate latency
+and usage checks. Knowledge retrieval can use at most three distinct queries
+per turn, at most two for one purpose; only a genuine empty result permits a
+reformulation for that purpose. Provider failures do not trigger search retries.
+
+See [ADR 0015](docs/adr/0015-direct-conversation-proposals.md), the preserved
+invariants in [ADR 0014](docs/adr/0014-conversational-runtime-contract.md), and the current
+runtime, Data Resource and Connector documentation for the exact contracts.
+The [implementation verification record](docs/CONVERSATIONAL_RUNTIME_VERIFICATION.md)
+separates passing software checks from unresolved local-model acceptance.
+
+## Unreleased: source-bound Connector clarification context
+
+Run `php artisan migrate` before directing chat traffic to the upgraded runtime.
+The additive `2026_09_07_000001_add_chat_turn_connector_context.php` migration
+adds nullable `bot_chat_turns.connector_context`. The Chat Turn model encrypts
+this private envelope and hides it from ordinary serialization. It stores pending direct-read
+inputs, declared conditions, original visitor-source bindings, and bounded
+question progress separately from answer receipts. There is no backfill from
+old questions, generated answers, or unverified history.
+
+An executing turn can re-admit its own exact private checkpoint while correcting
+a tool proposal. Its current user message and freshly attested scope remain
+mandatory, and earlier values still need committed source turns. The next turn
+cannot consume that checkpoint until canonical commit. This introduces no
+permission, execution owner, or recovery scheduler.
+
+This optional contract addition does not rewrite existing operation revisions
+or Agent deployments. Operations without `metadata.context_contract` retain
+their exact serialized pins and hashes. To add or change conditions, test and
+republish the operation, then publish the consuming Agent. A previous generic
+`string` input gains no automatic geographic or business-relation validation.
+Use explicit published fields and input/result predicates for conditions the
+provider can support. Nonempty context contracts are rejected on writes;
+Playbooks continue to use their own validation and confirmation contracts.
+
+Operations declaring context conditions add a focused model assessment before
+recording their question or dispatching their lookup. It uses the exact deployed
+model, ordinary governed usage under `agent_connector_context_assessment`, and
+the shared turn deadline, with a one-step/1,024-token/20-second ceiling. No
+assessment is called for operations without conditions. Include this additional
+latency and usage in candidate acceptance. A failed assessment cannot silently
+drop conditions or release a provider call. Every unresolved condition stays
+pending until individually answered; null and unrelated value replies cannot
+silently remove it.
+
+The internal `agent_runtime.connector_context_ttl_minutes` policy defaults to
+30 minutes, clamped to 1–1440; it is not a new host-tunable memory setting.
+The original request creation time controls
+expiry; another question does not renew it. This is an admission limit and
+does not purge stored ciphertext. Existing Chat Turn retention remains in
+effect. Keep the database and the matching application encryption key in the
+host's verified backup and restoration procedure. Once context is unavailable,
+a bare value reply requires a complete new request unless an immediately
+adjacent successful lookup independently proves continuation.
+
+The former adjacent-question operation limit is replaced by pending-request
+state: a repeated unresolved state cannot ask again, while progress can ask
+another field within a six-question ceiling. Runtime controls select, revise,
+start, or cancel a local pending read; they are never API payload fields.
+No additional worker or scheduler is introduced. Neither the new storage nor
+source-quoted model proposals grant capability permission or prove provider
+facts without the published checks.
+
+The migration refuses `down()` rather than discarding pending context. Restore
+a verified schema/data backup with its matching package release and encryption
+key when rollback is required. See [Pending direct-read context](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md#pending-direct-read-context)
+and the package's [ADR 0010](docs/adr/0010-source-bound-connector-clarification-context.md)
+for the authority and compatibility boundaries.
+
 ## Unreleased: private knowledge source uploads
 
 Older published configurations may contain only `knowledge_sources.authorization`.
@@ -46,6 +510,43 @@ Existing source-owned files are skipped when their private contract is valid.
 See [Knowledge source file storage](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#knowledge-source-file-storage)
 for ongoing checks.
 
+## Unreleased: concrete Playbook write approval
+
+Explicit Approval steps now capture and show the exact downstream action before
+waiting for the visitor. The prepared request stays immutable; a trusted input
+correction or a confirmation older than ten minutes requires a new displayed
+request and another confirmation. Pending approvals created by older code have
+no captured request and cannot grant a write silently after the upgrade. The
+existing engine confirmation at the write step obtains the required proof.
+Custom button labels and cancellation retain their authored behavior.
+## Unreleased: governed Data Resource writes
+
+Run `php artisan migrate` to add the append-only Data Resource staging-evidence
+table before importing evidence or publishing a write Playbook. Configure a
+dedicated `AGENTIC_CHATBOT_DATA_RESOURCE_WRITE_TEST_SIGNING_KEY` with at least
+32 characters in the trusted production and isolated staging applications.
+Set distinct `AGENTIC_CHATBOT_DATA_RESOURCE_ENVIRONMENT` values. Existing host
+configs need the `data_resources.write_testing` block documented in
+[Data Resources](docs/DATA_RESOURCES.md).
+
+Write-enabled Data Resource contracts now pin their database target and registered
+model policy. Re-export the exact Playbook candidate, run each insert/update
+step with concrete confirmation against a separate staging database, import
+its signed evidence, and republish the Playbook and consuming Agent. Do not set
+`production_targets` overrides in the production application. The test mapping
+never switches a live Eloquent connection. Ordinary Agent and candidate tests
+remain unable to perform writes.
+
+Registered Eloquent create/update policies now run on the exact scoped record
+inside the transaction. The authenticated host actor must match the runtime's
+attested actor; an unrelated signed-in administrator cannot supply that identity.
+Updates reject stale versions and preserve fractional timestamp precision.
+Cancelled model saves fail and roll back instead of reporting success.
+Read-only resource contracts gain no write permission. Prior deployments,
+write ledgers, unknown outcomes and evidence remain retained. A rollback with
+stored evidence requires restoring a verified backup; it cannot silently drop
+that history. See [ADR 0013](docs/adr/0013-reviewed-integration-writes.md).
+
 ## Unreleased: remote MCP connections
 
 Run package migrations before opening Connector administration. The additive
@@ -61,14 +562,18 @@ through the normal release lifecycle before activation. Existing deployment
 records are not rewritten or silently upgraded. The package continues to reject
 stale implementation fingerprints.
 
-MCP is now restricted to reviewed data reads, including inside Playbooks. There
-is no additional schema migration for this restriction. Existing MCP write
-operations are blocked before dispatch and are not converted to reads; preserve
-their histories and reconcile any prior unknown outcomes. Use a separately
-governed API Connector when an application requires writes.
+MCP reads retain their separate read review. Synchronous create/update writes
+now require `mcp_write_access_review.v1`, fixed targets, tenant/actor scope,
+concrete confirmation, business-success and record-identity checks, and a
+successful isolated staging test for the exact candidate before publication.
+This optional operation contract field needs no MCP database migration. Existing
+unreviewed MCP writes remain blocked; no migration converts a read review into
+write permission. Preserve historical ledgers and reconcile prior unknown
+outcomes before any new attempt. Direct Agent tools remain read-only. See
+[reviewed MCP writes](docs/MCP_CONNECTIONS.md#reviewed-playbook-writes).
 
 Existing custom MCP reads must be explicitly reviewed again in **MCP data sources
-> Review read functions**, tested and republished before use. Their signed review
+> Review operations**, tested and republished before use. Their signed review
 binds the exact server, definition and request scope; changing those values or
 the application key requires another review. Curated GitHub reads require the
 official endpoint, an approved read tool, and fixed owner/repository arguments.

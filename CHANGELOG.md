@@ -4,6 +4,18 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- Discarded provisional conversation bindings for Data Resource intent mismatches proven to occur before admission. Diagnostic traces remain; prior revisions, admitted work and independent changes are preserved.
+- Projected explicit Playbook resolutions through the same conversation-state owner as native tool resolutions, preserving exact run identity and unknown outcomes.
+- Kept still-open approval controls available after an unrelated failed turn using the authenticated current waitpoint from history. History refresh never repeats a message or effect.
+- Preserved bounded nested facts from explicitly selected, JSON-typed Data Resource fields. New MCP imports map only declared structured output fields through the existing output contract.
+- Stopped carrying finished reads forward as input targets solely because answer coverage was incomplete. Expired Connector waits no longer leave orphan request bindings; canonical receipts and genuine continuations remain intact.
+- Kept qualified ordinal lookups separate from explicit references to previously displayed results.
+- Expanded the bounded lossless answer review to 48,000 bytes and 4,096 output tokens. A stale draft open-item can no longer veto an otherwise complete, source-supported HTTP answer with a valid review and no pending input.
+- Added one bounded completion opportunity inside the existing native read loop before accepting an early answer draft, so the Agent can propose a still-unattempted independent lookup.
+- Kept independent same-message lookups separate when an earlier lookup using the same capability created a pending task. Request binding and Connector context admission share the same source-owner filter.
+
 ## [0.19.0] - 2026-09-05
 
 ### Fixed
