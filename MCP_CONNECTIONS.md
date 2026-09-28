@@ -133,6 +133,13 @@ disabled. The existing step, token and evidence limits still apply.
    activate the resulting Agent release. Saving, discovery and operator review
    never grant direct Agent write access.
 
+The supported structured-output schema includes FastMCP's boolean
+`x-fastmcp-wrap-result` root annotation. The original declaration and annotation
+remain hash-pinned; the portable validator checks the declared `structuredContent`
+object and its fields without interpreting the annotation as a constraint or
+unwrapping its `result` field. Unknown extensions and unsupported validation
+keywords still block import. See the [FastMCP output documentation](https://github.com/PrefectHQ/fastmcp/blob/main/docs/servers/tools.mdx).
+
 Refreshing an imported tool is an explicit draft replacement in the discovery
 dialog. It keeps the operation identity and published revision, replaces the
 draft's discovered schema and default mapping, and requires review, testing and
