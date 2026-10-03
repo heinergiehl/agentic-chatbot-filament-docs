@@ -233,7 +233,7 @@ Playbooks.
 
 ### 1. Create the Agent
 
-For a guided support starting point, open **Build > Agents > Use Solution Kit**
+For a guided support template, open **Build > Agents > Use template**
 and choose **Customer Support & Human Handoff**. The wizard explains missing
 provider keys and model-profile blockers while keeping your entered Agent name.
 Installation creates an inactive draft with a handoff Playbook and saved tests.
@@ -242,21 +242,24 @@ Add a missing key under the Agent's **AI Setup** or in the host app, then run
 that action makes a billable provider call. Continue through the same candidate
 test and activation gates below. See [Solution Kits](SOLUTION_KITS.md).
 
-1. Open **Agentic Chatbot > Build > Agents** and create an Agent.
-2. Complete **Essentials**, **AI setup**, and **Review**. Choose its name, job, boundaries, provider, model, and availability. Review the host defaults for access and permissions; optional sections remain available.
-3. Choose the narrowest capability mode that covers its job, then save to open **Overview**. Conversation starters and widget styling are optional.
+1. Open **Agentic Chatbot > Build > Agents** and choose **Create Agent**. This opens the three-step wizard directly.
+2. In **Purpose**, keep **Have a conversation** for a simple Agent or choose **Answer from my content** for an FAQ Agent. Enter its name and job, and edit the suggested boundaries. In **AI connection**, use the configured provider and verified model, or repair missing setup. No provider test runs when the wizard opens.
+3. Check **Review** and create the paused, unpublished draft. For an FAQ Agent, **Overview** leads to **Add first content**; otherwise it leads to the test path. Website access, appearance, and advanced permissions can be adjusted in their own areas after creation.
 
-Ordinary conversation needs no Playbook canvas. Publish and test a candidate, select the tested release, and enable availability when visitor access should begin.
+Ordinary conversation needs no Playbook canvas. Use **Test changes**, check a
+representative answer, select the tested version, and enable availability when
+visitor access should begin.
 
 ### 2. Connect only what the Agent needs
 
-- Add and ingest [Knowledge Sources](KNOWLEDGE_SOURCES.md) for grounded answers.
-- Approve read-only [Data Resources](DATA_RESOURCES.md) for live application
-  records and select them on the Agent under **Tools & Data**. A Playbook is not
-  required for a direct read.
-- Publish exact read [API Connector](API_CONNECTORS.md) operations and select
-  their immutable revisions on the Agent. Use a Playbook Capability step only
-  when the operation belongs to a controlled process.
+- For an FAQ Agent, choose **Add first content** on Overview. Add text, a file, or one web page, then ingest it. The saved source page shows its actual state and whether its current generation is pinned in the selected version. [Knowledge Sources](KNOWLEDGE_SOURCES.md) explains advanced API ingestion.
+- Open the Agent's **Tools & Data > Add capability** and choose **Read app data** for
+  approved read-only [Data Resources](DATA_RESOURCES.md), or **Get live information**
+  for a published [API Connector](API_CONNECTORS.md) read. Select an available
+  definition and use **Assign to draft**. A direct read needs no Playbook.
+  If no suitable definition exists, the same area links to its editor and
+  returns to the Agent with that definition in focus. Assignment changes only
+  the saved draft; test and select a new version before visitors can use it.
 - To start from an API description, open **Connect > API Connectors**, choose
   **Import integration**, and follow [Integration Studio](INTEGRATION_STUDIO.md).
   Its optional AI step reuses an existing centrally configured provider key;
@@ -268,23 +271,41 @@ Ordinary conversation needs no Playbook canvas. Publish and test a candidate, se
 
 Create a Playbook only for a bounded multi-step process. Start with **AI Draft**
 or add one of the twelve Playbook steps manually. Validate and publish the
-Playbook, then explicitly assign it to the Agent. A draft or legacy live
+Playbook, then use **Tools & Data > Add capability > Run a controlled process** to
+assign it to the Agent draft. A draft or legacy live
 workflow pointer grants no authority.
 
 ### 4. Publish, test, and activate a release candidate
 
-Save the Agent and choose **Publish candidate**. Publication snapshots the Agent
-behavior, model policy, knowledge, capability mode, budgets, explicitly assigned
-guardrail policies, and exact Playbook deployments into one hash-verified contract. The active release stays selected; the action saves form changes, including availability, website access, and credentials. Run **Test release candidate** with a representative request. The test
-uses the real persistent chat/runtime path and real reads, but the capability
-gateway blocks productive writes. Only after that exact deployment hash and
-saved Agent fingerprint have passing durable evidence can **Select tested release** atomically replace the previous active release. Availability stays unchanged, so a paused Agent remains paused. Later edits require a
-new candidate and test.
+Choose **Test changes** for behavior and model edits. This saves only the draft,
+reuses a matching verified test version when possible, otherwise prepares a new
+candidate, and opens the test workspace. It does not send a question. The
+selected release and visitor access stay as they were. Candidate publication
+snapshots the Agent behavior, model policy, knowledge, assigned capabilities,
+budgets, guardrail policies, and exact Playbook deployments into a hash-verified
+contract. Use the separate **Enable/Pause**, **Save website access**, **Save
+connection**, and **Save appearance** actions for settings with immediate
+effects; **Test changes** does not save those groups. Widget language changes
+the displayed language immediately and requires a new tested release to change
+the Agent's default response language.
+
+In **Test**, enter a representative question and choose **Test question**.
+When the version has one expected ability it is preselected; with several,
+choose the named ability you mean to check. Knowledge search appears as
+**Answer from own content**. No tool ID or routing mode is needed. Sending may
+call the configured model and approved reads; productive writes are blocked.
+The existing release checks decide whether the bound test passes. Only after
+the exact candidate and saved Agent fingerprint have passing evidence can
+**Select tested version** replace the selected release. Availability stays
+unchanged, so a paused Agent remains paused. Later edits need another test.
+The advanced **Publish candidate** action remains available for operators who
+want to prepare a version separately; it is not a required step before **Test
+changes**.
 
 ### 5. Verify the live Agent
 
-1. Confirm the active Agent deployment hash and attached capabilities.
-2. Run normal, unexpected, and ambiguous wording through **Test live Agent**. This action always uses the active release, even when another candidate exists; candidate evidence is kept separate.
+1. In **Overview**, check the selected version and availability. **Tools & Data** shows which assignments belong to the saved draft and verified test or selected version; hashes are under technical details.
+2. Open **Test** and choose the selected version for normal, unexpected, and ambiguous wording. A separate candidate keeps its own test evidence.
 3. Check a grounded knowledge answer when sources are attached.
 4. If a Playbook is assigned, test its branch, input waitpoint, approval, and
    result path.
@@ -321,7 +342,7 @@ For a page served by the same Laravel app, use the package component:
 
 Every candidate must be active and backed by a hash-verified Agent deployment. The component resolves the uniquely marked public-widget Agent, then falls back to `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`, then the first runnable Agent. An explicit, configured, marked, or fallback Agent that is not runnable is rejected rather than activated or exposed implicitly.
 
-For external websites or pages where you want a fixed Agent, use the `Embed Snippet` action on the Agent edit page.
+For an external website with a fixed Agent, open the Agent's **Website** tab. Add the exact host (or paste an HTTP(S) page URL, which saves only its host), then use **Save website access**. Copy the displayed script tag and add it to that host's page. The tab shows the selected version, availability, host access, signing configuration, and a manual check. Copying the code does not activate the Agent or verify the installation.
 
 Example:
 
@@ -336,6 +357,7 @@ Example:
 The script path is controlled by `widget.script_route`; update deployed snippets when you change it. The package registers that configured path only.
 
 The generated snippet contains no token. The loader verifies the browser origin against the Agent's Allowed Domains, obtains short-lived access from the bootstrap endpoint, and renews it automatically. In production, an empty Allowed Domains list blocks bootstrap even when a permissive compatibility flag is present.
+The default area is used automatically. Advanced areas and public-widget selection are separate options, not steps for a single external website. After inserting the snippet, open the page, load the widget, and send a question to verify the actual integration. That question can incur provider usage. The admin tab continues to show installation as unverified; this manual check is part of operator acceptance.
 
 After the first real conversations land, open the Agent's **Analytics** page to review feedback and citation coverage. The **Knowledge** tab contains only high-confidence cases where a completed production turn durably recorded a Knowledge search, returned no source evidence, and used the safe capability fallback. It does not classify every uncited answer as a gap.
 
@@ -343,7 +365,7 @@ For each verified gap: review the original conversation, start work, create its 
 
 ## 10. Advanced: Server API And Channels
 
-For server API clients or channel connections, create one Agent Access Token per integration in Filament and set the matching channel label for isolated reporting, rate limits, and budgets. Telegram is available by default; Slack and Mailtrap Email are real-provider-tested opt-ins. WhatsApp Cloud API and Mailgun Email are built in but intentionally unavailable by default until their separate real-provider acceptance is complete. Server clients call the JSON complete endpoint:
+For server API clients or channel connections, create one Agent Access Token per integration in Filament and set the matching channel label for isolated reporting, rate limits, and budgets. Telegram is available by default; Slack and Mailtrap Email are opt-ins whose current provider acceptance is still required per connection. WhatsApp Cloud API and Mailgun Email are built in but intentionally unavailable by default until their separate real-provider acceptance is complete. Server clients call the JSON complete endpoint:
 
 ```http
 POST /api/filament-agentic-chatbot/chat/{botPublicId}/complete
@@ -367,7 +389,7 @@ Use this before publishing:
 3. `php artisan filament-agentic-chatbot:doctor` has no `FAIL`.
 4. pgvector installs show `ext-pdo_pgsql` enabled and `CREATE EXTENSION vector` available, or ChromaDB health is green.
 5. Any source used by the Agent ingests to `completed`.
-6. The Agent publishes one immutable candidate while retaining its active release; saved availability and access changes take effect independently.
+6. The Agent prepares one immutable candidate while retaining its active release; saved availability and access changes take effect independently.
 7. **Test release candidate** records passing durable evidence for the exact deployment hash and saved Agent fingerprint before **Select tested release** selects it. Availability remains unchanged.
 8. The widget answers ordinary and unexpected wording through that verified live Agent deployment.
 9. Optional Playbook execution appears in `Playbook Runs`, and any approved `store_submission` output appears in `Submissions`.

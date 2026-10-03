@@ -95,23 +95,38 @@ OpenAPI, Postman, and cURL are import formats, not execution formats. The
 deterministic importer produces the same closed package operation contract
 regardless of source.
 
-Required OpenAPI query collections preserve their declared serialization:
+Required and optional OpenAPI query collections preserve their declared serialization:
 flat arrays support `form` with either `explode` value and `spaceDelimited` or
 `pipeDelimited` with `explode=false`; flat objects support `form` with either
 value and `deepObject` with `explode=true`. Compound path/header parameters,
 nested query collections, `content`, `allowReserved`, and unsupported styles
 produce a specific import diagnostic instead of a request that silently changes
-the source semantics. Optional parameters remain explicitly reported for manual
-mapping. See [Query parameter serialization](API_CONNECTORS.md#query-parameter-serialization).
+the source semantics. Optional query/header parameters stay optional in the
+draft schema and are omitted from the request when absent. An optional whole
+request body still needs an explicit body omission mapping and fails import with
+a diagnostic instead of being converted to required.
+See [Query parameter serialization](API_CONNECTORS.md#query-parameter-serialization).
 
 OpenAPI 3.0 `nullable: true` and OpenAPI 3.1 types such as
-`["string", "null"]` are preserved in response schemas. Nullable tool inputs
-require a manually reviewed supported mapping. `oneOf`/`anyOf` and ambiguous
-multi-type schemas are reported as unsupported; the importer never chooses an
-arbitrary branch. Unsupported input schemas block import of that operation.
+`["string", "null"]` are preserved in input and response schemas. Required,
+enum and nested schema constraints are retained. Unsupported input compositions
+such as `oneOf`, `anyOf` and `allOf`, and other unsupported validation keywords,
+remain visible in an inert draft and fail publication with their field path.
+Ambiguous multi-type schemas fail import; the importer never chooses a branch
+or flattens a composition.
 An unsupported response schema is left unset with a visible warning. Supply a
 reviewed response schema before testing and publication; an installed draft
 does not establish response validation.
+
+Imported operations remain inactive drafts with strict literal/enum policies.
+Remote descriptions, HTTP methods and tool names do not enable public
+interpretation. In the normal Operation workbench, choose the public read review
+profile and explicitly review each public field path, including nested children
+and array items. The publication preview compares the compiled candidate's field
+policies with the current immutable revision, or the strict default for a new
+operation. Test and publish the candidate through the existing flow; prior
+revisions and Agent deployments retain their pins. See
+[Connector authoring](API_CONNECTORS.md).
 
 ## AI Authority Boundary
 

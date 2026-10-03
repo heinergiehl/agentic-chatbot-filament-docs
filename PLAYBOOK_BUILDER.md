@@ -1,5 +1,9 @@
 # Playbook Builder
 
+The Playbooks list reports total inventory only. Each row retains its verified
+release status and repair warnings; the Updated column is hidden by default and
+can be restored through the native column selector.
+
 The Playbook Builder is the optional visual editor for bounded Agent processes.
 Creating and publishing a conversational Agent does not require opening it.
 

@@ -1,8 +1,12 @@
 # Agent Runtime Architecture
 
 This document describes the implemented runtime after the agent-first hard cutover.
-The current native/durable changes are unreleased; candidate acceptance remains
-incomplete as recorded in [the acceptance evidence](CHAT_RUNTIME_ACCEPTANCE.md).
+The current Runtime Recovery v3 implementation is an unreleased candidate on
+Agent runtime ABI v32 and compiler ABI v17. K9 integrates deterministic recovery
+evidence; its required gates and host/provider acceptance follow
+[STATUS](plans/runtime-recovery-v3/STATUS.md). Deterministic package checks do
+not establish real host, provider or user acceptance. See the
+[RC-08 user walkthrough](plans/runtime-convergence/handoffs/USER_E2E.md).
 
 [ADR 0025](adr/0025-source-bound-conversation-reliability.md) is the accepted
 target for source-bound offers, typed cross-turn status and one bounded native
@@ -138,13 +142,23 @@ verified read. Empty and Length finishes can continue; incomplete or
 nonexecuted tool proposals cannot dispatch. An identical proposal with a new
 provider call ID reuses its existing rejection or completed read observation.
 The provider finish reason and the SDK Continue signal are recorded separately.
-Answer-only recovery closes tools. An exhausted, failed or interrupted model
-step never promotes draft prose to a finished answer. A terminal Graph recovery
+Runtime ABI v17 uses the turn's typed tool outcomes for local read repair. One
+successful read does not close tools while a sibling has a correctable local
+rejection. The two-recovery-step and answer-only limits remain. Local rejection,
+input need, execution and delivered result are separate observations; a result
+is usable only with a matching successful execution receipt. Answer-only
+recovery closes tools after no correctable work remains. An exhausted, failed
+or interrupted model step never promotes draft prose to a finished answer. A terminal Graph recovery
 uses only execution-matched delivered read data and the authoritative run
 projection. There is no outer empty-response prompt restart or per-tool repair
 counter. Provider errors and unknown effects do not cause an automatic
 post-dispatch retry. Safe rate-limit transport retries retain their
 no-execution/state-unchanged guard.
+Local read repair follows typed nonexecution and `correct_arguments`, without
+an error-code allowlist. An unknown operation closes repair for that operation;
+independent pinned reads may still use remaining native steps. Connector replay
+binds admitted inputs, context, sources, task revision and scope and consumes
+no new dispatch attempt.
 
 Per-invocation technical flags live in the existing agent lifecycle and are bound
 to original SDK options at StartingStep. Pure request projection shares effective
@@ -152,17 +166,99 @@ instructions, live pending state, messages, tool definitions and schema between
 budget admission and dispatch. Pending data stays fresh; its random wrapper
 boundary is stable only for that state instance. Attachment accounting remains
 separate. Native provider tokens/blocks/call IDs are never package control markers.
-The original native step ceiling counts actual attempts across provider failover;
-shared time and usage limits still apply. Review agents gain no
-extra steps. Deferred, nested and interrupted streams have separate cleanup.
 
-The package does not force a tool or restrict its list after local argument
-feedback and a subsequent model stop. That extra forced chance is superseded;
-voluntary correction and safe failure remain. Its removal and removal of the
-Flash-Lite cue have not been evaluated for real-model answer quality.
+Runtime Recovery v3 K1 uses `agent_tool_projection.v13`. Admission serializes
+the native SDK request body with the dispatch JSON encoding, including provider
+options, tool results, continuation framing and streaming options. The native
+step retains that ephemeral projection for dispatch; a new attempt invalidates
+it and requires fresh admission. The replaced section-based budget request and
+Ollama-only request reconstruction are removed. The initial preflight and every
+step after any history reduction use the same serializer.
+
+Runtime Recovery v3 K3 removes the duplicate-only productive compactor. Within
+the deployment's unchanged native history window, the latest complete turn and
+turns containing bound draft values, published conditions, interpreted visitor
+sources or still-binding delivered input offers/questions are protected by their
+original message IDs. Other whole turns are removed oldest first, retaining
+original order. The existing reader excludes unanswered user-only turns before
+segmentation, so a later incomplete turn does not displace the latest complete
+one. Reduced history is explicitly described as discontinuous. Original rows,
+drafts and receipts are not changed by projection.
+
+Each reduction recomposes the existing bounded session-memory snapshot and
+rebuilds offered visitor provenance solely from retained native user messages.
+Memory remains optional background, never source authority. Bound sources outside
+the native window still pass the scoped original-content checks at reload and
+Gateway admission; they are not offered as native history. Missing originals
+fail closed. A protected minimum that cannot fit rejects before dispatch.
+The turn owner locally completes a capacity rejection with a persisted technical
+answer and typed operator error, retaining received input and unchanged pending
+state. JSON/SSE replay uses that same canonical commit; the next normal turn
+remains admissible, subject to the same protected minimum and budget. Successful
+reads retain their evidence after answer failure, pending requests remain open,
+and unknown outcomes require reconciliation before repeating the operation. No additional model
+request, recovery credit or external retry is created. K3 requires fresh ABI v26
+Agent candidates; compiler v16, native projection v13, Observation v4 and
+Connector Context v5 are unchanged.
+
+ADR 0021's accounting bases remain distinct: published input quotas and financial
+reservations retain the conservative UTF-8 upper bound; physical model-window
+admission retains the existing tokenizer/provider-profile estimate plus the
+same attachment/framing allowances and per-request reserved output. Output is
+not subtracted from the published input quota. When estimates are comparable,
+the effective input ceiling is the smaller of that quota and the known model
+window minus output. An unknown window does not bypass the quota. Capacity
+diagnostics name the violated constraint, estimate source, token unit and limit;
+request byte counts and input/context estimates remain separate. No prompt or
+provider result text is added to operational diagnostics. ABI v23 deployments
+remain readable and are explicitly rejected for execution; K1 does not publish
+or activate replacements or migrate open conversation authority.
+
+The original native step ceiling counts actual attempts across provider failover;
+shared time and usage limits still apply. There is no productive answer-review
+agent. Deferred, nested and interrupted streams have separate cleanup.
+
+The S3 candidate under ADR 0034 permits one ordinary Stop after a typed local,
+nonexecuted correction to continue in the existing native SDK loop. Stop,
+Length and Empty recovery share the same two credits, original step ceiling,
+deadline and usage budget. A second ordinary Stop ends unresolved work, even
+when empty. Genuine input needs, protected evidence, definitive policy boundaries
+and unknown effects do not grant this chance. The runtime neither forces a tool
+nor restricts its list to a rejected operation. Real-model quality remains open.
+
+`AgentToolOutcome` distinguishes local correction, missing input, protected
+evidence, policy boundary, success/no-match, provider failure, unknown and pending.
+ConversationState projects the latest typed outcome for each selected operation;
+its `agent_observations.v3` snapshot keeps execution authority and result usability
+separate. Historical v1/v2 remain readable. Identical repairs reuse the native
+adapter's turn-local canonical proposal and selected operation, independent of
+provider call IDs. The adapter remains bound to the immutable tool, deployment
+and authority scope; exact draft controls include revision. Independent reads
+and explicitly selected refresh use their existing admission and Gateway checks.
+Unknown effects keep reconciliation, with no automatic repair dispatch. Short
+feedback projects affected fields under the offered schema instead of repeating
+the full tool definition. Observed outcomes and evidence references enter the
+last native composition; continued draft text never becomes the canonical answer.
 Supported unstructured high-level streaming and direct SDK schema-format streams
 are tested separately: the installed SDK rejects high-level structured-agent
 streaming, which this package change does not enable.
+
+Runtime Recovery v3 K2 replaces the current writer with `agent_observations.v4`.
+The bounded private snapshot has one `sources` table keyed by message ID and
+SHA-256 of the original message content. Each entry holds `message_id`,
+`content_sha256` and the existing bounded `quote`; invocations hold `source_ref`
+and `latest_source_ref`. Equal text from different messages remains distinct.
+The outer `source_message_id` still identifies the current turn. The canonical
+reader validates same-snapshot references and exposes ephemeral resolved fields;
+receipt and diagnostic consumers recheck original content, role and scope.
+Pure v1/v2/v3 readers remain, without a historical writer or restored authority.
+Admission counts the actual escaped v4 snapshot, reserves bounded outcome growth
+for unfinished calls and the final commit, and keeps the 8,000-byte source,
+24-invocation and 65,536-byte snapshot limits. A refused invocation cannot
+dispatch. Execution and answer states retain their existing meanings.
+This requires fresh ABI v25 Agent candidates; compiler ABI v16, native schema
+projection v13 and Connector Context v5 are unchanged. Existing deployments and
+receipts are not rewritten. Host cutover and release acceptance remain pending.
 
 S4 holds native DeployedAgent text until `finalAgentStepResponse` has made
 its response decision. `AgentDraftTextBuffer` retains at most 48,000 serialized
@@ -227,17 +323,21 @@ response locale. The default is `behavior.default_language`, or the first
 permitted locale when that default is excluded. No new publish migration or
 Agent fixed-language field is introduced.
 
-Native and prompt-based answers receive the same permitted set and default.
-`AgentEvidenceAnswer::admitLanguage` reads the existing bounded response envelope;
-its permitted `language` selects presentation, not evidence or execution
-permission. The existing `AgentAnswerReviewCandidate` carries that choice through
-claims, facts, questions, failure notices, historical sections and supplements.
-Malformed or excluded declarations retain the safe fallback path without
-relabeling model prose. All nested claims, references, public fields, sources
-and byte limits still require their original checks. The choice is also included
-in the existing `AgentAnswerReviewContext` and review payload hash, even when
-there are no claims. The tool-free reviewer uses this value instead of making
-another language choice. Stale coverage from another language is rejected.
+Native answers receive this policy as instructions. There is no general locale
+envelope, Claims parser or separate answer reviewer; the finalizer bounds native
+prose and projects witnessed source cards under ADR 0029. Technical fallback
+uses the published default without certifying the language of model prose.
+
+Runtime Recovery v3 K8 removes the unused current review payload/context,
+coverage construction and coverage commit writer. The unused historical language
+grammar and review-only relative-date heuristic are physically removed; current
+receipt resolution and published calendar/source admission stay in their existing
+owners. `AgentAnswerCoverage` retains
+only the pure `answer_coverage.v1` validator used by historical receipt restore.
+Historical coverage and reviewer events stay readable and immutable; they do
+not certify new native prose or authorize execution. No new tool abstraction or
+productive authority is introduced; the manifest-bound adapter retains the
+specific read, knowledge, Playbook and cancellation contracts.
 
 A short continuation can follow the model's conversation context without a
 server heuristic constraining its schema to one locale. `VisitorMessageLocale`
@@ -391,12 +491,36 @@ Agent ABI v8 pins `portable_exact_names.v1` tool loading. Small offers remain
 eager; larger offers expose the complete bounded name/purpose directory and
 load exact original schemas for the next native step. Admission, wire projection
 and the SDK's static dispatch handlers share the same frozen step offer.
-Pending tools and controls stay available. Publication rejects oversized
+Permanent controls stay available. Runtime Recovery v3 K4B replaces the forced
+pending-tool exposure: Lazy drafts remain in the compact live context with their
+exact manifest tool names and current selections, while only explicitly loaded
+capability schemas enter the next step. Loading never executes a capability;
+hidden dispatch in the loading batch remains rejected. Eager offers keep every
+schema and their published byte ceiling, including dynamic pending-schema growth.
+Draft proposal instructions live in selected schemas rather than duplicate system
+prompt paragraphs. Load, step, call, money and deadline limits do not refresh on
+recovery. Publication rejects oversized
 directories, unloadable tools, unsupported modes and insufficient configuration
 quota before candidate promotion. See [ADR 0024](adr/0024-portable-deployment-tool-loading.md)
 for exact byte, native-step, deadline and financial-capacity boundaries.
 
 `AgentDeploymentPublisher` creates an immutable contract and deployment hash.
+The local Ollama configuration extension pins an optional boolean
+`runtime_config.agent.ollama_think` as `model.ollama_think`. Only the exact Ollama
+driver accepts it. Publication and runtime validation reject null, strings,
+numbers, objects, arrays and use with another driver. An absent value omits
+`think` and preserves the SDK/server default. The native SDK transports a pinned
+value as top-level `think` in previews, inference, streaming and technical
+continuations; it is never read from mutable authoring or injected into HTTP.
+Context and output budgets retain their existing admission checks.
+
+This requires runtime ABI v32 and compiler ABI v17: the previous implementation
+would silently ignore the new pin. Exact compatibility manifests reject that
+cross-version execution. Old immutable artifacts and hashes remain unchanged;
+normal republication, candidate tests and activation are required. Native
+projection v17, receipt formats, Playbook ABI and AgentGraph ABI are unchanged.
+This local candidate extension does not establish dialogue quality or a release.
+
 Authoring may explicitly select `agent.tool_loading_mode = eager_bounded.v1`
 for a modest catalogue. This hash-pinned alternative offers every original
 schema immediately, caps the complete offer at 32,000 UTF-8 bytes at publication
@@ -445,7 +569,80 @@ There is no global tool or Playbook registry, client-selected operation or
 workflow ID, mutable authoring fallback, or legacy main-workflow conversation
 owner.
 
+Runtime Recovery v3 K4A/K4B uses native projection v15 and Agent runtime ABI v28.
+Before each native dispatch, optional direct-read data and Knowledge chunks
+compete against the exact serialized next request, with the same output reserve,
+attachments, provider options and framing used by usage admission. Eligible whole
+history turns are removed first, refreshing memory and offered visitor provenance.
+Then the largest optional result is reduced one atomic record or chunk at a time;
+ties follow invocation order. Standalone objects and scalars are atomic. Remaining
+record identities, units and periods are kept together. Tool call/result pairs,
+execution statuses and evidence IDs remain present, including when all optional
+data is omitted. The complete minimal envelopes and untrusted wrappers count;
+if they cannot fit, the existing capacity failure path terminates locally.
+
+This projection never mutates canonical evidence or re-queries a source. Existing
+stored-payload privacy and size limits remain upper bounds. Diagnostics distinguish
+`stored_payload_limit`, `model_result_limit`, `knowledge_context_limit` and
+`model_request_capacity`; provider windows remain separate upstream evidence.
+An omitted list cannot prove absence. Knowledge matching a source but unable to
+include a whole chunk reports capacity exhaustion rather than `no_evidence`.
+The existing retrieval, Gateway authority, step credits and deadlines are unchanged.
+New writers, manifests and historical evidence are not migrated in place. Compiler
+v16, Observation v4, Connector Context v5 and Playbook/AgentGraph ABI v1 are unchanged.
+
+K5 advances Agent runtime ABI to v29 for independent stored result
+references. Native projection v15, compiler v16 and all stored formats above are
+unchanged. No existing deployment or receipt is rewritten.
+
+K6 uses runtime ABI v30 and native projection v16 for the uniform direct-read
+envelope below. Connector Context advances to v6 for member provenance and
+unresolved pointers. Compiler v16, Observation v4, presentation receipts v1 and
+Playbook/AgentGraph ABI v1 stay unchanged. K7 advances runtime ABI to v31 for
+independent historical selections described below.
+
+The K4B milestone also closes two characterized recovery regressions. Snapshot
+projection constructs fresh invocation arrays, including when a checkpoint caller
+holds a PHP reference to a canonical observation. Repeated snapshots never replace
+that observation's original source fields. Native history uses living Message
+objects as WeakMap keys: a released history object's recycled numeric ID cannot
+identify a later SDK message as removed history or suppress the current input.
+
 ## Direct Read Capability Invocation
+
+RC-02 candidate: [ADR 0032](adr/0032-source-bound-read-drafts.md) governs
+source-bound Connector and Data Resource drafts in the shared durable context.
+The current envelope is `chat_turn_connector_context.v6`; historical v3/v4/v5 readers remain. Its bounded member sources preserve independently patched literal fields and their original messages; unresolved nested pointers remain blocked across turns. Compaction protects all member sources. No persisted artifact is rewritten; RC-02 introduced
+Agent runtime ABI v18 and compiler ABI v13. Set, unset and nullable values are
+distinct. A proposed question becomes an operative question only when its exact
+text appears in the canonically committed assistant message. Short replies may
+select one verified draft at its revision, including after a side question and
+reload. A pure text question without a draft offers a bounded committed source
+turn and exact original visitor quote. The Data Resource no longer requires an
+immediately preceding successful query. Earlier version and review descriptions
+below are retained as historical design context where superseded by ADR 0029,
+ADR 0031 and ADR 0032. RC-03 candidate: [ADR 0033](adr/0033-native-read-selection-and-attested-read-policy.md)
+adds explicit completed-read selection for Connector continuation and historical
+replacement or refresh. It removes word-list vetoes. Authenticated
+`direct_read_policy=deny` blocks Connector, Data Resource and knowledge reads
+at native adapters and at the Capability Gateway. New Agent publications use
+runtime ABI v19; the compiler ABI remains v13.
+
+RC-06 candidate: a public Connector `search_query` can make one additional
+material query variation after a successful first read when the published
+`metadata.search_refinement_limit` permits it (default 1, explicit 0 disables).
+The other admitted request inputs and context remain bound; an identical query
+replays, while each changed query consumes a real dispatch slot and the same
+turn budget. A bounded or empty search result does not prove global absence or
+the identity of another entity. The direct-read presenter compacts published
+field metadata before sizing the wrapped model result, then omits whole fields
+or records with an explicit projection limit. It never offers a JSON prefix as
+source data. Small independent results keep their own budget. A committed text
+exchange may be offered as a bounded historical source even without question
+punctuation; the model chooses relevance and the server still verifies source,
+scope, revision and actual assistant delivery. A quoted question mark has no
+special authority. Normal mixed answers remain one Agent turn; terminal model
+failure uses only execution-matched stored read evidence.
 
 Remote MCP tools are Connector operations with an explicit `mcp` transport.
 Discovery creates only drafts. Published operation revisions pin tool declarations,
@@ -501,10 +698,32 @@ metadata helps a smaller model associate terms such as “Bisaflor” with a
 Pokémon lookup without adding API-specific routing classes. Metadata proposes
 the route; it never authorizes it.
 
+Public interpreted domain arguments use the existing canonical operation input
+policy under [ADR 0034](adr/0034-public-interpreted-input-and-native-continuation.md).
+`source=interpreted`, `field_role=public_domain` and `exact_source_required=false`
+permit schema-valid interpretation without a literal substring or alias. A
+mutable author preset expands once in the Publisher and never enters runtime
+metadata. Nested children need their own positive policy; protected roles,
+Writes, confirmation, credentials, destinations and incoming read dependencies
+cannot use this mode. The same Binder records server-owned `model_interpreted`
+provenance bound to source turn, visitor context, operation/policy hashes and
+scope. The Gateway rechecks policy pins and sources before dispatch. This proves
+schema admission, not semantic truth, identity or approval. S2 uses the current
+visitor message and the visitor-only references from the actual native history
+offer: at most twelve prior visible conversation messages, subject to smaller
+published history/token limits and whole-turn compaction. Summaries, assistant
+prose and tool results add no input authority. The ordered server reference is
+hashed as `offered_visitor_context.v1`; the model supplies no source metadata.
+Retained fields keep their original bound references in the existing encrypted
+source entry and reverify content, source turn, deployment and scope on reload.
+Structured
+field diagnostics carry root `input`, exact `field_path`, category and bounded
+rule codes. No host or live activation is claimed.
+
 Each call is checked twice: the tool adapter and `CapabilityExecutionGateway`
 discard undeclared top-level provider arguments without interpreting, persisting,
 or forwarding their values. They independently bind new declared arguments to
-literal evidence in the latest visitor message, rebind retained pending-read
+the published source policy, including literal evidence in the latest visitor message or explicitly reviewed interpreted public fields under ADR 0034, rebind retained pending-read
 values to their original persisted user sources, apply exact published aliases,
 optionally apply the pinned `safe_v1` matcher only against that published alias
 map, use a registered deterministic resolver only for `capability_resolver`, or
@@ -584,15 +803,18 @@ A scalar read input may explicitly publish
 success, the runtime stores only those admitted fields in an encrypted,
 hash-checked binding scoped to the conversation, capability, immutable Agent
 deployment, and source user message. For the immediately following persisted
-user message, a strict bounded follow-up grammar such as “Und morgen?” may remove
-that server-owned field from the model-visible tool schema; the server supplies
-the exact prior value. Model-supplied historical values remain rejected by the
-unchanged input admission contract. Unknown words, expiry, an intervening user turn,
-a different conversation/capability/deployment, non-scalar inputs, writes, and
-model-proposed historical values all fail closed. Expired ciphertext is pruned
-by the package scheduler.
+user message, the model may select a short offered result handle through
+`request.ref` with `action=refresh` or `revise`. Refresh supplies empty `input`;
+revise supplies only new domain proposals. Admission and the Gateway recheck the handle and rebind
+only its eligible prior fields. Without the handle, a new read gets no prior
+input. “Morgen?” and “Und morgen?” have the same server contract; the model
+interprets their meaning. Model-supplied historical values remain rejected by
+input admission. Expiry, an intervening user turn, a different conversation,
+capability, deployment or authority scope, non-scalar inputs, writes and
+unoffered handles fail closed. Expired ciphertext is pruned by the package
+scheduler.
 
-Continuation bindings use `binding_version: 2`; their uniqueness scope includes
+Continuation bindings use `binding_version: 3`; their uniqueness scope includes
 `source_message_id`. A successful read in the current turn cannot overwrite the
 previous turn's binding while that earlier source is still needed. Different
 targets for the same capability and source message produce an empty `[]`
@@ -642,8 +864,8 @@ which different entity was returned. Required candidate choices remain unresolve
 
 Connector input questions use the normal native tool with known arguments.
 The binder records missing required fields before a question is delivered.
-For an ambiguous supplied or optional public visitor input, `__clarify_input`
-names the field to leave unresolved; private and server-bound fields are
+For an ambiguous supplied or optional public visitor input, `request.unresolved`
+names its offered `/input/...` JSON pointer; private and server-bound fields are
 excluded. No external dispatch occurs for an incomplete proposal. A semantic
 ambiguity blocks guessed retries in that turn while independent admitted reads
 remain available. Final answer wording can present an issued question, but
@@ -655,8 +877,9 @@ semantic meaning and requirement. Omission reaches the existing input binder,
 which rejects missing essentials before the gateway and supplies a bounded
 clarification request for a public field. The immutable API schema and execution
 checks remain required; native omission is not a new default or continuation
-authority. Verified server-bound continuation inputs remain absent from the
-model schema and cannot be the subject of a pre-call question.
+authority. The model-visible schema retains the field; a selected verified
+handle supplies it only for that call. Without a handle, a genuinely missing
+public field can still become a question.
 
 After a failed Connector result identity, the tool instead supplies a
 `clarification_request` with an opaque request ID and bounded context from the
@@ -759,72 +982,81 @@ A pending API input remains required even when the base schema makes it optional
 A provider mismatch against an already known condition preserves that condition
 for the next lookup; it is distinct from an unknown condition value.
 
-The native model selects an existing pending with `__pending: {id, revision, action}`;
-both the offered and live revisions must match. Omission means a new proposal.
-The shared native input-confirmation object selects only an offered `offer_id`;
-the conversation adapter binds the complete current visitor message as internal
-reply evidence. A model-supplied reply echo receives local correction. Exact
-pending selection, committed-offer admission and Gateway source checks still
-apply; copying or binding a reply is not proof of semantic consent.
-A partial native tool proposal
-retains other admitted arguments and declared `__context` while asking for one
-field. `__context` is separate from API arguments. Existing
-conditions survive ordinary replies: a different value requires a question
-about that condition or an explicit `revise` action with attested current-message
-values. A new proposal preserves other tasks. `cancel_connector_request` requires
-an exact task and revision, closes that local request, and commits
-that change without a provider call or Playbook cancellation. Completed IDs
-also remain closed within the turn, so a stale tool proposal cannot revive them.
-Revision, new-request, and cancellation intent remain semantic model proposals.
-The deterministic evidence check attests value provenance and scope; it does not
-establish linguistic intent or exclude a value merely because it stands alone.
+Every direct HTTP/MCP and Data Resource read uses one closed native envelope:
+required object `input`, optional objects `request`, `conditions` and `evidence`.
+Domain values, including a published field named `request`, stay under `input`;
+only admitted domain values reach the existing Binder/Gateway provider mappings.
+The partial native schema omits required markers from closed object members;
+array item objects retain their complete contract. The full pinned schema still
+runs before dispatch. Allowed empty lists retain their array type in mappings.
 
-A native call may omit its `__context` object or supply null, an empty object,
-or a sparse object of declared fields. Missing or null fields mean no new
-visitor value and preserve previously sourced conditions. The native schema
-advertises optional typed nullable fields in an optional nullable object.
-Unknown keys, nonempty lists and malformed scalar values return local correction
-feedback before review, dispatch or question-state mutation; no coercion supplies
-missing values. Pins without declared context accept no extra context fields.
+`request` allows only `ref`, `action`, `remove`, `unresolved`, `repair`. A ref is
+an offered opaque draft/result handle, resolved and rechecked by the server.
+Ref requires action; action without ref is invalid. No ref means independent
+input with no implicit inheritance. Draft continue fills missing/unresolved
+members; identical echoes retain their original source and do not renew age.
+Replacing an existing member requires revise. Cancel takes empty input and only
+ref/action, closes exactly the selected draft and performs no external call.
+Result revise/refresh starts a new admitted read; refresh takes empty input and
+no new conditions, remove or unresolved. Only existing continuation policies and
+freshly verified source bindings transfer values, including their expiry and
+scope limits. Missing transferable required values produce input need. Result
+continue/cancel and draft refresh are invalid. K7 indexes selection and successful
+invocation by the concrete offered result handle. Each revise/refresh stands alone,
+including multiple results of the same operation or different retained source
+turns. Each success is independently cross-checked with its exact invocation and
+Gateway evidence; failure of a sibling cannot roll back success. Untouched
+siblings remain historical and their admitted exact tuples are deduplicated by
+source turn and evidence identity before reuse. Selected targets cannot suppress
+each other's execution. Existing fanout, native replay, receipt revalidation,
+source and scope checks remain mandatory. Exact receipts resolve a multi-success
+continuation ambiguity marker; an operation-only offer remains unavailable. Input
+transfer retains the existing preceding-message, integrity and expiry checks and
+rebinds the original source. Older result references require fresh inputs when
+those continuation checks cannot authorize transfer. No receipt is mutated or new ledger
+created. K7 advanced Agent runtime ABI to v31; the pinned Ollama thinking
+extension above advances it to v32/compiler v17. Native projection v17 protects the unresolved
+pointer offer. K7 left compiler v16,
+Observation v4, Connector Context v6 and receipts v1 are unchanged.
 
-For operations with declared conditions, `__context` and the optional
-`__ambiguous_context` list form one native proposal with API arguments and exact
-pending controls. Ambiguity names must be unique, declared fields with no new
-native value. Optional absence is not ambiguity. The existing proposal builder
-supplies every declared field to semantic review, with null for missing values,
-alongside independently verified retained sources. Shape completeness never
-establishes semantic completeness. Source, schema, revision and confirmation
-admission run before semantic review.
+Unresolved pointers reuse the existing Needs-Visitor and sensitive-field rules,
+including password-format and write-only members, and native validation enforces
+the exact offered pointer set. Invalid controls and protected evidence cannot
+partially mutate a draft. A continue clarification with invalid sibling arguments
+also leaves the draft unchanged. A valid revise with an invalid domain replacement
+blocks its old dispatch value and preserves valid partial sources inert, including
+when another pointer remains unresolved. Unknown Playbook arguments are rejected
+against the published schema before source injection or execution.
 
-The tool-free assessment verifies that proposal using the exact deployment
-provider/model, public API/context field meanings, current message, freshly
-verified selected field sources and exact selected task. Matching open-task
-hints expose only IDs, revisions and public open-field definitions, never other
-tasks' values. Historical sources retain their provenance. Arbitrary history,
-attachments and provider results are excluded.
+Closed objects patch by member and arrays replace/remove atomically as a whole.
+Pointers are concrete escaped schema-derived `/input/...` or `/conditions/...`
+paths, with at most 32 unique entries per list, no array indices or wildcards.
+Remove requires selected revise. Set/remove and set/unresolved overlaps fail
+locally before mutation. Null is a schema-dependent value; false, zero and
+allowed empty lists remain present. Invalid explicit replacements block their
+old value, retain independently valid members in an inert draft and do not
+create a question or confirmation. Unresolved optional members also prevent
+fallback to provider defaults until that exact member is validly supplied.
 
-The closed verdict contains `status` and bounded `{field, reason}` issues;
-it supplies no values, task changes, execution permission or visitor questions.
-Negative or unavailable verdicts produce local `correct_arguments` feedback with
-`execution: not_started`, recognized by the existing native repair path. They
-create no receipt or pending/checkpoint mutation. Only a corrected, admitted
-native call may execute or record a genuine clarification. A failed interpretation
-does not imply a provider outage or missing provider data. Private diagnostics
-exclude response text and inputs. See [ADR 0022](adr/0022-coherent-connector-continuations.md).
+Conditions offer only existing published context fields. The parent may be
+omitted or supplied as an object; null/list/scalar parents are invalid. Nullable
+condition members keep their established no-new-value semantics. Conditions and
+API fields keep independent source proofs and dependency invalidation.
+Unknown outer/control/evidence fields are local rejections. Unknown domain
+convenience fields follow the existing Binder policy and never reach dispatch.
 
-The assessment uses one model step, at most 1,024 output tokens and 20 seconds
-within the existing turn deadline. Usage remains
-`agent_connector_context_assessment`. A maximum of 16 canonical per-turn cache
-entries includes failures and binds the complete proposal/context/ambiguities,
-fresh selected revision/sources, association hints, pin, confirmation, deployment,
-authority scope and current message. Object key order and equivalent missing/
-null native fields are immaterial; changed values, revision or source require
-a new review. Operations without declared context and without source reassignment
-incur no review call. Representative
-model quality remains an integration check.
+Evidence offers only required protected protocols: input_confirmation with an
+offer_id, read_inputs with original dependency references and, where reviewed,
+rebind with original root references. The server binds the entire current reply;
+a model-supplied reply_evidence is rejected. A bound reply is not semantic
+consent. Committed offer, source, scope, revision and Gateway checks remain.
+Normal question prose requires no tool or durable question text. Native parsers
+and prompts no longer offer __pending, __request, __prior_read, __unset or the
+former normal question/context control dialects. No source-policy branch selects
+a second native protocol.
 
-S2B `__rebind` is an optional closed list of at most 16 concrete input/context
-root references within the exact live `__pending` ID/revision and `revise` action.
+S2B `evidence.rebind` is an optional closed list of at most 16 concrete input/context
+root references within the exact live draft selected by `request.ref` and `action=revise`.
 Targets require published `pending_source_rebinding: true` in API input policies
 or context field metadata. Both endpoints must be public scalar literal fields
 with exact source binding, no resolver and `latest_message_only`. Absence or false
@@ -832,8 +1064,7 @@ denies reassignment. The shared context admission binds original donor literals
 against target policies before current replacements, preserves their message
 IDs/hashes and removes donors unless separately replaced. Required missing donors
 and invalidated dependencies stay unresolved. Duplicate, cyclic, conflicting or
-unauthorized moves return local no-mutation repair. The reviewer sees only the
-validated references and resulting fields. The gateway repeats admission with
+unauthorized moves return local no-mutation repair. The gateway repeats deterministic admission with
 the revision and verifies fresh sources immediately before dispatch. Existing
 ConversationState persists partial progress once without renewing task age; a
 successful read consumes only the selected task. Context metadata is stripped
@@ -1099,6 +1330,19 @@ evidence hash, canonical message hash, visible fields and context closure.
 Its catalog is bound to the current request. It neither refreshes capabilities
 nor restores old scope values as execution authority. Old receipts without a
 presentation proof or scope fingerprint are ineligible; they are not backfilled.
+ADR 0035 K5 supersedes prose-derived selection below: a canonically committed,
+individually successful read with its original source/commit/evidence binding is
+also eligible as a result reference without an answer-presentation proof. Public
+summary/detail fields and their context closure may enter bounded context even
+when prose paraphrases them or their values are `0`, `false` or short names.
+These result records have no display ordinal. Only the existing attested
+structured presentation reader grants displayed order; source cards and prose
+cannot grant it. Missing or ambiguous order requires clarification.
+Successful siblings remain eligible beside failed or input-needing calls. The
+32-turn lookback and three-turn/six-group/twelve-record/12,288-byte bounds remain;
+the general 30-minute reference cutoff is removed. Retention, original and latest
+visitor source checks, current immutable read pins and fresh scope still apply.
+Reference selection rereads its original receipt; it never refreshes a capability.
 
 A bounded multilingual reference grammar recognizes explicit factual references
 and definite ordinal phrases against published metadata. It is an additional
@@ -1140,14 +1384,10 @@ required record identity. A missing, ambiguous or out-of-range source instead pr
 localized clarification according to the published uncertainty policy. Source
 proofs remain available when native model history has dropped the original
 message, subject to these explicit source-retention limits.
-For a source-limited partial turn without a fact-level presentation receipt, one uniquely
-identified curated record may be retained from the successful read. This path
-requires the original bound coverage, source-answer attestation, unchanged
-deployment and scope, and exact displayed scalar values. Only fields visibly
-present in the original answer are eligible; other fields in the read result
-cannot become historical facts. Ambiguous record order or a missing attestation
-leaves the historical reference unavailable. This read-only path never repeats
-the capability or supplies inputs for a new one.
+Historical reviewed source-claim and structured presentation receipts retain their
+narrow visible-field/context reader. Current result references use stored public
+fields, independently of answer coverage or scalar-word occurrence. They certify
+neither prose claims nor a record's displayed position.
 
 A historical reference and an independent current request share the ordinary
 deployment-pinned tools and their existing turn budget.
@@ -1631,12 +1871,20 @@ activate a tested replacement to change live protection.
 
 ## Durability, Safety, And Operations
 
-The unreleased candidate records bounded `agent_execution_event.v2` activity
+The unreleased candidate records bounded `agent_execution_event.v5` activity
 in private `chat_turn_progress.v2`, with separate public projection and
-server-authorized existing-debugger diagnostics. Native proposals, model calls
-(including reviewers) and Gateway dispatches have distinct counters. Events
+server-authorized operator diagnostics. RC-04 adds optional bounded trace
+storage, expiring conversation grants and allowlisted read-only export; neither
+trace nor transport owns execution. Native proposals, model calls and Gateway
+dispatches have distinct counters. Historical reviewer events remain readable. Events
 never own execution or recovery. See [the schema, bounds and S7 consumer
 contract](EXECUTION_ACTIVITY.md).
+
+S5 adds content-free published field causes and server-observed links among
+proposal, native admission, local rejection, recovery and Gateway activity.
+Response completion, observed execution and answer coverage remain distinct.
+Historical events without these fields remain unknown. Neither recording nor
+diagnosis changes productive decisions or recovers missing execution evidence.
 
 - One durable `ChatTurn` owns client-turn idempotency and the selected Agent
   deployment.
@@ -1754,6 +2002,25 @@ Agent form. Connector operation authoring
 captures purpose, realistic request examples, ability aliases, entity types,
 input grounding/aliases, and optional result identity in structured fields.
 
+The S4 candidate adds an explicit public read review profile and per-field roles
+to that workbench. The existing Publisher previews the candidate policies against
+the current immutable revision or strict new-operation defaults, then expands
+the author preset once on normal publication. Imported descriptions, HTTP GET and
+MCP hints confer no public role. Nested paths need their own review; protected
+roles and conflicting exact evidence remain publication errors. Old revisions
+and Agent deployments are unchanged by authoring or preview.
+
+OpenAPI import retains supported required, enum, nullable and nested facets, with
+unsupported input facets preserved for a field-path publication error. MCP's
+single typed null union projects to the same canonical nullable form. Optional
+query/header/MCP inputs are removed before template resolution when omitted,
+without inheriting old Playbook variables. Unsupported optional body omission
+mapping fails import instead of becoming required. Native offers carry compact
+mapped result paths/labels and fixed result-window bounds; hidden fields stay
+excluded. Complete result metadata remains in the result contract. Shared
+example/default rules appear once in instructions. The existing SDK and provider
+projection remains the exact budgeted offer; no second schema compiler is added.
+
 Live provider readiness uses the verified active deployment's exact provider,
 model, driver and base URL, together with the current stored Agent credential
 or that exact provider's host credential. Draft and candidate setup are evaluated
@@ -1824,6 +2091,26 @@ candidate tests, and multi-turn Agent Quality runs, even when the Agent invokes
 a Playbook. Read operations and provider calls continue through the real
 capability path so routing evidence remains representative without allowing a
 test to mutate productive systems.
+
+The internal `BotAdminTestSessions` application entry point gives the Filament
+test workspace two explicit purposes. Free exploration binds an operator,
+tenant, Bot, area, role, verified deployment ID and hash in the existing test
+conversation metadata. Its completed turns may accept ordinary follow-up
+questions but never update launch checks or release evidence. An explicit case
+binds canonical routing expectations before the first message. Candidate cases
+still pass through `AgentReleaseService::testCandidate`; live cases use the
+existing live-test result path. Only existing Connector and Playbook pending
+interactions can extend an open case. A completed case requires a new session.
+The durable `client_turn_id` ledger admits each send at most once; history and
+status reads expose only authorized user and assistant text and never dispatch.
+Changed target pointers or lost area access make old sessions read-only or
+unavailable. The internal entry point does not add a public endpoint or a new
+release authority.
+
+Technical replacement answers carry a server-produced `degraded` flag in the
+durable operator execution evidence. Routing and release evaluators reject
+them even if the assistant text is nonempty and the exact capability route was
+observed. Diagnostic decision labels alone do not authorize or deny release.
 
 `AgentRoutingEvidenceEvaluator` owns the shared exact-route contract used by
 both the live test and Agent Quality Tests. The protected

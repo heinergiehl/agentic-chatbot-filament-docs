@@ -2,7 +2,206 @@
 
 This document covers required steps when upgrading between public releases.
 
-The current conversation/diagnostics work remains an unreleased local candidate on Agent runtime ABI v10. The v9 steps below document the earlier transitional cutover. Current offline evidence uses the locked Laravel AI 0.11.2 graph; Laravel AI 1.0.0 is a separate migration decision, not an implicit upgrade step. The [S10 evidence](docs/plans/2026-09-24-s10-operating-evidence.md) records the compatibility boundary and open host/release gates.
+The current runtime-convergence work remains an unreleased local candidate on
+Agent runtime ABI v32 and compiler ABI v17. The older ABI steps below record
+earlier cutovers and do not enable old artifacts under this candidate. Current
+offline evidence uses the locked Laravel AI 0.11.2 graph; Laravel AI 1.0.0 is a
+separate migration decision. Host and user acceptance remain outstanding.
+
+The local Ollama thinking extension requires normal republication and candidate
+verification before activation. An optional strict boolean
+`runtime_config.agent.ollama_think` is frozen as `model.ollama_think`; omission
+preserves the SDK/server default. Only Ollama accepts the option. ABI v32 and
+compiler v17 prevent previous implementations from silently ignoring an explicit
+pin. Existing contracts, hashes and active pointers are not rewritten. This is
+an unreleased configuration extension, not a package version change.
+
+Runtime Recovery v3 K1 through K7 require fresh Agent runtime ABI v31 candidates,
+with compiler ABI v16 unchanged. K2 writes only private Observation v4 snapshots
+with deduplicated, content-bound source references. Historical v1/v2/v3 receipts
+remain readable; existing artifacts and open drafts are not rewritten or
+transferred to another deployment hash. K3 replaces duplicate-only native history
+reduction with whole-turn removal that protects current draft sources, conditions,
+delivered offers and the latest complete turn. Offered visitor provenance reflects
+only retained history; bounded memory cannot replace original source proof. A true
+minimum overflow commits a technical answer without accepting an unapplied
+correction, resetting recovery limits or repeating an external operation. The next
+normal turn remains admissible under the same budget and source protections.
+K4A allocates direct-read results and whole Knowledge chunks against the next
+actual native request after removable history. Evidence identities and minimal
+outcomes remain even when optional data is omitted; the stored receipt is unchanged.
+Projection limits are distinct from provider windows and stored-payload limits.
+Result omission cannot establish absence. K4B replaces forced pending-schema
+exposure in Lazy mode with explicit exact-name loading. Open drafts retain their
+references and tool names in the compact context. Selected schemas appear only in
+the next step; hidden calls in a loading batch remain rejected. Eager deployments
+keep all schemas and their published limits. Loading and recovery preserve the
+existing credits and shared deadline. Native projection v15 replaces v14.
+The same candidate fixes checkpoint projection mutating canonical observation
+sources and recycled native history IDs suppressing the current SDK message.
+K5 replaces prose-derived historical references with individually verified stored
+results. Only attested structured output grants a display ordinal; historical
+prose grants no displayed order. Failed or input-needing siblings do not exclude a
+valid completed read. General result references no longer expire after 30 minutes;
+existing retention, bounded lookback and fresh scope checks still apply. Receipt
+and presentation writers remain v1, with no backfill or migration.
+K6 replaces the native HTTP/MCP and Data Resource control dialects with required
+`input` and optional closed `request`, `conditions`, `evidence`. Domain field
+`request` is safe inside `input`. Selected drafts patch closed object members,
+replace whole arrays and retain exact sources. Invalid replacements and explicit
+unresolved members prevent dispatch; cancel closes exactly one selected draft.
+Result refresh/revise rechecks existing continuation authority and expiry.
+Native projection advances to v16. Connector Context v6 writes bounded member
+sources and unresolved pointers; compaction protects every member's original
+message. Historical v3/v4/v5 readers remain, without artifact conversion.
+K7 binds each historical revise/refresh selection and successful invocation to
+its concrete turn-bound result handle. Multiple references, including two results
+of one operation and reads from different retained turns, execute independently.
+Refresh does not require an earlier replacement. A failed sibling does not roll
+back a successful read; untouched verified siblings remain historical and are not
+queried again. Published fanout, replay, scope and input continuation limits remain
+unchanged. Exact receipts resolve multi-success selection ambiguity while input
+transfer keeps its preceding-message and expiry limits, integrity checks and
+original source binding. No operation-only default is inferred. Runtime ABI advances to v31; native projection advances to v17 for the protected
+unresolved-pointer offer. Compiler v16,
+Observation v4, Connector Context v6 and receipts v1 are unchanged.
+Unresolved pointers retain the existing Needs-Visitor and sensitive-field guards.
+Invalid controls and protected evidence leave drafts unchanged. A valid revision
+with invalid domain replacement values instead blocks the old dispatch values and
+keeps independently admitted sources inert, even beside an unresolved pointer.
+Unknown Playbook arguments are rejected against the published native schema.
+ABI v30 and older Agents fail productive admission. No K1 through K7 database
+migration is required. Drain active work under its
+supported old release before installing incompatible code in a linked host,
+then publish and test fresh candidates through the regular flow. Installation,
+activation and release acceptance are separate authorized steps.
+
+## Runtime Recovery v3 maintenance and return procedure
+
+This is an unreleased ABI v32/compiler v17 candidate, not an approved customer update.
+K9 adds deterministic package integration and an indexed recovery matrix;
+it does not activate a host or certify provider behavior. Host/artifact acceptance
+remains outstanding; the internal K9 host acceptance order tracks that work
+separately from this customer maintenance procedure.
+The existing release helper's required old upgrade baseline is `0.18.0`.
+That rehearsal has not been rerun for this candidate. Preserve the exact old
+host commit, package artifact and Composer lock; do not infer support for an
+arbitrary older installation from a successful Composer install.
+
+1. Before installing, inventory affected Agents, their deployment ABI/hash,
+   queued/active turns, open drafts, Graph waits and unknown external effects.
+   ABI v30 and older Agents cannot execute under this candidate. Their
+   immutable artifacts and historical receipts remain readable. Report which
+   operations, dependent Playbooks and Agents need regular republication.
+2. Close entry to affected new turns for a maintenance window. Complete or
+   reconcile active external work using the exact supported old release before
+   stopping its workers and scheduler. Do not delete queued jobs, resume a job
+   with different code, or replay an unknown write to drain the queue. Unaffected
+   host functions need no new locking architecture. A symlinked checkout is
+   already a code cutover: inspect active turns/jobs before editing it.
+3. Record and back up the package and host versions, lockgraph, both package
+   and AgentGraph databases, configuration and encryption key together. Keep
+   side-effect ledgers and status/receipt identities. Record how the old
+   environment was verified and how it can be restarted.
+4. Install the exact candidate artifact into the rehearsal copy, then run
+   migrations and both Doctor checks. K1 through K9 add no database migration;
+   an older host can still require earlier package migrations. Republish changed
+   operations, dependent Playbooks and the consuming Agent through their normal
+   publishers. Never rewrite a deployment, receipt, source hash or live pointer
+   in SQL to make it compatible.
+5. Keep the new candidate inactive. Test it through the persistent host turn
+   and queue path, including the widget, reconnect, limits, confirmation and
+   unknown/reconciliation cases. Bind evidence to the package commit, ZIP
+   digest, host commit/lock, deployment hashes and published operations. Activate
+   through the existing release flow and reopen entry only after all required
+   evidence passes and activation is separately authorized.
+6. Before activation and before any new external effect, return to the verified
+   old bundle if the rehearsal fails. After a new external effect, preserve its
+   ledger and reconcile the actual effect first. A blind database restore can
+   erase idempotency evidence and repeat a write; a backup alone is not a safe
+   rollback. Do not use a code-only return or destructive down-migration across
+   retained receipts or unknown outcomes.
+7. Keep old completed conversations readable as historical data. Mark open old
+   drafts as not transferred. A conversation under a new deployment does not
+   inherit old confirmations, private sources or pending authority. Original
+   source retention and fresh authorization remain necessary for every result
+   reference; result visibility does not grant permission to execute.
+
+Operators should distinguish the published conservative input quota, a known
+physical model window and its output reservation, stored payload bounds and
+optional model projection. An omitted record is not evidence of no match.
+Local preflight failures commit a localized technical answer and received input
+without applying a rejected correction or dispatching a model. A successful
+read survives a later answer failure; unknown writes require reconciliation.
+Use the authorized turn diagnostic export v4, canonical receipt and deployment
+identity to investigate. Public JSON/SSE/history are projections and cannot
+repair a receipt or authorize retries. Never include raw prompts, private
+payloads or credentials in an exported support report.
+
+Runtime-generalization S1 adds explicit interpreted policies only for reviewed
+public Connector domain fields; see [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
+The author preset is not runtime metadata. S1 publication required runtime
+ABI v23/compiler ABI v16, without rewriting older artifacts or providing a legacy
+executor. S2 shares the actual bounded native visitor history with admission and
+introduced public draft handles, whose native envelope is superseded by K6. Original field references stay
+in encrypted context v5, with v3/v4 retained as historical readers. No database
+migration is needed for S1 through S4. S3 adds typed outcomes and one native Stop
+repair within existing credits and budgets. Private observation snapshots advance
+to v3 with historical v1/v2 readers; no public host API is added. Republish changed operation
+revisions and consuming candidates normally; repin dependent Playbooks when
+needed. Host installation, activation, live inference and S5 through S7 remain
+separate work. Existing Graph waits and unknown effects retain their original
+historical authority.
+
+S4 adds explicit per-field public review and a compiled policy comparison in the
+Operation workbench. Import preserves supported nested required/enum/nullability
+constraints; unsupported input facets fail publication with their path. Optional
+query/header/MCP arguments remain absent, including when older Playbook variables
+share their names. Optional whole request bodies need an explicit omission
+mapping and fail import. Native offers include visible mapped result fields and
+fixed window limits; budget and dispatch use the same projection. Review, test
+and republish selected operations normally to opt in. The profile alone grants
+no interpretation and old revisions are not rewritten.
+
+## Unreleased runtime-convergence host rehearsal
+
+Rehearse in an isolated host application using the [host integration guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md).
+This is a rehearsal order, not an automatic activation:
+
+1. Record exact package commit, Composer lock, schema/migration status, Agent
+   and Playbook deployment hashes, active drafts/waitpoints, queued turns and
+   unreconciled effects. Back up package and AgentGraph data together with
+   configuration and the encryption key. Stop entry traffic, queue workers and
+   schedulers before changing schema or code.
+2. Install the matching package and lock, run the normal `php artisan migrate`
+   on the configured host connections, then both package and AgentGraph Doctor
+   checks. Do not use `apps/sandbox` as host acceptance. Inspect incompatible
+   deployments and changed published operations without mutating their
+   historical artifacts.
+3. Classify each retained state. Completed turns and presentation receipts are
+   historical, read-only replay; source-bound open Connector drafts retain
+   their source, scope and revision; Graph waitpoints resume only through their
+   pinned Playbook; known effects reuse their original receipt; Unknown writes
+   remain locked for operator reconciliation. If the old code/schema cannot
+   safely resume an in-flight state, preserve it for explicit disposition
+   rather than silently dispatching or deleting it.
+4. Republish changed Connector operations and Data Resources, then dependent
+   Playbooks and sub-Playbooks, then the consuming Agent. New Agent artifacts
+   must pin `filament_agentic_chatbot.agent_runtime.v32` and
+   `filament_agentic_chatbot.agent_deployment_compiler.v17`; Playbooks pin
+   their v1 runtime/compiler contract and `heiner.agent_graph.public_api.v1`.
+   Test the exact candidate with controlled reads, confirmation, delay and
+   Unknown cases. Activate only through the existing tested-release flow
+   after user acceptance.
+5. Reopen traffic and workers only after no active conversation depends on an
+   incompatible artifact or unresolved migration. If rehearsal fails, keep
+   traffic stopped. Restore the matched pre-change code, Composer lock,
+   database, AgentGraph state, config and encryption key as one bundle; do not
+   attempt a code-only rollback or `migrate:rollback` across retained
+   receipts or unknown effects.
+
+Record actual host dialogue observations separately from deterministic package
+checks, following the [shipping checklist](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SHIP_CHECKLIST.md).
 
 ## Unreleased development cutover: source-bound offers and Agent ABI v9
 
@@ -24,12 +223,11 @@ Existing links remain optional and keep their
 hashes/meaning. Publish new Connector revisions and an isolated Agent candidate
 to opt in; old deployment artifacts and historical evidence gain no authority.
 The Gateway boolean identity verdict now accompanies its execution receipt.
-The [S5 handoff](docs/plans/runtime-reliability/S5-result.md) records the provider
-fixture, verification limits and external-host integration step.
+Record provider fixtures, verification limits and external-host integration
+evidence separately from candidate publication.
 
-The [S8 integration record](docs/plans/runtime-reliability/S8-result.md) records
-real publication and persisted deterministic tests on a disabled external-host
-candidate. It does not authorize activation. The synthetic location contract is
+Publication and persisted deterministic tests on a disabled external-host
+candidate do not authorize activation. The synthetic location contract is
 not a verified mapping for wttr.in or Open-Meteo. UI persistence and live model
 quality remain separate acceptance gaps; no measured token or cost saving is
 claimed from scripted model responses.
@@ -43,7 +241,7 @@ adapter changes require fresh Workbench evidence and new revisions/candidates.
 Never rewrite an existing artifact. The shipped profile supports explicit
 public location-ID selection and verification only. Forecast binding and
 model/UI acceptance remain separate prerequisites for a public weather Agent.
-See [ADR 0026](docs/adr/0026-bounded-provider-location-selection.md).
+See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 S8e adds opt-in `canonical.mode: request_tuple_v1` and an implementation-pinned
 `request_binding` descriptor for complete required input tuples from one fresh
@@ -54,7 +252,7 @@ identity. Existing scalar canonical links retain their stricter single-input
 contract. New code, Workbench evidence, Connector revision and paused Agent
 candidate are required; old artifacts are unchanged. This completes the local
 provider chain, while model/UI acceptance and public activation remain open.
-See [ADR 0027](docs/adr/0027-canonical-request-tuples-and-grid-forecasts.md).
+See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 S6 adds private `chat_turn_progress.v2` with bounded `agent_execution_event.v2`
 observations in the existing `progress` column. No migration or backfill is
@@ -71,7 +269,7 @@ record-aware gates must apply its tenant/ownership SQL scope for both
 `bot_conversations.diagnostics.authorization`. Missing scope fails closed.
 There is no browser or runtime argument-logging switch. S7 consumes the new
 public progress/SSE contract; its widget presentation is not part of S6.
-See [bounded activity](docs/EXECUTION_ACTIVITY.md).
+See [runtime diagnostics](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md).
 
 The encrypted Connector context is now `chat_turn_connector_context.v3`, with
 `connector_input_offer.v2` source, scope, deployment, expiry and delivery proof.
@@ -131,7 +329,7 @@ and unknown external operations retain their exact deployment and block an
 incompatible switch until resolved through the supported path. Never reset them
 or mutate an old deployment to satisfy v9. S8 must test a final newly published
 candidate before any separately authorized activation. See
-[ADR 0025](docs/adr/0025-source-bound-conversation-reliability.md).
+[runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 ## Unreleased: coherent Connector proposals and Agent ABI v7
 
@@ -139,8 +337,7 @@ This earlier cutover introduced Agent runtime/compiler ABI v7, superseded by
 the coordinated v9 development cutover above. Build and test fresh candidates before
 coordinated activation; hash-valid v6 artifacts remain unchanged and fail closed.
 Playbook and AgentGraph ABIs are unchanged. The reviewed runtime is integrated
-on main; package checks do not establish host or release acceptance. See the
-[main integration record](docs/audits/2026-09-20-main-integration.md) for local status.
+on main; package checks do not establish host or release acceptance.
 
 Connector calls accept sparse `__context` proposals for declared conditions;
 omitted or null fields do not erase retained conditions.
@@ -157,7 +354,7 @@ are eligible. Original source identities, task age, dependencies and result
 predicates remain enforced, including independent gateway checks. Enabling the
 flag requires a newly published operation revision and Agent candidate. The
 native input-policy toggle and context JSON retain this metadata without
-rewriting an absent flag during an unchanged edit. See [ADR 0022](docs/adr/0022-coherent-connector-continuations.md).
+rewriting an absent flag during an unchanged edit. See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 ## Unreleased: natural dialogue and Agent ABI v6
 
@@ -172,7 +369,7 @@ Natural questions now bind to exact pending IDs/revisions and share the existing
 semantic answer review. Capability descriptions use the model's normal answer
 step instead of the old automatic list. Exact facts and field labels remain
 fallbacks. No new style setting or model-specific prompt tuning is required.
-See [ADR 0021](docs/adr/0021-natural-dialogue-and-context-accounting.md).
+See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 Model context admission now uses the existing tokenizer/profile estimate.
 Conservative monetary reservations and configured input quotas are unchanged.
@@ -339,7 +536,7 @@ the mismatch; a fresh Agent alone cannot make a stale operation executable.
 Bounded successful Connector searches can now support reviewed positive answers
 with an explicit selection limitation. Their receipts remain partial; old
 receipts are not backfilled with selection proof. See
-[ADR 0018](docs/adr/0018-bounded-connector-answer-selection.md).
+[runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 Connector context contracts may publish `input_dependencies`, a map from an
 existing top-level operation input to the context fields on which it depends.
@@ -401,11 +598,9 @@ and usage checks. Knowledge retrieval can use at most three distinct queries
 per turn, at most two for one purpose; only a genuine empty result permits a
 reformulation for that purpose. Provider failures do not trigger search retries.
 
-See [ADR 0015](docs/adr/0015-direct-conversation-proposals.md), the preserved
-invariants in [ADR 0014](docs/adr/0014-conversational-runtime-contract.md), and the current
-runtime, Data Resource and Connector documentation for the exact contracts.
-The [implementation verification record](docs/CONVERSATIONAL_RUNTIME_VERIFICATION.md)
-separates passing software checks from unresolved local-model acceptance.
+See the [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
+and current Data Resource and Connector documentation for the exact contracts.
+Record passing software checks separately from local-model acceptance.
 
 ## Unreleased: source-bound Connector clarification context
 
@@ -463,7 +658,7 @@ facts without the published checks.
 The migration refuses `down()` rather than discarding pending context. Restore
 a verified schema/data backup with its matching package release and encryption
 key when rollback is required. See [Pending direct-read context](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md#pending-direct-read-context)
-and the package's [ADR 0010](docs/adr/0010-source-bound-connector-clarification-context.md)
+and the [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
 for the authority and compatibility boundaries.
 
 ## Unreleased: private knowledge source uploads
@@ -527,7 +722,7 @@ dedicated `AGENTIC_CHATBOT_DATA_RESOURCE_WRITE_TEST_SIGNING_KEY` with at least
 32 characters in the trusted production and isolated staging applications.
 Set distinct `AGENTIC_CHATBOT_DATA_RESOURCE_ENVIRONMENT` values. Existing host
 configs need the `data_resources.write_testing` block documented in
-[Data Resources](docs/DATA_RESOURCES.md).
+[Data Resources](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RESOURCES.md).
 
 Write-enabled Data Resource contracts now pin their database target and registered
 model policy. Re-export the exact Playbook candidate, run each insert/update
@@ -545,7 +740,7 @@ Cancelled model saves fail and roll back instead of reporting success.
 Read-only resource contracts gain no write permission. Prior deployments,
 write ledgers, unknown outcomes and evidence remain retained. A rollback with
 stored evidence requires restoring a verified backup; it cannot silently drop
-that history. See [ADR 0013](docs/adr/0013-reviewed-integration-writes.md).
+that history. See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
 ## Unreleased: remote MCP connections
 
@@ -570,7 +765,7 @@ This optional operation contract field needs no MCP database migration. Existing
 unreviewed MCP writes remain blocked; no migration converts a read review into
 write permission. Preserve historical ledgers and reconcile prior unknown
 outcomes before any new attempt. Direct Agent tools remain read-only. See
-[reviewed MCP writes](docs/MCP_CONNECTIONS.md#reviewed-playbook-writes).
+[reviewed MCP writes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md#reviewed-playbook-writes).
 
 Existing custom MCP reads must be explicitly reviewed again in **MCP data sources
 > Review operations**, tested and republished before use. Their signed review
@@ -729,8 +924,9 @@ completion errors remain errors even when accompanied by nonempty text.
 
 OpenAPI imports now report unsupported parameter/schema forms explicitly. Review
 those diagnostics instead of treating an imported operation as ready to run.
-Response nullability is preserved; nullable tool inputs and ambiguous unions
-require an explicitly reviewed supported mapping.
+Input and response nullability with one non-null type is preserved. Ambiguous
+unions still require an explicitly reviewed supported mapping; retained input
+compositions fail publication with their field path.
 
 ## Existing conversations after runtime upgrades
 

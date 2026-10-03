@@ -1,5 +1,11 @@
 # Quality Operations
 
+The Quality Tests list shows the full test name with its Agent, a short result
+and the last run. Required release checks carry a visible badge beside the test.
+Automation and the detailed gate column can be restored through the column
+selector. Inspect shows the complete saved failure explanation; hiding a column
+does not change any gate or execution policy.
+
 Quality Operations turns the existing Quality Tests into a continuous, auditable improvement loop without adding another runtime or provider path.
 
 ## Automated Published Agent tests
@@ -59,6 +65,17 @@ and delivered facts. The frozen v2 case set and offline contract grader are in
 evals/runtime-dialogue-v2; they require an independent human answer review
 for a full pass. The N04 candidate has no live dialogue or widget acceptance
 until N05 records the prescribed attempts.
+
+The internal Agent test workspace contract distinguishes a free conversation
+from an explicit case. Free conversation turns keep history on one pinned
+deployment and remain outside release checks, regardless of whether an answer
+was returned. A case fixes its expected route before dispatch and uses the
+existing candidate or live evaluator; an open bound clarification may continue
+that case, while a completed case needs a new session. The operator can reload
+persisted status without resending a turn. Technical replacement answers are
+marked degraded in durable execution evidence and cannot pass a release check.
+This backend contract is available for the planned test workspace; the current
+editor test action remains available until that UI is integrated.
 
 ## Production acceptance for mixed requests
 

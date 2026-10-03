@@ -54,6 +54,8 @@ A conversation starter has three fields:
 
 The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. The widget renders at most four starters, uses native buttons, and sends the selected prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
 
+The Website tab keeps access, code, installation guidance, and appearance together. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; area overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
+
 Starter titles and prompt descriptions wrap to remain readable. Keep the welcome message and starter labels concise so visitors can scan the choices. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
 
 Long welcome messages appear as body text below the localized “How can I help?” heading. The configured message is preserved in full. Short greetings remain the heading. All twelve templates share this hierarchy and the compact header actions, with template-specific colors and geometry in light and dark mode. The subtitle is descriptive text without an animated availability indicator.
@@ -213,6 +215,7 @@ Common optional attributes:
 | `data-accent` | Hex accent color |
 | `data-title` | Chat panel title |
 | `data-subtitle` | Chat panel subtitle |
+| `data-subtitle-mode` | `hidden` omits the subtitle; generated snippets use `custom` with the resolved text otherwise |
 | `data-welcome` | Welcome message |
 | `data-empty-state-hint` | Short guidance below the empty-state heading |
 | `data-compact` | `true` or `false` |
@@ -569,7 +572,13 @@ See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract
 
 ## Testing The Widget
 
-The bot edit page provides a built-in **Live Preview** section in Filament where you can test the widget for the current bot without embedding it on an external site.
+The Agent's **Website** tab includes an appearance preview with sample messages.
+It does not send a message or provide release-test evidence. Use the Agent's
+**Test** area to check a selected version or candidate. To verify an external
+installation, put the displayed script tag on an allowed host and send a
+question there; this may call the configured provider and approved reads. The
+admin page continues to report installation as unverified until an operator
+checks it manually.
 
 ## Related Docs
 
@@ -611,11 +620,13 @@ Authenticated GET polling/history reconciliation recover interrupted delivery;
 Long-running recovery and graph waiting do not show a perpetual animated dot.
 Legacy transcripts do not acquire reconstructed tool history.
 
-The authorized turn debugger shows separate model-call, tool-proposal and
-capability-dispatch counters, bounded events and explicit correlation/receipt
-references. Keyboard-operable disclosures expose only existing report fields;
-usage and receipt sections retain their existing authority. The
-[S8 acceptance record](plans/runtime-reliability/S8-result.md) verifies persisted
-JSON/SSE replay on an isolated external-host candidate. Real authenticated
-settings save/reload and a browser-to-worker candidate conversation remain
-unverified; the design preview does not execute an Agent.
+The RC-05 operator diagnosis is a separate protected display. After an
+authenticated operator obtains a conversation grant with both required Gates,
+the SDK accepts it through `setDiagnosticAccess`; saved assistant messages
+then expose a keyboard-operable `Diagnosis` disclosure and a read-only,
+redacted export. The grant stays in memory, expires, and is cleared on new
+chat; it must be reissued after reload. Each snapshot rechecks operator,
+conversation, message and Bot scope. Without a grant, no diagnostic control
+appears. Public tool activity never exposes arguments, private causes or
+receipts. The controlled SDK/Widget fixtures verify these display boundaries;
+real host and user acceptance remain pending.

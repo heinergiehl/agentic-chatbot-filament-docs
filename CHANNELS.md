@@ -2,17 +2,17 @@
 
 Channels let the package receive and answer messages from external systems while keeping Agent authority, optional Playbook execution, conversation, usage, and budget logic inside the Filament plugin.
 
-The web widget remains the default web chat surface. Telegram, Slack, and Mailtrap Email are real-provider tested external channels. Mailtrap Email is the preferred asynchronous-email implementation; Mailgun remains an optional alternative. WhatsApp Cloud API stays deferred. Every enabled entry point calls the same Agent runtime, stores the same conversations, and reuses the Agent's configured AI provider credential; each channel connection stores only the credentials required by that delivery provider.
+The web widget remains the default web chat surface. Telegram, Slack, Mailtrap Email, Mailgun Email, and WhatsApp Cloud API have package adapters and deterministic contract tests. Mailtrap Email is the preferred asynchronous-email implementation; Mailgun remains an optional alternative. Current real-provider acceptance for the exact installation remains separate and pending. Every enabled entry point calls the same Agent runtime, stores the same conversations, and reuses the Agent's configured AI provider credential; each channel connection stores only the credentials required by that delivery provider.
 
 ## Release Availability
 
 | Surface | Current status | Default |
 | --- | --- | --- |
 | Web widget | Supported | Available |
-| Telegram Bot API | Supported and real-provider tested | Available |
-| Slack App | Supported and real-provider tested | Disabled until explicitly enabled |
+| Telegram Bot API | Implemented; current real-provider acceptance pending | Available |
+| Slack App | Implemented; real-provider acceptance pending | Disabled until explicitly enabled |
 | WhatsApp Cloud API | Deferred because provider onboarding is not yet accepted | Disabled |
-| Mailtrap Email | Supported and real-provider tested | Disabled until explicitly enabled |
+| Mailtrap Email | Implemented; current real-provider acceptance pending | Disabled until explicitly enabled |
 | Mailgun Email | Optional alternative; real-provider acceptance deferred | Disabled |
 
 Disabled providers are absent from the Filament setup wizard. Existing records remain visible for deactivation or deletion, but their diagnostics, test-send, activation, inbound webhook, and outbound runtime paths fail closed. Enabling a staged provider is an explicit deployment decision:
@@ -24,7 +24,7 @@ AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=false
 AGENTIC_CHATBOT_CHANNELS_MAILGUN_ENABLED=false
 ```
 
-Enable Slack or Mailtrap only after configuring buyer-owned credentials and completing a staging smoke test for that exact connection. Enable WhatsApp or Mailgun only in the environment where that still-staged provider is being acceptance-tested. An implementation or mocked contract test is not a live-provider certification.
+Enable Slack or Mailtrap only after configuring buyer-owned credentials and completing a staging smoke test for that exact connection. Enable WhatsApp or Mailgun only in the environment where that still-staged provider is being acceptance-tested. The 29 August 2026 Mailtrap implementation commit reports an acceptance path, and older documentation reports Telegram and Slack testing, but this repository does not retain attributable provider receipts for the current installation. Those historical statements do not certify a new buyer connection. An implementation or mocked contract test is not a live-provider certification.
 
 ## Architecture
 
@@ -33,6 +33,7 @@ Channel support is package-owned:
 - `channel_connections` stores one provider connection per bot.
 - `channel_threads` maps provider thread/user identifiers to package session IDs.
 - `channel_delivery_events` records inbound/outbound delivery state and deduplicates provider events.
+- An inbound processing claim fences older workers when a stale event is reclaimed. A saved reply remains bound to the original inbound event; a later worker cannot rerun its Agent turn to rebuild it.
 - `channel_inbound_attachments` durably stages multipart provider uploads on the configured private attachment disk before queue dispatch.
 - `RichMessage` normalizes Agent and Playbook output into text, buttons, cards, sources, image URLs, and HTML.
 - `ChannelMessageRenderer` implementations convert rich messages into channel-safe text-first replies, with optional provider-native Telegram or Slack payloads when explicitly enabled.
@@ -43,7 +44,7 @@ Channel support is package-owned:
 - `ProcessChannelInboundMessage` claims inbound events before running the Agent, records the answer, and sends it back through the driver.
 - `SendChannelOutboundMessage` retries provider rate-limited outbound sends without running the Agent or Playbook a second time.
 - `BotAccessToken` remains the authoritative product-level governance layer for abilities, areas, budgets, and per-token rate limits.
-- Channel setup only lists active, unexpired Agent Access Tokens that allow the selected default area and the `chat` ability. Create one token per channel connection for clean reporting and runtime isolation.
+- Channel setup can create a scoped Agent Access Token in the final save transaction, or select an existing manageable token. Existing choices must be active, unexpired, unrevoked, and allow the selected area and `chat` ability. A dedicated token per channel gives clearer reporting; shared tokens remain valid until separately revoked.
 - Channel webhooks use a separate ingress rate limiter to protect the queue before the bot runtime is reached.
 - Outbound drivers split long replies into provider-safe message chunks instead of silently truncating Agent output.
 
@@ -102,13 +103,33 @@ Image delivery supports two generic forms. Public `http` or `https` `imageUrl` v
 
 ## Admin Setup
 
-1. Open **Agentic Chatbot > Connect > Agent Access Tokens**.
-2. Create one token per enabled external channel, for example `Telegram Support`.
-3. Set its channel to the matching enabled provider channel.
-4. Scope areas, abilities, budgets, and rate limits for that channel.
-5. Open **Agentic Chatbot > Connect > Channels**.
-6. Create a channel connection for the Agent and select the matching Agent Access Token.
-7. Save, copy the generated webhook URL, and configure it in the provider dashboard.
+**Connect** opens the native overview at `agentic-chatbot-connect`. Choose a task:
+connect an Agent through Channels (or optional server API access), open an Agent's
+Knowledge & capabilities or its API/MCP/App Data libraries, or forward events
+through outgoing webhooks. Capability Bridge remains a read-only page under the
+collapsed Developer diagnostics section. Opening Connect or a library performs
+no discovery, assignment, test, send, or activation.
+
+The Connect sidebar contains Overview, Channels, API Connectors, MCP data sources,
+and Data Resources in that order. Tokens, outgoing webhooks, and Capability Bridge
+remain reachable through the overview and their existing URLs. Their backend
+authorization and global-search restrictions still apply. Connect is unavailable
+when none of its seven targets is accessible.
+
+The Agent editor's Connect link carries only a manageable Agent ID. Without
+authorized context, the overview links to the Agent list for an explicit choice;
+it never selects the first Agent. Library links retain the existing Knowledge &
+capabilities return contract. Channel, token, and webhook list/create/edit pages
+retain authorized context across Livewire updates and offer Back to Connect.
+Incoming external return URLs and area parameters do not become return targets
+or access grants. Opening a list does not preselect or assign its Agent.
+
+1. Open **Agentic Chatbot > Connect > Channels** and start a new channel.
+2. Choose the manageable Agent, area, channel name, and enabled provider. If more than one area is available, choose one explicitly.
+3. Under **Access**, create a dedicated token with a name, positive per-minute rate limit, and positive monthly token budget. It receives only the `chat` ability and the chosen area. Token creation happens together with the final channel save. If token creation is not permitted, choose an existing manageable token that is valid for this Agent and area.
+4. Enter provider credentials and settings, then review and save. A newly created channel remains inactive. Copy its generated webhook URL from the saved channel and configure it in the provider dashboard. Diagnostics and test send are separate actions after saving.
+
+**Agent Access Tokens** remains an independent route for API clients and advanced administration, reached through **Connect > Overview > API access / tokens**; an API token needs no channel. Revoking a token immediately blocks API requests and channels using it. Removing a channel does not revoke a shared token. Channel-internal token secrets are not displayed, while standalone API token creation retains its one-time copy action.
 
 New connections stay inactive until the operator deliberately activates them. For an explicitly enabled staged provider, a correctly authenticated Slack URL-verification or WhatsApp subscription challenge is still answered while inactive so provider setup can finish; ordinary inbound messages remain rejected until activation. A disabled provider is rejected before challenge or payload processing. **Test Send** is outbound-only and can be used before activation.
 
@@ -326,9 +347,9 @@ Outbound replies are deliberately text-first, split at WhatsApp's text limit, an
 
 Provider: `Email via Mailtrap`
 
-Release status: supported and real-provider tested, but disabled by default as an explicit deployment opt-in. Set `AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=true` only after configuring the deployment's own token, hosted inbox, two provider-issued webhook secrets, public HTTPS callback, and verified sender. Email is an asynchronous support and document-intake surface, not a realtime-chat substitute.
+Release status: implemented but disabled by default as an explicit deployment opt-in; current real-provider acceptance is pending. Set `AGENTIC_CHATBOT_CHANNELS_MAILTRAP_ENABLED=true` only after configuring the deployment's own token, hosted inbox, two provider-issued webhook secrets, public HTTPS callback, and verified sender. Email is an asynchronous support and document-intake surface, not a realtime-chat substitute.
 
-The real-provider acceptance covers a Mailtrap-hosted Inbound inbox, exact-body HMAC verification for both webhook types, full-message fetch, a bounded text attachment through the canonical attachment boundary, a committed Gemini Agent turn, same-thread reply, and idempotent delivery-status ingestion. Email Sending events are classified by their explicit event type because Mailtrap may include `inbox_id` on delivery or rejection events too.
+The historical 29 August 2026 implementation report describes a Mailtrap-hosted Inbound inbox, exact-body HMAC verification for both webhook types, full-message fetch, a bounded text attachment through the canonical attachment boundary, a committed Gemini Agent turn, same-thread reply, and idempotent delivery-status ingestion. Provider receipts for this scope are not retained here, so repeat these steps for the current connection before acceptance. Email Sending events are classified by their explicit event type because Mailtrap may include `inbox_id` on delivery or rejection events too.
 
 Credentials JSON:
 
@@ -485,7 +506,15 @@ off, while the outbound delivery event stays in `processing`. The retry uses
 the saved reply and, for Telegram, the accepted-chunk journal; it does not rerun
 the Agent, knowledge search, Playbook, budgets, or usage accounting. A lost
 Mailgun send response is an unknown outcome without automatic retry, not proof
-that no email was accepted.
+that no email was accepted. Mailtrap and WhatsApp follow the same rule for a
+lost POST response or provider 5xx response. Slack and WhatsApp cannot safely
+replay a complete multi-part answer after any part was accepted; a later
+rejection leaves the overall outcome unknown for reconciliation. A confirmed
+429 before any accepted part may use the provider's bounded Retry-After.
+Queue retry workers recheck the current channel, provider gate, Agent, and
+linked token before dispatch. A revoked token or disabled channel cannot
+retract a provider send already made; pending delivery remains unknown when
+its prior dispatch cannot be excluded.
 
 The earliest retry time is persisted with the handoff. A synchronous webhook
 retry before that time returns backpressure again; after it is due, only the

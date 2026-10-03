@@ -82,12 +82,24 @@ upper-exclusive range. Date-time relative phrases cannot be reduced to a
 guessed scalar timestamp. Date-time policies require a storage timezone.
 
 A later reply may explicitly reference a visitor source with
-`visitor_reference: {message_id, quote}`. Only the active request's original
-source or its latest recorded field correction is eligible. Admission verifies
+`visitor_reference: {message_id, quote}`. A selected active draft's original
+field source or latest recorded field correction is eligible. Admission verifies
 the original committed turn, exact quote and unchanged authority scope again.
 A correction invalidates the old field source, and current corrected values
 must bind to that correction's quote. A relative date cited from an older
 eligible visitor source keeps that source turn's time anchor.
+
+RC-02 candidate: a selected Data Resource draft now retains verified field
+sources through side questions and reloads. The model copies one offered
+opaque `__pending` handle; the server resolves its exact ID and revision.
+Omitted fields remain in the draft, while
+`__unset` removes named fields. When an ordinary committed text question has
+no draft, the tool may offer a bounded question turn. A filter may then include
+`question_turn_id` beside `message_id` and `quote` in `visitor_reference`.
+The server checks the offered turn, canonical assistant question, original
+visitor source, scope, deployment and age before using the quote. No adjacent
+successful query is required. A proposed question without assistant delivery
+does not create this offer.
 
 A scalar filter may instead carry
 `source_reference: {evidence_id, pointer}` for an explicitly published
@@ -310,7 +322,14 @@ Import verifies the signature and selected resource, retains the evidence idempo
 
 `query_data_resource` returns its validated result only to the invoking Agent or Playbook step. It does not write a second `last_result_set` state into the conversation and does not install a hidden query-patch protocol for the next turn.
 
-The Agent can understand a conversational follow-up from normal chat history. If fresh data is required, it must make another explicit capability call with a complete typed query. The deployment-pinned Data Resource contract, server-attested scopes, and `CapabilityExecutionGateway` authorize that call exactly like the first one. This keeps conversational interpretation flexible while keeping database access explicit, deterministic, and fail closed.
+The Agent may propose a conversational follow-up from native chat context.
+Unresolved inputs live in a source-bound, revisioned draft; an intervening
+question or reload does not authorize values from a different visitor turn.
+If fresh data is required, a new explicit capability call must pass the
+deployment-pinned query contract, server-attested scope and
+`CapabilityExecutionGateway` before any database read. A missing, rejected or
+ambiguous value causes no query. Results from an earlier successful turn are
+historical evidence, not new query arguments or execution authority.
 
 The direct tool describes only query modes approved in that pinned contract;
 its closed input schema carries the same mode enum. A rejected mode performs

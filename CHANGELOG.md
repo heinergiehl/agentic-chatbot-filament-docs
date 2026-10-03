@@ -4,15 +4,21 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+### Runtime Recovery v3 candidate
+
+- Added deterministic persistent-turn integration for inventory with nested inputs and transit with scalar inputs. The release matrix now requires source-preserving history reduction, bounded result projection, independent continuation, historical revision, local overflow and replay evidence alongside crash, lease, duplicate-delivery and unknown-outcome cases.
+- This candidate requires fresh Agent runtime ABI v31 publications. Older deployments remain historical and fail productive admission; open old drafts and confirmations are not transferred. Maintenance, the supported upgrade rehearsal baseline and return limits are documented in [UPGRADING](UPGRADING.md). Package checks do not constitute host/provider acceptance or release approval.
+
 ### Fixed
 
+- Restored Google Docs setup draft compilation with a source-reviewed HTTP write-result contract and executable fixtures. Only final HTTP 200 with valid response schema and matching identity can succeed; pending, malformed or uncertain outcomes remain unknown and cannot be dispatched again through replay.
 - Discarded provisional conversation bindings for Data Resource intent mismatches proven to occur before admission. Diagnostic traces remain; prior revisions, admitted work and independent changes are preserved.
 - Projected explicit Playbook resolutions through the same conversation-state owner as native tool resolutions, preserving exact run identity and unknown outcomes.
 - Kept still-open approval controls available after an unrelated failed turn using the authenticated current waitpoint from history. History refresh never repeats a message or effect.
 - Preserved bounded nested facts from explicitly selected, JSON-typed Data Resource fields. New MCP imports map only declared structured output fields through the existing output contract.
 - Stopped carrying finished reads forward as input targets solely because answer coverage was incomplete. Expired Connector waits no longer leave orphan request bindings; canonical receipts and genuine continuations remain intact.
 - Kept qualified ordinal lookups separate from explicit references to previously displayed results.
-- Expanded the bounded lossless answer review to 48,000 bytes and 4,096 output tokens. A stale draft open-item can no longer veto an otherwise complete, source-supported HTTP answer with a valid review and no pending input.
+- Replaced the general answer-review path with native prose and canonical typed outcomes. Historical coverage receipts remain private and readable; new answers are not certified by a reviewer.
 - Added one bounded completion opportunity inside the existing native read loop before accepting an early answer draft, so the Agent can propose a still-unattempted independent lookup.
 - Kept independent same-message lookups separate when an earlier lookup using the same capability created a pending task. Request binding and Connector context admission share the same source-owner filter.
 

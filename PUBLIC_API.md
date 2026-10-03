@@ -13,12 +13,28 @@ validation, not assignment, publication, execution testing or dialogue acceptanc
 Its authorized Agent preview shows source pins, canonical and provider tool
 definitions, budgets and explicit configuration-only omissions without dispatch.
 
-The unreleased N01 dialogue contract uses Agent runtime/compiler ABI v12 and
-`agent_tool_projection.v10`; affected Agents require fresh publication. Native
-text answers replace the general Claims answer and review protocol. Historical
-presentation context and correction handles remain internal and confer no
-execution authority. N02–N05 finish input, recovery, migration and live
-acceptance. N01 adds no supported host API entry or adapter.
+The current unreleased runtime-convergence candidate uses Agent runtime ABI
+`filament_agentic_chatbot.agent_runtime.v32` and compiler ABI
+`filament_agentic_chatbot.agent_deployment_compiler.v17`. Native text answers
+replace the general Claims answer and review protocol. Published deployment
+hashes, pinned dependencies and the existing release evidence gate remain
+authoritative. Historical result/presentation context and correction handles are
+internal and confer no execution authority. The candidate still requires
+host preparation and user end-to-end acceptance; it adds no supported host API
+entry or compatibility adapter beyond the operator diagnostics listed below.
+
+Ollama Agent authoring may set the strictly boolean
+`runtime_config.agent.ollama_think`. Publication pins it as `model.ollama_think`;
+omission preserves the provider default. Other drivers and non-boolean values
+are rejected. Existing deployments require normal republication and candidate
+verification for ABI v32; no artifact rewrite or automatic activation occurs.
+
+Runtime Recovery v3 K8 removes internal current review construction and its
+unused commit writer. Historical `answer_coverage.v1` receipts remain read-only
+validated data. Operator exports use `conversation_turn_diagnosis.v4` and
+identify verified native text without a reviewer as `not_assessed` with reason
+`native_text_no_review`, rather than missing review evidence. This changes no
+host integration entry, execution ABI or existing receipt format.
 
 ## Filament plugin
 
@@ -336,6 +352,44 @@ error, confirmation/wait state and retry restriction. Its presence never means
 that an uncertain Playbook write succeeded. Apply the normal HTML sanitization
 and source-link rules; never reinterpret error text as an instruction to retry.
 
+## Operator conversation diagnostics (unreleased RC-04 candidate)
+
+An authenticated host operator obtains a five-minute conversation grant with
+`POST /filament-agentic-chatbot/diagnostics/conversations/{conversation}/access`.
+The route uses the configured session guard and requires explicit conversation
+and diagnostic Gate abilities, including record scopes, even when the panel's
+development defaults would otherwise allow a view. Its JSON response contains
+`token` and `expires_at`; the token belongs in an `Authorization: Bearer`
+header, never a URL. The configured guard must be a Laravel session guard with
+a user provider. Visitor chat credentials cannot issue or use this grant.
+
+The grant permits read-only `GET
+/api/filament-agentic-chatbot/chat/{botPublicId}/diagnostics/conversations/{conversation}/messages/{message}`
+and the same path with `/export?format=json` or `format=markdown`. The latter
+returns the same allowlisted diagnosis. `DELETE
+/api/filament-agentic-chatbot/chat/{botPublicId}/diagnostics/conversations/{conversation}/access`
+revokes it. Every use reloads the operator and checks current policies and
+conversation scope. The bot's configured widget origin policy gates cross-origin
+transport; it does not grant diagnosis. Responses use `no-store`. Neither GET
+nor export dispatches a model or tool.
+
+The optional extra trace is off by default. Set
+`bot_conversations.diagnostics.recording.enabled=true` to record bounded
+events, with `retention_days=7` by default. Expired details are inaccessible
+and the daily `filament-agentic-chatbot:prune-conversation-diagnostics` command
+removes traces and expired grants. Conversation deletion cascades both. Core
+progress, usage and execution receipts remain independent of this switch.
+`bot_conversations.diagnostics.access.enabled` disables token issue and use;
+`operator_guard` and `ttl_minutes` set its guard and bounded lifetime.
+
+`conversation_turn_diagnosis.v2` exposes scope IDs, verified execution state,
+bounded event IDs and operation summaries, safe field source message IDs, usage
+status and `complete`, `truncated`, `unavailable` or `disabled` observation
+status. It contains no prompt, SQL, credential, argument, result or hidden
+reasoning text. A missing event never proves non-dispatch. Admission failures
+on the chat routes expose a separate request ID header without inventing a
+turn ID.
+
 ## Configuration
 
 Only the keys in `config_keys` below are supported host configuration. Empty
@@ -473,6 +527,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "agent_workflows.authorization.manage_ability",
     "agent_workflows.authorization.require_gates",
     "agent_workflows.authorization.view_ability",
+    "api.chat_queue.connection",
+    "api.chat_queue.queue",
     "api.include_session_auth_context",
     "api.max_execution_time",
     "api.max_requests_per_minute",
@@ -528,10 +584,15 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bot_conversations.authorization.manage_ability",
     "bot_conversations.authorization.require_gates",
     "bot_conversations.authorization.view_ability",
+    "bot_conversations.diagnostics.access.enabled",
+    "bot_conversations.diagnostics.access.operator_guard",
+    "bot_conversations.diagnostics.access.ttl_minutes",
     "bot_conversations.diagnostics.authorization.enabled",
     "bot_conversations.diagnostics.authorization.manage_ability",
     "bot_conversations.diagnostics.authorization.require_gates",
     "bot_conversations.diagnostics.authorization.view_ability",
+    "bot_conversations.diagnostics.recording.enabled",
+    "bot_conversations.diagnostics.recording.retention_days",
     "bot_handoff_requests.authorization.enabled",
     "bot_handoff_requests.authorization.manage_ability",
     "bot_handoff_requests.authorization.require_gates",
@@ -758,6 +819,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "widget.default_language",
     "widget.default_position",
     "widget.default_show_sources",
+    "widget.default_show_tool_activity",
     "widget.default_size_preset",
     "widget.default_subtitle",
     "widget.default_template",
@@ -800,6 +862,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "filament-agentic-chatbot::chat-widget"
   ],
   "named_routes": [
+    "filament-agentic-chatbot.diagnostics.access",
     "filament-agentic-chatbot.widget.script"
   ],
   "http_routes": [
@@ -808,6 +871,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "POST api/filament-agentic-chatbot/chat/{botPublicId}",
     "POST api/filament-agentic-chatbot/chat/{botPublicId}/bootstrap",
     "POST api/filament-agentic-chatbot/chat/{botPublicId}/complete",
+    "GET api/filament-agentic-chatbot/chat/{botPublicId}/diagnostics/conversations/{conversation}/messages/{message}",
+    "GET api/filament-agentic-chatbot/chat/{botPublicId}/diagnostics/conversations/{conversation}/messages/{message}/export",
+    "DELETE api/filament-agentic-chatbot/chat/{botPublicId}/diagnostics/conversations/{conversation}/access",
     "POST api/filament-agentic-chatbot/chat/{botPublicId}/form-draft",
     "GET api/filament-agentic-chatbot/chat/{botPublicId}/history",
     "GET api/filament-agentic-chatbot/chat/{botPublicId}/history/export",
@@ -817,7 +883,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "POST api/filament-agentic-chatbot/chat/{botPublicId}/feedback",
     "GET api/filament-agentic-chatbot/connectors",
     "POST api/filament-agentic-chatbot/connectors/continuations/{continuationPublicId}/completion",
-    "GET,POST api/filament-agentic-chatbot/channels/{connection}/webhook"
+    "GET,POST api/filament-agentic-chatbot/channels/{connection}/webhook",
+    "POST filament-agentic-chatbot/diagnostics/conversations/{conversation}/access"
   ],
   "commands": [
     "filament-agentic-chatbot:collect-knowledge-gaps",
@@ -826,6 +893,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "filament-agentic-chatbot:maintain-outbound-webhooks",
     "filament-agentic-chatbot:prune-channel-inbound-attachments",
     "filament-agentic-chatbot:prune-chat-attachments",
+    "filament-agentic-chatbot:prune-conversation-diagnostics",
     "filament-agentic-chatbot:prune-pending-interaction-drafts",
     "filament-agentic-chatbot:qa-enterprise-smoke",
     "filament-agentic-chatbot:reconcile-ai-usage",

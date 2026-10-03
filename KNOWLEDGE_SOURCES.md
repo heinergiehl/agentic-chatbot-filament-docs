@@ -1,5 +1,12 @@
 # Knowledge Sources
 
+The knowledge list distinguishes saved, processing, available and failed sources.
+Available requires a completed source with an active generation. Technical chunk
+counts are hidden by default and can be restored with the native column selector.
+Creation starts with text; API sources are marked advanced. File limits are shown
+from the configured ingestion limit. Creating and processing retain their existing
+explicit actions; opening a form performs no ingestion.
+
 The optional Knowledge scope form stores public operator-authored facts in
 `meta.knowledge_profile`: `summary` (2,000 characters), `topics` and `exclusions`
 (1,000 each), `language` (120), and `validity` (500). Publication validates these
@@ -39,8 +46,10 @@ Filament Agentic Chatbot supports four source types:
 
 - **Text**: paste content directly into the panel
 - **File**: upload a supported document such as markdown, text, HTML, JSON, CSV, or a text-based PDF
-- **URL**: fetch a public web page and extract readable content
+- **Single web page**: fetch one public URL and extract readable content; this is not a site crawler
 - **API**: fetch JSON records through a saved API Connector and map fields into searchable content
+
+From an Agent's **Add first content** link, the Agent is selected through an authorized context. The form shows only fields for the chosen type. A file name or web page path can suggest a source name while that field is empty; no URL is fetched before saving the source. After saving, the edit page shows the actual saved, processing, failed, or usable state and a bounded extracted-text view for an active generation. Saving does not automatically run a second ingestion job. A usable current generation is distinct from a generation pinned into the selected Agent version; use **Test changes** on the Agent to prepare a new version.
 
 ## When To Use Each Source Type
 

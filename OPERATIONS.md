@@ -1,5 +1,13 @@
 # Operations Guide
 
+Runtime Recovery v3 is an unreleased ABI v31 candidate. For its maintenance,
+upgrade and safe return order, use [UPGRADING](../UPGRADING.md#runtime-recovery-v3-maintenance-and-return-procedure).
+The [host acceptance order](plans/runtime-recovery-v3/HOST_ACCEPTANCE.md) binds
+the remaining checks to an exact candidate. No host activation follows from
+package verification alone. Distinguish quota/model-window admission,
+stored-payload limits and model projection; unknown effects retain their
+ledger until reconciliation. Diagnosis and transport never authorize a retry.
+
 ## Queue Worker
 
 Ingestion jobs run on Laravel queues.

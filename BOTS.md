@@ -1,5 +1,10 @@
 # Agents
 
+The Launch Dashboard shows one next step and keeps optional setup in a closed
+section. Create an Agent with the existing conversation or knowledge starting
+point. Valid host provider/model defaults are shown and retained; missing chat
+credentials have a visible repair path. Knowledge and Playbooks are optional.
+
 This is the specific documentation page to share when someone asks:
 
 - what an Agent is
@@ -56,9 +61,9 @@ In practice, this means you can create:
 ## How To Create An Agent
 
 1. Open **Agentic Chatbot > Build > Agents** in your Filament panel.
-2. Choose **Use Solution Kit** for a versioned use-case starting point, or **Create manually** for a blank Agent.
-3. Complete **Essentials** (name, job, boundaries, and availability), **AI setup** (provider and model), and **Review**. Optional access, permissions, and widget settings remain available in collapsed sections; conversation starters are optional.
-4. Save the Agent to open **Overview** and follow its next release step.
+2. Choose **Create Agent** to open the existing wizard directly. **Use template** is the secondary entry to the Solution Kit wizard.
+3. In **Purpose**, choose **Have a conversation** (the default) or **Answer from my content**. Enter the name and job, then edit the suggested boundaries. **AI connection** shows the configured provider and verified model; missing credentials or a model profile need repair before a test version can be prepared. A configured credential does not prove a successful connection test.
+4. **Review** summarizes the purpose and connection. Creating saves a paused, unpublished draft and opens **Overview**. The content starting point recommends adding the first source there; a conversation Agent has no required knowledge source. The starting point is authoring metadata only and grants no runtime authority.
 5. Follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment) to test, publish, and activate the Agent. Add a Playbook only when the job needs a bounded process.
 
 Creating the Agent saves its settings. Visitor access also requires a verified active release, enabled availability, and valid channel access. Selecting a tested release keeps a paused Agent paused.
@@ -73,18 +78,28 @@ Installation is atomic and idempotent. It does not publish, activate, call an ex
 
 After saving an Agent, use the edit page as your rollout checklist before you publish or embed it widely.
 
-- **Overview** is the first stop. It shows availability (**Enabled** or **Paused**), active release integrity, and live-test evidence separately, alongside Knowledge, assigned Playbooks, and the next action. Saved draft setup is checked separately from the selected release.
+- **Overview** is the first stop. A compact context shows availability (**Enabled** or **Paused**) and the verified selected version separately. One deterministic next step, a summary of completed checks and short repair links replace the full repeated release checklist. Name and role use the explicit draft save; availability uses its separate action. Pausing retains the selected version and its evidence. Technical details start closed; the explicit `diagnose=overview` link opens them.
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the Agent.
 - **Production readiness** also surfaces widget signing/domain posture and the verified Knowledge generations pinned to the live release. A failed new indexing attempt does not by itself invalidate a usable pinned generation.
-- **Appearance preview** renders sample messages with the current widget theme, copy, and area-specific styling. It does not run the Agent or provide release-test evidence.
+- **Appearance preview** opens explicitly in Website > Design and shows the current draft widget appearance without running the Agent or producing release-test evidence.
 - **Test release candidate** tests the published candidate. **Test live Agent** always tests the selected active release, including when a different candidate exists. Both use real provider calls and reads while blocking productive writes; neither enables availability.
 - **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker.
-- **Embed Snippet** gives you a ready-to-paste script tag for the Agent's default area and signing mode.
+- **Website** starts in **Set up**, with numbered steps to allow a website, paste valid code, and check the installation. **Design** contains appearance settings and an explicitly opened native preview dialog. The former Embed Snippet action links to this tab.
 - **Analytics** becomes the next stop once you have live conversations, because it surfaces feedback, citation coverage, traffic, and knowledge gaps.
+
+In **Knowledge & capabilities**, compact native sections show draft capabilities and knowledge sources separately. **Add capability** opens a type-first modal for knowledge, API/MCP reads, app data, or an optional Playbook. Its searchable selection uses the authorized library; contextual creation retains the Agent return path without automatically assigning the new definition. Rows show a short business description, read/write effect, version differences and **Edit**. The **More** menu opens version details or removes only the form assignment, never the shared definition. Shared configuration is identified in the chooser and row details.
+
+The row's **Test changes** action saves through the existing draft boundary, prepares or reuses a matching verified version, and opens the test workspace with that published ability selected. The workspace puts the question and conversation before diagnostics. It has one expected-ability choice, the existing published examples, a compact coverage summary and closed status/details lists. Results separate assistant text from recorded capability calls and the existing pass/failure decision; unavailable execution evidence stays unknown. Productive writes remain blocked. **Free exploration** supports follow-up questions without release evidence. Historical conversations retain their exact version and become read-only after the target changes. Rendering, version/purpose switches and history reads create no candidate, conversation or model call.
+
+Adding or removing a capability changes only the form draft and preserves other unsaved inputs. **Save draft** persists those changes after current scope, published-release, permission and conflict checks; it does not publish, prepare or activate a version. Invalid or unavailable assignments remain visible for repair or removal. Leaving for a dedicated editor offers save, discard or stay; validation errors preserve the draft. Knowledge sources belong to the Agent and retain their dedicated ingestion/configuration editor and processing status.
+
+**Permissions & technical details** is collapsed by default and groups the mode control, effective permissions, Data Resource field policies and limits, capture rules, and guardrails. Blocking assignment warnings remain visible above the sections with a repair action. The mode labels remain **Read access**, **Approved write actions**, and **Read access and approved write actions**, mapped to `query_only`, `write_only`, and `query_and_write`. A direct Connector write cannot be assigned; controlled Playbook writes still require compatible Agent permissions, their published confirmation and policy contracts. The tab query ID remains `behavior`.
+
+The native page inherits the host font and primary color. Its scoped panel CSS is registered as a versioned package asset, so a standard Filament panel needs no package-source Tailwind scan or host theme build. A panel without the plugin receives no package assets from plugin registration.
 
 ### Assigning Guardrail Policies
 
-In **Behavior**, assign enabled Guardrail Policies separately to incoming and
+In **Knowledge & capabilities > Permissions & technical details**, assign enabled Guardrail Policies separately to incoming and
 outgoing text. Up to 16 policies per direction can be selected. An enabled policy
 record alone protects no Agent: **Publish candidate** freezes the assignments
 and policy contents, **Test release candidate** checks that exact candidate, and
@@ -245,6 +260,12 @@ Context areas help separate different assistant experiences such as:
 Use different Agents when access scope or audience meaningfully changes.
 
 ### Widget Settings
+
+Website access and appearance have separate explicit save actions and conflict checks. Saving the Agent draft does not save either form. Tab switches retain their unsaved values; reloading saved settings requires confirmation. An exact domain and each subdomain need separate permissions. The domain details explain HTTP(S) URL normalization and explicit wildcards without extending access automatically.
+
+The embed code uses saved settings and is available only when a valid public ID, allowed website host, verified selected version, signing and area settings, and enabled visitor access are present. Missing prerequisites show a repair action. Copying confirms only clipboard success; installation remains **not yet checked** until there is real evidence. The provided manual steps can make real visitor requests and incur provider usage.
+
+**Design** puts template, accent, language and size first. Texts and suggested questions, further display options including the existing widget fonts, and area overrides are separate sections. **Open preview** shows current draft appearance inside a native dialog without saving or running the Agent. Closing it restores focus to the opener; leaving Design or Website, reloading or navigating away removes the preview and its listeners. System labels follow the widget language; saved customer text, including the welcome message, is preserved. Use **Open test area** to test replies. The host panel keeps its own font and theme.
 
 Each Agent can have its own:
 
