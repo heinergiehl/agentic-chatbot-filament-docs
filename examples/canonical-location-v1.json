@@ -1,0 +1,51 @@
+{
+  "version": 1,
+  "status": "deterministic-provider-contract-example",
+  "source": {
+    "request": {
+      "path_template": "/locations/{{city}}",
+      "input_schema": {
+        "type": "object",
+        "properties": {"city": {"type": "string"}},
+        "required": ["city"],
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "result_identity": {"input": "city", "response_path": "query", "normalizer": "exact", "required": true},
+      "context_contract": {
+        "version": 1,
+        "fields": {
+          "country": {"type": "string", "title": "Country"},
+          "region": {"type": "string", "title": "Region"}
+        },
+        "checks": [
+          {"field": "country", "source": "result", "path": "country", "operator": "equals", "normalizer": "casefold"},
+          {"field": "region", "source": "result", "path": "region", "operator": "equals", "normalizer": "casefold"}
+        ]
+      }
+    }
+  },
+  "target": {
+    "request": {
+      "path_template": "/weather/{{location_id}}",
+      "input_schema": {
+        "type": "object",
+        "properties": {"location_id": {"type": "integer", "minimum": 1}},
+        "required": ["location_id"],
+        "additionalProperties": false
+      }
+    },
+    "metadata": {
+      "input_policies": {"location_id": {"source": "literal", "entity_type": "location"}},
+      "result_identity": {"input": "location_id", "response_path": "location_id", "normalizer": "exact", "required": true}
+    }
+  },
+  "binding": {
+    "source_pointer": "/data/candidates/0/id",
+    "target_input": "location_id",
+    "value_type": "integer",
+    "entity_domain": "location",
+    "canonical": {"max_age_seconds": 300}
+  }
+}

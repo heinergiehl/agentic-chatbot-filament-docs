@@ -18,9 +18,11 @@ The editor therefore has two deliberately separate layers:
 
 1. **Setup > When to use** defines the immutable invocation contract: bounded outcome, positive
    start rule, exclusions, and realistic matching requests.
-2. **Steps** defines what happens only after the Agent has chosen the Playbook.
+2. **Inputs** (on the Entry step) define the Playbook's input schema: the
+   values the Agent collects before it starts the Playbook.
+3. **Steps** defines what happens only after the Agent has chosen the Playbook.
 
-The React Flow canvas does not model the Agent's conversation or tool-selection
+The editor does not model the Agent's conversation or tool-selection
 reasoning. It models only the deterministic process, including explicit
 branches and typed waitpoints. This is why a flexible Agent and a directed graph
 can coexist without implying that every chat follows a top-to-bottom workflow.
@@ -30,36 +32,104 @@ semantic steps, and transitions. The backend compiler produces the internal
 executable graph used for preview and immutable publication. Compiled runtime
 JSON is not a second editable source of truth.
 
-The UI has one catalog, one canvas, one inspector, and one validation model.
-Advanced fields are progressively disclosed inside the selected step; there is
-no separate recipe runtime or expert node architecture.
+## Step list and canvas
+
+The default view is a vertical **step list** that starts at Entry. Steps with
+paths (Approval, Decision, an AI task with a result format) show each path as
+an indented sub-list: Confirmed and Cancelled, If true and Otherwise, or the
+Decision's own paths. When the paths meet again, the list continues below
+them; a path that reaches a step shown elsewhere reads "Continues with ...".
+
+**Add step** sits between every two steps. A new step is wired into the path it
+was added to. A new Approval continues with the rest of the path on Confirmed
+and gets its own Cancelled end; a new Decision continues on its first path and
+ends the other one. Deleting a step reconnects the steps around it; deleting a
+step with paths keeps its main path and asks before the steps only its other
+paths lead to are deleted. A path always ends in a Result, which cannot be
+deleted while a path leads to it. Steps move up and down within a plain
+sequence. The list therefore cannot create unconnected steps or forget a path.
+
+**Canvas** in the header shows the same Playbook as a diagram for free
+arrangement. Its toolbar holds zoom, **Fit view**, **Arrange steps** (lays the
+steps out the way the list reads them) and **Add note**. Steps added from the
+list are arranged automatically. Steps that no path reaches (for example after
+canvas edits) are listed under **Not connected** with a Remove fix.
 
 ## Starting a draft
 
-A new Playbook starts with Entry only. From there:
+A new Playbook opens with **How should this Playbook start?**:
 
-- define **When to use** before publication so the Agent has an unambiguous routing
-  contract;
-- choose **Add first step** to open the catalog, or start with **Retrieve data**
-  or **Approve before writing**;
-- use **More Playbook tools > Create draft with AI** for a generated proposal.
+- **Describe your process** creates an AI draft from a few sentences (shown
+  when draft generation is configured);
+- a template: **Callback request**, **Appointment request**, **Lead
+  qualification**, **Order status**, **Return request**, **Support ticket** or
+  **Quote request**;
+- **Start empty** keeps Entry only.
 
-Starters insert ordinary semantic steps as one undoable edit. They do not select
-resources or grant permissions. Choose the approved operation and complete its
-required fields. The main catalog shows Request Input, Run Operation, Decision,
-Approval, and Result; less common process controls remain under Advanced.
+A template adds its Entry details, fills **When to use** where it is still
+empty and connects ordinary steps as one undoable edit. It grants no
+permission and selects no resource. Every template except Order status runs on
+built-in features: the visitor confirms a card (Approval) and the case goes to
+your team through **Hand over to a person**; lead qualification first checks
+the budget and hands only a fitting lead to sales. Order status reads through a
+**Query data** step marked "Choose your orders Data Resource." until you select
+it. The canvas fits all steps into view after a template, an import or an AI
+draft, and on every open. A flow that would only fit below 70 % zoom opens at
+70 % with its Entry step in view; **Fit view** still shows every step.
+
+The step palette is one list grouped into Operations, Flow, AI, Values and
+Finish. Saved API operations are chosen inside **Run operation**. Entry is
+automatic; notes live in the canvas toolbar.
 
 Review generated capabilities, branches, waitpoints, and write approvals before
 publishing. AI Draft can propose structure but cannot grant dependencies.
 
+## Testing
+
+**Test** in the header opens the test chat beside the steps. It runs the saved
+draft directly (not the Agent's choice of tools): fill the details of Entry,
+write the visitor's first message, and confirm cards as a visitor would. The
+step the run waits at is highlighted in the step list and on the canvas. Reads
+use live data; nothing is saved: the Gateway blocks every write of a test and
+the step continues as simulated ("Test: nothing was saved."). **Play sample**
+starts a run with the first **When to use** example and sample details for
+every Entry input and confirms its cards, so every template runs to its end in
+a few seconds. Test the Agent's choice of the Playbook in the Agent editor's
+test chat after publishing.
+
+The Playbook editor has no saved tests and no test requirement for publishing.
+Repeatable tests belong to the Agent: an Agent test with the check
+**Tool called** `playbook_<id>` proves that the Agent uses this Playbook for a
+message (see [Agent Tests](AGENT_TESTS.md)). Failing Agent tests warn when the
+Agent is published and never block it.
+
+## Collect details
+
+Select Entry to edit **Collect details**, the Playbook's input schema
+(`data.inputs`, ADR 0040). Each detail has a label, a name in lower snake case
+(later steps use it as `{{name}}`, and the variable picker offers it), one of
+nine types (text, long text, email, phone, URL, number, date, time, choice),
+a required switch and, under **More**, an optional description for the Agent
+and a rule in Request Input syntax such as `min:2|max:80`. A choice needs 1 to
+50 options; a Playbook has at most 20 details. The name follows the label until
+you change it. Publication reports invalid details at the field.
+
 ## Canvas rules
 
 - Keep one Entry and at least one Result before publication.
-- Use Request Input only for typed information needed by this process.
+- Declare the values the process needs up front under Collect details on the
+  Entry step. The Agent collects them in conversation and starts the Playbook
+  with all of them; a missing required value never starts a run.
+- Use **Ask mid-process** (Request Input) only for a value that can be known
+  only mid-process (for example a choice among results of an earlier step).
+  The Agent supplies it through the same Playbook tool when the visitor gives
+  it.
 - Use Decision for deterministic conditions or exact values.
 - Put every write behind an explicit Approval. Only the Approved path may reach
-  the write; the Declined path must end without writing. The capability gateway
-  still enforces confirmation, authority, payload binding, and idempotency.
+  the write; the Declined path must end without writing. The visitor decides an
+  Approval on a confirmation card (Confirm or Cancel), never by typing. The
+  capability gateway still enforces confirmation, authority, payload binding,
+  and idempotency.
 - Keep AI Task bounded; follow it with deterministic validation or routing.
 - Give For Each a finite `maxItems` value.
 - Use Note for documentation only. Notes never become prompts or runtime nodes.
@@ -106,20 +176,41 @@ navigation, and the step inspector adapt to the editor container. Docked panels
 share the available width and keep room for the canvas. At smaller widths, one
 panel opens as a drawer while preserving its fields and keyboard focus. The
 editor remembers preferred desktop widths separately from temporary limits.
-Step labels wrap rather than becoming an icon-only catalog. The editor
-uses the existing `--fi-wf-*` and Filament tokens in light and dark modes; it
-does not install global CSS or Tailwind preflight.
+Step labels wrap rather than becoming an icon-only catalog. The editor's
+`--fi-wf-*` tokens derive from the panel's Filament variables (`--primary-*`,
+`--gray-*`, the semantic colors and the panel font `--font-family`) and follow
+Filament's `.dark` class; it does not install global CSS or Tailwind preflight.
 
 Keyboard focus, canvas zoom/pan, drag/drop, connection handles, undo/redo,
-autosave, and unsaved-state warnings remain part of the editor contract.
+autosave, and unsaved-state warnings remain part of the editor contract. The
+header carries the view switch, undo and redo, the problem count, Test and
+Publish; everything else (Describe your process, When to use, Variables,
+Versions, Test runs, settings, JSON export and import, full screen,
+remove all steps) is in its "..." menu.
 
-**Find step** searches existing canvas steps and opens the selected inspector.
-It links to **Review** for validation instead of maintaining a second readiness
-dashboard. Review shows publication blockers, optional warnings, and saved-test
-attention with explicit repair actions. Setup, Review, and Test remember their
-last subpage. Versions live in Review; publication settings live in Setup.
+## Problems
 
-Request Input forms use a visual field list for names, labels, types, choices,
+One problem list replaces separate review counters. The header shows the
+count; **Problems** in the rail lists each finding as one sentence, for example
+"This Agent may not save data, so “Request callback” cannot run." Clicking a
+problem opens its step or setup field. Where a fix exists it is a button next
+to the sentence:
+
+| Problem | Fix |
+|---|---|
+| A path has no end, or a step has no next step | **End here** adds a Result |
+| A step is not connected | **Remove** |
+| A step saves data without an Approval before it | **Ask first** adds an Approval before the step |
+| The linked Agent may not save (or read) data | **Allow saving** / **Allow reading** |
+
+The Agent fixes change only the Agent's saved draft through the same settings
+boundary as the Agent editor (Agent edit permission, compare-and-set baseline)
+and never publish the Agent. Publication validation and
+`PlaybookInputSchema` stay the authority; the server sends each finding with a
+stable `code` and, where it has one, an `action` the editor maps to its fix.
+Steps show only a small marker with their problem count.
+
+Ask mid-process forms use a visual field list for names, labels, types, choices,
 ordering, and required flags. Existing unsupported structures remain available
 in the advanced JSON editor. Editing supported fields preserves additional
 field metadata.
@@ -137,16 +228,25 @@ silently restoring a previous valid value.
 
 ## Publication
 
-Save updates only the mutable draft. Review, AI Draft completion, and Publish
-share the same release-readiness preflight: outcome and start rules, graph and
+Saving updates only the mutable draft. The problem list, AI Draft completion,
+and Publish share the same release-readiness preflight: outcome and start rules, graph and
 step validation, explicit write approvals, exact capability materialization,
 dependency pinning, and the published contract. Publish then creates the
-immutable deployment. The invocation contract is frozen with that deployment.
+immutable deployment in one click: while problems block it, it opens the
+problem list instead; a draft with risky writes asks for a short note. After
+publishing, a summary says what the Agent can now do and offers **Add to
+<Agent>** (in the Agent's draft, when it is not assigned yet) and **Test in
+chat**. The invocation contract is frozen with that deployment.
 The Agent can use it only after an explicit assignment is included in a newly
 published Agent deployment. Versions reports whether the current Playbook
 release is actually pinned by the active Agent. The editor's process test starts
-the Playbook directly; test Agent selection and conversation in the Agent's
-candidate and live tests.
+the Playbook directly with the values entered for its Entry details, checked
+like the Agent's tool call; test the Agent's choice of the Playbook in the
+Agent editor's **Test** chat and **Tests** tab after publishing.
+
+A Playbook release does not contain the Agent's behavior (role, tone,
+languages). Changing those on the Agent never requires republishing a
+Playbook; the Agent writes the answers.
 
 Editor saves compare the caller's draft and published fingerprints while holding
 the Playbook row lock on the package connection. A stale session must load the
@@ -163,4 +263,4 @@ See [Agents and Playbooks](AGENTIC_WORKFLOWS.md) and
 
 **Settings → Rename** changes the internal Playbook name used in the editor and lists. **Title shown to visitors** is separate draft content and reaches chat only after the Playbook and its dependent Agent are published. Renaming does not replace process edits or deployment pins.
 
-Save feedback describes the current operation. Errors retain local edits, and a delayed timeout from an earlier save cannot change a newer save's status. Native Filament dialogs leave canvas focus mode and hide floating editor controls while open.
+The draft saves itself a moment after each change; the header shows Saving soon, Saving… or Saved, and Ctrl+S saves at once. There is no separate save button. Errors retain local edits, and a delayed timeout from an earlier save cannot change a newer save's status.

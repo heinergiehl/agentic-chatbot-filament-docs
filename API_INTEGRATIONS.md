@@ -6,7 +6,7 @@ Agent Access Tokens are server-side secrets. Do not embed them in browser JavaSc
 
 ## Create An Agent Access Token
 
-1. Open **Agentic Chatbot > Connect > Overview > API access / tokens** in Filament. The existing Agent Access Tokens URL remains available.
+1. Open **Agentic Chatbot > Connect** and choose **API access / tokens** in Filament. The existing Agent Access Tokens URL remains available.
 2. Select the bot.
 3. Give the token a clear name such as `Telegram production`.
 4. Set **Channel** to classify where the token is used, for example `API`, `Web Widget Bridge`, `Telegram`, or `Slack`.
@@ -219,4 +219,4 @@ After migrations and token setup, run:
 php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 ```
 
-Use **Agentic Chatbot > Observe > AI Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.
+Use **Agentic Chatbot > Insights > Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.

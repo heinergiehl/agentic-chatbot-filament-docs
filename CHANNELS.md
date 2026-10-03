@@ -41,6 +41,7 @@ Channel support is package-owned:
 - `ChannelDriver` implementations normalize provider payloads and send rendered replies.
 - Attachment-capable drivers resolve provider file references only through bounded, provider-allowlisted HTTPS downloads or durable private ingress records before the canonical chat turn begins.
 - `ChannelActivityManager` starts and finishes provider-specific activity indicators before long-running Agent work, using native typing, placeholder messages, or a no-op fallback depending on the channel.
+- Channels send the committed final text. Answer streaming (ADR 0042) is a widget feature; progressive edits of a Telegram or Slack placeholder while the answer is written are planned, not released.
 - `ProcessChannelInboundMessage` claims inbound events before running the Agent, records the answer, and sends it back through the driver.
 - `SendChannelOutboundMessage` retries provider rate-limited outbound sends without running the Agent or Playbook a second time.
 - `BotAccessToken` remains the authoritative product-level governance layer for abilities, areas, budgets, and per-token rate limits.
@@ -61,6 +62,7 @@ Renderer behavior defaults to text-first for external realtime channels. This ke
 | Cards and sources | Compact text fallback | Text fallback; optional Block Kit | Compact text fallback | Compact text fallback |
 | Delivery statuses | Send result | Send result | Sent, delivered, read, failed | Sent, delivered, read, failed |
 | Activity indicator | Native typing | Configurable placeholder | None | None |
+| Write confirmation cards | Inline keyboard | Block Kit buttons | Interactive reply buttons | Not offered |
 
 Text options keep Playbook waitpoint semantics intact:
 
@@ -73,6 +75,41 @@ Reply with the number, the label, or continue in your own words.
 ```
 
 The inbound runtime maps `1`, `2`, or the typed label back to the original Playbook choice before the Agent processes the next turn.
+
+### Write confirmations
+
+A direct Agent write that needs the visitor's confirmation (ADR 0038) is shown
+on Telegram, Slack and WhatsApp as its own card message with every value and
+**Confirm** and **Cancel** buttons. These buttons are always native, whatever
+the presentation mode, because typed text never confirms a write. A button
+value is `atc:c:<id>` or `atc:x:<id>` (42 bytes, inside Telegram's callback
+limit).
+
+- A press counts only from a webhook request that passed the driver's
+  verification (Telegram secret token, Slack signature, WhatsApp
+  `X-Hub-Signature-256`). It becomes a chat turn with the structured
+  `confirmation` field in the conversation of the thread the callback belongs
+  to: the Telegram chat (per user in user-scoped groups), the Slack thread or
+  user-scoped channel conversation, the WhatsApp sender. A card of another
+  conversation is not found and nothing is written.
+- Typed text, including a copied button value, is an ordinary message.
+- A repeated delivery of the same callback is deduplicated like any provider
+  event; a second press reports the decided status and writes nothing. Cards
+  expire after 30 minutes and are then sent without buttons; a late press
+  writes nothing.
+- After the reply to a decision, Telegram edits the card message to show its
+  status without buttons and Slack replaces it through the action's response
+  URL. WhatsApp cannot edit messages, so the reply starts with the card title
+  and status.
+- Only the channel user whose message led to the card decides it. In shared
+  conversations (Telegram groups with `telegram_group_scope: chat`, Slack
+  threads) another member's press neither confirms nor cancels the card.
+- A connection gets writes that need confirmation only with its webhook
+  secret configured (Telegram `webhook_secret`, Slack `signing_secret`,
+  WhatsApp `app_secret`); without it a button press decides nothing.
+- Email conversations are never offered writes that need confirmation; writes
+  the admin runs without confirmation stay available. A custom driver opts in by
+  implementing `Channels\Contracts\ConfirmsAgentWrites`.
 
 Native controls are opt-in:
 
@@ -103,16 +140,16 @@ Image delivery supports two generic forms. Public `http` or `https` `imageUrl` v
 
 ## Admin Setup
 
-**Connect** opens the native overview at `agentic-chatbot-connect`. Choose a task:
+**Connect** opens the overview at `agentic-chatbot-connect`. Choose a task:
 connect an Agent through Channels (or optional server API access), open an Agent's
 Knowledge & capabilities or its API/MCP/App Data libraries, or forward events
 through outgoing webhooks. Capability Bridge remains a read-only page under the
 collapsed Developer diagnostics section. Opening Connect or a library performs
 no discovery, assignment, test, send, or activation.
 
-The Connect sidebar contains Overview, Channels, API Connectors, MCP data sources,
-and Data Resources in that order. Tokens, outgoing webhooks, and Capability Bridge
-remain reachable through the overview and their existing URLs. Their backend
+The Connect section lists Channels, APIs & MCP (API Connectors and MCP
+servers as two tabs), Data and Webhooks. Tokens and Capability Bridge remain
+reachable through the overview and their existing URLs. Their backend
 authorization and global-search restrictions still apply. Connect is unavailable
 when none of its seven targets is accessible.
 
@@ -129,7 +166,7 @@ or access grants. Opening a list does not preselect or assign its Agent.
 3. Under **Access**, create a dedicated token with a name, positive per-minute rate limit, and positive monthly token budget. It receives only the `chat` ability and the chosen area. Token creation happens together with the final channel save. If token creation is not permitted, choose an existing manageable token that is valid for this Agent and area.
 4. Enter provider credentials and settings, then review and save. A newly created channel remains inactive. Copy its generated webhook URL from the saved channel and configure it in the provider dashboard. Diagnostics and test send are separate actions after saving.
 
-**Agent Access Tokens** remains an independent route for API clients and advanced administration, reached through **Connect > Overview > API access / tokens**; an API token needs no channel. Revoking a token immediately blocks API requests and channels using it. Removing a channel does not revoke a shared token. Channel-internal token secrets are not displayed, while standalone API token creation retains its one-time copy action.
+**Agent Access Tokens** remains an independent route for API clients and advanced administration, reached through **Connect > API access / tokens**; an API token needs no channel. Revoking a token immediately blocks API requests and channels using it. Removing a channel does not revoke a shared token. Channel-internal token secrets are not displayed, while standalone API token creation retains its one-time copy action.
 
 New connections stay inactive until the operator deliberately activates them. For an explicitly enabled staged provider, a correctly authenticated Slack URL-verification or WhatsApp subscription challenge is still answered while inactive so provider setup can finish; ordinary inbound messages remain rejected until activation. A disabled provider is rejected before challenge or payload processing. **Test Send** is outbound-only and can be used before activation.
 

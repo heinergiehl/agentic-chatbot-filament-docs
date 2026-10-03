@@ -15,7 +15,7 @@ Do not put Agent Access Tokens in widget markup or public JavaScript. Widgets us
 - Adapts to desktop and mobile screen sizes
 
 Chat requires a persistent Laravel queue and a worker for `agentic-chat` (or
-the configured `CHAT_QUEUE` name). See [upgrade configuration](../UPGRADING.md).
+the configured `CHAT_QUEUE` name). See [upgrade configuration](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 The widget receives an early `turn_accepted` event, displays saved progress and
 retrieves the final committed answer through authenticated status requests.
 Reloading restores an active turn from history without sending the message
@@ -41,7 +41,7 @@ Per bot, you can customize all of these from the Filament panel:
 | **Show sources**      | Whether to display retrieved source cards    | `true` / `false`                |
 | **Input placeholder** | Placeholder text in the message input        | "Type a message..."             |
 | **Response format**   | `markdown` or `plain_text`                   | `markdown`                      |
-| **Language**          | Widget UI language code                      | `en`, `de`, `fr`, `es`          |
+| **Language**          | Widget language for built-in texts           | `en`, `de`, `fr`, `es`          |
 | **Attachments**       | Allow verified private image/document uploads | `true` / `false`                |
 
 ### Conversation Starters And Icons
@@ -108,6 +108,57 @@ disk is appropriate when it points outside `public/` and `serve` remains
 disabled. See [Security and Privacy](SECURITY_AND_PRIVACY.md#private-chat-attachments)
 and [Operations](OPERATIONS.md#chat-attachment-retention).
 
+## Language
+
+The widget shows one language per session. Its built-in texts (buttons,
+status lines, errors, cards, progress labels, handoff states) come from
+`resources/lang/{locale}/widget.php` for the Agent's widget language; English
+and German are complete, French and Spanish are shipped too. A text field left
+empty in the Website tab (title, subtitle in **Standard** mode, welcome
+message, empty-state hint, input placeholder) shows the translated default.
+Texts you write are shown as written, so write them in the widget language.
+
+When the live Agent version allows several languages and the Agent has no
+written visitor texts (welcome message, hint, placeholder, custom subtitle or
+conversation starters), the widget follows the visitor's browser language
+among those languages. Otherwise it keeps the widget language. The
+"Choose a suggestion" line appears only when conversation starters exist; a
+written hint always appears. Answers follow the visitor's language within the
+Agent's languages independently of the widget texts.
+
+To change a built-in text, publish the translations and edit
+`lang/vendor/filament-agentic-chatbot/{locale}/widget.php` (see
+[Localization](LOCALIZATION.md)). The widget script version changes with the
+texts, so browsers load the new script.
+
+## Appearance On Host Pages
+
+The panel is opaque on every template, so host content never shows through
+it. The widget switches to its dark palette when the host page has a `dark`
+class or `data-theme="dark"` on an ancestor, as Filament panels do. Text,
+cards, confirmation cards and progress labels meet WCAG AA contrast in light
+and dark; links and the Confirm and Submit buttons derive an AA-readable shade
+from the accent color. On screens up to 640 px wide the open panel becomes a
+full-screen sheet within the safe areas, sized to the visible viewport so the
+on-screen keyboard does not cover the composer. Every control has a visible
+focus outline, and animations and smooth scrolling are off when the visitor
+prefers reduced motion.
+
+A host page can set these CSS custom properties on `:root` or any ancestor of
+the widget:
+
+| Property | Effect | Default |
+| --- | --- | --- |
+| `--fac-font` | Font family of the widget | the font preset |
+| `--fac-z-index` | Stacking order of launcher and panel | `2147483000` |
+| `--fac-offset-x` | Distance from the left or right edge (desktop) | `24px` |
+| `--fac-offset-y` | Distance from the bottom | `24px` (phones: `12px` or the safe area) |
+| `--fac-focus-ring` | Focus outline color | the accent color |
+
+Colors come from the Agent's accent color and template; use
+`data-accent="inherit"` with `data-accent-css-var` to take the accent from a
+host CSS variable.
+
 ## Style Templates
 
 The widget ships with twelve visual themes:
@@ -115,7 +166,7 @@ The widget ships with twelve visual themes:
 | Template     | Description                            |
 | ------------ | -------------------------------------- |
 | `clean`      | Balanced cards and a connected compact composer |
-| `glass`      | Left-aligned welcome, quiet translucent cards, and an expanding composer |
+| `glass`      | Left-aligned welcome, quiet light cards, and an expanding composer |
 | `bold`       | Large typography and stacked action rows |
 | `neo-brutal` | Hard corners, thick borders, and offset shadows |
 | `noir`       | Editorial rows on warm paper or a near-black night surface |
@@ -188,8 +239,8 @@ Add a single `<script>` tag to any HTML page:
     data-subtitle="Always here to help"
     data-empty-state-hint="Choose a topic or ask freely."
     data-compact="false"
-    data-size="comfortable"
-    data-font="modern-sans"
+    data-size-preset="comfortable"
+    data-font-preset="modern-sans"
     data-show-sources="true"
     data-lang="en"
     defer
@@ -225,7 +276,7 @@ Common optional attributes:
 | `data-lang` | UI language code such as `en`, `de`, `fr`, or `es` |
 | `data-context-endpoint` | Authenticated host endpoint returning a short-lived signed customer-context token |
 
-All optional `data-*` attributes override the bot's default settings.
+The `data-*` attributes apply until the widget has loaded the Agent's configuration; the configuration then sets the texts, language, avatar and theme. Generated snippets carry only the texts you wrote.
 
 ### Option 3: NPM Package (for SPAs)
 
@@ -312,8 +363,7 @@ identity during replay.
 
 ## Event Stream And Failure Behavior
 
-In the unreleased runtime-dialogue v2 candidate, the final answer, retrieved
-source cards, and canonical operation status are
+The final answer, retrieved source cards, and canonical operation status are
 committed before delivery. JSON responses, SSE completion, authenticated turn
 status, and reloaded history show that same outcome. A source card may have no
 public URL; the widget displays its label without inventing a link. Cards
@@ -322,7 +372,18 @@ Resource, and Knowledge results. They do not prove each sentence of the
 assistant's prose. Operation completion, failure, and unknown status come from
 the stored execution and Graph or Gateway state, never from that prose.
 
-Streaming admission persists the turn and queues its execution before emitting `init` and `turn_accepted`, followed by `data: [DONE]`. The widget polls the authorized turn projection for persisted progress and the committed outcome. A repeated request for a completed turn delivers its canonical `message_complete` or `error` event without executing it again. Final content is persisted before delivery; the package does not manufacture token deltas from a completed message.
+Streaming admission persists the turn and queues its execution before emitting `init` and `turn_accepted`. While the worker runs the turn, the same response relays the answer as it is written (ADR 0042):
+
+| Event | Meaning |
+| ----- | ------- |
+| `delta` | Text appended to the current draft. |
+| `draft_reset` | The draft is discarded (a tool step, a retry, or a blocking output check rejected it). |
+| `draft_status` | A tool step started: `knowledge`, `lookup` or `action`; the widget shows a short translated label such as "Searching knowledge…". |
+| `activity` | Persisted turn progress, as in turn polling. |
+
+When the turn is committed while the response is open, the response sends the stored outcome (`activity`, then `message_complete` or `error`) exactly as a repeated request would, then `data: [DONE]`. After 15 seconds without an event the response sends an SSE comment (`: keep-alive`), so proxies keep it open and a disconnected client ends the request. When the client disconnects or `api.chat_stream.relay_seconds` (`AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS`, default 100, capped at the PHP limit minus 10 seconds; 0 disables streaming) is used up first, the response ends with `data: [DONE]` and the widget reads the committed outcome from the authorized turn projection. The committed message replaces the draft; a draft is never kept beside or instead of the committed message, and a failed turn shows its error instead of the draft. A disconnect, reload or repeated request falls back to turn polling and history reconciliation without running the turn again. A repeated request for a completed turn delivers its canonical `message_complete` or `error` event without executing it again.
+
+Drafts are presentation only. They are held in the cache store (`api.chat_stream.cache_store`, `AGENTIC_CHATBOT_CHAT_STREAM_CACHE_STORE`, default store), which web and queue processes must share; with a per-process store such as `array` the widget simply shows the committed answer. Before any draft text is sent, the output checks (standard profile and the Agent's Safety settings) accept the whole text written so far, masked personal data is shown masked, and the newest word plus 24 bytes are held back. A rejected draft is cleared and the committed answer carries the Agent's fallback message. After a Playbook step in a turn, only the committed answer is shown. The SSE request stays open while its turn runs and holds one PHP worker until then: size PHP-FPM workers for concurrent chats. A single-process server (`php artisan serve` or `php -S` without `PHP_CLI_SERVER_WORKERS`) still delivers the answer, but other requests wait until the turn ends; set `relay_seconds` to 0 there.
 
 The terminal `message_complete` or `error` projection may contain the frozen `public_chat_turn_lifecycle.v1` envelope consumed by the SDK. It is transport-neutral and replay-stable.
 
@@ -330,7 +391,7 @@ Execution failures follow the authoritative turn and AgentGraph lifecycle. An un
 
 The stream encoder substitutes invalid UTF-8 before sending JSON events. If encoding still fails, the client receives a safe error event with code `stream_encoding_failed` instead of malformed SSE data.
 
-The unreleased S6 server contract adds `chat_turn_progress.v2`. Authorized turn
+The server reports progress as `chat_turn_progress.v2`. Authorized turn
 status and completed JSON include safe `progress.activity`; committed SSE sends
 an `activity` event before the final message/error. Consumers must close active
 indicators when `activity.active` is false or the canonical turn is terminal,
@@ -338,7 +399,7 @@ including waiting, failure, cancellation and unknown outcome. The final answer
 arrives directly in that response. `truncated` indicates omitted intermediate
 events. Only public identity/category/status/time fields are delivered; counters,
 native IDs, reasons and receipt references stay in the authorized admin debugger.
-The unreleased S7 widget consumes v2 and legacy v1 stages. See the [server schema](EXECUTION_ACTIVITY.md).
+The widget reads v2 and the earlier v1 stages.
 
 ## Widget Security
 
@@ -531,13 +592,19 @@ If you embed the widget on pages served by the same Laravel monolith, CORS is us
 
 Use it for custom widget empty states such as "sources are still indexing" without guessing from source records.
 
+Visitor texts (`name`, `subtitle`, `welcome_message`, `empty_state_hint`,
+`input_placeholder`) are `null` when no text was written; the widget then shows
+its translated default. `subtitle_mode` is `standard`, `custom` or `hidden`.
+`widget_language` is the Agent's widget language and `languages` the languages
+of its live version (empty without one).
+
 ## Content Security Policy
 
 Same-origin embedding avoids cross-origin complexity, but it does not automatically bypass CSP.
 
 - The widget is loaded through a script tag.
 - The widget calls the chat API with `fetch()`.
-- The current widget runtime injects its own `<style>` tag for the UI.
+- The widget script injects its own `<style>` tag for the UI.
 
 That means a very strict CSP can still block the widget even on the same app. In practice, pages that host the widget should allow the same-origin script and API calls, and should not block the widget's injected styles.
 
@@ -580,6 +647,18 @@ question there; this may call the configured provider and approved reads. The
 admin page continues to report installation as unverified until an operator
 checks it manually.
 
+## Widget Script Source
+
+The served script is the committed build `resources/dist/widget.js`; installing
+the package needs no Node. `WidgetScriptController` fills in the package
+defaults and the widget texts of every language and serves it at the
+configured script route with an ETag (immutable caching for `?v=` URLs).
+The sources are `resources/js/widget/src/*.js`; they share one closure and are
+concatenated in a fixed order. After a change run
+`node resources/js/widget/build.mjs` and commit the build;
+`tests/widget/build.test.mjs` and `WidgetScriptTest` (when Node is installed)
+fail when the build is out of date.
+
 ## Related Docs
 
 - [Bots](BOTS.md)
@@ -587,7 +666,7 @@ checks it manually.
 - [API Integrations](API_INTEGRATIONS.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
-### Tool activity display (unreleased S8 candidate)
+### Tool activity display
 
 Enable **Show tool activity** in the existing Agent widget appearance settings,
 or in a widget area override. The package default is

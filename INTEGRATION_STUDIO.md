@@ -8,7 +8,7 @@ gateway, confirmation, idempotency, and reconciliation path.
 
 ## Operator Flow
 
-Open **Agentic Chatbot > Connect > API Connectors** and choose **Import
+Open **Agentic Chatbot > Connect > APIs & MCP** and choose **Import
 integration**.
 
 1. **Source** uploads or pastes OpenAPI 3.x JSON/YAML, Postman Collection
@@ -43,7 +43,8 @@ suggestions retain the provider/model authenticated by their AI receipt.
 
 ## Filament Capability Bridge
 
-Open **Agentic Chatbot > Connect > Capability Bridge** to review functions that
+Open **Agentic Chatbot > Connect**, then **Capability Bridge** under Developer
+diagnostics, to review functions that
 the host Laravel application explicitly registered through
 `CapabilityProvider`. The page materializes each declaration through the same
 `ActionRegistry` contract validator used at runtime and shows its version,

@@ -2,14 +2,17 @@
 
 Outbound webhooks let a committed Agent business event trigger an external,
 non-conversational automation. Typical receivers are a host backend,
-ticketing service, n8n, Make, or Zapier. These are notifications, not CRM leads:
-no contact details or conversation content are sent. They are not instructions for the
-model and they never bypass the capability gateway.
+ticketing service, n8n, Make, or Zapier. By default they are notifications with
+public ids and status only: no contact details or conversation content are
+sent. An endpoint may opt into redacted content (see Payload Content), and a
+receiver can fetch details by id through the [Read API](READ_API.md). Webhooks
+are not instructions for the model and they never bypass the capability
+gateway.
 
 ## Setup
 
 1. Open **Connect > Overview > Forward events > Outgoing webhooks** and create an endpoint for one Agent. The existing outgoing-webhooks URL remains available.
-2. Choose the exact event subscriptions the receiver needs.
+2. Choose the exact event subscriptions the receiver needs, and payload content only if the receiver needs it.
 3. Copy the generated signing secret into the receiver.
 4. Save the endpoint. New endpoints are inactive.
 5. Send a signed test and wait for a successful delivery in the ledger.
@@ -17,9 +20,9 @@ model and they never bypass the capability gateway.
 
 Only absolute public HTTPS destinations are accepted. DNS is resolved and
 pinned for each request; localhost, private, reserved, metadata, redirect, and
-DNS-rebinding destinations fail closed. Changing the Agent, URL, signing secret
-or subscriptions automatically pauses the endpoint and requires a new successful
-test followed by activation. Renaming an endpoint does not invalidate its test.
+DNS-rebinding destinations fail closed. Changing the Agent, URL, signing secret,
+subscriptions or payload content automatically pauses the endpoint and requires
+a new successful test followed by activation. Renaming an endpoint does not invalidate its test.
 Queued signed tests are bound to the exact configuration requested; they cannot
 verify a later edit. A test acknowledged after an edit records its delivery but
 does not verify the new configuration.
@@ -34,11 +37,33 @@ shows **Verification required**. Starting the new test pauses that old flag.
 
 Supported subscriptions are:
 
+- `conversation.started`: a visitor message was stored while the conversation
+  was not active (its first message, or the first after it ended).
+- `conversation.ended`: no message of any role for
+  `outbound_webhooks.conversation_idle_minutes` (default 30) and no handoff
+  open, assigned or waiting. The scheduled maintenance command ends idle
+  conversations every minute.
+- `submission.created`: a new submission or lead was saved.
+- `feedback.received`: a visitor rated an answer (each new or changed rating).
 - `outcome.recorded`: a verified conversation outcome was recorded.
 - `handoff.created`: a new operator handoff case was created.
 - `handoff.updated`: a public handoff activity, status, assignment or priority changed.
 - `handoff.resolved`: an operator resolved the case.
 - `handoff.returned_to_agent`: an operator returned the conversation to the Agent.
+- `playbook.completed` and `playbook.failed`: a live Playbook run reached that
+  final state.
+- `action_review.requested`: a Playbook action waits for operator review.
+- `usage.budget_threshold`: the Agent's settled usage reached 80 or 100 percent
+  of its monthly token or cost budget; each threshold and metric is sent once
+  per month.
+
+Each start and end of a conversation is one activity period. Writing again
+after the end starts a new period, so a conversation can produce several
+`conversation.started` and `conversation.ended` events, each with its own event
+ID and `data.conversation.sequence`. The upgrade marks conversations that
+already have messages as one ended period at their last message, so history
+sends no `conversation.ended`. Admin playground, Agent test and editor test
+records never produce events.
 
 `webhook.test` is an explicit signed test for one destination, not a subscription.
 The form includes a masked synthetic payload preview without querying a
@@ -73,9 +98,62 @@ Every payload is versioned and uses public identifiers:
 ```
 
 Handoff payloads contain only status, priority, team, version, SLA timestamps,
-and the public activity transition. Customer contact data, conversation text,
-handoff reason/summary, internal notes, operator identity, evidence references,
-credentials, and internal database IDs are excluded.
+the public activity transition and the conversation's public id. Customer
+contact data, conversation text, handoff reason/summary, internal notes,
+operator identity, evidence references, credentials, and internal database IDs
+are excluded.
+
+The other events follow the same envelope. Their `subject` and `data` are:
+
+| Event | Subject | Data |
+|---|---|---|
+| `conversation.*` | `conversation` | `conversation`: id, channel, status, sequence, created_at, last_activity_at, ended_at |
+| `submission.created` | `submission` | `submission`: id, schema_key, schema_version, status, conversation_id, playbook_run_id, timestamps |
+| `feedback.received` | `feedback` | `feedback`: id, rating (`positive` or `negative`), has_comment; `conversation.id` |
+| `playbook.*` | `playbook_run` | `playbook_run`: id, status, playbook name, started_at; `conversation.id` |
+| `action_review.requested` | `action_review` | `action_review`: id, action_key, status, risk, priority, expires_at; `conversation.id`, `playbook_run.id` |
+| `usage.budget_threshold` | `usage_budget` | `budget`: period (`YYYY-MM`), metric (`tokens` or `cost`), threshold_percent, limit, used, unit, currency |
+
+All ids are public ids; the read API accepts the same ids.
+
+## Payload Content
+
+Content is off by default. Per endpoint an admin may opt into:
+
+- **Submission fields**: the fields of a new submission (`submission.created`).
+- **Last messages** (5, 10 or 20): the newest messages of the event's
+  conversation, oldest first, each with `role` (`visitor`, `agent`,
+  `operator` or `system`), `text`, `truncated` and `created_at`. Events with a
+  conversation carry them: `conversation.ended`, `submission.created`,
+  `feedback.received` (plus the feedback `comment`), `playbook.*`,
+  `handoff.created` and `action_review.requested`.
+
+Opted-in content arrives as a top-level `content` object:
+
+```json
+{
+  "content": {
+    "fields": { "name": "Ada", "email": "ada@example.com", "api_token": "[REDACTED]" },
+    "messages": [
+      { "role": "visitor", "text": "Please call me on [phone number removed].", "truncated": false, "created_at": "2026-10-03T10:00:00+00:00" }
+    ]
+  }
+}
+```
+
+Content is captured with the event and redacted before it is stored:
+credential-like field names, schema fields marked `sensitive`, bearer and basic
+credentials and runtime secrets are removed, and the email, phone and link
+types that the Agent's live Safety settings mask or block are masked (all three
+when the settings cannot be read). A message keeps at most 4,000 characters.
+A body stays within `outbound_webhooks.max_payload_bytes` (default 65,536):
+oldest messages are dropped first, then field values are shortened, and
+`content.truncated` is `true`; fetch the rest through the read API. The body is
+the same on every retry while the endpoint's verified contract is unchanged
+and the conversation exists. Deleting a conversation's history removes its
+messages and the feedback comment from stored events, so later deliveries and
+retries no longer carry them; submission fields stay with the retained
+submission.
 
 ## Signature Verification
 
@@ -138,9 +216,9 @@ contract never authorizes replay of a Capability write or continuation of a Play
   The current host SQL management scope is checked again. Paused endpoints and
   unrelated deliveries cannot be used to bypass that check.
 
-Laravel Scheduler runs the recovery sweep every minute. It redispatches missed
-fanout, due retries, and expired worker leases, then prunes terminal ledgers
-after the configured retention period:
+Laravel Scheduler runs the maintenance command every minute. It ends idle
+conversations, redispatches missed fanout, due retries, and expired worker
+leases, then prunes terminal ledgers after the configured retention period:
 
 ```bash
 php artisan filament-agentic-chatbot:maintain-outbound-webhooks --dry-run
@@ -159,6 +237,8 @@ OUTBOUND_WEBHOOK_TIMEOUT_SECONDS=10
 OUTBOUND_WEBHOOK_LEASE_SECONDS=120
 OUTBOUND_WEBHOOK_MAX_ATTEMPTS=8
 OUTBOUND_WEBHOOK_RETENTION_DAYS=30
+OUTBOUND_WEBHOOK_CONVERSATION_IDLE_MINUTES=30
+OUTBOUND_WEBHOOK_MAX_PAYLOAD_BYTES=65536
 ```
 
 ```bash

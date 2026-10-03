@@ -159,5 +159,5 @@ result pagination cannot be enabled on the same operation; model any subsequent
 result retrieval as a separate declared Playbook step.
 
 See [Operations](OPERATIONS.md#durable-connector-completion) for workers,
-scheduling and diagnostics, [Upgrading](../UPGRADING.md) for migrations, and
+scheduling and diagnostics, [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) for migrations, and
 [ADR 0009](adr/0009-durable-external-operations.md) for authority boundaries.

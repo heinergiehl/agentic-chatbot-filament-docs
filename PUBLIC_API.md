@@ -5,36 +5,17 @@ methods, routes, commands, views, configuration keys, tags, or assets not listed
 here are internal implementation details and may change without compatibility
 aliases.
 
-The unreleased capability-metadata change requires Agent runtime/compiler ABI v4
-and fresh Agent publication; see [Upgrading](../UPGRADING.md). It adds no host API
-or compatibility adapter. `import_basis` is MCP authoring data only, never an
+Agent deployments and Playbook deployments are immutable and hash-verified.
+When an upgrade changes what the runtime accepts, affected Agents show
+**Republish needed**; publish them again. No artifact is rewritten. `import_basis` is MCP authoring data only, never an
 execution contract. Capability Bridge's `definition_valid` means definition
-validation, not assignment, publication, execution testing or dialogue acceptance.
-Its authorized Agent preview shows source pins, canonical and provider tool
-definitions, budgets and explicit configuration-only omissions without dispatch.
-
-The current unreleased runtime-convergence candidate uses Agent runtime ABI
-`filament_agentic_chatbot.agent_runtime.v32` and compiler ABI
-`filament_agentic_chatbot.agent_deployment_compiler.v17`. Native text answers
-replace the general Claims answer and review protocol. Published deployment
-hashes, pinned dependencies and the existing release evidence gate remain
-authoritative. Historical result/presentation context and correction handles are
-internal and confer no execution authority. The candidate still requires
-host preparation and user end-to-end acceptance; it adds no supported host API
-entry or compatibility adapter beyond the operator diagnostics listed below.
+validation, not assignment, publication, execution testing or dialogue
+acceptance.
 
 Ollama Agent authoring may set the strictly boolean
 `runtime_config.agent.ollama_think`. Publication pins it as `model.ollama_think`;
 omission preserves the provider default. Other drivers and non-boolean values
-are rejected. Existing deployments require normal republication and candidate
-verification for ABI v32; no artifact rewrite or automatic activation occurs.
-
-Runtime Recovery v3 K8 removes internal current review construction and its
-unused commit writer. Historical `answer_coverage.v1` receipts remain read-only
-validated data. Operator exports use `conversation_turn_diagnosis.v4` and
-identify verified native text without a reviewer as `not_assessed` with reason
-`native_text_no_review`, rather than missing review evidence. This changes no
-host integration entry, execution ABI or existing receipt format.
+are rejected.
 
 ## Filament plugin
 
@@ -48,6 +29,32 @@ $panel->plugin(
     FilamentAgenticChatbotPlugin::make()->widgetEnabled(),
 );
 ```
+
+The admin navigation has four sections, `Heiner\FilamentAgenticChatbot\Support\NavigationSection`:
+**Build** (Agents, Playbooks, Knowledge), **Connect** (Channels, APIs & MCP,
+Data, Webhooks), **Inbox** (handoffs and action reviews that wait for a person,
+with a count badge) and **Insights** (Conversations, Submissions, Usage). Each
+panel's plugin instance configures them:
+
+```php
+use Heiner\FilamentAgenticChatbot\Support\NavigationSection;
+
+FilamentAgenticChatbotPlugin::make()
+    ->navigationGroup('Assistant')        // default "Agentic Chatbot"; a label or a navigation group enum case; null shows the sections without a group
+    ->navigationSort(20)                  // sort of the first section; the next follow in steps of one
+    ->navigationSections([                // shown sections, in this order
+        NavigationSection::Inbox,
+        NavigationSection::Build,
+        NavigationSection::Insights,
+    ])
+    ->navigationLabel(NavigationSection::Inbox, 'Support queue')
+    ->navigationIcon(NavigationSection::Inbox, 'heroicon-o-bell');
+```
+
+A section left out hides only its menu entries. Its pages keep their URLs and
+their authorization; hide a page from a role with the package Gates, not with
+the navigation. The order of the plugin group among the host's own groups
+follows the panel's `navigationGroups()`.
 
 Global ports are normal Laravel bindings in a host service provider:
 
@@ -250,13 +257,14 @@ public function register(): void
 
 The provider's `solutionKits()` method returns `SolutionKitDefinition`
 instances. Definitions are closed and credential-free. They require semantic
-versioning, at least one complete schema-v2 Playbook, active blocking
-current-draft quality coverage for every Playbook, and at least one measurable
-outcome. Write-capable definitions must require explicit installation approval.
-Duplicate Kit keys fail catalog resolution.
+versioning, at least one complete schema-v2 Playbook, and at least one
+measurable outcome. The optional `tests` list holds Agent tests in the Agent
+test turn format; a test names a Kit Playbook tool as `playbook:<playbook key>`.
+Tests warn and never block publishing. Write-capable definitions must require
+explicit installation approval. Duplicate Kit keys fail catalog resolution.
 
 The extension seam is authoring-only. Installation creates an inactive Agent,
-unpublished drafts, saved tests, and immutable installation evidence in one
+unpublished drafts, Agent tests, and immutable installation evidence in one
 transaction. It never publishes, activates, or executes a capability. Host
 actions referenced by a Kit remain separate `CapabilityProvider` contracts and
 execute only through the package capability gateway. See [Solution
@@ -327,6 +335,19 @@ with a stable event ID for receiver idempotency. See [Outbound
 Webhooks](OUTBOUND_WEBHOOKS.md) for the payload, signature, retry, and operations
 contract.
 
+Events cover conversations (started, ended), submissions, feedback, outcomes,
+handoffs, Playbook runs (completed, failed), action reviews and monthly budget
+thresholds. Payloads carry public ids only; per-endpoint opt-in content
+(submission fields, last messages) is redacted and size-capped.
+
+## Read API
+
+`GET` endpoints under `{api.prefix}/read/v1` return submissions (single and
+cursor-paginated list), conversations with messages, and handoffs by public id.
+They accept Agent access tokens with the explicit scopes `submissions:read`,
+`conversations:read` and `handoffs:read`; `*` does not grant them. The JSON
+shape is version 1. See [Read API](READ_API.md).
+
 ## Connector completion notifications
 
 The allowlisted Connector completion endpoint admits signed provider events,
@@ -352,7 +373,41 @@ error, confirmation/wait state and retry restriction. Its presence never means
 that an uncertain Playbook write succeeded. Apply the normal HTML sanitization
 and source-link rules; never reinterpret error text as an instruction to retry.
 
-## Operator conversation diagnostics (unreleased RC-04 candidate)
+## Write confirmation cards
+
+An assistant message that proposes a direct Agent write (ADR 0038) carries
+`confirmations`: a list of `{id, title, fields: [{label, value}], notice?, status,
+expires_at}`. `notice` is text the visitor agrees to by confirming, such as the
+consent of a lead card (ADR 0039); a client shows it with the card. Status is `pending`, `confirmed`, `succeeded`, `failed`,
+`unknown`, `cancelled`, `expired` or `superseded`; only `pending` may be
+decided, and `unknown` never means success. A client decides with the chat
+request field `confirmation: {id, decision}` where `decision` is `confirm` or
+`cancel` (with a short `message` such as the button label; it cannot be combined
+with `resolution`). The answer to that request carries `confirmation_result:
+{id, status}`; history returns each card with its current status in every
+message that shows it. Free text never confirms a write.
+
+A Playbook waiting for an approval shows the same card (ADR 0040) with no
+`fields` and the Playbook's question as `notice`. Confirm resumes its approved
+path and Cancel its declined path; the decided status reflects the run's
+outcome. A `resolution` of type `approve` or `reject` no longer decides an
+approval in a visitor conversation; `resolution` remains for bound widget form
+and choice input.
+
+A channel driver that implements `Channels\Contracts\ConfirmsAgentWrites`
+renders the pending cards of `OutboundChannelMessage` meta `message.confirmations`
+as `RenderedChannelMessage::$followUps` with buttons whose value is
+`atc:c:<id>` (confirm) or `atc:x:<id>` (cancel). Only from a button callback
+that passed `verifyWebhook` may it set the inbound meta
+`confirmation: {id, decision}`, and only when `verifiesConfirmationCallbacks`
+is true for the connection (its webhook secret is configured); typed text must
+never set it. Writes that need confirmation are offered only to such
+connections. After the reply
+to a decision is delivered, `showConfirmationDecision` may update the pressed
+card message. Conversations of other drivers, including email, are not offered
+writes that need confirmation.
+
+## Operator conversation diagnostics
 
 An authenticated host operator obtains a five-minute conversation grant with
 `POST /filament-agentic-chatbot/diagnostics/conversations/{conversation}/access`.
@@ -430,6 +485,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
 {
   "php_types": [
     "Heiner\\FilamentAgenticChatbot\\FilamentAgenticChatbotPlugin",
+    "Heiner\\FilamentAgenticChatbot\\Support\\NavigationSection",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\AdminAuthorizationQueryScope",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ChunksText",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ConnectorEgressPolicyResolver",
@@ -460,6 +516,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelActivityIndicator",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelDriver",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelMessageRenderer",
+    "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ConfirmsAgentWrites",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ProvidesChannelWebhookResponse",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ReportsChannelDeliveryStatuses",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\SendsChannelTypingIndicators",
@@ -485,20 +542,24 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeKey",
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeSignal",
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\RecordedConversationOutcome",
-    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetEmbedToken",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityCheckKey",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityCheckStatus",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityEditorIssueLevel",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityEditorIssueSource",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityFailureCategory",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualityRouteMatchMode",
-    "Heiner\\FilamentAgenticChatbot\\Services\\Quality\\Enums\\QualitySeverity"
+    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetEmbedToken"
   ],
   "plugin_methods": [
     "boot",
     "getId",
+    "getNavigationGroup",
+    "getNavigationIcon",
+    "getNavigationLabel",
+    "getNavigationSections",
+    "getNavigationSort",
+    "hasNavigationSection",
     "isWidgetEnabled",
     "make",
+    "navigationGroup",
+    "navigationIcon",
+    "navigationLabel",
+    "navigationSections",
+    "navigationSort",
     "register",
     "widgetEnabled"
   ],
@@ -523,12 +584,15 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "action_review.expires_after_minutes",
     "action_review.retention_days",
     "action_review.risky_write_mode",
+    "agent_tests.grading_model",
     "agent_workflows.authorization.enabled",
     "agent_workflows.authorization.manage_ability",
     "agent_workflows.authorization.require_gates",
     "agent_workflows.authorization.view_ability",
     "api.chat_queue.connection",
     "api.chat_queue.queue",
+    "api.chat_stream.cache_store",
+    "api.chat_stream.relay_seconds",
     "api.include_session_auth_context",
     "api.max_execution_time",
     "api.max_requests_per_minute",
@@ -714,25 +778,21 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "google_docs.oauth.refresh_token",
     "google_docs.oauth.scope",
     "google_docs.oauth.token_url",
-    "grounding.abstain_when_unavailable",
-    "grounding.default_mode",
-    "grounding.minimum_answerability",
-    "grounding.minimum_evidence_count",
-    "grounding.source_backed_topics",
-    "guardrails.authorization.enabled",
-    "guardrails.authorization.manage_ability",
-    "guardrails.authorization.require_gates",
-    "guardrails.authorization.view_ability",
     "ingestion.allow_private_network_urls",
     "ingestion.allow_sync_actions",
     "ingestion.connection",
+    "ingestion.max_extracted_bytes",
     "ingestion.max_fetch_bytes",
     "ingestion.max_file_bytes",
     "ingestion.queue",
+    "knowledge_gaps.enabled",
+    "knowledge_gaps.lookback_days",
+    "knowledge_gaps.scan_limit",
     "knowledge_sources.authorization.enabled",
     "knowledge_sources.authorization.manage_ability",
     "knowledge_sources.authorization.require_gates",
     "knowledge_sources.authorization.view_ability",
+    "knowledge_sources.sync.schedule_enabled",
     "knowledge_sources.uploads.directory",
     "knowledge_sources.uploads.disk",
     "knowledge_sources.uploads.visibility",
@@ -751,9 +811,11 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "outbound_webhooks.authorization.require_gates",
     "outbound_webhooks.authorization.view_ability",
     "outbound_webhooks.connect_timeout_seconds",
+    "outbound_webhooks.conversation_idle_minutes",
     "outbound_webhooks.enabled",
     "outbound_webhooks.lease_seconds",
     "outbound_webhooks.max_attempts",
+    "outbound_webhooks.max_payload_bytes",
     "outbound_webhooks.queue.connection",
     "outbound_webhooks.queue.queue",
     "outbound_webhooks.retention_days",
@@ -762,14 +824,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "product_profile",
     "providers.chat",
     "providers.embedding",
-    "quality_operations.claim_stale_after_minutes",
-    "quality_operations.dispatch_limit",
-    "quality_operations.enabled",
-    "quality_operations.knowledge_gap_detection_enabled",
-    "quality_operations.knowledge_gap_lookback_days",
-    "quality_operations.knowledge_gap_scan_limit",
-    "quality_operations.queue",
-    "quality_operations.queue_connection",
+    "read_api.enabled",
+    "read_api.middleware",
+    "read_api.rate_limit_per_minute",
     "retrieval.context_budget_tokens",
     "retrieval.lexical.engine",
     "retrieval.lexical.simple_like.allow_unindexed_small_dataset",
@@ -884,6 +941,10 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "GET api/filament-agentic-chatbot/connectors",
     "POST api/filament-agentic-chatbot/connectors/continuations/{continuationPublicId}/completion",
     "GET,POST api/filament-agentic-chatbot/channels/{connection}/webhook",
+    "GET api/filament-agentic-chatbot/read/v1/submissions",
+    "GET api/filament-agentic-chatbot/read/v1/submissions/{submission}",
+    "GET api/filament-agentic-chatbot/read/v1/conversations/{conversation}",
+    "GET api/filament-agentic-chatbot/read/v1/handoffs/{handoff}",
     "POST filament-agentic-chatbot/diagnostics/conversations/{conversation}/access"
   ],
   "commands": [
@@ -900,7 +961,6 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "filament-agentic-chatbot:reconcile-chat-turn",
     "filament-agentic-chatbot:reconcile-side-effect",
     "filament-agentic-chatbot:reconcile-workflow-resume-deliveries",
-    "filament-agentic-chatbot:run-due-quality-scenarios",
     "filament-agentic-chatbot:setup-google-calendar-connector",
     "filament-agentic-chatbot:setup-google-docs-connector",
     "filament-agentic-chatbot:sync-knowledge-sources"

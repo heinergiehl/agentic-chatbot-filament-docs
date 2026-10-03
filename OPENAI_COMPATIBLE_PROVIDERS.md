@@ -16,7 +16,7 @@ AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY=your-provider-key
 
 ## Configure Per Bot
 
-In **Agentic Chatbot > Build > Bots**:
+In **Agentic Chatbot > Build > Agents**:
 
 1. Set **Chat Provider** to **OpenAI-Compatible**.
 2. Set **Model Source** to **Manual ID** if the model is not in the curated list.

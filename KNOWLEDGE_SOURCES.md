@@ -16,6 +16,42 @@ Republish the Agent to change its profile. Ingestion dates are never presented a
 content validity. All pinned sources remain reachable through the shared search
 tool, including sources beyond the first eight; the complete offer is budgeted.
 
+## Knowledge Library
+
+**Knowledge** is a library of sources shared by Agents. A source can be used by
+any number of Agents, or by none yet. The list shows which Agents use each
+source (**Used by**, filterable by Agent), its state and its re-sync schedule;
+**Agents** in the row actions changes the assignment, **Re-sync now** fetches a
+URL or API source again. In the Agent editor, **Add from library** assigns
+existing sources and **Remove** takes one off the Agent; the source stays in the
+library.
+
+An assignment is part of the Agent's draft. A live Agent searches only the
+source versions pinned in its published deployment, so adding, removing or
+re-syncing a source takes effect for that Agent after its next publish. An
+admin can change only assignments to Agents they may edit; assignments to other
+Agents are kept.
+
+**Embeddings billed to** names the Agent whose embedding key and usage budget
+the source's ingestion and re-syncs use; empty means the app key. It starts as
+the first Agent chosen for the source and changes only when an admin picks
+another assigned Agent they may edit, or removes that Agent from the source
+(the source then uses the app key). Adding or removing other Agents never moves
+the cost. An API source can use an Agent-only API Connector only while that
+Agent is its only user; assigning another Agent is refused. Deleting an Agent
+removes only its assignments; its sources stay in the library until they are
+deleted themselves. A source that a live Agent version pins cannot be moved to
+trash or deleted: the notice names those Agents, and the source can go once
+they are published without it.
+
+### Re-Sync
+
+URL and API sources have a **Re-sync** setting: never, daily or weekly. A
+re-sync fetches the source again, rebuilds the index only when the content
+changed, keeps the previous index until the new one is ready, and shows a
+failure with its error and a retry with backoff. It needs the Laravel scheduler
+(`php artisan schedule:run`); see [Operations](OPERATIONS.md).
+
 This is the specific documentation page to share when someone asks:
 
 - what knowledge sources are
@@ -45,7 +81,7 @@ At runtime, a Knowledge search must be grounded in the visitor's latest request 
 Filament Agentic Chatbot supports four source types:
 
 - **Text**: paste content directly into the panel
-- **File**: upload a supported document such as markdown, text, HTML, JSON, CSV, or a text-based PDF
+- **File**: upload Markdown, text, HTML, JSON, text-based PDF, Word (DOCX), CSV or Excel (XLSX). Tables become Markdown tables whose header is repeated in every chunk
 - **Single web page**: fetch one public URL and extract readable content; this is not a site crawler
 - **API**: fetch JSON records through a saved API Connector and map fields into searchable content
 
@@ -104,7 +140,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 1. Open **Knowledge Sources**
 2. Click **Create**
-3. Select the target bot
+3. Optionally choose the Agents under **Used by**
 4. Choose **Manual Text**
 5. Paste the content
 6. Give the source a descriptive name
@@ -114,7 +150,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 1. Open **Knowledge Sources**
 2. Click **Create**
-3. Select the target bot
+3. Optionally choose the Agents under **Used by**
 4. Choose **File Upload**
 5. Upload the file
 6. Give the source a descriptive name
@@ -124,7 +160,7 @@ Use API sources when a JSON endpoint should sync records into the bot's knowledg
 
 1. Open **Knowledge Sources**
 2. Click **Create**
-3. Select the target bot
+3. Optionally choose the Agents under **Used by**
 4. Choose **URL**
 5. Paste the public page URL
 6. Give the source a descriptive name
@@ -137,15 +173,15 @@ Private and local network URLs are blocked by default for SSRF safety.
 1. Create an **API Connector** with the base URL, auth, headers, timeout, and SSL settings
 2. Open **Knowledge Sources**
 3. Click **Create**
-4. Select the target bot
+4. Optionally choose the Agents under **Used by**
 5. Choose **API Source**
 6. Select the connector and endpoint path
 7. Configure the records JSON path, record ID path, title path, content template, and optional URL path
 8. If the endpoint is paginated, choose page-number, offset, cursor, or next-URL pagination and set the safety limits
-9. Optionally enable **Auto Sync** and set the sync interval
+9. Optionally set **Re-sync** to daily or weekly
 10. Save and wait for `completed`
 
-API source ingestion currently supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own knowledge document. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. Auto sync is driven by `php artisan filament-agentic-chatbot:sync-knowledge-sources`, which should be called by Laravel Scheduler. After a successful re-ingest, the source's previous API documents are replaced, so records that disappeared from the API response are removed from retrieval; if the new sync fails, the previous indexed content remains active.
+API source ingestion currently supports authenticated `GET` JSON endpoints through API Connectors. Each mapped record becomes its own knowledge document. Pagination supports page-number, offset, cursor, and response-provided next URL strategies. After a successful re-ingest, the source's previous API documents are replaced in the new generation, so records that disappeared from the API response are no longer found; if the new sync fails, the previous indexed content remains active.
 
 ## What Happens After You Save A Source
 
@@ -237,7 +273,7 @@ Re-ingest when:
 
 ## Best Practices
 
-- Group sources by bot and audience.
+- Share one source between Agents instead of uploading copies.
 - Prefer clean docs pages over noisy landing pages when possible.
 - Re-ingest after editing or replacing important content.
 - Use descriptive source names so citations are understandable.

@@ -93,13 +93,34 @@ and `invalid`. For Each uses `each` and `done`.
 ### Entry
 
 Entry carries no capability authority. A publishable Playbook has exactly one
-entry point.
+entry point. Its optional `data.inputs` is the Playbook's input schema (ADR
+0040): the Agent tool's arguments, set as run variables when the run starts.
+
+```json
+{
+  "inputs": [
+    { "name": "name", "label": "Name", "type": "text", "required": true, "validation": "min:2|max:80" },
+    { "name": "phone", "label": "Phone", "type": "phone", "required": true },
+    { "name": "slot", "label": "Preferred time", "type": "choice", "required": false,
+      "choices": [{ "value": "morning", "label": "Morning" }, { "value": "afternoon", "label": "Afternoon" }] }
+  ]
+}
+```
+
+`name` is lower snake case and must not be reused as another step's variable.
+`type` is one of `text`, `textarea`, `email`, `phone`, `url`, `number`, `date`,
+`time` or `choice` (with 1 to 50 `choices`). `required` defaults to true;
+`description` (up to 500 characters) and `validation` (Request Input rule
+syntax) are optional. At most 20 inputs. A value is at most 500 characters
+(`textarea` 4,000, `url` 2,000, `email` 320). A left-out optional input is an
+empty string.
 
 ### Request Input
 
 Common fields are `prompt`, `variableName`, `inputType`, `required`, and typed
-validation settings. It creates a visitor waitpoint; it does not make the
-Playbook the general conversation owner.
+validation settings. It creates a visitor waitpoint for a value that exists only
+mid-process; values known up front belong in the Entry inputs. It does not make
+the Playbook the general conversation owner.
 
 ### Capability
 
@@ -230,6 +251,7 @@ Public presentation copy is not a second authoring chore. Unless explicitly
 overridden, the compiler derives the public title and description from the
 Playbook name and description and derives capability labels from visible step
 labels. Obsolete `turnUnderstanding` policy input is discarded; Agent-owned
-behavior remains outside the Playbook document. Every productive write must be
+behavior remains outside the Playbook document and its release, so a change of
+the Agent's role, tone or languages never requires republishing. Every productive write must be
 reachable only from an Approval's Approved path, while the capability gateway
 continues to enforce its independent runtime safeguards.

@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 2,
+  "name": "Collect contact",
+  "description": "Collect one typed value and return a bounded process result to the Agent.",
+  "steps": [
+    {
+      "id": "entry",
+      "kind": "entry",
+      "label": "Entry",
+      "position": { "x": 120, "y": 180 },
+      "data": {}
+    },
+    {
+      "id": "request_email",
+      "kind": "requestInput",
+      "label": "Request email",
+      "position": { "x": 420, "y": 180 },
+      "data": {
+        "prompt": "Which email address should I use?",
+        "variableName": "email",
+        "inputType": "email",
+        "required": true
+      }
+    },
+    {
+      "id": "result",
+      "kind": "result",
+      "label": "Return contact",
+      "position": { "x": 720, "y": 180 },
+      "data": {
+        "resultTemplate": "Contact email: {{email}}",
+        "statusValue": "collected"
+      }
+    }
+  ],
+  "transitions": [
+    { "id": "entry_email", "sourceStepId": "entry", "targetStepId": "request_email" },
+    { "id": "email_result", "sourceStepId": "request_email", "targetStepId": "result" }
+  ],
+  "annotations": [],
+  "conversationMemoryPolicy": "inherit",
+  "policies": {},
+  "compiler": { "version": 1 },
+  "viewport": { "x": 80, "y": 80, "zoom": 0.9 }
+}

@@ -1,33 +1,12 @@
 # Agent Runtime Architecture
 
-This document describes the implemented runtime after the agent-first hard cutover.
-The current Runtime Recovery v3 implementation is an unreleased candidate on
-Agent runtime ABI v32 and compiler ABI v17. K9 integrates deterministic recovery
-evidence; its required gates and host/provider acceptance follow
-[STATUS](plans/runtime-recovery-v3/STATUS.md). Deterministic package checks do
-not establish real host, provider or user acceptance. See the
-[RC-08 user walkthrough](plans/runtime-convergence/handoffs/USER_E2E.md).
-
-[ADR 0025](adr/0025-source-bound-conversation-reliability.md) is the accepted
-target for source-bound offers, typed cross-turn status and one bounded native
-pre-stop correction. S2–S4 implement these boundaries in the unreleased ABI v9
-candidate. S5–S7 add canonical read dependencies and bounded activity presentation.
-S8 verifies their deterministic integration on an isolated host candidate;
-UI persistence and empirical provider/model acceptance remain incomplete in the
-[S8 record](plans/runtime-reliability/S8-result.md).
-N01 adopts [ADR 0029](adr/0029-native-text-conversation.md): native text answers
-replace general Claims JSON and the universal answer reviewer. N02 removes the
-public-search word anchor and general Connector context assessment. N03 adds
-bounded native recovery. N04 prepares an ABI v15 candidate with revised source
-cards, operation contracts and quality checks. The candidate is not active;
-N05 live conversation and widget acceptance is outstanding. Older paragraphs
-in this document that describe Claims or general answer reviews are historical
-candidate details and cannot override the direct conversation contract below.
-
-[ADR 0019](adr/0019-http-write-result-evidence.md) defines the implemented candidate
-HTTP-write evidence contract. Publication checks explicit success evidence and
-bounded provider fixtures; unproven dispatched effects remain unknown. Verification
-and republish requirements are tracked in [the work log](audits/2026-09-13-runtime-hardening-plan.md).
+This document describes the implemented runtime on the `runtime-v2` branch.
+Productive conversation follows [ADR 0037](adr/0037-transcript-agent-loop.md):
+one transcript-based Agent loop with flat, deployment-pinned tools. ADR 0037
+supersedes the dialogue-contract decisions of ADRs 0010 to 0012, 0014 to 0018
+and 0020 to 0036; their observation snapshots, answer reviews, presentation
+receipts, read drafts, read dependencies and tool-loading modes are removed. Deterministic package checks do not establish
+real host, provider or user acceptance.
 
 ## Product Model
 
@@ -38,441 +17,316 @@ knowledge Agent does not need a Playbook.
 Every productive Agent is represented by exactly one live, immutable,
 hash-verified `AgentDeployment`. Its closed contract freezes behavior, model
 policy, one exact provider/model/driver/base-URL binding, effective token and
-monthly budgets, exact read-only Data Resource and Connector operation pins,
-and exact Playbook deployment pins. Provider fallback lists are authoring-time conveniences only
-and cannot be published as productive Agent authority. Mutable bot, Connector,
-or Playbook authoring data is never consulted as runtime authority.
+monthly budgets, exact Data Resource and Connector operation pins (reads, and
+writes with their confirmation policy),
+and exact Playbook deployment pins. Provider fallback lists are authoring-time
+conveniences only and cannot be published as productive Agent authority.
+Mutable bot, Connector, or Playbook authoring data is never consulted as
+runtime authority.
 
 API Connectors, Data Resources, knowledge sources, channels, access tokens,
 usage accounting, limits, human handoff, and operational inspection remain
 product capabilities. They do not own conversation routing.
 
-## Direct conversation contract
-
-[ADR 0029](adr/0029-native-text-conversation.md) governs the current
-unreleased runtime candidate. The model writes ordinary answer text and may
-propose only tools in the immutable deployment manifest. Typed tool input,
-server-side admission and `CapabilityExecutionGateway` decide whether an
-operation runs. General Claims JSON, a universal answer review, and language
-heuristics are not productive conversation gates.
-
-The current visitor message is server-attested. A model-supplied tool argument
-is a proposal, not a source of authority. The direct Connector binder admits
-published inputs and scoped pending revisions; it rejects invented values for
-server-derived fields such as `attested_calendar_year`. That policy uses an
-explicit, unambiguous year from the current message or the recorded turn clock.
-It applies only to a published integer calendar-year input of a read operation.
-Writes, confirmations, sensitive target selections and unknown outcomes retain
-their separate durable authorization and reconciliation contracts.
-
-The native model loop has bounded technical recovery for safe nonexecution,
-empty and truncated completions. It keeps successful read evidence without
-redispatching an identical operation. Graph recovery presents only execution-
-matched recorded data. An incomplete model fragment is never committed as a
-finished answer or executed as a partial tool call. Provider and usage limits
-remain shared across attempts.
-
-Admitted read results create canonical source cards, including sources without
-public URLs. Inline reference markers bind cited cards to delivered evidence;
-uncited cards may still be displayed as retrieved sources and are not claims
-that every sentence is proven. The assistant message, its source cards and the
-turn outcome are committed before JSON, SSE, widget or history projection.
-Operational status comes from the durable ledger, capability receipts and Graph.
-Model prose cannot create execution, confirmation or completion status.
-
-The candidate on runtime ABI v15 pins the revised holiday and Pokemon operation
-contracts and the short Agent 170 instructions. It has not been activated or
-accepted by live provider and widget tests; see the
-[N04 handoff](plans/runtime-dialogue-N04-handoff.md) and the
-[dialogue redesign plan](plans/2026-09-24-runtime-dialogue-redesign.md).
 ## One Productive Turn Path
 
 ```text
 HTTP / widget / channel
 -> ChatTurnApplicationService
 -> DurableChatTurnService
--> AgentTurnLoop
+-> AgentRunner                      (sole ChatTurnRequestExecutor)
 -> verified AgentDeployment
--> AgentTurnModel
-   -> answer or clarify directly
-   -> optionally invoke one or more exact deployment-pinned read tools
-   -> optionally invoke at most one exact deployment-pinned Playbook tool
--> verified read evidence and canonical Playbook outcome composition
+-> RuntimeAgent (Laravel AI agent loop, at most 12 steps)
+   -> transcript of earlier turns, replayed natively
+   -> flat read and write tools from the deployment pins
+   -> optional Playbook tools for the pinned Playbooks
+-> CapabilityExecutionGateway for every external read and write
 -> canonical ChatTurnResult
 -> durable outcome and assistant-message commit
 -> JSON / SSE renderer
 ```
 
-`AgentTurnLoop` is the sole productive implementation of
-`ChatTurnRequestExecutor`. It handles normal conversation, empty-input
-clarification, provider failures, and Playbook results. Provider exceptions are
-mapped to bounded errors and localized safe answers; raw exception text is not
-returned to visitors. Typed transport failures distinguish
-`provider_connection_failed` from `provider_timeout`; timeout classification
-requires typed or structured transport evidence. This does not add retries or
-change unknown-outcome reconciliation.
+`AgentRunner` handles handoff ownership, deployment verification, empty input,
+provider failures, confirmation cards and Playbook results. An open Playbook
+run whose Agent version can no longer be verified or uses the retired input
+contract is not continued: the model is offered only `cancel_playbook` for it
+and the answer ends with a fixed, localized notice (ADR 0040).
 
-HTTP provider failures retain only their status and an allowlisted structured
-error category in operator diagnostics and `AiUsageCall.meta.provider_failure`.
-HTTP 400/422 is `provider_request_rejected`, without visitor retry advice.
-Private error prose cannot turn a rejected request into a rate-limit retry.
-Absent usage receipts still require reconciliation; a rejection does not prove
-zero billable usage.
+`RuntimeAgent` accepts only the immutable runtime projection of exactly its
+verified deployment: the runtime bot must carry that deployment's ID, hash and
+contract version. Provider, driver and model come from that binding. A
+mismatch fails before any provider request.
+
+## Transcript
+
+The conversation transcript is the Agent's only dialogue state. Each committed
+assistant `BotMessage` stores the tool calls and tool results of its turn in
+`meta.agent_transcript` (version 1). The next turn replays them as native
+assistant tool-call and tool-result messages before the visible answer, so
+follow-ups such as "and in Celsius?" use the same mechanism as any coding
+agent. The public message serializer exposes only allowlisted meta keys, so
+the transcript never reaches visitors.
+
+- `conversation.session_memory.history_turns` (0 to 100, default 20 from
+  `chat.session_memory.history_turns`, "Turns to remember" in the editor) is
+  the upper bound of earlier turns loaded. Zero or disabled session memory
+  sends no history.
+- `ContextBudget` then fits those turns into the model's input room: the
+  context window from `ModelCapabilityRegistry` minus the reserved output, and
+  the configured input limit, each less the instructions, tool schemas, the
+  current turn and a reserve for this turn's own tool loop (a quarter of the
+  room, at most 16,000 tokens). A model without a known context window is
+  given 32,000 tokens of input room. It estimates with the same estimator as
+  request admission. The oldest whole turns go first; when only the newest
+  earlier turn is left, its tool results are replaced by the placeholder; then
+  it goes too. A turn is kept or dropped whole, so every tool call keeps its
+  result. Only when the current turn alone cannot fit does the visitor get the
+  "conversation too long" answer.
+- Operator replies from the handoff desk keep their stored `assistant` role
+  for the widget but are replayed with a prefix that marks them as written by
+  a human operator, not by the Agent.
+- Tool results stay verbatim for the three most recent assistant turns; older
+  results are replaced by a short placeholder that tells the model to call the
+  tool again when it needs the data.
+- Unpaired tool calls or results are dropped, because providers reject them.
+- Files a visitor attached on an earlier turn are replayed on that turn's
+  message within the attachment count and byte limits left after the current
+  turn's files. Unavailable or changed files are omitted with a note that asks
+  the visitor to attach them again.
+- `BaseConversationalAgent` admits every model step against the exact
+  serialized request. Before the first step it still drops whole earlier
+  turns, oldest first, if the request does not fit (never this turn's own
+  messages). Later steps cannot shrink: the SDK sends every message it holds,
+  so a step that does not fit is rejected. While earlier turns are still
+  replayed, `RuntimeAgent` then stops the loop with its messages so far and the
+  runner asks once more, with the earlier turns fitted again around them and a
+  runtime note to continue. A request that cannot fit without earlier turns
+  ends with a non-retryable `ai_context_window_exhausted` or
+  `ai_input_token_limit_exceeded` answer.
+
+## Tools
+
+`ToolFactory` turns each read pin of the deployment into one flat tool:
+
+- `ConnectorReadTool` for a published read operation of an API or MCP
+  connection. Its description combines the published description, result
+  fields, an intent example and, for MCP, the published source name, scope and
+  URL.
+- `DataResourceTool` for an approved Data Resource, with its published
+  filters, sorting and limits as typed arguments.
+- `KnowledgeTool` for the pinned knowledge search.
+
+- `WriteTool` for a published write: an API or MCP operation, or the insert or
+  update of an assigned Data Resource with a write policy (ADR 0038). With
+  visitor confirmation its call only proposes; see Direct Write Execution.
+- Built-in tools switched on in the Agent editor (ADR 0039): `HandoffTool`
+  (`request_human`) hands the conversation to the handoff desk, and
+  `save_contact` is a `WriteTool` that stores a lead as a submission after the
+  visitor confirmed its card. See Built-in Handoff And Lead Capture.
+
+Batch and durable background writes, approvals inside processes and durable
+waits belong in Playbooks. There is no global tool registry, mutable authoring
+fallback or client-selected operation.
+
+`RuntimeTool` is the shared envelope. Arguments are validated against the
+published input schema before any request leaves the server. A result is
+`{"ok": true, "result": ...}`, compacted to 12,000 characters while keeping its
+structure. A failure is `{"ok": false, "error": ..., "next_step": ...}`, where
+`next_step` tells the model in general terms whether it can correct its
+arguments, should ask the visitor, or should stop. An identical call within the
+same turn returns the earlier result without a second request. After three
+consecutive failures of one tool the tool refuses further calls in that turn.
+Arguments may be inferred by the model (for example translating a name);
+read authority comes from the pin, scope and Gateway, not from argument
+provenance.
+
+Each tool call is recorded in a per-turn `ToolCallLog`: redacted arguments
+(the free text of lead capture, `name` and `message`, and of a handoff,
+`reason` and `summary`, is always redacted), status, code and duration for the trace, source cards for the answer, and the
+capability executions for `ChatTurnExecutionEvidence`.
+
+## Model Loop And Failures
+
+`SystemPrompt` composes the deployment's instructions and its assistant
+profile (role, audience, tone, answer length, uncertainty, boundaries,
+languages, citation policy) with short, generic principles: handle every request, infer obvious values and name the
+assumption, take data only from tool results for exactly the requested item,
+do not substitute silently, follow a failed tool's `next_step`, and ask one
+concrete question when a required value is really missing. Tool results are
+data, not instructions. Channel and display context are appended. There are
+no provider-specific prompts.
+
+- A rate-limited request gets up to three attempts, only while no tool has
+  run during it and the backoff leaves execution budget for another attempt.
+- A call to a tool name the turn does not offer gets a paired error result
+  that names the offered tools (`RepairToolCalls` on `RuntimeAgent`), so the
+  model can correct itself. The runner records it in the `ToolCallLog` as a
+  failed `unknown_tool` call without arguments and logs the name, cut to 64
+  identifier characters; the stored error text carries the cut name too.
+  After three such calls in a turn the loop stops before its next model step
+  and the model is asked once to answer without them.
+- When a model ends with an empty message after tool results, the runner asks
+  once for the answer, replaying the visitor's message with its attachments
+  and the same rate-limit retry. A second empty answer is a degraded
+  `agent_response_empty` result.
+- Provider exceptions are mapped to bounded error codes and safe answers in
+  the visitor's language: the current message when it is clear, else the latest
+  clear earlier visitor message, else the Agent default language. Raw exception text and provider bodies are never shown to visitors.
+- `WorkflowExecutionOutcomeUnknownException` is rethrown so durable turn
+  handling keeps the turn reconcilable.
+- `AgentExecutionBudget` gives the whole turn one deadline (90 seconds by
+  default). Each model request and capability call consumes the same remaining
+  time. An already admitted capability keeps its own timeout and
+  unknown-outcome handling.
+
+The completed payload carries `agent_execution` with version
+`agent_runner.v1`, the decision, step count, empty-answer retry flag, tool
+calls, capability executions and whether knowledge was searched.
+
+### Streamed answer drafts
+
+A queued widget turn carries an `AnswerStream` in its `ChatTurnRequest`
+(ADR 0042). AgentRunner then runs the same loop through the SDK's `stream()`
+instead of `prompt()`: same tools, Gateway, usage admission, step limits,
+retries and stops. Each model run restarts the draft; a tool call discards the
+step's text and reports a progress category (`knowledge`, `lookup`,
+`action`); after a Playbook tool no draft text is shown. The loop's messages
+are rebuilt from `RuntimeAgent::completedSteps()` and the streamed tool
+results in the order `prompt()` returns them, so the stored transcript is the
+same for both transports. `TurnAnswerDraft` writes the visible prefix to
+`TurnDraftBuffer` (cache, at most every 100 ms) after
+`WorkflowSafetyBoundary::draftInspector()` accepted the whole text so far,
+holding back the newest word and 24 bytes; a rejected draft is cleared. The
+SSE request that admitted the turn relays the buffer (`ChatTurnDraftRelay`)
+until the turn is no longer active, then sends the stored outcome as a replay
+would. Drafts are never committed: the answer
+AgentRunner returns passes `protectResult()` and the existing committer once.
+JSON `/complete`, channels, admin tests and recovery keep `prompt()`.
+
+## Playbooks In A Turn
+
+`PlaybookTurns` builds the per-turn `AgentPlaybookTurn` (ADR 0040). Without an
+open run, each pinned Playbook is one flat tool whose arguments are the
+Playbook's input schema; missing or invalid values return a tool result naming
+the fields, and nothing starts. While a run is open, its tool supplies the
+value the run waits for (schema of the pending input) or reads its status, and
+`cancel_playbook` stops it. A turn performs at most one Playbook transition. A
+widget form or choice bound to the pending interrupt resumes without a model
+call.
+
+The model writes the answer from the compact Playbook tool result. The turn
+result keeps the run's canonical state (run projection, pending input, outcome
+flags) from `AgentPlaybookResultProjector`; without model text, and for an
+unknown outcome, the Playbook's fixed status text is the answer. Independent
+reads in the same turn keep their sources.
+
+## Agent Deployment Authority
+
+Agent deployments use contract `agent_contract.v3` (version 3). The contract
+no longer carries a runtime ABI, tool-loading mode, presentation receipts or
+read dependencies; the runner reads the pins directly. Earlier deployment
+versions remain readable and are refused for execution.
+
+`AgentDeploymentPublisher` creates an immutable contract and deployment hash.
+The local Ollama configuration extension pins an optional boolean
+`runtime_config.agent.ollama_think` as `model.ollama_think`; only the exact
+Ollama driver accepts it, and an absent value preserves the server default.
+
+Publication freezes:
+
+- behavior and response policy;
+- exact provider, driver, base URL, model, input/output limits, and monthly
+  token/cost policy;
+- allowed knowledge and data authority;
+- exact published Connector operation revision, contract and input schema
+  hashes, effect, environment binding, discovery metadata and optional MCP
+  source metadata, and for writes the confirmation policy (`visitor` or `none`);
+- exact Playbook workflow ID, deployment ID, deployment hash, tool identity,
+  and structured invocation contract; and
+- the release metadata needed to verify the contract.
+
+`AgentReleaseService::publish` makes that immutable artifact live in one
+transaction (ADR 0041): it locks the Agent row and every referenced Playbook,
+Data Resource, Connector operation and environment, Knowledge source and
+generation, compiles and verifies the deployment, re-checks under the locks
+that it is still the saved draft, verifies every pinned external dependency and
+only then moves the live pointer and records the version (`AgentRelease`:
+number, time, author, note). A failure leaves no new deployment, no version and
+the previous live pointer. `AgentReleaseService::restore` makes an earlier
+version live after the same verification and a compare-and-set on the live
+pointer the operator saw. Tests and quality runs never gate either step; they
+show as warnings.
+
+`AgentDeploymentRepository` resolves and verifies the deployment selected for
+the durable turn. A missing, foreign, mutable, or hash-invalid deployment fails
+closed. Later authoring changes require publication of a new deployment; they
+cannot alter an in-flight or historical turn.
+
+## Direct Read Execution
+
+Connector and Data Resource tools call
+`CapabilityExecutionGateway::executeConnectorRead` and
+`executeDataResourceRead` with an `AgentReadRequest` (deployment, turn, tool
+name, arguments). The Gateway checks the pin, scope, credentials and host
+policy, then delegates to `AgentConnectorReadExecutor` or
+`AgentDataResourceReadExecutor`. Authenticated `direct_read_policy=deny`
+blocks direct reads at the Gateway. Typed outcomes distinguish success,
+no match, partial results, failures and unknown outcomes; a partial or failed
+read cannot authorize a release.
+
+## Direct Write Execution
+
+A write tool call first passes `CapabilityExecutionGateway::admitAgentWrite`
+(pin, write permission, argument schema, Connector planning; nothing is claimed
+or sent). With confirmation policy `visitor`, `AgentToolConfirmations::propose`
+stores an `AgentToolConfirmation` with the encrypted arguments, bound by
+`AgentWriteBinding` to Agent, conversation, deployment, the complete pin and the
+authority scope. The tool result tells the model that nothing was saved; the
+assistant message meta `agent_confirmations` carries the public card. A newer
+proposal of the same tool in the conversation supersedes an older pending one.
+
+The visitor decides with an explicit `confirmation: {id, decision}` field of the
+chat request. `AgentRunner` resolves it before any model call: under a row lock
+the record becomes `confirmed`, `cancelled` or `expired` (30 minutes) once; a
+changed deployment, pin, payload or authority closes it without writing. A
+confirmed record executes through `CapabilityExecutionGateway::executeAgentWrite`,
+which re-verifies the record, the deciding turn and the confirmation-derived
+invocation key, claims the side-effect ledger, dispatches with the provider
+idempotency key and finalizes the outcome; post-dispatch ambiguity is
+`unknown`. The deciding turn appends the write tool's own call and result to the
+transcript and the model reports it with read tools only. Another turn that finds
+the record decided answers with its status without a model call; a repeated
+delivery of the deciding turn replays the stored outcome.
+
+With confirmation policy `none` (an explicit Agent setting; never for MCP) the
+call executes at once through the same Gateway path with an invocation key bound
+to the turn and payload. Admin test conversations (test chat and Agent tests)
+only simulate writes (ADR 0041). Channel conversations receive confirmation-required
+writes only once their driver renders buttons; email never does.
+
+Remote MCP tools are Connector operations with an explicit `mcp` transport.
+Discovery creates only drafts. Published operation revisions pin tool
+declarations, input/output contracts and the `core/mcp` implementation closure;
+Agent releases pin those revisions through the closed Connector manifest.
+Execution passes through `CapabilityExecutionGateway`, the typed Connector
+dispatcher and the bounded transport. The MCP client verifies the selected
+declaration before calling it and never injects a live remote catalog into the
+model. Separately reviewed synchronous MCP create/update operations are direct
+write tools that always ask the visitor to confirm, or Playbook steps with exact
+payload confirmation; both use isolated staging evidence and the same
+side-effect ledger and reconciliation path. See [MCP connections](MCP_CONNECTIONS.md) and
+[ADR 0013](adr/0013-reviewed-integration-writes.md).
 
 The Gemini compatibility gateway preserves provider-supplied function-call IDs
-in both model history and the matching function response. Laravel AI's internal
-correlation ID remains available for every call, but an originally ID-less
+in both model history and the matching function response. An originally ID-less
 provider call contributes no ID to either side of the wire exchange. This
-adapter correction changes neither tool authority nor retry behavior. Its
-overrides can be removed when Laravel AI preserves this distinction throughout
-parsing, history, and function-response serialization.
-
-Bare Gemini tool-result follow-ups use the normal native loop without an extra
-model-specific continuation cue. Tool results, provider IDs and original visitor
-messages remain intact.
-
-The N01 text response has no general JSON answer schema for Gemini or other
-providers. The SDK step projection still shares the same effective request with
-admission and closes tools during a bounded technical answer continuation.
-History, native tool IDs, receipts and per-step usage stay within that loop.
-
-Productive native invocations permit at most two technical recovery steps within
-the original SDK step budget, including at most one answer-only step after a
-verified read. Empty and Length finishes can continue; incomplete or
-nonexecuted tool proposals cannot dispatch. An identical proposal with a new
-provider call ID reuses its existing rejection or completed read observation.
-The provider finish reason and the SDK Continue signal are recorded separately.
-Runtime ABI v17 uses the turn's typed tool outcomes for local read repair. One
-successful read does not close tools while a sibling has a correctable local
-rejection. The two-recovery-step and answer-only limits remain. Local rejection,
-input need, execution and delivered result are separate observations; a result
-is usable only with a matching successful execution receipt. Answer-only
-recovery closes tools after no correctable work remains. An exhausted, failed
-or interrupted model step never promotes draft prose to a finished answer. A terminal Graph recovery
-uses only execution-matched delivered read data and the authoritative run
-projection. There is no outer empty-response prompt restart or per-tool repair
-counter. Provider errors and unknown effects do not cause an automatic
-post-dispatch retry. Safe rate-limit transport retries retain their
-no-execution/state-unchanged guard.
-Local read repair follows typed nonexecution and `correct_arguments`, without
-an error-code allowlist. An unknown operation closes repair for that operation;
-independent pinned reads may still use remaining native steps. Connector replay
-binds admitted inputs, context, sources, task revision and scope and consumes
-no new dispatch attempt.
-
-Per-invocation technical flags live in the existing agent lifecycle and are bound
-to original SDK options at StartingStep. Pure request projection shares effective
-instructions, live pending state, messages, tool definitions and schema between
-budget admission and dispatch. Pending data stays fresh; its random wrapper
-boundary is stable only for that state instance. Attachment accounting remains
-separate. Native provider tokens/blocks/call IDs are never package control markers.
-
-Runtime Recovery v3 K1 uses `agent_tool_projection.v13`. Admission serializes
-the native SDK request body with the dispatch JSON encoding, including provider
-options, tool results, continuation framing and streaming options. The native
-step retains that ephemeral projection for dispatch; a new attempt invalidates
-it and requires fresh admission. The replaced section-based budget request and
-Ollama-only request reconstruction are removed. The initial preflight and every
-step after any history reduction use the same serializer.
-
-Runtime Recovery v3 K3 removes the duplicate-only productive compactor. Within
-the deployment's unchanged native history window, the latest complete turn and
-turns containing bound draft values, published conditions, interpreted visitor
-sources or still-binding delivered input offers/questions are protected by their
-original message IDs. Other whole turns are removed oldest first, retaining
-original order. The existing reader excludes unanswered user-only turns before
-segmentation, so a later incomplete turn does not displace the latest complete
-one. Reduced history is explicitly described as discontinuous. Original rows,
-drafts and receipts are not changed by projection.
-
-Each reduction recomposes the existing bounded session-memory snapshot and
-rebuilds offered visitor provenance solely from retained native user messages.
-Memory remains optional background, never source authority. Bound sources outside
-the native window still pass the scoped original-content checks at reload and
-Gateway admission; they are not offered as native history. Missing originals
-fail closed. A protected minimum that cannot fit rejects before dispatch.
-The turn owner locally completes a capacity rejection with a persisted technical
-answer and typed operator error, retaining received input and unchanged pending
-state. JSON/SSE replay uses that same canonical commit; the next normal turn
-remains admissible, subject to the same protected minimum and budget. Successful
-reads retain their evidence after answer failure, pending requests remain open,
-and unknown outcomes require reconciliation before repeating the operation. No additional model
-request, recovery credit or external retry is created. K3 requires fresh ABI v26
-Agent candidates; compiler v16, native projection v13, Observation v4 and
-Connector Context v5 are unchanged.
-
-ADR 0021's accounting bases remain distinct: published input quotas and financial
-reservations retain the conservative UTF-8 upper bound; physical model-window
-admission retains the existing tokenizer/provider-profile estimate plus the
-same attachment/framing allowances and per-request reserved output. Output is
-not subtracted from the published input quota. When estimates are comparable,
-the effective input ceiling is the smaller of that quota and the known model
-window minus output. An unknown window does not bypass the quota. Capacity
-diagnostics name the violated constraint, estimate source, token unit and limit;
-request byte counts and input/context estimates remain separate. No prompt or
-provider result text is added to operational diagnostics. ABI v23 deployments
-remain readable and are explicitly rejected for execution; K1 does not publish
-or activate replacements or migrate open conversation authority.
-
-The original native step ceiling counts actual attempts across provider failover;
-shared time and usage limits still apply. There is no productive answer-review
-agent. Deferred, nested and interrupted streams have separate cleanup.
-
-The S3 candidate under ADR 0034 permits one ordinary Stop after a typed local,
-nonexecuted correction to continue in the existing native SDK loop. Stop,
-Length and Empty recovery share the same two credits, original step ceiling,
-deadline and usage budget. A second ordinary Stop ends unresolved work, even
-when empty. Genuine input needs, protected evidence, definitive policy boundaries
-and unknown effects do not grant this chance. The runtime neither forces a tool
-nor restricts its list to a rejected operation. Real-model quality remains open.
-
-`AgentToolOutcome` distinguishes local correction, missing input, protected
-evidence, policy boundary, success/no-match, provider failure, unknown and pending.
-ConversationState projects the latest typed outcome for each selected operation;
-its `agent_observations.v3` snapshot keeps execution authority and result usability
-separate. Historical v1/v2 remain readable. Identical repairs reuse the native
-adapter's turn-local canonical proposal and selected operation, independent of
-provider call IDs. The adapter remains bound to the immutable tool, deployment
-and authority scope; exact draft controls include revision. Independent reads
-and explicitly selected refresh use their existing admission and Gateway checks.
-Unknown effects keep reconciliation, with no automatic repair dispatch. Short
-feedback projects affected fields under the offered schema instead of repeating
-the full tool definition. Observed outcomes and evidence references enter the
-last native composition; continued draft text never becomes the canonical answer.
-Supported unstructured high-level streaming and direct SDK schema-format streams
-are tested separately: the installed SDK rejects high-level structured-agent
-streaming, which this package change does not enable.
-
-Runtime Recovery v3 K2 replaces the current writer with `agent_observations.v4`.
-The bounded private snapshot has one `sources` table keyed by message ID and
-SHA-256 of the original message content. Each entry holds `message_id`,
-`content_sha256` and the existing bounded `quote`; invocations hold `source_ref`
-and `latest_source_ref`. Equal text from different messages remains distinct.
-The outer `source_message_id` still identifies the current turn. The canonical
-reader validates same-snapshot references and exposes ephemeral resolved fields;
-receipt and diagnostic consumers recheck original content, role and scope.
-Pure v1/v2/v3 readers remain, without a historical writer or restored authority.
-Admission counts the actual escaped v4 snapshot, reserves bounded outcome growth
-for unfinished calls and the final commit, and keeps the 8,000-byte source,
-24-invocation and 65,536-byte snapshot limits. A refused invocation cannot
-dispatch. Execution and answer states retain their existing meanings.
-This requires fresh ABI v25 Agent candidates; compiler ABI v16, native schema
-projection v13 and Connector Context v5 are unchanged. Existing deployments and
-receipts are not rewritten. Host cutover and release acceptance remain pending.
-
-S4 holds native DeployedAgent text until `finalAgentStepResponse` has made
-its response decision. `AgentDraftTextBuffer` retains at most 48,000 serialized
-event bytes and 1,024 text events per step. Only unchanged, nonblank normal Stop
-text without tool calls, approvals or provider continuation is released, with
-its original event objects. Continued, failed, oversized or unserializable text
-is suppressed in full. The provider stream is still drained for its actual
-usage receipt. Nontext events, native response/history and opaque provider
-blocks remain on their existing path. This bounds the package presentation
-buffer, not the SDK's existing response accumulation. An overflow supplies no
-text to the stream consumer; it does not invent a truncated answer or retry.
-An abandoned stream still requires reconciliation when no complete native
-receipt was persisted. If an eligible answer review already caused the complete
-provider step to settle, later presentation abandonment cannot erase it.
-
-Once native formatting closes tools, that closure survives provider failover
-and reset SDK step numbers, including a switch to a provider that ordinarily
-combines tools and schema. Admission and dispatch share that effective final
-projection. `AgentNativeAnswerReview` assesses evidence-bearing drafts at this
-seam and permits one semantic correction only with a productive and final step
-remaining. It retains at most two exact candidate attempts across failover and
-passes its receipt/allowance into the final response. The finalizer consumes that
-receipt or remaining credit through the same policy; it cannot restart review.
-The binding covers turn/invocation, deployment/scope, raw draft, full review input,
-evidence/status, pending/offer revisions and language. Separate-format prose is
-untrusted coverage input, never a certificate for later formatted prose.
-
-Feedback has at most eight source-bound diagnoses and 2,048 JSON bytes through
-`agent_tool_projection.v7`; it supplies no replacement values, tool selection or
-permission. A complete productive native receipt settles before the separate
-tool-free review uses the same deadline and normal admission. An incomplete
-productive receipt stops the invocation before review and remains reconcilable. Failed/invalid
-reviews consume credit and retain safe factual/status rendering. Native stream
-text must also equal the approved presentation before its original events can
-be released. See [S4b evidence](plans/runtime-reliability/S4b-result.md).
-
-`DeployedAgent` enables Laravel AI's `RepairToolCalls` handling. An unknown tool
-name produces a failed tool result naming the tools actually available in the
-turn. The model may correct its proposal within the existing step and usage
-budgets; the unknown tool never executes and no additional capability is
-introduced. Exceptions from an executed handler still propagate through the
-existing failure and reconciliation paths. Knowledge-search instructions are
-included only when that turn actually provides the pinned knowledge tool.
-
-`AgentPromptInstructions` composes the conversation contract from the actual
-tools available in this turn. Connector, Data Resource, knowledge and Playbook
-rules are included only for their corresponding capabilities; a tool-free
-conversation does not receive direct-read JSON selection or tool-routing rules.
-An open Playbook is identified from verified runtime state, independently of
-whether its current status has a textual input snapshot. The closed deployment
-manifest still determines tool availability. This composition does not add a
-semantic tool shortlist or another routing authority. Instructions and schemas
-remain fixed within the native SDK invocation.
-
-The model chooses the response language within the immutable Agent policy.
-`behavior.profile.languages` contains the published language tags;
-`ChatLanguageResolver::agentLanguages` normalizes and deduplicates supported
-`TurnLocale` values. An empty list permits all four built-ins. A singleton is
-fixed; a mixed list permits only its supported subset. A nonempty list without
-any supported built-in retains the documented default as its sole technical
-response locale. The default is `behavior.default_language`, or the first
-permitted locale when that default is excluded. No new publish migration or
-Agent fixed-language field is introduced.
-
-Native answers receive this policy as instructions. There is no general locale
-envelope, Claims parser or separate answer reviewer; the finalizer bounds native
-prose and projects witnessed source cards under ADR 0029. Technical fallback
-uses the published default without certifying the language of model prose.
-
-Runtime Recovery v3 K8 removes the unused current review payload/context,
-coverage construction and coverage commit writer. The unused historical language
-grammar and review-only relative-date heuristic are physically removed; current
-receipt resolution and published calendar/source admission stay in their existing
-owners. `AgentAnswerCoverage` retains
-only the pure `answer_coverage.v1` validator used by historical receipt restore.
-Historical coverage and reviewer events stay readable and immutable; they do
-not certify new native prose or authorize execution. No new tool abstraction or
-productive authority is introduced; the manifest-bound adapter retains the
-specific read, knowledge, Playbook and cancellation contracts.
-
-A short continuation can follow the model's conversation context without a
-server heuristic constraining its schema to one locale. `VisitorMessageLocale`
-and verified open-request source inference remain only in
-`ChatLanguageResolver::forInputAdmission`, preserving the Connector binder's
-`SlotValueAdmissionContext.locale` behavior. They no longer authorize answer
-language. Early failures and technical capability descriptions use the published
-default; a capability description must not overwrite the final draft's locale.
-
-The existing workflow `forTurn` fixed-language policy remains authoritative for
-its Playbook section. The result projector passes the Agent choice as a
-preference through the verified Workflow state. Already canonical Workflow
-prose is not translated; incompatible Agent/Workflow policies can yield sections
-in different languages. Plain prose without a structured locale keeps its
-existing admission path, including code fences and Markdown. Its language is
-prompt-guided, not deterministically certified. A locale declaration alone is
-also not proof that every phrase is written in that language.
-
-Changing draft settings or later conversation language cannot relocalize a
-committed turn: JSON and SSE replay retain its stored content and presentation
-proof. No translation call, additional review, language state or operational
-continuation is added. Evidence, graph transitions, error codes and retry
-authority retain their existing owners.
-
-General capability questions use the normal model turn. The local
-`describe_agent_capabilities` tool supplies only the immutable manifest's public
-scope. A reviewed `capability_description` can express that scope naturally;
-canonical labels remain the fallback. No keyword shortcut forces a list or
-skips the model. Neither wording nor visitor requests expand published access.
-See [ADR 0021](adr/0021-natural-dialogue-and-context-accounting.md) for the current
-answer contract and the distinction between context sizing and cost reservation.
-
-Within the normal model turn, an answer may also select `capabilities` with
-the closed scope `all`, `data_resources`, `connectors`, `knowledge`, or
-`playbooks`. This presentation selection can stand alone or accompany current
-facts, historical facts, and a recorded clarification. The existing capability
-overview renders only public labels and availability from the verified
-deployment manifest. An absent Data Resource therefore means no database
-source is enabled for this Agent, not that a database is empty or that its API
-operations cannot return data. The scope field supplies no source contents or
-permissions. Reviewed description claims can phrase that exact scope naturally.
-The metadata never counts
-as an executed read or satisfies evidence coverage. It has a separate share of
-the answer budget; independent facts, failure reasons, source pointers, and
-confirmation offers retain their existing validation. The facts fallback
-preserves a valid original metadata selection and cannot change its scope.
-The model receives complete category counts, including zero, from that same
-manifest. Role descriptions and custom system prose cannot add sources to this
-catalogue. Access descriptions must select this metadata contract; combined
-requests must also cover unavailable scopes alongside their independent results
-or questions.
-Normal turns that already expose tools also offer `describe_agent_capabilities`,
-a local presentation action over this manifest. It makes no source query and
-grants no access. A healthy completion carries its selected scope into the same
-answer contract even when final model prose omits or misstates it. The first
-valid scope is retained; a conflicting second selection cannot overwrite it.
-This selection is local to the invocation, not a recoverable external operation.
-Tool-free history and answer review do not acquire this tool.
-
-An admissible, server-bound question after an identity mismatch is presented
-directly when it concerns a single operation. Mixed operations retain concise
-source attribution. The operator receipt still records the mismatch; rejected
-facts remain excluded. Without a valid question, with exhausted clarification,
-or with an unresolved result condition, the bounded explanatory fallback
-remains available. Visitor prose does not need the internal tool error and
-field-assignment preamble to ask for a more precise input.
-
-The synchronous deployed-model path shares one ephemeral, monotonic
-`AgentExecutionBudget` per `ChatTurnRequest` (90 seconds by default). Model
-requests, existing rate-limit retries and terminal claim review consume the same
-remaining time; each native Laravel HTTP request is capped at dispatch rather
-than receiving another full timeout. An exhausted admission budget has the
-distinct bounded code `agent_execution_timeout`. The execution scope is restored
-on exceptions and isolated between PHP Fibers; unrelated HTTP requests keep
-their original options. The model, deployment pins and payloads are unchanged.
-
-HTTP execution through `ChatTurnApplicationService`, including admin candidate
-tests and Quality runs, applies the configured `api.max_execution_time` PHP
-limit (120 seconds by default) before durable turn admission. Public API
-controllers also apply it before context setup. This leaves room beyond the
-shared model budget for canonical terminal persistence; it does not increase
-that budget, retry allowance or lease. Nonpositive settings opt out, and CLI
-workers retain their own process limit. PHP execution limits remain process
-settings, separate from Fiber-local model deadlines; hosts must also align
-their web server, proxy and worker limits with the supported execution path.
-
-This is cooperative admission, not cancellation authority. A new model-requested
-tool cannot start after expiry, but an already admitted capability keeps its own
-timeout and unknown-outcome handling. Its elapsed time reduces the next model
-request's allowance. Completed results are not retroactively discarded. This
-HTTP enforcement covers the native Laravel HTTP gateways on the productive
-synchronous path; direct AWS Bedrock transport and deferred native SDK streaming
-are not claimed to have equivalent per-request deadline enforcement.
-
-If model completion times out, is truncated, or ends with a filtering, provider,
-incomplete-tool or unknown-completion error after verified reads, Knowledge
-excerpts or historical evidence are available, `AgentAnswerFinalizer` preserves
-their guarded rendering with a localized incompleteness notice. The native
-finish reason is classified even when the provider returned text. Unfinished model prose is
-discarded and no answer repair is attempted. Space for the notice is reserved
-within the existing answer limit, and the presentation proof is rebound to the
-full committed text before JSON/SSE rendering. With no usable evidence, the
-visitor receives a bounded service/time-limit explanation without an automatic
-retry instruction. This does not make a slow first provider response succeed.
-
-A normal empty stop retains the existing healthy exact fallback classification
-only for one complete curated object or a flat curated list of at most twelve
-records, with its presentation proof and no failure, Knowledge or Playbook mix.
-Other invalid or missing selections remain safe fallback decisions, even when
-their displayed facts are useful. No second generative selection promotes them
-to success.
-
-Independent direct reads may coexist with one Playbook in the same turn. The
-single-open-Playbook rule and all approval, wait, cancellation and unknown-write
-semantics remain authoritative. `AgentAnswerFinalizer` composes verified read
-evidence with the canonical Playbook presentation. Bounded encrypted
-`ChatTurnPresentationReceipts` persist completed reads and the exact Playbook
-observation before recovery can need them. Observing a busy, delayed or terminal
-Playbook projects an authorized AgentGraph snapshot; it never dispatches or
-resumes the graph just to reconstruct an answer. Uncertain writes retain their
-terminal error and retry lock, with independent read evidence in `read_answer`.
-
-A pure Playbook response is rendered from the authoritative run and verified
-state, so it does not depend on provider prose after the tool exchange. If a
-provider reports a normal stop with an empty final text after that completed
-exchange, the deterministic Playbook projection remains a healthy response.
-Typed timeout, filtering, truncation, incomplete-tool, and unknown completion
-errors remain recorded and continue to block release evidence.
+adapter correction changes neither tool authority nor retry behavior.
 
 For a long-running external operation, an immutable Connector completion
 contract returns a typed pending reference through the same capability gateway.
-AgentGraph owns the delay/checkpoint and its existing resume-delivery mechanism
-owns polling. Signed completion notifications are deduplicated wake-up hints;
-the gateway retrieves authoritative results. There is no second job scheduler,
-conversation loop, or webhook-controlled graph transition. See
+AgentGraph owns the delay/checkpoint and its resume-delivery mechanism owns
+polling. Signed completion notifications are deduplicated wake-up hints; the
+gateway retrieves authoritative results. See
 [Durable Connectors](DURABLE_CONNECTORS.md) and
 [ADR 0009](adr/0009-durable-external-operations.md).
 
@@ -481,1196 +335,65 @@ It does not select a Playbook, mutate workflow state, or authorize a
 capability. `ChatTurnApplicationService` applies the safety boundary and
 commits a canonical outcome before a renderer can serialize it. Replaying a
 completed client-turn identity returns the persisted result without another
-model or capability call. The same identity may be replayed through JSON or SSE;
-transport choice and a later active deployment do not change the canonical
-request identity or persisted result.
-
-## Agent Deployment Authority
-
-Agent ABI v8 pins `portable_exact_names.v1` tool loading. Small offers remain
-eager; larger offers expose the complete bounded name/purpose directory and
-load exact original schemas for the next native step. Admission, wire projection
-and the SDK's static dispatch handlers share the same frozen step offer.
-Permanent controls stay available. Runtime Recovery v3 K4B replaces the forced
-pending-tool exposure: Lazy drafts remain in the compact live context with their
-exact manifest tool names and current selections, while only explicitly loaded
-capability schemas enter the next step. Loading never executes a capability;
-hidden dispatch in the loading batch remains rejected. Eager offers keep every
-schema and their published byte ceiling, including dynamic pending-schema growth.
-Draft proposal instructions live in selected schemas rather than duplicate system
-prompt paragraphs. Load, step, call, money and deadline limits do not refresh on
-recovery. Publication rejects oversized
-directories, unloadable tools, unsupported modes and insufficient configuration
-quota before candidate promotion. See [ADR 0024](adr/0024-portable-deployment-tool-loading.md)
-for exact byte, native-step, deadline and financial-capacity boundaries.
-
-`AgentDeploymentPublisher` creates an immutable contract and deployment hash.
-The local Ollama configuration extension pins an optional boolean
-`runtime_config.agent.ollama_think` as `model.ollama_think`. Only the exact Ollama
-driver accepts it. Publication and runtime validation reject null, strings,
-numbers, objects, arrays and use with another driver. An absent value omits
-`think` and preserves the SDK/server default. The native SDK transports a pinned
-value as top-level `think` in previews, inference, streaming and technical
-continuations; it is never read from mutable authoring or injected into HTTP.
-Context and output budgets retain their existing admission checks.
-
-This requires runtime ABI v32 and compiler ABI v17: the previous implementation
-would silently ignore the new pin. Exact compatibility manifests reject that
-cross-version execution. Old immutable artifacts and hashes remain unchanged;
-normal republication, candidate tests and activation are required. Native
-projection v17, receipt formats, Playbook ABI and AgentGraph ABI are unchanged.
-This local candidate extension does not establish dialogue quality or a release.
-
-Authoring may explicitly select `agent.tool_loading_mode = eager_bounded.v1`
-for a modest catalogue. This hash-pinned alternative offers every original
-schema immediately, caps the complete offer at 32,000 UTF-8 bytes at publication
-and each native step, and retains the six-step eager allowance. It never falls
-back to hidden loading. Normal full-request quota checks, Gateway authority and
-exact-candidate release gates still apply. The default portable contract and its
-8,000/16,000-byte thresholds are unchanged; see ADR 0024's bounded eager extension.
-
-Publication freezes:
-
-- behavior and response policy;
-- exact provider, driver, base URL, model, input/output limits, and monthly
-  token/cost policy;
-- allowed knowledge and data authority;
-- exact published read-only Connector operation revision, contract and input
-  schema hashes, environment binding, discovery metadata, input policies, and
-  optional result-identity proof;
-- exact Playbook workflow ID, deployment ID, deployment hash, tool identity,
-  and structured invocation contract (outcome, start rule, exclusions, and
-  examples); and
-- the release metadata needed to verify the contract.
-
-Publication selects that immutable artifact as the Agent's release candidate;
-it does not change live traffic. `AgentReleaseService` runs the exact candidate
-through the normal persistent `ChatTurnApplicationService` runtime using a
-server-attested admin-test conversation. A passing evidence record binds the
-candidate ID and hash, productive authoring fingerprint, committed Chat Turn,
-operator, and evidence hash. Productive writes remain blocked by
-`CapabilityExecutionGateway` during this test. Activation locks the Agent row,
-compares both the expected candidate and previous live deployment, then locks
-the candidate plus every referenced Playbook, Data Resource, Connector-
-operation, Connector-environment, Knowledge-source, and Knowledge-generation
-head before recomputing the current authoring fingerprint. It revalidates the
-immutable artifact, release-test evidence, and
-durable Chat Turn. Required Candidate Quality runs and every ordered quality
-turn are HMAC-attested, locked, and re-bound to their exact terminal durable
-Chat Turns and server-attested test conversations before the live pointer is
-changed atomically. No direct productive publish-and-activate path exists.
-
-`AgentDeploymentRepository` resolves and verifies the deployment selected for
-the durable turn. A missing, foreign, mutable, or hash-invalid deployment fails
-closed. Later authoring changes require publication of a new deployment; they
-cannot alter an in-flight or historical turn.
-
-There is no global tool or Playbook registry, client-selected operation or
-workflow ID, mutable authoring fallback, or legacy main-workflow conversation
-owner.
-
-Runtime Recovery v3 K4A/K4B uses native projection v15 and Agent runtime ABI v28.
-Before each native dispatch, optional direct-read data and Knowledge chunks
-compete against the exact serialized next request, with the same output reserve,
-attachments, provider options and framing used by usage admission. Eligible whole
-history turns are removed first, refreshing memory and offered visitor provenance.
-Then the largest optional result is reduced one atomic record or chunk at a time;
-ties follow invocation order. Standalone objects and scalars are atomic. Remaining
-record identities, units and periods are kept together. Tool call/result pairs,
-execution statuses and evidence IDs remain present, including when all optional
-data is omitted. The complete minimal envelopes and untrusted wrappers count;
-if they cannot fit, the existing capacity failure path terminates locally.
-
-This projection never mutates canonical evidence or re-queries a source. Existing
-stored-payload privacy and size limits remain upper bounds. Diagnostics distinguish
-`stored_payload_limit`, `model_result_limit`, `knowledge_context_limit` and
-`model_request_capacity`; provider windows remain separate upstream evidence.
-An omitted list cannot prove absence. Knowledge matching a source but unable to
-include a whole chunk reports capacity exhaustion rather than `no_evidence`.
-The existing retrieval, Gateway authority, step credits and deadlines are unchanged.
-New writers, manifests and historical evidence are not migrated in place. Compiler
-v16, Observation v4, Connector Context v5 and Playbook/AgentGraph ABI v1 are unchanged.
-
-K5 advances Agent runtime ABI to v29 for independent stored result
-references. Native projection v15, compiler v16 and all stored formats above are
-unchanged. No existing deployment or receipt is rewritten.
-
-K6 uses runtime ABI v30 and native projection v16 for the uniform direct-read
-envelope below. Connector Context advances to v6 for member provenance and
-unresolved pointers. Compiler v16, Observation v4, presentation receipts v1 and
-Playbook/AgentGraph ABI v1 stay unchanged. K7 advances runtime ABI to v31 for
-independent historical selections described below.
-
-The K4B milestone also closes two characterized recovery regressions. Snapshot
-projection constructs fresh invocation arrays, including when a checkpoint caller
-holds a PHP reference to a canonical observation. Repeated snapshots never replace
-that observation's original source fields. Native history uses living Message
-objects as WeakMap keys: a released history object's recycled numeric ID cannot
-identify a later SDK message as removed history or suppress the current input.
-
-## Direct Read Capability Invocation
-
-RC-02 candidate: [ADR 0032](adr/0032-source-bound-read-drafts.md) governs
-source-bound Connector and Data Resource drafts in the shared durable context.
-The current envelope is `chat_turn_connector_context.v6`; historical v3/v4/v5 readers remain. Its bounded member sources preserve independently patched literal fields and their original messages; unresolved nested pointers remain blocked across turns. Compaction protects all member sources. No persisted artifact is rewritten; RC-02 introduced
-Agent runtime ABI v18 and compiler ABI v13. Set, unset and nullable values are
-distinct. A proposed question becomes an operative question only when its exact
-text appears in the canonically committed assistant message. Short replies may
-select one verified draft at its revision, including after a side question and
-reload. A pure text question without a draft offers a bounded committed source
-turn and exact original visitor quote. The Data Resource no longer requires an
-immediately preceding successful query. Earlier version and review descriptions
-below are retained as historical design context where superseded by ADR 0029,
-ADR 0031 and ADR 0032. RC-03 candidate: [ADR 0033](adr/0033-native-read-selection-and-attested-read-policy.md)
-adds explicit completed-read selection for Connector continuation and historical
-replacement or refresh. It removes word-list vetoes. Authenticated
-`direct_read_policy=deny` blocks Connector, Data Resource and knowledge reads
-at native adapters and at the Capability Gateway. New Agent publications use
-runtime ABI v19; the compiler ABI remains v13.
-
-RC-06 candidate: a public Connector `search_query` can make one additional
-material query variation after a successful first read when the published
-`metadata.search_refinement_limit` permits it (default 1, explicit 0 disables).
-The other admitted request inputs and context remain bound; an identical query
-replays, while each changed query consumes a real dispatch slot and the same
-turn budget. A bounded or empty search result does not prove global absence or
-the identity of another entity. The direct-read presenter compacts published
-field metadata before sizing the wrapped model result, then omits whole fields
-or records with an explicit projection limit. It never offers a JSON prefix as
-source data. Small independent results keep their own budget. A committed text
-exchange may be offered as a bounded historical source even without question
-punctuation; the model chooses relevance and the server still verifies source,
-scope, revision and actual assistant delivery. A quoted question mark has no
-special authority. Normal mixed answers remain one Agent turn; terminal model
-failure uses only execution-matched stored read evidence.
-
-Remote MCP tools are Connector operations with an explicit `mcp` transport.
-Discovery creates only drafts. Published operation revisions pin tool declarations,
-input/output contracts and the `core/mcp` implementation closure; Agent releases
-pin those revisions through the existing closed Connector manifest. Execution
-passes through `CapabilityExecutionGateway`, the typed Connector dispatcher and
-the existing bounded transport. The MCP client verifies the selected declaration
-before calling it. It never injects a live remote catalog into the model. Direct
-Agent tools remain read-only. Separately reviewed synchronous MCP create/update
-operations use published Playbooks with exact payload confirmation, isolated
-staging evidence and the same side-effect ledger and reconciliation path.
-Read approvals never authorize writes; unreviewed functions remain blocked.
-Write reviews bind connection/environment, definition, fixed targets and
-identity scopes, request, result and execution contracts. See
-[MCP connections](MCP_CONNECTIONS.md) and [ADR 0013](adr/0013-reviewed-integration-writes.md).
-
-Optional published `metadata.mcp_source` is pinned with each MCP capability. The
-turn exposes a compact catalogue containing each available source's public name,
-configured scope and optional exact URL once, referenced by its tools. Catalogue
-facts can answer source-link and scope questions without an external read; actual
-source contents still require approved evidence. No mutable connection metadata,
-raw server instructions or server diagnostic identity enter this catalogue. It is
-presentation data, never execution authority. The catalogue is bounded to 8,192
-UTF-8 bytes at publication and runtime and counted by the existing routing and
-input budgets. It uses the already selected turn tools, with no extra routing
-model or mid-invocation schema changes.
-
-`AgentConnectorTurn` and `AgentDataResourceTurn` project only exact immutable
-entries from the verified Agent deployment into model-visible tools. A direct
-tool is eligible only when its published effect is `read`; every write,
-approval, or durable wait belongs in a Playbook. A direct read may supply a
-scalar input to another direct read only through an explicit Agent release
-link, as described under [Published read dependencies](#published-read-dependencies).
-
-Each approved Data Resource becomes its own closed read tool. Its normalized
-resource definition, contract hash, allowed query modes, fields, filters,
-sorting, scope rules, and list limits are copied into the Agent deployment.
-Custom scope-source paths and code-reviewed static scope values are pinned with
-that definition; request-specific authority values remain server-attested at
-execution. Runtime never consults mutable host or Bot scope configuration for a
-live direct tool.
-Model-proposed filter values, including booleans, require typed source evidence
-before the central capability gateway may execute the bounded database query.
-Published aliases and calendar policies can transform exact visitor phrases.
-An attested source in the same open request or an explicitly linked current
-read result can supply an input only through its dedicated reference contract;
-neither path can replace server-attested row scope. See
-[Data Resource filter evidence](DATA_RESOURCES.md#published-filter-evidence).
-
-The model sees the operation purpose, realistic intent examples, entity types,
-closed JSON input schema, and a bounded set of explicit visitor aliases. This
-metadata helps a smaller model associate terms such as “Bisaflor” with a
-Pokémon lookup without adding API-specific routing classes. Metadata proposes
-the route; it never authorizes it.
-
-Public interpreted domain arguments use the existing canonical operation input
-policy under [ADR 0034](adr/0034-public-interpreted-input-and-native-continuation.md).
-`source=interpreted`, `field_role=public_domain` and `exact_source_required=false`
-permit schema-valid interpretation without a literal substring or alias. A
-mutable author preset expands once in the Publisher and never enters runtime
-metadata. Nested children need their own positive policy; protected roles,
-Writes, confirmation, credentials, destinations and incoming read dependencies
-cannot use this mode. The same Binder records server-owned `model_interpreted`
-provenance bound to source turn, visitor context, operation/policy hashes and
-scope. The Gateway rechecks policy pins and sources before dispatch. This proves
-schema admission, not semantic truth, identity or approval. S2 uses the current
-visitor message and the visitor-only references from the actual native history
-offer: at most twelve prior visible conversation messages, subject to smaller
-published history/token limits and whole-turn compaction. Summaries, assistant
-prose and tool results add no input authority. The ordered server reference is
-hashed as `offered_visitor_context.v1`; the model supplies no source metadata.
-Retained fields keep their original bound references in the existing encrypted
-source entry and reverify content, source turn, deployment and scope on reload.
-Structured
-field diagnostics carry root `input`, exact `field_path`, category and bounded
-rule codes. No host or live activation is claimed.
-
-Each call is checked twice: the tool adapter and `CapabilityExecutionGateway`
-discard undeclared top-level provider arguments without interpreting, persisting,
-or forwarding their values. They independently bind new declared arguments to
-the published source policy, including literal evidence in the latest visitor message or explicitly reviewed interpreted public fields under ADR 0034, rebind retained pending-read
-values to their original persisted user sources, apply exact published aliases,
-optionally apply the pinned `safe_v1` matcher only against that published alias
-map, use a registered deterministic resolver only for `capability_resolver`, or
-resolve an explicitly published current-request read dependency;
-they then validate the closed schema,
-re-resolve the exact revision and environment, and verify declared result
-identity. The safe matcher auto-corrects only a unique close candidate and turns
-every uncertain candidate set into the contract's configured clarify-or-reject
-outcome. Unknown literal values remain literal values. A host resolver used
-directly must expose a stable key, version,
-and behavior hash through `VersionedCapabilityEntityResolver`; that identity is
-pinned into the Agent deployment and reverified at both admission and gateway
-execution. Merely registering a resolver never changes `literal` or `enum`
-behavior. An ungrounded correction is rejected unless the immutable contract
-selects the published alias matcher or a versioned resolver returns an
-unambiguous canonical value.
-
-If a model proposes a published alias target without an admitted literal source,
-the rejected input may carry advisory spelling suggestions derived from the
-latest visitor message and that same pinned alias map. These hints never change
-`typo_tolerance`, admit an input, create a resolver choice, or authorize a call.
-Unknown names and private fields produce no hints. An exhausted clarification
-retains its field and useful suggestions in the answer without asking another
-question; independent verified facts remain visible.
-
-Source-bound read offers use `connector_input_offer.v2` in the encrypted
-`chat_turn_connector_context.v3` envelope, under the coordinated unreleased
-Agent runtime/compiler ABI v9. Sources are an exact published alias target,
-a current or freshly reverified selected-pending visitor literal, and an
-explicitly published durable Gateway resolver projection. The private proof binds the pin and
-policy hashes; literals additionally bind the original message ID, content
-hash, exact quoted span and source turn. Assistant prose supplies no authority.
-`questions[].offer_value` explicitly proposes a candidate beside the exact
-pending ID/revision and natural question. The existing semantic review checks
-that complete question, candidate and retained conditions; deterministic source
-admission must also succeed before rendering an operative offer. An unsupported
-candidate falls back to the published field question.
-
-Canonical commit seals an offer only if its entire question is an exact
-paragraph in the actual assistant message. It atomically advances the pending
-revision and records assistant message/turn, content hash, offer ID and that
-post-commit revision. The stored expiry uses the existing bounded context TTL
-and original task/source ages; re-rendering and later configuration changes
-cannot extend it. A pending revision change removes the old offer. Readers,
-admission and Gateway reject invalid source, scope, deployment, delivery or
-revision bindings; expired offers are no longer offered for selection.
-
-The native model selects the exact pending and offer, and interprets the whole
-reply, including corrections and independent requests. The adapter binds the
-whole attested reply, not a model echo or a yes/typo keyword classifier.
-Ordinary changed values use normal source-bound arguments and revision policy.
-Existing declared conditions, semantic context assessment, resolver policies,
-write confirmations and Graph waits remain independent. Invalid metadata does
-not erase pending work or dispatch a read. The protocol proves binding, not
-semantic understanding of every reply.
-
-`AgentConnectorResolverOffers` admits `verified_resolver` only through an
-explicit published read-dependency `offer` policy. It reads the offer turn's
-existing encrypted presentation receipts, verifying the exact successful
-Gateway execution, evidence identity (including original inputs), source pin,
-link, selected public field pointer, scope and source deadline. The question
-contains the exact selected string, which is also the confirmed input; no
-label-to-opaque-target conversion occurs. Admission and Gateway reload the
-receipt independently. Historical status/fact receipts and versioned entity
-resolver labels alone remain insufficient. Reading or accepting a proof never
-executes the resolver. See [ADR 0025](adr/0025-source-bound-conversation-reliability.md)
-for the implemented boundary and [S2b handoff](plans/runtime-reliability/S2b-result.md)
-for verification and S5 integration constraints.
-
-The native wrapper supplies source text from the attested turn. Domain tools
-never ask the model or visitor to copy internal source evidence. Local argument
-feedback uses the published fields and permits repair without granting execution
-authority or requiring fixed visitor wording.
-
-A scalar read input may explicitly publish
-`continuation_mode: exact_previous_success`. After a complete authoritative
-success, the runtime stores only those admitted fields in an encrypted,
-hash-checked binding scoped to the conversation, capability, immutable Agent
-deployment, and source user message. For the immediately following persisted
-user message, the model may select a short offered result handle through
-`request.ref` with `action=refresh` or `revise`. Refresh supplies empty `input`;
-revise supplies only new domain proposals. Admission and the Gateway recheck the handle and rebind
-only its eligible prior fields. Without the handle, a new read gets no prior
-input. “Morgen?” and “Und morgen?” have the same server contract; the model
-interprets their meaning. Model-supplied historical values remain rejected by
-input admission. Expiry, an intervening user turn, a different conversation,
-capability, deployment or authority scope, non-scalar inputs, writes and
-unoffered handles fail closed. Expired ciphertext is pruned by the package
-scheduler.
-
-Continuation bindings use `binding_version: 3`; their uniqueness scope includes
-`source_message_id`. A successful read in the current turn cannot overwrite the
-previous turn's binding while that earlier source is still needed. Different
-targets for the same capability and source message produce an empty `[]`
-binding: ambiguity remains sticky for that source, even if another successful
-call follows. The runtime never selects the last target of a fan-out as an
-implicit continuation. Legacy version-1 rows remain encrypted and unchanged
-until TTL cleanup, but are not executable. The source-scope migration requires
-a quiesced host and a verified backup; see [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
-
-A read tool may be repeated for independent items only when the immutable
-operation contract declares `fanout_safe`; `max_items` and the global five-call
-budget both apply, leaving the sixth model step available for the final answer.
-The native gateway requests no tool selection in that final SDK step for a
-deployed Agent, using the provider's native tool-choice option. The SDK already
-refuses to execute tools at that point; the
-request options now reserve it for composing the answer from available evidence.
-This consumes the existing step, adds no model or capability calls, and leaves
-the normal evidence validation and incomplete-completion handling in place.
-Providers must support the native option; the current Ollama adapter does not
-map tool choice and therefore retains the SDK's existing completion behavior.
-`single_only` and `native_batch` permit one call, with a
-native batch owning its list input inside that call and the published
-`max_items` bound constraining every declared array. Server-owned or prior-task
-input policies are Playbook-only and make an operation ineligible as a direct
-tool.
-
-Calls remain separate evidence records with an exact evidence identity,
-capability identity, redacted requested and grounded input provenance, and the
-payload actually delivered to the model. Successful and replayed execution
-traces must bind back to that same record; several calls cannot be justified by
-one flattened union of unrelated values. A missing call evidence identity is
-incomplete even when capability names or redacted inputs match. Each
-model-visible result is bounded to 16 KB and all Connector results in one turn
-share a 48 KB budget; truncation becomes incomplete evidence rather than a
-silently shortened success. Provider partial results, missing records, and
-explicit call failures cannot be presented as complete evidence. Ambiguous
-resolver candidates still produce an input clarification.
-
-An unresolved input does not hide a separate failed lookup. The existing
-evidence fallback preserves its safe failure notice alongside the clarification
-and any independently verified facts. A declared result-identity failure gets
-a localized explanation scoped to its safely attributable published source,
-followed by its clarification. Repeated failures share that source notice within
-the answer budget. A pre-call input question alone does not produce a lookup
-failure notice. Rejected payloads remain excluded; the explanation never claims
-which different entity was returned. Required candidate choices remain unresolved.
-
-Connector input questions use the normal native tool with known arguments.
-The binder records missing required fields before a question is delivered.
-For an ambiguous supplied or optional public visitor input, `request.unresolved`
-names its offered `/input/...` JSON pointer; private and server-bound fields are
-excluded. No external dispatch occurs for an incomplete proposal. A semantic
-ambiguity blocks guessed retries in that turn while independent admitted reads
-remain available. Final answer wording can present an issued question, but
-cannot create a new task or execution authority.
-
-Native Connector arguments are optional proposals even when the pinned API
-schema requires them. Their descriptions retain the published title, description,
-semantic meaning and requirement. Omission reaches the existing input binder,
-which rejects missing essentials before the gateway and supplies a bounded
-clarification request for a public field. The immutable API schema and execution
-checks remain required; native omission is not a new default or continuation
-authority. The model-visible schema retains the field; a selected verified
-handle supplies it only for that call. Without a handle, a genuinely missing
-public field can still become a question.
-
-After a failed Connector result identity, the tool instead supplies a
-`clarification_request` with an opaque request ID and bounded context from the
-pinned identity input schema and its admitted, redacted value. Rejected provider
-facts, credentials and unpublished defaults never enter that context. The normal
-model completion can add `clarification: {request_id, question}` to its evidence
-selection. The guard checks the issued request binding, language, closed shape
-and direct-question form. Preambles, separate sentences and recognizable
-statement clauses fall back to bounded application wording; ordinary output
-safety still applies. A question
-is conversational text, not verified evidence or new execution authority. These
-checks do not prove its semantic quality. Missing or invalid proposals receive
-a localized fallback naming only a safely attributable input.
-
-Successful sibling selections remain intact in partial answers. Questions do
-not erase failed outcomes or promote rejected facts. An already-required resolver
-choice takes precedence. Repeated questions are bounded by the pending request's
-admitted values and unresolved issue, rather than an adjacent answer receipt or
-operation key. Under
-[ADR 0012](adr/0012-turn-scoped-connector-recovery.md), each request permits at
-most six distinct question states within one freshly attested visitor turn.
-Duplicates preserve the useful existing question. Rephrasing, a model retry,
-transport replay, or stale admission does not reset the current budget; the
-current in-memory task or verified checkpoint takes precedence. A later
-persisted visitor reply may repeat an unresolved state without renewing task
-age or changing task, issue, input, condition, offer, or scope authority.
-
-Input `clarification_request` context can include the pinned field meaning,
-issue code, lookup status, safe admitted retained fields and conditions, and a
-previously verified published spelling offer. It gives the existing Laravel AI
-SDK tool loop presentation context for a question bound to the current request
-ID. The deterministic fallback may re-present a valid suggestion without an
-exact-retyping demand. This adds no input authority or model call. Invalid
-confirmation metadata uses the existing `correct_arguments` path without
-changing the visitor issue. Other source mismatches describe a proposal's
-missing evidence; they do not establish that the visitor supplied a wrong value.
-
-Pending direct-read context follows
-[ADR 0010](adr/0010-source-bound-connector-clarification-context.md). The
-per-turn dialogue snapshot carries source-bound public inputs, optional scalar
-conditions, the pending field, every unresolved declared condition, and the
-question-state budget. It is presented
-to the model through `UntrustedLlmContext` as data rather than instructions.
-It does not execute capabilities or schedule work. `AgentTurnLoop` remains the
-conversation owner, `CapabilityExecutionGateway` remains the execution boundary,
-and AgentGraph continues to own Playbook tasks, checkpoints, and waits.
-
-The snapshot is a separate encrypted and serialization-hidden
-`bot_chat_turns.connector_context` envelope, bounded to 64 KB and 16 open
-requests. The ledger checkpoints it privately and binds it to the canonical
-assistant message at the outcome commit. Its binding includes the Chat Turn,
-bot, conversation, source user message, input hash, exact Agent deployment ID
-and hash, and a fingerprint of context area plus freshly attested authority
-scope. The commit binds the persisted assistant message ID and content hash.
-Presentation receipts may establish scope equality for a source turn but never
-supply pending inputs or conditions. A question text is not a value source.
-
-`read()` restores only committed earlier context at turn start. During the
-current turn, `readForAdmission()` may instead use its own uncommitted checkpoint
-under a freshly attested, exact `executing` Chat Turn with no completion or
-commit marker. The envelope binding, scope, and current user-message hash must
-match. Only that exact turn's user message can supply an active source; every
-earlier input source or task update still requires a canonical committed turn.
-A present checkpoint, including an empty snapshot, takes precedence. Invalid
-current checkpoints fail closed rather than falling back to earlier state.
-This permits correction of an automatic tool-binding diagnostic from values
-already present in the current message. It does not waive an explicit dialogue
-question's wait for a visitor reply or carry uncommitted context to a later turn.
-
-Recovery verifies source and assistant messages against canonical outcomes.
-Each retained field carries its canonical value, original proposed value,
-source user message ID, and source hash. Admission re-runs the exact published
-binder against that original message before combining it with new values.
-Bounded arrays and objects may be retained as well as scalars. Schema inspection
-recursively excludes sensitive fields, including inside nested containers, from
-this retention path. An invalid newly proposed
-input removes that field from the retained inputs; it cannot fall back to its
-older value. An invalid condition cannot silently delete an already admitted
-condition. Both the tool adapter and gateway apply admission under current
-authority, so the envelope does not restore old permissions.
-
-The reader scans at most 32 consecutive earlier turns. A deployment, scope,
-sequence, expiry, or unfinished-turn barrier prevents reaching older context.
-Usable source turns must have a canonically committed `completed`, `waiting`,
-or `cancelled` outcome with ordered user and assistant messages. Tampered,
-unreadable, or uncommitted earlier envelopes fail closed. An explicit empty snapshot
-after completion or cancellation prevents resurrection from older turns.
-The internal `agent_runtime.connector_context_ttl_minutes` policy defaults to
-30 and is clamped to 1–1440; request age starts at its original creation and is not extended by new
-questions. Expiry prevents reuse. It does not introduce a ciphertext-pruning
-job or change Chat Turn retention. The model may propose a new read from literal
-current-message values. Reusing retained pending values requires explicit current
-task selection; successful adjacent reads retain only their independently verified
-continuation evidence. No linguistic value-only classifier grants or denies scope.
-
-All semantically unresolved context fields remain in the sealed task until
-individually resolved by current source-bound visitor values. Null proposals,
-a reply to another field, and retained old values do not settle an ambiguity.
-A pending API input remains required even when the base schema makes it optional.
-A provider mismatch against an already known condition preserves that condition
-for the next lookup; it is distinct from an unknown condition value.
-
-Every direct HTTP/MCP and Data Resource read uses one closed native envelope:
-required object `input`, optional objects `request`, `conditions` and `evidence`.
-Domain values, including a published field named `request`, stay under `input`;
-only admitted domain values reach the existing Binder/Gateway provider mappings.
-The partial native schema omits required markers from closed object members;
-array item objects retain their complete contract. The full pinned schema still
-runs before dispatch. Allowed empty lists retain their array type in mappings.
-
-`request` allows only `ref`, `action`, `remove`, `unresolved`, `repair`. A ref is
-an offered opaque draft/result handle, resolved and rechecked by the server.
-Ref requires action; action without ref is invalid. No ref means independent
-input with no implicit inheritance. Draft continue fills missing/unresolved
-members; identical echoes retain their original source and do not renew age.
-Replacing an existing member requires revise. Cancel takes empty input and only
-ref/action, closes exactly the selected draft and performs no external call.
-Result revise/refresh starts a new admitted read; refresh takes empty input and
-no new conditions, remove or unresolved. Only existing continuation policies and
-freshly verified source bindings transfer values, including their expiry and
-scope limits. Missing transferable required values produce input need. Result
-continue/cancel and draft refresh are invalid. K7 indexes selection and successful
-invocation by the concrete offered result handle. Each revise/refresh stands alone,
-including multiple results of the same operation or different retained source
-turns. Each success is independently cross-checked with its exact invocation and
-Gateway evidence; failure of a sibling cannot roll back success. Untouched
-siblings remain historical and their admitted exact tuples are deduplicated by
-source turn and evidence identity before reuse. Selected targets cannot suppress
-each other's execution. Existing fanout, native replay, receipt revalidation,
-source and scope checks remain mandatory. Exact receipts resolve a multi-success
-continuation ambiguity marker; an operation-only offer remains unavailable. Input
-transfer retains the existing preceding-message, integrity and expiry checks and
-rebinds the original source. Older result references require fresh inputs when
-those continuation checks cannot authorize transfer. No receipt is mutated or new ledger
-created. K7 advanced Agent runtime ABI to v31; the pinned Ollama thinking
-extension above advances it to v32/compiler v17. Native projection v17 protects the unresolved
-pointer offer. K7 left compiler v16,
-Observation v4, Connector Context v6 and receipts v1 are unchanged.
-
-Unresolved pointers reuse the existing Needs-Visitor and sensitive-field rules,
-including password-format and write-only members, and native validation enforces
-the exact offered pointer set. Invalid controls and protected evidence cannot
-partially mutate a draft. A continue clarification with invalid sibling arguments
-also leaves the draft unchanged. A valid revise with an invalid domain replacement
-blocks its old dispatch value and preserves valid partial sources inert, including
-when another pointer remains unresolved. Unknown Playbook arguments are rejected
-against the published schema before source injection or execution.
-
-Closed objects patch by member and arrays replace/remove atomically as a whole.
-Pointers are concrete escaped schema-derived `/input/...` or `/conditions/...`
-paths, with at most 32 unique entries per list, no array indices or wildcards.
-Remove requires selected revise. Set/remove and set/unresolved overlaps fail
-locally before mutation. Null is a schema-dependent value; false, zero and
-allowed empty lists remain present. Invalid explicit replacements block their
-old value, retain independently valid members in an inert draft and do not
-create a question or confirmation. Unresolved optional members also prevent
-fallback to provider defaults until that exact member is validly supplied.
-
-Conditions offer only existing published context fields. The parent may be
-omitted or supplied as an object; null/list/scalar parents are invalid. Nullable
-condition members keep their established no-new-value semantics. Conditions and
-API fields keep independent source proofs and dependency invalidation.
-Unknown outer/control/evidence fields are local rejections. Unknown domain
-convenience fields follow the existing Binder policy and never reach dispatch.
-
-Evidence offers only required protected protocols: input_confirmation with an
-offer_id, read_inputs with original dependency references and, where reviewed,
-rebind with original root references. The server binds the entire current reply;
-a model-supplied reply_evidence is rejected. A bound reply is not semantic
-consent. Committed offer, source, scope, revision and Gateway checks remain.
-Normal question prose requires no tool or durable question text. Native parsers
-and prompts no longer offer __pending, __request, __prior_read, __unset or the
-former normal question/context control dialects. No source-policy branch selects
-a second native protocol.
-
-S2B `evidence.rebind` is an optional closed list of at most 16 concrete input/context
-root references within the exact live draft selected by `request.ref` and `action=revise`.
-Targets require published `pending_source_rebinding: true` in API input policies
-or context field metadata. Both endpoints must be public scalar literal fields
-with exact source binding, no resolver and `latest_message_only`. Absence or false
-denies reassignment. The shared context admission binds original donor literals
-against target policies before current replacements, preserves their message
-IDs/hashes and removes donors unless separately replaced. Required missing donors
-and invalidated dependencies stay unresolved. Duplicate, cyclic, conflicting or
-unauthorized moves return local no-mutation repair. The gateway repeats deterministic admission with
-the revision and verifies fresh sources immediately before dispatch. Existing
-ConversationState persists partial progress once without renewing task age; a
-successful read consumes only the selected task. Context metadata is stripped
-from the generated input schema. No second source store or transition owner is
-introduced; details and candidate boundaries are in ADR 0022.
-
-Optional `metadata.context_contract` is closed, versioned, and frozen in the
-operation revision and Agent pin. It declares public scalar conditions and
-fixed `equals`, `lte`, or `gte` predicates on compatible API inputs or concrete
-provider result paths. Input predicates run after source/schema admission and
-before dispatch; result predicates run before identity checks, projection, and
-evidence admission. Missing metadata or conflicts produce field/reason
-diagnostics without rejected provider values. Successful replay requires the
-same admitted inputs and conditions. A general OpenAPI string and model world
-knowledge cannot supply an undeclared relationship check. See
-[API Connector context contracts](API_CONNECTORS.md#pending-direct-read-context)
-for the schema and authoring limits.
-
-Declared conversation conditions apply only to direct Agent reads. Nonempty
-contracts on writes fail publication; Playbook validation and confirmation
-remain separate. Existing operations without the optional metadata keep their
-exact serialization and hashes. The additive context migration preserves old
-history without deriving tasks from earlier questions; new conditions require
-operation and Agent republication. This boundary adds neither a resolver
-network call nor a second scheduler.
-
-The deployed model is instructed to explain capabilities from their published
-descriptions without executing them and to focus input clarifications on the
-unresolved part of a request. These semantic instructions are not independent
-proof of correct intent selection; representative candidate dialogue evidence
-is still required. They do not introduce another router or execution authority.
-One final language instruction applies to natural answers, capability limits,
-clarifications and the evidence-selection language field. The evidence format
-does not override this language choice; technical keys and identities stay
-unchanged.
-
-For complete direct reads, the model selects evidence instead of writing the
-factual answer. `AgentEvidenceAnswer` accepts this closed JSON document as
-ordinary model text; native provider structured-output support is not required:
-
-```json
-{"language":"de","layout":"auto","sections":[{"evidence_id":"exact-call-evidence-id","pointer":"/data"}]}
-```
-
-Only `language` (`de`, `en`, `fr`, or `es`), optional `layout`, and `sections`
-are allowed. `layout` is limited to `auto`, `paragraph`, `bullets`, `numbered`,
-or `table`; it is a presentation hint for an explicit visitor request and never
-changes evidence selection or capability authority. A section
-contains `evidence_id` and `pointer`, optionally `fields` (one to 32 distinct,
-literal child keys) or `detail: "all"`, never both. It contains no generated
-labels, values, units, claims, or prose. A complete JSON code fence is also accepted. Every
-available complete successful direct result must be covered. References must
-match the delivered ledger and execution trace, and pointers must resolve
-exactly under `/data` using RFC 6901 escaping. Mixed Knowledge results may
-select `/context`, never `/sources` or source metadata. Invalid, duplicate, or
-missing selections fail closed.
-
-The initial answer should respect the requested number of records. Covering
-every successful call does not require displaying every returned record.
-If its selection is invalid, the existing fallback can display a broader set
-of verified records; no second model selects a narrower subset.
-Both curated and raw renderers keep HTTP(S) URL scalar
-values intact. If a complete record and its required context cannot fit, they
-omit that record and retain the output-limit notice instead of shortening its
-URL. Omitted records do not receive visible-fact presentation receipts.
-
-`ConnectorOutputContract` uses the verified operation's `response.output_mapping`
-for both workflow mapping and an explicit Agent projection. `response.agent_output`
-is `mapped` or `response`. A mapped projection is a closed field allowlist even
-when every mapped value is absent or hidden. It never falls back to the raw
-response. A missing mode preserves the existing published choice: a nonempty
-mapping is curated, an empty mapping exposes the selected response. New form
-and Integration Studio drafts default to `mapped`; clearing every field keeps
-that mode. The `response` option is an explicit advanced choice and cannot
-bypass a nonempty mapping.
-
-Each mapping can publish `presentation` labels, language-specific labels,
-description, unit, exact localized `value_labels`, `summary`/`detail`/`hidden`
-visibility and sibling `context` dependencies. Value labels change only the
-rendered form of an exact API enum or code; the original value remains in the
-evidence envelope. Hidden fields and workflow-only role aliases do not reach the
-Agent. Objects and record collections require explicit nested `fields`; records
-retain their actual indices, and parallel wildcard arrays are never zipped.
-Missing required context removes the dependent fact. Projection precedes model
-context construction, while result identity verification still uses the full
-provider result. Presentation metadata comes from the verified revision, never
-from a provider property named `presentation`, and is redacted and budgeted with
-the projected data. The complete envelope participates in the existing evidence
-hash and exact in-turn replay.
-
-For a fixed first-page API read, `response.result_window` may publish the
-mapped collection field, mapped provider total, literal request limit parameter,
-limit and first-position meaning. Publication requires a matching static query
-limit and disallows automatic pagination on the same operation. Runtime checks
-the mapped total against the delivered record count. A larger total yields a
-typed, hash-bound selection scope on both the execution receipt and curated
-evidence; an equal total proves this returned collection complete, including a
-true empty result. Missing or contradictory counts fail the read. Answer review
-and exact-fact fallback add the localized first-N boundary once for displayed
-records, without exposing raw metadata or deriving a total from their count.
-Existing revisions without this declaration retain their original meaning and
-must be republished before a fixed response limit can establish this scope.
-
-An optional versioned `response.answer_presentation` policy belongs to this
-same immutable operation revision. Omission means `auto` and does not rewrite
-older contracts. It can select a deterministic layout, preserve or suppress an
-intro, choose the subject from an exact admitted input or visible field, name a
-record-title field, append localized closing text, or use a bounded plain-text
-template. Templates accept only `{{subject}}`, `{{count}}`,
-`{{input:key}}`, and `{{field:semantic.path}}`; every reference must resolve to
-the closed input schema or visible output mapping at publication. There are no
-functions, expressions, HTML execution, provider-supplied templates, or new
-model prose. Referenced fields become explicit same-record or inherited context
-and remain subject to evidence validation and output budgets.
-
-The model view omits repeated `summary` visibility defaults and renderer-owned
-context dependencies. Field pointers, labels, meanings and approved values stay
-visible; the renderer expands context from the full canonical ledger after
-selection. The canonical evidence and its hashes retain every explicit context
-dependency. Shared purpose and literal-input rules appear once in the Agent
-instructions; each Connector description retains its published purpose, input
-meanings, cardinality and special alias or continuation rules. Successful tool
-results carry one brief completion cue instead of repeating the conversation
-rules. Instructions and the native clarification schema ask the
-model to account for each concern and retain every supplied other input in
-`known_inputs`. This remains a semantic proposal checked by the existing binder,
-not proof that every intended concern or value was identified.
-
-The model selects relevant facts within that projection. Selecting an object
-uses its published summary fields; an exact scalar or `fields` selection may
-include detail fields, and `detail: "all"` selects all approved facts. Explicit
-context is added without unrelated siblings. `AgentEvidenceRenderer` formats
-readable labels, units, localized values and decimal separators, natural bounded
-intros, configured record titles, and call-specific subjects. Connector binding
-keeps both the admitted canonical input used for execution and the redacted
-literal phrase used for presentation; both are included in the evidence hash.
-JSON pointers and raw request JSON remain internal. Each record and its complete
-context (including an explicitly inherited parent currency or timestamp) render
-atomically under the output budget. Uncurated results retain their containing
-record because no field-level context contract exists. No field-name convention
-such as `records` or `items`, flattened value pool, or word-distance/number
-heuristic establishes identity. Strings are escaped as literal data, so API
-content cannot supply active Markdown or HTML or alter the response contract.
-Execution/source metadata and `data_preview` are not factual payloads. A root
-fact already fully visible in a published section intro is not repeated in each
-nested record. Record pointers, displayed ordinals and complete context proofs
-remain unchanged. Independent nested records still render separately.
-
-The Agent tone and length profile applies to reviewed natural factual claims.
-Exact source selection and published `answer_presentation` templates remain the
-fallback if semantic wording is rejected. Evidence-pointer and arithmetic
-validation remain exact; a digit regex does not prove natural prose truth.
-Questions bind to exact pending IDs/revisions and share the existing batch
-review. They cannot modify pending state or authorize an operation. No new
-global style setting or per-question model loop is introduced.
-
-Native paragraph output uses short public result references. After tool results
-arrive, the shared step projection refreshes the response schema with the exact
-currently offered references as an enum. Admission and provider dispatch use
-that same schema; source field values cannot stand in for result identities.
-This is a formatting constraint, not evidence or execution authority. The
-existing finalizer still checks the referenced public fields and reviews prose.
-The independent claim review does not inherit this productive reference offer.
-
-The immutable answer-length profile bounds the entire rendered answer in UTF-8
-bytes, including markup, labels, and provenance: `short` is 3,000, `balanced`
-is 8,000, and `detailed` is 16,000. The renderer budgets sections and fields
-within that total and visibly marks omitted data. These presentation limits are
-separate from the tool-result and provider-usage budgets.
-
-Invalid or missing answer selections use the existing verified source/facts
-fallback directly. There is no separate generative answer repair, repair schema,
-repair prompt or repair-only history snapshot. Normal native schema formatting,
-SDK tool-call correction and the single terminal claim review remain separate
-existing boundaries. Review is tool-free, carries no conversation history or
-attachments, runs at most one step, and retains its 20-second cap within the
-remaining turn deadline. Recovery does not acquire a model or tool replay.
-
-This deliberately removes a second opportunity to choose a narrower record or
-field. For example, a bad document-link pointer can now show both verified links,
-and a malformed tomorrow selection can show both returned days. Unsupported
-prose never becomes a fact. Existing public field, source identity, twelve-section
-and answer-byte limits remain; an empty allowlist still exposes no private field.
-Historical selection keeps the verified displayed record and original order;
-Knowledge excerpts and independent reads retain their sources alongside the
-authoritative Playbook status, including waiting or unknown outcomes.
-
-Ordinary conversation without direct reads and pure Knowledge answers remain prose;
-Knowledge citations are checked against the actual delivered source identities.
-Neither a valid source identity nor this output contract proves the semantic
-truth of free prose, the correctness of external data, or that the model chose
-every capability the visitor intended. Routing coverage remains an explicit
-quality check.
-
-Each Knowledge attempt can retain a bounded private `knowledge_retrieval`
-diagnostic in canonical execution evidence and the existing encrypted
-presentation receipt. It records retrieval status, strategy, evidence quality,
-returned/delivered chunk counts, index-compatible candidate counts and
-allowlisted failure codes. Counts are integers limited to 0 through 1,000,000.
-Query text or fingerprints, vectors, source content, raw errors and credentials
-are excluded. The checkpoint survives model failure, empty delivery, mixed
-Playbook composition and receipt restoration; successful retrieval checkpoints
-once. The operator debugger can display these facts, while visitor JSON/SSE
-exposes only the separate generic capability status. Older receipts remain
-readable without inventing missing diagnostics. These diagnostics do not change
-retrieval thresholds, capability authority or candidate acceptance.
-
-The Knowledge tool admits at most three distinct normalized queries per turn
-and at most two for an overlapping, exact `request_evidence` purpose. A second
-query for that purpose is allowed only after a clean `no_evidence` result. A
-successful first search permits another search only for a separate,
-nonoverlapping source-bound purpose. Duplicate queries, retrieval errors,
-unavailable sources and unusable evidence do not authorize a blind retry.
-All attempts share the original turn deadline, pinned authority and remaining
-Knowledge context budget. Delivered citations use increasing reference numbers
-across the turn, with a separate evidence entry for each successful search.
-
-When reranking is enabled, retrieval and hybrid fusion keep the pinned candidate
-pool before applying the final `top_k`, within the existing backend ceiling of
-30 candidates. Candidates still must pass index compatibility, original
-thresholds and score checks. Final evidence scoring uses the selected results;
-reranker failure falls back within the same final limit. No retry lowers a
-threshold. Multiple attempts add at most three allowlisted diagnostic summaries
-to the existing receipt, with one checkpoint per dispatched attempt and no
-query text or source content in those summaries.
-
-The S3b candidate also offers execution status as a value-free claim:
-`{"kind":"execution_status","receipt_ref":"exact offered reference","capability_key":"exact offered operation"}`.
-`AgentExecutionStatus` resolves the pair against current read receipts or the
-once-per-turn `agent_execution_context.v1` snapshot. Current references address
-an actual member of the current receipt array and its SHA-256 identity, never a
-fabricated SDK call ID. A shifted position cannot select a different receipt.
-The renderer supplies the pinned public label and recorded outcome. Historical
-statuses explicitly identify the earlier source-turn completion time; they
-never supply fresh observations or result facts. Result selection below keeps
-its separate source/presentation admission.
-
-Pending inputs, technical attempts, verified execution history and selected
-historical evidence also make a turn evidence-bearing without a current call.
-The same snapshot survives response copies and encrypted presentation checkpoints.
-`answer_review.v5` includes the frozen context, bounded receipt offers, public
-pending metadata, reverified retained visitor sources and native binding hashes. A `current_message` semantic review group is not an invocation,
-request inventory or execution permission. Invalid or unavailable review cannot
-publish that prose; deterministic facts/status or a verified-result limitation
-remain. Completely context-free ordinary prose still has the explicitly retained
-semantic limitation in ADR 0025.
-
-Historical references to previously displayed direct-read records have a
-separate admission rule inside this same answer/evidence boundary. The normal
-renderer produces `agent_answer_presentation.v1` only for fully displayed
-curated records, recording their displayed ordinals and visible fact pointers.
-The normal outcome commit binds that private proof to the canonical assistant
-message and its content hash in the existing encrypted presentation receipt.
-Omitted or shortened records, uncurated prose and model summaries cannot supply
-that proof. Historical rendering never creates a new current-read receipt.
-
-`AgentHistoricalEvidenceReader` examines at most 32 earlier completed turns and
-admits at most three source turns, six groups and twelve complete records within
-a 12,288-byte catalog. Sources must match the current bot, conversation, exact
-deployment/hash, approved read pins and freshly attested scope fingerprint,
-including tenant, actor/token and area. It verifies the original receipt,
-evidence hash, canonical message hash, visible fields and context closure.
-Its catalog is bound to the current request. It neither refreshes capabilities
-nor restores old scope values as execution authority. Old receipts without a
-presentation proof or scope fingerprint are ineligible; they are not backfilled.
-ADR 0035 K5 supersedes prose-derived selection below: a canonically committed,
-individually successful read with its original source/commit/evidence binding is
-also eligible as a result reference without an answer-presentation proof. Public
-summary/detail fields and their context closure may enter bounded context even
-when prose paraphrases them or their values are `0`, `false` or short names.
-These result records have no display ordinal. Only the existing attested
-structured presentation reader grants displayed order; source cards and prose
-cannot grant it. Missing or ambiguous order requires clarification.
-Successful siblings remain eligible beside failed or input-needing calls. The
-32-turn lookback and three-turn/six-group/twelve-record/12,288-byte bounds remain;
-the general 30-minute reference cutoff is removed. Retention, original and latest
-visitor source checks, current immutable read pins and fresh scope still apply.
-Reference selection rereads its original receipt; it never refreshes a capability.
-
-A bounded multilingual reference grammar recognizes explicit factual references
-and definite ordinal phrases against published metadata. It is an additional
-answer admission check, not a general intent classifier or capability router.
-Social acknowledgements, fresh named lookups, supplied local lists and ordinary
-conversation retain their existing path. Unsupported paraphrases remain outside
-this grammar; this is not a universal factuality guarantee. Multiple possible
-source groups or records require clarification instead of a recency guess.
-Bounded list compounds can match an exact published subject prefix; they must
-not hide one side of an explicit choice between source lists. Result values do
-not become subject metadata. German retrospective source frames before a colon
-and partitive ordinals also require a published subject. Predicate ellipses are
-limited to complete auxiliary questions with a lowercase weak-participle form;
-unrelated noun heads, arbitrary predicates and source frames in supplied local
-lists cannot acquire a historical record position through this rule.
-An English definite subject followed by `from before` also requires published
-subject metadata; quoted titles and dated cutoffs do not supply this reference.
-The relative phrase `you just read` follows the same published-subject rule;
-an imperative request to read a source remains a new request. A short past-tense
-pronoun question immediately following a bound historical subject stays with
-that historical record. Explicit current work and newly named sources do not.
-
-For a uniquely bound historical record, the adapter supplies a metadata-only
-selection catalog under the existing input budget. The normal conversation
-invocation retains its deployment-pinned tools and step budget even when a
-language heuristic sees only a historical reference. The optional historical
-field in `StructuredAgentConversationAnswer` contains `include: true` and
-optional visible child `fields`. The server binds the exact source turn,
-evidence ID and ordinal; those technical IDs are absent from the model offer.
-Prompt-only profiles use the same selection instruction and deterministic
-binding. The prompt, ordinary history, memory projection and input budget
-remain on the same deployed path.
-The server checks source and ordinal against the request and renders only
-original verified facts with a historical notice. Invalid model prose or a
-wrong selection or provider-formatting failure falls back to the uniquely bound
-record without another model repair. Focused child fields retain their published
-context dependencies; asking for only a name does not remove a contractually
-required record identity. A missing, ambiguous or out-of-range source instead produces a visible
-localized clarification according to the published uncertainty policy. Source
-proofs remain available when native model history has dropped the original
-message, subject to these explicit source-retention limits.
-Historical reviewed source-claim and structured presentation receipts retain their
-narrow visible-field/context reader. Current result references use stored public
-fields, independently of answer coverage or scalar-word occurrence. They certify
-neither prose claims nor a record's displayed position.
-
-A historical reference and an independent current request share the ordinary
-deployment-pinned tools and their existing turn budget.
-The current request still needs its own source-bound arguments and purpose;
-the historical catalog supplies neither. A missing historical record therefore
-cannot suppress a current read. The final normal evidence selection may carry
-one separate historical selection with `include` and visible fields. The server
-resolves its original identity. Both parts are validated independently and
-rendered within the shared answer limit. Current presentation receipts contain
-only newly executed facts; the original historical provenance remains separate.
-An invalid historical selection cannot replace its bound record or erase a
-successful current read. Already closed native answer-format steps still have
-no tools under the technical SDK step contract.
-An internal selection without current evidence is never ordinary answer prose,
-including when it copies an old evidence ID or invents a new one. The historical
-part remains available; the current part states the missing verified result,
-using an unambiguous published source label where possible.
-
-A successful direct-read source does not make another source redundant merely
-because both use the same purpose phrase or literal subject. Input questions
-remain bound to their own task; unsuccessful sibling input cannot erase verified
-facts or create a choice between capability labels from shared values alone.
-A complete value-only reply consumed by one verified pending request does retain
-a narrow ambiguity barrier against reuse for another pending question. It may
-produce a contextual capability choice, without weakening each task's own
-input, deployment and scope admission. Previously committed route-conflict
-receipts retain their original presentation on recovery.
-
-An unexecuted model read proposal does not prove that its named source contains
-or lacks information. Bounded source-content and completed-search assertions
-are checked against that rejected capability's published label and aliases.
-An independent API or knowledge result cannot attest to the unqueried source;
-its own verified facts and citations remain available. The reply states that
-the rejected source was not queried, without blaming
-the provider or the visitor's input. Trace labels and rejected arguments cannot
-supply the public attribution. Ordinary conversation, future help and explicit
-non-execution keep their existing path. This is a bounded assertion guard,
-not a general natural-language entailment check.
-
-Distinct unresolved task/input receipts contribute their own questions to the
-answer. One question cannot silently hide another concern. At most one displayed
-spelling suggestion owns a canonical confirmation offer; additional unresolved
-inputs remain visible without presenting an uncommitted second offer. A short
-acknowledgement still cannot ambiguously select among pending requests.
-
-Model-facing curated results omit value-label translations for values absent
-from that exact field and localized labels identical to their fallback. The
-full result, field pointers, evidence identity, units and visibility rules remain
-available. Server-side evidence and rendering retain the full original contract.
-This reduces repeated context without changing the conservative input budget.
-
-Direct-read failure presentation preserves the adapter's bounded cause and
-recovery action through the model context and final evidence guard. API/MCP
-provider failures, rejected inputs, identity or condition mismatches, and
-database execution failures remain distinct. Public explanations use closed
-categories and pinned labels, never raw provider error text. Successful empty
-database results remain evidence. Reverified retained input may supply
-clarification presentation context without becoming fresh input authority;
-resolver choices and partial input corrections keep the same source-bound
-pending request and question budget. Mixed failures remain visible beside
-verified independent results, subject to the answer size limit.
-
-Every direct-read tool call also carries a required, exact quote of the latest
-visitor message that states the call's purpose. This routing-only value is
-removed before input binding and is never sent to the external capability or
-persisted. One purpose can require several independently allowed read targets.
-The per-turn ledger and adapters retain exact capability/query completion
-identities, same-item replay, fan-out and execution budgets. Missing or invented
-routing quotes create no ledger claim; existing input and result guards still
-apply. Playbook start admission retains its separate overlap policy.
-Neither those guards nor a matching source span prove that the visitor requested
-the selected capability's purpose. This limit requires explicit routing tests.
-
-For a verified pending Connector request, a continuation or source-attested
-revision can refine a shared compound quote to its freshly bound input and
-condition spans. Each task is still re-admitted before execution. Separate
-spans keep each task's input evidence separate. An explicit current purpose may
-use multiple sources; a bare pending value cannot silently answer unrelated
-open questions. Task IDs, retained values and unverifiable source spans cannot
-create input or execution authority.
-
-If the model omits or paraphrases that routing quote while answering a pending
-Connector question, the server may recover the complete current reply only for
-an exact verified prior task. A missing task ID requires one uniquely open task
-for that capability. Fresh input or confirmation evidence must pass the normal
-binder first; retained values alone, invalid arguments and new tasks cannot use
-this recovery. The original task supplies the purpose, not the model quotation.
-
-The runtime deliberately does not use a keyword list to infer which tool
-arbitrary prose must invoke. Such a classifier would be capability-specific,
-multilingual, and brittle. Instead, **Test live Agent** and the Agent Quality Tests
-can assert one exact set of routes per turn: answer without a tool, knowledge
-search, one or more Data Resources or API Connectors, one Playbook, or
-clarification. API checks may also require an exact distinct item count.
-Evaluation uses only committed, allowlisted execution evidence. It rejects
-missing or incomplete evidence and every unexpected tool attempt. Request
-values and provider results are not copied into durable operator evidence. This
-makes routing an explicit weak-model eval rather than a false universal runtime
-guarantee. New follow-up values are still admitted only from the latest visitor
-message; only the preceding server-attested exception may be carried.
-
-`chat_turn_execution_evidence.v5` adds optional, allowlisted `evidence_guard`
-and historical `answer_repair` diagnostics. New turns create no answer-repair
-usage or metadata; old records retain bounded attempt counts, outcomes and
-initial guard reasons, never raw prompts,
-model drafts, or provider results. Existing v5 evidence without these fields
-remains readable. A useful `safe_evidence_fallback` is not a passing `answer`
-for routing, Quality Tests, or release evidence.
-Optional `historical_sources` records only bounded original turn IDs, evidence
-hashes and record ordinals. Historical decisions never fabricate current
-`capability_executions`, and this private diagnostic is not public chat output.
-
-One per-turn sequence guard permits independent direct reads alongside at most
-one Playbook action when the mixed presentation can be checkpointed to the
-originating durable turn. Crossing between these capability classes requires a
-successful checkpoint; a missing checkpoint or a second Playbook action is
-rejected before execution. An already-open Playbook limits the Playbook tools
-to its matching continuation or cancellation while approved independent reads
-remain available. Knowledge search remains a bounded read-only context tool
-and cannot supply executable Playbook or Connector inputs.
-
-The runtime does not automatically search the public web for unknown terms. Web
-or entity discovery must be published as its own governed read capability,
-otherwise the Agent asks for clarification or states the limit.
-
-### Published read dependencies
-
-The Agent compiler copies `runtime_config.agent.read_dependencies` into
-`authority.read_dependencies` in the immutable deployment. Each link declares
-both existing direct-read capability keys, one literal source pointer relative
-to the delivered payload, one target input, its JSON scalar type and its entity
-domain. For example, a host may publish:
-
-```json
-{
-  "agent": {
-    "read_dependencies": [
-      {
-        "source_capability_key": "data_resource_query:customers",
-        "target_capability_key": "api_connector_operation:42",
-        "source_pointer": "/data/0/id",
-        "target_input": "customer_id",
-        "value_type": "integer",
-        "entity_domain": "customer"
-      }
-    ]
-  }
-}
-```
-
-Publication and runtime validation accept at most 16 distinct, acyclic links.
-Both endpoints must already be pinned Connector or Data Resource reads. The
-target type must match its published schema or filter type; sensitive inputs,
-authority scope filters, self-links, wildcards and collection selectors other
-than index zero are rejected. A declared Connector target entity type must
-match the link's domain. Knowledge, Playbook outputs and write inputs are not
-dependency sources or targets. Missing links grant no transfer permission.
-
-An optional `offer: {max_candidates: 12, max_age_seconds: 300}` explicitly
-publishes the separate durable public-string confirmation projection described
-above. Bounds are 1–12 candidates and 1–86400 seconds, further capped by the
-original pending/context deadline. This requires Connector endpoints, required
-source result identity and a literal string target. One `/0/` segment may select
-each member of a bounded collection for an offer; duplicate public values and
-nested/partial collections are rejected. The following invocation-local ledger
-and its automatic uniqueness requirement are unchanged.
-
-An opt-in `offer.mode: bounded_selection_v1` instead offers individual public
-values from an intact bounded search response. It does not require a provider
-query echo or globally complete result set; it requires the actual successful
-Gateway request/result pair and an exact-identity target. Such links never enter
-the automatic read ledger, even for one match. Existing delivery, scope,
-revision, age and Gateway checks still apply. The Open-Meteo decoder/profile
-implements public ID selection and a fresh ID lookup with country/region checks;
-it does not yet implement weather or coordinate-pair authority. See
-[ADR 0026](adr/0026-bounded-provider-location-selection.md). Existing offer and
-canonical policies retain the stricter meaning documented below.
-
-The existing presentation checkpoint first persists the delivered evidence and
-its matching successful execution. Only then does the turn-local
-`AgentReadDependencyLedger` retain the explicitly linked scalar projections.
-It binds the original request object, active persisted turn, source message,
-deployment hash, freshly attested scope, and active conversation request id and
-revision. Both capabilities must belong to that same recorded request. This
-projection has at most 24 source identities and cannot be restored from history,
-model arguments or a later checkpoint under another request.
-
-Only successful, complete, redacted results qualify. Every collection traversed
-by a pointer must contain exactly one entity. Data Resource sources additionally
-require a complete `list` execution with exactly one delivered row and a pointer
-of the form `/data/0/field`. SQL `first` chooses a record but does not attest
-uniqueness; a partial page, final continuation page, empty list or multiple
-matches cannot supply a dependency. Connector result-identity and output checks
-still run before evidence admission.
-
-Connector proposals carry `__read_inputs[input] = {evidence_id, pointer}`;
-Data Resource scalar filters carry `source_reference` with the same two fields.
-The normal input remains present and must equal the verified canonical value.
-The existing gateway resolves the proof again before dispatch, enforcing the
-same immutable input, scope and capability contracts. A broken model proof
-returns correctable argument feedback without creating a visitor question.
-Derived Connector inputs do not become retained visitor sources or implicit
-cross-turn defaults. Native tool, query, item, context and deadline budgets
-continue to bound execution; the links introduce no additional turn loop.
-
-An optional `canonical: {max_age_seconds: 300}` makes the linked Connector input
-mandatory evidence-derived authority. This is part of the unreleased ABI v9
-candidate and requires explicit republication. Source and target must both
-declare required result identity; the target must use `normalizer: exact` to
-check the sole canonical input. The target schema must contain exactly this
-one required property, with one published source link and no optional link or
-`offer` on that field. Composite targets such as latitude/longitude or
-customer/site are unsupported in this scalar mode: the response verifier checks only one scalar.
-An additional optional property or ordinary dependency cannot bypass this
-publication restriction. Static request configuration remains available for
-fixed provider options. All transitive endpoints must already occur in the
-closed capability manifest; neither compiler nor runtime discovers tools.
-
-The distinct opt-in `canonical.mode: request_tuple_v1` supports a complete
-required input tuple when the target pins a request-bound response adapter.
-All fields must use one fresh verified flat source record and the same evidence
-ID. The source's exact verified identity must be one tuple member. Publication
-rejects incomplete tuples, mixed policies/sources and additional selectors.
-The Gateway rechecks persisted source evidence/execution hashes before dispatch.
-This mode does not require a collection-completeness claim for an exact-ID flat
-record. The adapter validates the final authorized request and labels local
-request provenance separately from provider result facts. The first profile
-binds Open-Meteo coordinates and preserves its distinct forecast grid. See
-[ADR 0027](adr/0027-canonical-request-tuples-and-grid-forecasts.md).
-
-The Gateway's boolean identity verdict is checkpointed with the successful
-execution. Scalar canonical source admission requires its accepted, verified result.
-It also requires an explicit `complete: true` payload or
-`data.collection_complete: true` witness. A provider's first/limited page must
-never be relabeled as complete to manufacture a unique location.
-Freshness is bounded to 1–86400 seconds and starts conservatively at the source
-turn's persisted receipt time. Registration, redisplay and reuse cannot renew
-it. The binder and Gateway require `__read_inputs` even when an identical value
-occurs in visitor text, retained input or a confirmed public label. Expired,
-cross-scope, incomplete, unverified or changed sources cannot supply a target.
-Empty and multiple candidate collections yield distinct
-`connector_read_dependency_not_found` and `connector_read_dependency_ambiguous`
-diagnostics. They do not create another visitor confirmation. Provider outages
-and identity failures retain their existing failure categories. A failed
-identity/not-found response for a verified canonical target stops without asking
-the visitor to reconfirm an internal identifier.
-
-The executable [location example](examples/canonical-location-v1.json) and its
-Gateway fixture use a provider-issued location ID, required target identity,
-and the existing country/region context predicates. A station display name may
-differ while that ID matches. Query echo attestation proves the query binding;
-the published provider contract must separately establish that its candidate
-IDs and country/region metadata describe the resolved locations. Neither a
-generated echo nor fuzzy label similarity establishes that relationship.
-The example specifies a deterministic provider protocol, not wttr.in or
-Open-Meteo compatibility. See [the S5 handoff](plans/runtime-reliability/S5-result.md)
-for the bounded external-host candidate step. Existing literal/exact-name
-contracts and S2 public-string offers retain their meaning.
+model or capability call, through JSON or SSE alike.
+
+## Built-in Handoff And Lead Capture
+
+`AgentBuiltInTools` compiles the two Agent switches into pins of the closed
+manifest (ADR 0039). `request_human` (reason, summary, optional contact) runs
+through `CapabilityExecutionGateway::executeAgentHandoff`, which checks the pin,
+refuses admin test conversations and creates the request with
+`HumanHandoffRequestService`; an open handoff is returned instead of a second
+one. It needs no visitor confirmation and is offered only when the conversation
+can receive operator replies. The runner reports the handoff its own call
+created as `agent_execution.requested_handoff_id`, so committing the turn keeps
+the model's answer instead of the takeover notice; any other handoff created
+during the turn still takes over. The committed payload carries the public
+`handoff` state and the next visitor message goes to the desk.
+
+`save_contact` follows Direct Write Execution with confirmation policy
+`visitor` and a pinned submission schema (the built-in `lead` schema or a
+registered one). Its card is worded in the visitor's language and carries the
+consent notice. A confirmed lead becomes one `BotSubmission` with its audit row
+under a confirmation-bound ledger claim. Like any direct write it needs the
+Agent-wide write permission (publication refuses it otherwise); the handoff
+does not. Release capability coverage ignores both tools.
 
 ## Playbook Invocation
 
 For each turn, `AgentPlaybookTurn` derives the model's tool set only from the
-verified Agent deployment. With no open run, those tools may start only their
-exact pins. With an open run, the Agent sees the matching continuation tool,
-except at waitpoints that require bound structured widget input or authorized
-operator resolution. These keep their existing resolution path without offering
-the model an unusable continuation. Delayed runs retain their status tool.
-Only when the latest visitor message independently matches the bounded explicit
-cancellation grammar is the continuation tool replaced by the
-closed cancel tool. The cancel handler repeats this attestation before changing
-state, so model instructions, retrieved knowledge, history, negation, quoted
-text, and mixed requests cannot authorize cancellation.
+verified Agent deployment (ADR 0040):
+
+- No open run: one tool per pin whose input contract is version 2. Its schema
+  is the Playbook's input schema (`name`, `label`, `type`, `required`,
+  `choices`, `validation`), its description the published invocation contract.
+  Requiredness is stated in the descriptions and enforced by the server, so the
+  model asks instead of inventing a value. Arguments are validated against the
+  schema only; they are not bound to the visitor's wording. Valid values become
+  the run's variables. A pin of an older contract is not offered.
+- Open run of a verifiable pin: the same tool name with the schema of the input
+  the run waits for (one field, or the fields of a form), or no arguments for a
+  status read. Valid values resume the exact AgentGraph interrupt with a typed
+  resolution (`slot_value`, `choice`, `slot_list` or `structured_object`)
+  bound to its interrupt identity and payload hash; AgentGraph verifies them
+  before resuming.
+- `cancel_playbook` is offered whenever a run is open, also when its Agent
+  version cannot be verified. It calls `WorkflowRunner::cancel`, which keeps
+  the AgentGraph cancellation and its recovery semantics, and closes the run's
+  open approval cards.
+
+An approval waitpoint is decided only on a confirmation card (ADR 0038 card,
+`agent_tool_confirmations.workflow_run_id`). The card stores the interrupt
+identity; Confirm resumes the approved path, Cancel the declined path, exactly
+once under the card's row lock. A card whose interrupt has moved on resumes
+nothing. Text never decides an approval. Surfaces that cannot render cards do
+not get Playbooks with approvals (`approvals` on the pin); admin test
+conversations decide approvals on the same cards (ADR 0041).
 
 A normal user cancellation commits against the verified AgentGraph cancellation
 reason and its closed interrupt. It does not require an operational
 `system_failure_reason`: cancelling a task is not a system failure. JSON and SSE
 replay the same committed cancellation message without repeating the operation.
-
-Starting a Playbook reserves a `WorkflowRun` bound to the Agent deployment and
-the exact immutable Playbook deployment. Continuing it uses the latest user
-message only as proposed input to the current typed waitpoint. A Playbook
-result is projected back through `AgentPlaybookResultProjector`; the graph does
-not become a second general-chat owner.
 
 `AgentPlaybookOutcomePresenter` is the shared, provider-free public outcome
 projection for normal turns, terminal recovery, and delayed delivery.
@@ -1707,7 +430,7 @@ AgentPlaybookTurn
 -> AgentGraphWorkflowRuntime
 -> typed result / waitpoint / delay / terminal state
 -> AgentPlaybookResultProjector
--> AgentTurnLoop
+-> AgentRunner
 ```
 
 AgentGraph owns checkpoint, interrupt, resume, delay, task, structured child
@@ -1757,86 +480,12 @@ turn an uncertain provider outcome into success.
 
 ## Conversation And Waitpoints
 
-General questions and side questions remain Agent turns. A running Playbook may
-continue only through its deployment-bound continuation tool. The current
-Playbook waitpoint and AgentGraph state determine whether input can resolve an
-interrupt; unexpected text therefore produces an Agent answer or clarification
-instead of falling through a router/planner taxonomy.
-
-Before model dispatch, the runtime captures the current question, input type,
-resolution mode, and bounded choice options from the authoritative AgentGraph
-interrupt of the exact pinned open Playbook. This presentation snapshot is
-redacted and wrapped as untrusted data. It contains no future steps and does
-not depend on conversation history or a stale pending-interaction projection.
-An unavailable, absent, or mismatched Graph interrupt contributes no snapshot.
-The context describes the waitpoint at turn start; it grants no authority and
-does not save an answer. A canonical continuation result replaces it. The Agent
-must use the available continuation tool to apply an unambiguous current answer
-and must not invent the next process question. Side questions, clarification,
-explicit approval, widget inputs, and operator review retain their boundaries.
-
-Choice continuations expose the published labels and canonical values in their
-answer schema. System and tool guidance both require a current request for the
-published Playbook job and values supplied for use in that job; a literal mention
-alone does not establish either intent. A rejected textual proposal explicitly
-reports that no input was applied and whether clarification is possible; it must not be described as a
-saved or confirmed choice. Every direct read and new Playbook start additionally
-carries a reserved purpose-evidence field. The runtime removes that field before
-input binding and requires a whole-token source span from the latest visitor
-message; missing or model-invented purpose wording cannot dispatch the capability.
-An evidence excerpt that only repeats one supplied input value from a larger turn
-cannot dispatch either: a source-bound value is not proof that the visitor
-requested the capability's job. A complete short value reply remains eligible
-for a contextual clarification such as “Which city?” → “Berlin”.
-Within the conversation plan, Connector, Data Resource and Knowledge reads reuse
-the already verified current request quote when the duplicate purpose field is
-omitted. Explicit malformed or unrelated quotes remain invalid. A stale plan or
-historical request cannot supply current purpose, and published input-binding
-and policy checks still authorize the actual read.
-Textual replies at email, number, date, time, choice and free-text waitpoints
-use the same native semantic decision before deterministic source binding.
-An acknowledgement, side request or pause must not become a field value
-automatically. A valid proposed answer still needs exact current-message
-evidence and the existing input validation. Defer leaves graph and pending
-request provenance unchanged and permits normal conversation or independent reads.
-Questions, mixed acts, cancellations, invalid typed values, approvals, operator
-reviews and widget-only inputs retain their existing explicit boundaries.
-Rejected direct-read and Playbook-start proposals remain in the shared operator
-trace but do not count as executed attempts or turn an otherwise safe
-conversational answer into a fictitious lookup failure.
-
-Standalone input and model-selected answers share the same complete-message
-admission. When the proposed value is an excerpt, every surrounding word must
-fit a closed affirmative response grammar. Unknown surrounding prose, questions,
-conditions, refusals and quoted examples leave the waitpoint open. A closed
-correction grammar may retract one contract-valid prior typed value, for example
-“Nicht Berlin, sondern Hamburg.” Multiple unretracted choices remain ambiguous.
-A complete valid free-text answer can itself contain negation as data; text
-still requires an Agent proposal. These checks authorize supported response
-forms rather than claiming universal semantic interpretation. Unsupported forms
-require clarification or the existing bound input controls.
-
-A separately recorded text input continuing the exact active Playbook can share
-a turn with an independent read or knowledge question. Admission validates its
-unique, nonoverlapping current visitor span and rejects uncovered prose, quoted
-examples, qualifications and competing answers. The input remains bound to the
-same authoritative graph interrupt; the independent request supplies no approval
-or write authority. Textual approvals retain complete-message admission.
-
-Before model dispatch, an open run's bound Agent deployment is verified. If its
-runtime contract is incompatible, the turn commits localized, non-retryable
-conversation advice and leaves that historical run and pending input unchanged.
-The visitor is directed to the operator about unfinished work; a new conversation
-is suggested only for new requests. This classification does not catch late
-execution failures or replace unknown-outcome reconciliation.
-
-Textual approval or rejection additionally requires the complete latest visitor
-message to match a bounded explicit-response grammar, independently of the
-model's proposed resolution and quoted span. Negated, quoted, conditional,
-mixed, or otherwise unsupported wording cannot authorize either branch. The
-waitpoint stays open for clarification or the existing bound widget controls.
-Accepted textual resolutions retain the whole attested utterance as evidence;
-operator-review and typed widget authority remain separate and unchanged.
+General questions and side questions remain Agent turns. A running Playbook
+continues only through its deployment-bound tool: the model decides from the
+conversation whether the visitor supplied the pending value, and the server
+validates that value against the interrupt's contract. Nothing is resumed by
+classifying free text. A short line in the Agent instructions names the open
+run and its state; the tool description repeats what it waits for.
 
 Playbook node-level AI tasks may interpret bounded input for that node. Their
 output remains untrusted data checked by the node contract and deterministic
@@ -1846,45 +495,48 @@ selects the required variables. The plain AI executor reads only explicitly
 declared context sources. Missing or empty sources never fall back to ambient
 `context`, `kb_context` or `knowledge_context` variables from another node.
 
-## Explicit Guardrail Policy Releases
+## Agent Safety Settings
 
-Optional `runtime_config.agent.guardrail_policy_ids.input` and `.output` select
-at most 16 authorized, enabled policies per direction. Publication normalizes
-and freezes their identities, content hashes, modes, structured checks and safe
-fallback text into `contract.safety` (`agent_guardrails.v1`). Publication and
-activation lock policy heads; productive changes invalidate candidate evidence.
-Unassigned artifacts retain their original baseline-only meaning and hashes.
+The Agent editor's **Safety** section stores `runtime_config.agent.safety`
+(ADR 0043). Publication normalizes it into `contract.safety`
+(`agent_safety.v1`); default settings add nothing, so an Agent without Safety
+settings keeps its deployment hash. The deployment hash covers the settings,
+so there is no separate policy record, pin or head lock. The
+contract is closed: unknown fields, non-canonical values and the former
+`agent_guardrails.v1` pins fail verification, so such a deployment is not
+executable until the Agent is published again. A deployment without `safety`
+has baseline protection only, which is what the default settings mean.
 
-`WorkflowSafetyBoundary` remains the only enforcer. It combines baseline safety
-with the exact acquired Agent deployment's input/output pins before model work
-and canonical message persistence. Recovery and delayed messages use the run's
-historical pin, not the latest live Agent or mutable policy records. Blocking
-policies reject matching text; advisory policies attach findings. A custom
-fallback is used only if it passes the complete output checks.
+- Topic limits (`only_topics`, `never_topics`, at most 500 characters each)
+  are model-interpreted: `SystemPrompt` adds them as topic rules after the
+  assistant profile. They are not a deterministic guarantee.
+- Blocked words and phrases (at most 40, 120 characters each) match whole
+  words, case-insensitively and Unicode-aware (`TermMatcher`); a trailing `*`
+  matches word beginnings. They apply to visitor messages, answers or both.
+- Personal data (email addresses, phone numbers, links;
+  `PersonalDataDetector`) is allowed, masked or blocked per type, for visitor
+  messages, answers or both. A masked visitor message is stored and sent to
+  the model masked; a masked answer is stored, shown, streamed and delivered
+  masked. Source links and button targets are not answer text.
+- A blocked answer is replaced by the Agent's fallback message when it passes
+  all output checks, otherwise by the translated default.
 
-Policies check banned/required phrases, length, and email/phone/URL patterns in
-text. They do not inspect attachments or replace capability authorization,
-confirmation or idempotency. Opaque legacy Rules JSON has no executable schema
-and is rejected at both save and publication. Disabling/deleting an authoring
-policy prevents new publication, but cannot revoke a frozen live release;
-activate a tested replacement to change live protection.
+`WorkflowSafetyBoundary` remains the only enforcer: baseline checks
+(instruction override, credentials, prompt leakage, length), the Playbook
+profile, then the exact acquired deployment's settings, for input before
+model work, for streamed drafts (ADR 0042) and before canonical message
+persistence. Recovery and delayed messages use the run's historical
+deployment, not the latest authoring. The checks inspect text, not
+attachments, and do not replace capability authorization, confirmation or
+idempotency.
 
 ## Durability, Safety, And Operations
 
-The unreleased candidate records bounded `agent_execution_event.v5` activity
-in private `chat_turn_progress.v2`, with separate public projection and
-server-authorized operator diagnostics. RC-04 adds optional bounded trace
-storage, expiring conversation grants and allowlisted read-only export; neither
-trace nor transport owns execution. Native proposals, model calls and Gateway
-dispatches have distinct counters. Historical reviewer events remain readable. Events
-never own execution or recovery. See [the schema, bounds and S7 consumer
-contract](EXECUTION_ACTIVITY.md).
-
-S5 adds content-free published field causes and server-observed links among
-proposal, native admission, local rejection, recovery and Gateway activity.
-Response completion, observed execution and answer coverage remain distinct.
-Historical events without these fields remain unknown. Neither recording nor
-diagnosis changes productive decisions or recovers missing execution evidence.
+Turn activity is recorded as bounded `agent_execution_event.v5` events in the
+private `chat_turn_progress.v2` envelope, with a separate public projection
+and server-authorized operator diagnostics (expiring conversation grants and an
+allowlisted read-only export). Events never own execution or recovery, and
+neither recording nor diagnosis changes productive decisions.
 
 - One durable `ChatTurn` owns client-turn idempotency and the selected Agent
   deployment.
@@ -1922,49 +574,17 @@ diagnosis changes productive decisions or recovers missing execution evidence.
   oldest whole turns to the effective input/context boundary, enforce the
   provider-profile output maximum on the request, and record provider-reported
   input, output, reasoning, cache-read, and cache-write buckets exactly once.
-- The S3c candidate restricts productive Agent conversation compaction to an
-  oldest complete native turn exactly duplicated by a later complete turn,
-  including its message objects and attachments. A unique retained turn may
-  carry a correction, condition or result detail; it cannot be discarded merely
-  because the budget is tight or an execution-status receipt exists. If this
-  bounded retained context cannot fit, admission fails before provider dispatch
-  or usage reservation. Existing history selection/scan limits still apply;
-  this is not unlimited recall of every condition ever mentioned.
-- Conversation summaries use their own summary bounds instead of the generic
-  scalar-memory prefix limit. Both prompt readers retain the newest complete
-  summary records. Each record has bounded excerpts of both sides of the turn;
-  optional topic and retrieval notes cannot displace them.
-- New session-memory writes bind bounded previews to fingerprints of their full
-  redacted, whitespace-normalized source content in the existing AgentGraph
-  memory metadata. Summary projection records bind the exact rendered line,
-  both full source messages and its topic/query notes. Projection omits a line
-  only while the corresponding adjacent native user/assistant pair and matching
-  independent notes remain. Last-message and timeline previews likewise require
-  a matching full source fingerprint; shared prefixes alone are insufficient.
-  Legacy unbound memory, unmatched summaries and independent retrieval/source
-  notes remain. Projection snapshots its scoped reads once and can restore an
-  omitted copy without rereading storage; it never deletes stored memories or
-  replaces business results with execution status. Open v3 Connector offers,
-  revisions and evidence retain their existing separate bound projection.
-  These candidate changes remain within the unreleased ABI v9 and preserve
-  `agent_tool_projection.v7` and the frozen S3 execution-context contract.
 - Synchronous and native streaming `BaseConversationalAgent` invocations admit
   and reserve each native SDK model step before dispatch, using its current
   messages, including tool calls, results, provider replay blocks, fixed schemas
-  and attachment allowances. Completed steps settle before tool execution, and
-  eligible independent answer reviews settle the complete productive response
-  before their own provider request. The later matching SDK `StepCompleted`
-  cannot bill it twice. Only an uncertain
+  and attachment allowances. Completed steps settle before tool execution; the
+  later matching SDK `StepCompleted` cannot bill them twice. Only an uncertain
   failed provider step retains its own reconcilable reservation. Expired deadlines
   and rejected input budgets create no reservation for an undispatched step.
   The SDK owns the loop; the usage listener never executes tools or transitions
   workflow state. Conservative byte upper bounds remain in force. Deferred
   streams reserve only when iterated; interrupted iteration cannot redispatch
   the transport. Provider-specific adapters preserve each terminal receipt.
-- If a later model step exceeds context or usage limits after verified reads,
-  `agent_context_limit_reached` or `agent_usage_limit_reached` preserves the
-  evidence with an incomplete-answer notice and performs no extra inference. It
-  does not retry completed capabilities or spend another model request.
 - Usage and cost accounting retain Agent deployment, Playbook deployment, run,
   stage, and parent-turn attribution without persisting prompts in operational
   summaries. All model-step records include `meta.invocation_id` and the
@@ -2002,8 +622,8 @@ Agent form. Connector operation authoring
 captures purpose, realistic request examples, ability aliases, entity types,
 input grounding/aliases, and optional result identity in structured fields.
 
-The S4 candidate adds an explicit public read review profile and per-field roles
-to that workbench. The existing Publisher previews the candidate policies against
+The workbench also offers an explicit public read review profile and per-field
+roles. The Publisher previews the draft policies against
 the current immutable revision or strict new-operation defaults, then expands
 the author preset once on normal publication. Imported descriptions, HTTP GET and
 MCP hints confer no public role. Nested paths need their own review; protected
@@ -2023,17 +643,19 @@ projection remains the exact budgeted offer; no second schema compiler is added.
 
 Live provider readiness uses the verified active deployment's exact provider,
 model, driver and base URL, together with the current stored Agent credential
-or that exact provider's host credential. Draft and candidate setup are evaluated
-separately; editing their provider settings cannot attest or invalidate the
-unchanged live provider binding. Channel availability and exact-deployment test
-evidence remain separate checks.
+or that exact provider's host credential. Draft setup is evaluated separately;
+editing provider settings cannot attest or invalidate the unchanged live
+provider binding. Channel availability remains a separate check.
 
-Before a tested candidate becomes live, activation rechecks each immutable
-Connector operation pin in the Agent manifest and its pinned Playbooks against
-the running package's strategy implementations, published operation state and
-current Connector environment binding. A failing pin blocks activation and
-names the affected capability for the operator. The productive Gateway still
-authorizes each request independently at execution time.
+Before a version becomes live (publish or restore), `AgentDeploymentCapabilityReadiness`
+rechecks each immutable Connector operation pin in the Agent manifest and its
+pinned Playbooks against the running package's strategy implementations,
+published operation state and current Connector environment binding. A failing
+pin blocks the step and names the affected capability for the operator. A live
+version that fails verification later, or whose pins the runtime now refuses,
+is shown as "Republish needed" in the editor, the Agent list and the launch
+dashboard. The productive Gateway still authorizes each request independently
+at execution time.
 
 Playbooks are optional advanced process automation. The existing React Flow
 island is retained as the Playbook editor, including its Filament tokens,
@@ -2043,11 +665,10 @@ than generic conversation nodes.
 
 The Playbook editor cannot define a second conversational persona, tone,
 language policy, answer length, citation policy, or fallback behavior. Those
-settings belong to the Agent. Publication snapshots the linked Agent profile
-into the immutable Playbook artifact for bounded AI steps, and Agent publication
-rejects a Playbook whose snapshot no longer matches the current Agent. Changing
-Agent behavior therefore requires republishing affected Playbooks before the
-next Agent deployment can be activated.
+settings belong to the Agent. A Playbook release does not copy them: it
+compiles its fixed status texts for every supported language, the Agent picks
+one per turn and writes the answer. Changing Agent behavior never requires
+republishing a Playbook; the release stays immutable and hash-verified.
 
 The editor presents the immutable invocation contract before the graph. The
 contract helps the Agent decide whether to select the Playbook; the React Flow
@@ -2070,54 +691,35 @@ tool, rejects contradictory matching/exclusion phrases, and
 rejects duplicate model tool names or identical normalized routing phrases
 across tools.
 
-Published-Agent Quality Tests run every saved turn through
-`ChatTurnApplicationService`, using one fresh test conversation per scenario
-and the exact verified active `AgentDeployment`. Ordered turns share that
-conversation, so compound requests and elliptical follow-ups exercise the real
-history path. Each turn may require the complete exact route set; a missing
-route or any extra attempt fails it. Results are bound to the scenario
-fingerprint and deployment hash. A newer deployment therefore makes them stale.
-Candidate-role runs additionally sign the finalized run and every ordered turn
-with the application key. Activation locks and verifies those signatures and
-their referenced durable Chat Turns again; unsigned pre-migration evidence or
-evidence invalidated by application-key rotation cannot authorize release.
-Playbook-draft scenarios remain separately bound to the draft fingerprint and
-compiled artifact. Historical captured turns can remain immutable run evidence,
-but cannot be created as executable scenario targets.
+Agent tests (S12c, [Agent Tests](AGENT_TESTS.md)) send each saved visitor
+message through `ChatTurnApplicationService` in one fresh admin test
+conversation per run, bound to the verified, never activated deployment of the
+saved draft (the same one the playground uses). Checks read the committed
+answer and the tool calls of its transcript; a rubric is graded by the tested
+deployment's own provider and model. A result counts only for the draft and
+test it ran with. Results are warnings before publishing; they never gate it.
 
-Admin live-test and release-candidate conversations are server-attested. The
-central capability gateway blocks productive writes for one-turn live tests,
-candidate tests, and multi-turn Agent Quality runs, even when the Agent invokes
-a Playbook. Read operations and provider calls continue through the real
-capability path so routing evidence remains representative without allowing a
-test to mutate productive systems.
-
-The internal `BotAdminTestSessions` application entry point gives the Filament
-test workspace two explicit purposes. Free exploration binds an operator,
-tenant, Bot, area, role, verified deployment ID and hash in the existing test
-conversation metadata. Its completed turns may accept ordinary follow-up
-questions but never update launch checks or release evidence. An explicit case
-binds canonical routing expectations before the first message. Candidate cases
-still pass through `AgentReleaseService::testCandidate`; live cases use the
-existing live-test result path. Only existing Connector and Playbook pending
-interactions can extend an open case. A completed case requires a new session.
-The durable `client_turn_id` ledger admits each send at most once; history and
-status reads expose only authorized user and assistant text and never dispatch.
-Changed target pointers or lost area access make old sessions read-only or
-unavailable. The internal entry point does not add a public endpoint or a new
-release authority.
+Admin test conversations (the editor playground and Agent test runs) are
+server-attested sandboxes (ADR 0041). The playground compiles the saved draft
+into a verified, never activated deployment and runs it through the normal
+persistent `ChatTurnApplicationService`, multi-turn, in a conversation bound to
+the operator, the Agent, the area and that deployment's ID and hash
+(`AgentPlaygroundSessions`). Write tools propose confirmation cards; a
+confirmed card and an unconfirmed write are simulated and never reach the
+Gateway's write execution, which refuses every admin test conversation, also
+for a Playbook's own write steps. Playbook approvals use the same cards as
+visitors. The handoff tool is not offered. Read operations and provider calls
+continue through the real capability path.
 
 Technical replacement answers carry a server-produced `degraded` flag in the
-durable operator execution evidence. Routing and release evaluators reject
-them even if the assistant text is nonempty and the exact capability route was
-observed. Diagnostic decision labels alone do not authorize or deny release.
+durable operator execution evidence. An Agent test run ends with an error on
+such an answer even if the assistant text is nonempty.
 
-`AgentRoutingEvidenceEvaluator` owns the shared exact-route contract used by
-both the live test and Agent Quality Tests. The protected
-`evals/AgentRoutingProviderEvalTest.php` suite supplies real-provider confidence
-for English, German, typo, negative, ambiguous, knowledge, Data Resource, API,
-Playbook, compound-read, and contextual elliptical-follow-up routing. Missing
-provider credentials make that gate skipped or blocked, never passed.
+The provider routing eval of the
+removed runtime was deleted with it. A real-provider eval for `AgentRunner` is
+planned; until then, `evals/runtime-v2` measures model behavior with the
+Phase 0 prototype loop only. Missing provider credentials make provider evals
+skipped or blocked, never passed.
 
 ## Forbidden Productive Paths
 

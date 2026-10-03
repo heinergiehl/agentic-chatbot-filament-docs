@@ -203,6 +203,29 @@ connection and set its Laravel `retry_after` above the chat job timeout; use
 under your normal process supervisor. A sync queue cannot provide durable
 streaming chat. The synchronous JSON endpoint remains available to server clients.
 
+While the worker runs a widget turn, the chat request stays open and relays the
+answer as it is written ([Chat Widget](CHAT_WIDGET.md)). Web and queue processes
+must share the cache store (database, Redis, or file on one host; not `array`);
+otherwise the widget shows only the final answer. Each open chat holds one PHP
+worker until its turn ends, so size PHP-FPM workers for concurrent chats.
+`php artisan serve` and `php -S` serve one request at a time unless
+`PHP_CLI_SERVER_WORKERS` adds workers (not on Windows), so other requests wait
+while a turn streams; set `AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS=0` there to
+end the request at once and let the widget poll.
+
+Run the Laravel scheduler every minute:
+
+```cron
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+The package schedules its own commands: knowledge source re-sync (every 15
+minutes, for sources set to daily or weekly), knowledge gap collection, ending
+idle conversations and delivering webhooks (every minute), AI usage and
+Playbook resume reconciliation, and nightly pruning of expired attachments,
+diagnostics and action reviews. Without the scheduler, sources never re-sync,
+`conversation.ended` is never sent and the read API keeps conversations active.
+
 If the host app uses Laravel's `database` queue driver and has not created queue tables yet, run this first:
 
 ```bash
@@ -227,8 +250,8 @@ Treat `FAIL` as blocking.
 
 ## 7. Golden Path: Agent To Live Deployment
 
-Use this path for the first production Agent. It keeps one clear authority: one
-immutable Agent deployment with only its published knowledge and optional
+Use this path for the first production Agent. It keeps one clear authority:
+one hash-verified, immutable Agent deployment with only its published knowledge and optional
 Playbooks.
 
 ### 1. Create the Agent
@@ -239,77 +262,87 @@ provider keys and model-profile blockers while keeping your entered Agent name.
 Installation creates an inactive draft with a handoff Playbook and saved tests.
 Add a missing key under the Agent's **AI Setup** or in the host app, then run
 **Setup Check > Test Chat Provider** explicitly if you want a connection test;
-that action makes a billable provider call. Continue through the same candidate
-test and activation gates below. See [Solution Kits](SOLUTION_KITS.md).
+that action makes a billable provider call. Then test and publish the Agent as
+below. See [Solution Kits](SOLUTION_KITS.md).
 
 1. Open **Agentic Chatbot > Build > Agents** and choose **Create Agent**. This opens the three-step wizard directly.
 2. In **Purpose**, keep **Have a conversation** for a simple Agent or choose **Answer from my content** for an FAQ Agent. Enter its name and job, and edit the suggested boundaries. In **AI connection**, use the configured provider and verified model, or repair missing setup. No provider test runs when the wizard opens.
 3. Check **Review** and create the paused, unpublished draft. For an FAQ Agent, **Overview** leads to **Add first content**; otherwise it leads to the test path. Website access, appearance, and advanced permissions can be adjusted in their own areas after creation.
 
-Ordinary conversation needs no Playbook canvas. Use **Test changes**, check a
-representative answer, select the tested version, and enable availability when
-visitor access should begin.
+Ordinary conversation needs no Playbook canvas. Use **Test**, check a
+representative answer, **Publish**, and enable availability when visitor
+access should begin.
+
+**Knowledge & capabilities > Built-in tools** has two switches. **Human handoff** (on for
+new Agents) lets a visitor ask for a person: the conversation moves to the
+**Inbox** and an operator answers in the same chat. **Collect leads** lets
+the Agent save contact details as a submission after the visitor confirms them
+on a card; it needs approved write actions under **Permissions & technical
+details**. Choose the lead form and, optionally, the consent text shown on the
+card. Neither needs a Playbook; publish the Agent after changing them.
 
 ### 2. Connect only what the Agent needs
 
 - For an FAQ Agent, choose **Add first content** on Overview. Add text, a file, or one web page, then ingest it. The saved source page shows its actual state and whether its current generation is pinned in the selected version. [Knowledge Sources](KNOWLEDGE_SOURCES.md) explains advanced API ingestion.
-- Open the Agent's **Tools & Data > Add capability** and choose **Read app data** for
-  approved read-only [Data Resources](DATA_RESOURCES.md), or **Get live information**
+- Open the Agent's **Knowledge & capabilities > Add capability** and choose **Read app data** for
+  approved [Data Resources](DATA_RESOURCES.md), or **Get live information**
   for a published [API Connector](API_CONNECTORS.md) read. Select an available
   definition and use **Assign to draft**. A direct read needs no Playbook.
   If no suitable definition exists, the same area links to its editor and
   returns to the Agent with that definition in focus. Assignment changes only
-  the saved draft; test and select a new version before visitors can use it.
-- To start from an API description, open **Connect > API Connectors**, choose
+  the saved draft; publish the Agent before visitors can use it.
+- To start from an API description, open **Connect > APIs & MCP**, choose
   **Import integration**, and follow [Integration Studio](INTEGRATION_STUDIO.md).
   Its optional AI step reuses an existing centrally configured provider key;
   the imported service credential remains a separate encrypted Connector value.
-- Keep writes behind Approval and the required confirmation and idempotency
-  policy.
+- Writes need a permission mode with approved write actions under
+  **Permissions & technical details**. A published Data Resource insert or update, API Connector write or
+  MCP write then becomes a tool the Agent may propose; the visitor sees every
+  value on a card and the write runs once after **Confirm**. Confirmation is on
+  by default and can be turned off per operation for harmless writes.
 
 ### 3. Add an optional Playbook
 
-Create a Playbook only for a bounded multi-step process. Start with **AI Draft**
-or add one of the twelve Playbook steps manually. Validate and publish the
-Playbook, then use **Tools & Data > Add capability > Run a controlled process** to
-assign it to the Agent draft. A draft or legacy live
+Create a Playbook only for a bounded multi-step process. Start from **Describe
+your process** (AI draft) or a template: callback, appointment, lead
+qualification, order status, return, support ticket or quote request. The
+editor shows the steps as a list, saves the draft automatically and runs it in
+its test chat, where writes are only simulated. A canvas is not required. It is
+an optional view of the same Playbook. **Publish** the Playbook; **Add to** the Agent puts
+it into the Agent draft, which you then publish. A draft or legacy live
 workflow pointer grants no authority.
 
-### 4. Publish, test, and activate a release candidate
+### 4. Test and publish
 
-Choose **Test changes** for behavior and model edits. This saves only the draft,
-reuses a matching verified test version when possible, otherwise prepares a new
-candidate, and opens the test workspace. It does not send a question. The
-selected release and visitor access stay as they were. Candidate publication
-snapshots the Agent behavior, model policy, knowledge, assigned capabilities,
-budgets, guardrail policies, and exact Playbook deployments into a hash-verified
-contract. Use the separate **Enable/Pause**, **Save website access**, **Save
+**Test** saves the form and opens a chat beside the editor that runs the saved
+draft. It is multi-turn, shows each tool call (name, arguments, status, short
+result) and the confirmation cards for writes and Playbook approvals. Writes
+are simulated: **Confirm** shows what would be written and nothing reaches your
+systems. **Reset conversation** starts over; after a saved change the next
+message starts a new conversation with the new draft.
+
+**Publish** saves the form, compiles the Agent behavior, model policy,
+knowledge, assigned capabilities, budgets, Safety settings and exact
+Playbook deployments into an immutable, hash-verified version and makes it
+live at once. The dialog lists problems that prevent publishing (for example a
+missing model or an unpublished Playbook) with links to fix them, and warnings
+(tests that failed or have no result for the draft, a missing API key) that do
+not block. An optional note
+is stored with the version. **Versions** lists every published version with
+its number, time, author and note; **Restore** makes an earlier version live
+again after verifying it. Availability is separate: a paused Agent stays paused.
+Use the separate **Enable/Pause**, **Save website access**, **Save
 connection**, and **Save appearance** actions for settings with immediate
-effects; **Test changes** does not save those groups. Widget language changes
-the displayed language immediately and requires a new tested release to change
-the Agent's default response language.
-
-In **Test**, enter a representative question and choose **Test question**.
-When the version has one expected ability it is preselected; with several,
-choose the named ability you mean to check. Knowledge search appears as
-**Answer from own content**. No tool ID or routing mode is needed. Sending may
-call the configured model and approved reads; productive writes are blocked.
-The existing release checks decide whether the bound test passes. Only after
-the exact candidate and saved Agent fingerprint have passing evidence can
-**Select tested version** replace the selected release. Availability stays
-unchanged, so a paused Agent remains paused. Later edits need another test.
-The advanced **Publish candidate** action remains available for operators who
-want to prepare a version separately; it is not a required step before **Test
-changes**.
+effects.
 
 ### 5. Verify the live Agent
 
-1. In **Overview**, check the selected version and availability. **Tools & Data** shows which assignments belong to the saved draft and verified test or selected version; hashes are under technical details.
-2. Open **Test** and choose the selected version for normal, unexpected, and ambiguous wording. A separate candidate keeps its own test evidence.
+1. In **Overview**, check the release state and availability. **Knowledge & capabilities** shows which assignments belong to the saved draft and the live version; hashes are under technical details.
+2. Open **Test** for normal, unexpected, and ambiguous wording.
 3. Check a grounded knowledge answer when sources are attached.
 4. If a Playbook is assigned, test its branch, input waitpoint, approval, and
    result path.
-5. Confirm usage and any Playbook execution or write evidence in Observe.
+5. Confirm usage and any Playbook execution or write evidence in **Insights**.
 
 **Appearance preview** displays sample messages only; it neither calls the Agent
 nor supplies release-test evidence. Add the exact production hosts to **Allowed
@@ -317,8 +350,8 @@ Domains** before embedding: an empty list blocks public widget access.
 
 Knowledge status distinguishes the live deployment's verified pinned generation
 from the latest indexing attempt. A failed replacement index does not remove
-still-valid live knowledge. New indexed content becomes live only after a new
-Agent candidate is published, tested, and activated.
+still-valid live knowledge. New indexed content becomes live only after the
+Agent is published again.
 
 ## 8. Advanced: Playbook Building
 
@@ -359,9 +392,9 @@ The script path is controlled by `widget.script_route`; update deployed snippets
 The generated snippet contains no token. The loader verifies the browser origin against the Agent's Allowed Domains, obtains short-lived access from the bootstrap endpoint, and renews it automatically. In production, an empty Allowed Domains list blocks bootstrap even when a permissive compatibility flag is present.
 The default area is used automatically. Advanced areas and public-widget selection are separate options, not steps for a single external website. After inserting the snippet, open the page, load the widget, and send a question to verify the actual integration. That question can incur provider usage. The admin tab continues to show installation as unverified; this manual check is part of operator acceptance.
 
-After the first real conversations land, open the Agent's **Analytics** page to review feedback and citation coverage. The **Knowledge** tab contains only high-confidence cases where a completed production turn durably recorded a Knowledge search, returned no source evidence, and used the safe capability fallback. It does not classify every uncited answer as a gap.
+After the first real conversations land, open the Agent's **Analytics** page to review feedback and citation coverage. **Verified Knowledge Gaps** lists questions where a completed live turn searched the Agent's knowledge and found no or not enough evidence; it does not classify every uncited answer as a gap. The scheduler collects them every five minutes.
 
-For each verified gap: review the original conversation, start work, create its Published Agent regression, update and ingest the relevant Knowledge Source, run the linked test against the current deployment, and then choose **Verify resolved**. The final action fails closed until the selected source has an active generation and the exact linked regression is currently passing.
+For each gap: review the original conversation, **Start work**, add or update the Knowledge Source that answers it, publish the Agent, and choose **Verify resolved** with that source (it needs an active generation) and a short note. A gap or a negative rating can also become an Agent test in the **Tests** tab.
 
 ## 10. Advanced: Server API And Channels
 
@@ -389,10 +422,10 @@ Use this before publishing:
 3. `php artisan filament-agentic-chatbot:doctor` has no `FAIL`.
 4. pgvector installs show `ext-pdo_pgsql` enabled and `CREATE EXTENSION vector` available, or ChromaDB health is green.
 5. Any source used by the Agent ingests to `completed`.
-6. The Agent prepares one immutable candidate while retaining its active release; saved availability and access changes take effect independently.
-7. **Test release candidate** records passing durable evidence for the exact deployment hash and saved Agent fingerprint before **Select tested release** selects it. Availability remains unchanged.
+6. **Test** answers from the saved draft with writes simulated.
+7. **Publish** makes the new version live and lists it under **Versions**; availability remains unchanged.
 8. The widget answers ordinary and unexpected wording through that verified live Agent deployment.
-9. Optional Playbook execution appears in `Playbook Runs`, and any approved `store_submission` output appears in `Submissions`.
+9. Optional Playbook execution appears under the Playbook's **Runs** and on the conversation page; confirmed leads and any approved `store_submission` output appear in **Insights > Submissions**, and requested handoffs in the **Inbox**.
 
 ### One-Command Smoke Script (PowerShell)
 

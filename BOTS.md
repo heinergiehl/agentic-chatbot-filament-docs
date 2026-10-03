@@ -1,7 +1,7 @@
 # Agents
 
-The Launch Dashboard shows one next step and keeps optional setup in a closed
-section. Create an Agent with the existing conversation or knowledge starting
+The Agents list shows each Agent's status and its one open step (add content,
+repair setup, Publish or Republish) as a row action. Create an Agent with the existing conversation or knowledge starting
 point. Valid host provider/model defaults are shown and retained; missing chat
 credentials have a visible repair path. Knowledge and Playbooks are optional.
 
@@ -49,7 +49,7 @@ Each Agent owns its own:
 - context areas
 - widget branding and prompts
 - linked sources
-- explicitly assigned input and output Guardrail Policies
+- Safety settings (topic limits, blocked words, personal data)
 
 In practice, this means you can create:
 
@@ -62,60 +62,113 @@ In practice, this means you can create:
 
 1. Open **Agentic Chatbot > Build > Agents** in your Filament panel.
 2. Choose **Create Agent** to open the existing wizard directly. **Use template** is the secondary entry to the Solution Kit wizard.
-3. In **Purpose**, choose **Have a conversation** (the default) or **Answer from my content**. Enter the name and job, then edit the suggested boundaries. **AI connection** shows the configured provider and verified model; missing credentials or a model profile need repair before a test version can be prepared. A configured credential does not prove a successful connection test.
+3. In **Purpose**, choose **Have a conversation** (the default) or **Answer from my content**. Enter the name and job, then edit the suggested boundaries. **AI connection** shows the configured provider and verified model; missing credentials or a model profile need repair before the Agent can answer. A configured credential does not prove a successful connection test.
 4. **Review** summarizes the purpose and connection. Creating saves a paused, unpublished draft and opens **Overview**. The content starting point recommends adding the first source there; a conversation Agent has no required knowledge source. The starting point is authoring metadata only and grants no runtime authority.
-5. Follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment) to test, publish, and activate the Agent. Add a Playbook only when the job needs a bounded process.
+5. Follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment) to test and publish the Agent. Add a Playbook only when the job needs a bounded process.
 
-Creating the Agent saves its settings. Visitor access also requires a verified active release, enabled availability, and valid channel access. Selecting a tested release keeps a paused Agent paused.
+Creating the Agent saves its settings. Visitor access also requires a published, verified version, enabled availability, and valid channel access. Publishing keeps a paused Agent paused.
 
 ### Creating From A Solution Kit
 
-A Solution Kit creates one coherent, inactive authoring bundle instead of a live Agent. The built-in **Customer Support & Human Handoff** Kit includes support behavior, optional mappings to approved app reads, a confirmation-gated handoff Playbook, saved quality tests, widget copy, and outcome goals.
+A Solution Kit creates one coherent, inactive authoring bundle instead of a live Agent. The built-in **Customer Support & Human Handoff** Kit includes support behavior, optional mappings to approved app reads, a confirmation-gated handoff Playbook, Agent tests, widget copy, and outcome goals.
 
-Installation is atomic and idempotent. It does not publish, activate, call an external service, or execute a write. The Agent Overview then shows the required release path through current-draft tests, immutable Playbook publication, Agent assignment, candidate testing, activation, and public traffic enablement. See [Solution Kits](SOLUTION_KITS.md).
+Installation is atomic and idempotent. It does not publish, activate, call an external service, or execute a write. The Agent Overview then shows the next step: immutable Playbook publication, Agent assignment, testing in the playground, publishing, and enabling public traffic. See [Solution Kits](SOLUTION_KITS.md).
 
 ## Agent Control Center
 
 After saving an Agent, use the edit page as your rollout checklist before you publish or embed it widely.
 
-- **Overview** is the first stop. A compact context shows availability (**Enabled** or **Paused**) and the verified selected version separately. One deterministic next step, a summary of completed checks and short repair links replace the full repeated release checklist. Name and role use the explicit draft save; availability uses its separate action. Pausing retains the selected version and its evidence. Technical details start closed; the explicit `diagnose=overview` link opens them.
+- The page header shows one release state for the Agent, the same as in the Agent list: **Not published**, **Live** (with its version), **Unpublished changes**, or **Republish needed** when the live version no longer verifies or uses an outdated pin format. Its one action is **Publish** (**Republish**).
+- **Overview** shows availability (**Enabled** or **Paused**) and the release state, one next step and short repair links. Availability uses its separate action; pausing keeps the live version. Technical details start closed; the explicit `diagnose=overview` link opens them.
 - **Readiness** shows the active chat provider, model, key path, embedding setup, and infrastructure status currently backing the Agent.
 - **Production readiness** also surfaces widget signing/domain posture and the verified Knowledge generations pinned to the live release. A failed new indexing attempt does not by itself invalidate a usable pinned generation.
 - **Appearance preview** opens explicitly in Website > Design and shows the current draft widget appearance without running the Agent or producing release-test evidence.
-- **Test release candidate** tests the published candidate. **Test live Agent** always tests the selected active release, including when a different candidate exists. Both use real provider calls and reads while blocking productive writes; neither enables availability.
+- **Test** opens a chat beside the editor that runs the saved draft: multi-turn, tool calls inline, write and Playbook approval cards decided in a sandbox (writes are simulated, never executed). **Reset conversation** starts over. It uses real provider calls and reads and never changes the live version.
+- **Tests** lists saved conversations with checks (tool called or not, answer contains or not, a rubric graded by a model) and runs them against the saved draft in the test sandbox; see [Agent Tests](AGENT_TESTS.md).
+- **Publish** makes the saved draft live as a new immutable version in one step; problems that prevent it are listed with links; failed or not run tests show as warnings. **Versions** lists published versions with number, time, author and note; **Restore** makes an earlier version live again after verifying it.
 - **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker.
 - **Website** starts in **Set up**, with numbered steps to allow a website, paste valid code, and check the installation. **Design** contains appearance settings and an explicitly opened native preview dialog. The former Embed Snippet action links to this tab.
 - **Analytics** becomes the next stop once you have live conversations, because it surfaces feedback, citation coverage, traffic, and knowledge gaps.
 
 In **Knowledge & capabilities**, compact native sections show draft capabilities and knowledge sources separately. **Add capability** opens a type-first modal for knowledge, API/MCP reads, app data, or an optional Playbook. Its searchable selection uses the authorized library; contextual creation retains the Agent return path without automatically assigning the new definition. Rows show a short business description, read/write effect, version differences and **Edit**. The **More** menu opens version details or removes only the form assignment, never the shared definition. Shared configuration is identified in the chooser and row details.
 
-The row's **Test changes** action saves through the existing draft boundary, prepares or reuses a matching verified version, and opens the test workspace with that published ability selected. The workspace puts the question and conversation before diagnostics. It has one expected-ability choice, the existing published examples, a compact coverage summary and closed status/details lists. Results separate assistant text from recorded capability calls and the existing pass/failure decision; unavailable execution evidence stays unknown. Productive writes remain blocked. **Free exploration** supports follow-up questions without release evidence. Historical conversations retain their exact version and become read-only after the target changes. Rendering, version/purpose switches and history reads create no candidate, conversation or model call.
+Adding or removing a capability changes only the form draft and preserves other unsaved inputs. **Save** persists those changes after current scope, published-release, permission and conflict checks; it does not publish. Invalid or unavailable assignments remain visible for repair or removal. Leaving for a dedicated editor offers save, discard or stay; validation errors preserve the draft. Knowledge sources belong to the Agent and retain their dedicated ingestion/configuration editor and processing status.
 
-Adding or removing a capability changes only the form draft and preserves other unsaved inputs. **Save draft** persists those changes after current scope, published-release, permission and conflict checks; it does not publish, prepare or activate a version. Invalid or unavailable assignments remain visible for repair or removal. Leaving for a dedicated editor offers save, discard or stay; validation errors preserve the draft. Knowledge sources belong to the Agent and retain their dedicated ingestion/configuration editor and processing status.
-
-**Permissions & technical details** is collapsed by default and groups the mode control, effective permissions, Data Resource field policies and limits, capture rules, and guardrails. Blocking assignment warnings remain visible above the sections with a repair action. The mode labels remain **Read access**, **Approved write actions**, and **Read access and approved write actions**, mapped to `query_only`, `write_only`, and `query_and_write`. A direct Connector write cannot be assigned; controlled Playbook writes still require compatible Agent permissions, their published confirmation and policy contracts. The tab query ID remains `behavior`.
+**Permissions & technical details** is collapsed by default and groups the mode control, effective permissions, Data Resource field policies and limits, and capture rules. Blocking assignment warnings remain visible above the sections with a repair action. The mode labels remain **Read access**, **Approved write actions**, and **Read access and approved write actions**, mapped to `query_only`, `write_only`, and `query_and_write`. Direct writes and lead capture need a mode with approved write actions; Playbook writes additionally need their published confirmation and policy contracts. The tab query ID remains `behavior`.
 
 The native page inherits the host font and primary color. Its scoped panel CSS is registered as a versioned package asset, so a standard Filament panel needs no package-source Tailwind scan or host theme build. A panel without the plugin receives no package assets from plugin registration.
 
-### Assigning Guardrail Policies
+### Safety
 
-In **Knowledge & capabilities > Permissions & technical details**, assign enabled Guardrail Policies separately to incoming and
-outgoing text. Up to 16 policies per direction can be selected. An enabled policy
-record alone protects no Agent: **Publish candidate** freezes the assignments
-and policy contents, **Test release candidate** checks that exact candidate, and
-**Select tested release** selects it through the normal release gates without changing availability.
+**AI setup > Safety** holds the Agent's safety settings. They take effect with
+the next **Publish**; earlier versions and resumed turns keep the settings
+they were published with.
 
-Editing, disabling, or deleting an authoring policy does not rewrite an existing
-release. Historical and resumed turns use their pinned policy snapshot. Publish,
-test, and activate a new candidate to change live protection; a policy edit also
-invalidates candidate evidence based on the old policy contents.
+- **Only talk about** and **Never talk about** describe topics in plain
+  language. They become rules in the Agent's instructions, so the model
+  applies them; they are not a hard filter.
+- **Blocked words** are matched as whole words, ignoring case: "Ass" does not
+  match "Assistent". End a word with `*` to also match longer words
+  ("Konkurrenz*"). Choose whether visitor messages, answers or both are
+  checked. A blocked visitor message never reaches the model; a blocked answer
+  is replaced.
+- **Personal data**: email addresses, phone numbers and links can be allowed,
+  masked or blocked, for visitor messages, answers or both. Masked details
+  are replaced, for example by "[phone number removed]", before the message
+  is stored, shown or sent on. Dates, prices, version numbers and order
+  numbers are not treated as phone numbers.
+- **Message for a blocked answer** replaces a blocked answer; empty uses the
+  translated default.
 
-The policy list distinguishes enabled authoring records from verified live
-assignments and reports changed, unavailable, or restricted evidence honestly.
-The existing runtime safety boundary remains active. These deterministic text
-checks do not inspect image/PDF/file contents and are not a general semantic
-safety guarantee. Opaque Rules JSON has no productive interpreter and cannot be
-published as an assigned policy.
+Built-in protection against instruction overrides, credentials and prompt
+leakage always applies. The checks inspect text, not attachments. They also run
+on the streamed draft, so a blocked or masked detail never appears in the
+widget before the committed answer.
+
+### Built-in tools
+
+**Knowledge & capabilities > Built-in tools** has two switches; neither needs a
+Playbook.
+
+- **Human handoff** (on for Agents created in the editor) adds a
+  `request_human` tool. When a visitor asks for a person, the Agent creates a
+  handoff with a reason and summary; it appears in the **Inbox**, the Agent's
+  answer stays visible, and the next visitor message goes to the operator. It is
+  offered only where an operator can reply (web widget, or a channel
+  conversation with its thread) and never in test chats.
+- **Collect leads** adds a `save_contact` tool bound to a submission form.
+  The visitor confirms the contact details on a card, optionally with the
+  consent text you set, and the lead is stored under **Insights >
+  Submissions**. It needs a permission mode with approved write actions.
+
+### Writes and confirmation
+
+With a permission mode that allows writes, every assigned published write
+becomes its own tool: a Data Resource insert or update, an API Connector write
+or an MCP write. The model only proposes the call. The widget shows a card
+with every value and **Confirm** and **Cancel**; the write runs once through
+the capability gateway when the visitor confirms, and the Agent then reports
+the outcome. Telegram, Slack and WhatsApp show the same card with buttons when
+the connection verifies its webhooks; email offers no confirmation-required
+writes.
+
+- **Ask visitor to confirm** (per write operation, on by default) can be
+  turned off for harmless writes. MCP writes and lead capture always confirm.
+- A direct Data Resource update reaches only records the current visitor owns.
+  For a resource scoped to the Agent, a tenant or all rows, the update tool is
+  offered only after you enable **Allow updating any record**, which always
+  asks the visitor.
+- Cards expire after 30 minutes. A repeated click or delivery never writes
+  twice, and an unknown outcome is reported as unknown, never as success.
+- In **Test** and Agent tests a confirmed write is simulated.
+
+### Conversation memory
+
+**Advanced > Session Memory > Turns to remember** (1 to 100, default 20) caps
+how many earlier turns are loaded. The runner also fits the history into the
+model's context window: it drops the oldest whole turns first and shortens old
+tool results before a request could fail, so long conversations keep
+answering.
 
 ## Important Agent Fields
 
@@ -197,7 +250,7 @@ Capability mode controls what the published Agent and its pinned Playbooks may d
 This matters most once an Agent is linked to Playbooks.
 
 - `query_data_resource` and knowledge search require query capability.
-- `mutate_data_resource` requires write capability and is available only inside a published Playbook with an explicit resource mutation policy.
+- Data Resource inserts and updates require write capability and an explicit resource write policy; they run as direct tools after visitor confirmation or as a Playbook `mutate_data_resource` step.
 - `store_submission` requires write capability.
 - `httpRequest` and `apiConnector` treat `GET` as query behavior and `POST` / `PUT` / `PATCH` / `DELETE` as write behavior.
 - Request retries are conservative: `POST` and `PATCH` are not retried unless the Playbook uses an explicitly idempotent external API contract.
@@ -206,21 +259,21 @@ This matters most once an Agent is linked to Playbooks.
 
 ### Allowed Internal Data Resources
 
-Agents can opt into specific internal Data Resources. With natural data questions enabled, publishing the Agent freezes each approved resource as its own direct read-only tool. A Playbook may separately bind a resource for a governed query or, when the global resource defines an explicit write policy, a confirmed create/update step.
+Agents can opt into specific internal Data Resources. With natural data questions enabled, publishing the Agent freezes each approved resource as its own direct query tool, plus one confirmed write tool per enabled insert or update when the Agent may write. A Playbook may separately bind a resource for a governed query or a confirmed create/update step.
 
 Each enabled resource is:
 
 - defined globally in **Data Resources**
 - optionally seeded from `filament-agentic-chatbot.data_resources.resources`
 - allow-listed and optionally narrowed per Agent
-- read-only when exposed directly to the Agent; optional writes are Playbook-only and separately governed
+- written only through an explicit write policy, with visitor confirmation for direct tools
 - limited to the declared fields, filters, sort options, and max limit
 
 Use this for conversational facts such as product availability or case status, or for a controlled Playbook step that needs internal business records without exposing arbitrary database access. Mutation policies allow only one scoped insert or optimistic update; arbitrary SQL, bulk mutation, and delete remain unavailable.
 
 If records belong to an Agent, tenant, team, or customer, add that boundary as a Data Resource safety scope or through your model design. Safety scope filters are always applied by the runtime and do not need to appear as normal Playbook filters.
 
-In the Filament panel, use **Agentic Chatbot > Connect > Data Resources** to follow the guided setup: choose records, approve information, set result guardrails, and add safety scope. The Agent edit page can only approve or narrow those global rules.
+In the Filament panel, use **Agentic Chatbot > Connect > Data** to set up a resource on one screen: pick a model, review the proposed fields, choose whose records the Agent reads and, optionally, enable writes. **Preview** shows a sample query and the exact tool the Agent sees. The Agent edit page can only approve or narrow those global rules.
 
 The package config remains useful for install-time seeds and code-reviewed defaults, but normal admin changes should happen in **Data Resources**. Use **Sync from config** only when you intentionally want to create or overwrite UI-managed resources from published config.
 
@@ -228,7 +281,7 @@ The built-in `bots` resource is scoped to the current Agent by default. Expose a
 
 ### Natural Data Questions
 
-The **Tools & Data** tab also includes **Understand natural data questions**. This is the admin-friendly layer above the same closed `query_data_resource` contract.
+**Permissions & technical details > Data Resources** also includes **Understand natural data questions**. This is the admin-friendly layer above the same closed `query_data_resource` contract.
 
 Admins choose:
 
@@ -237,9 +290,9 @@ Admins choose:
 - the default and maximum number of records for each direct query
 - a preview of each selected resource's sorting, filters, returned fields, hidden safety scope, and result limits
 
-The Agent maps a natural request to a complete typed query. Filter values must be grounded in the latest visitor message, and the runtime validates all fields, operators, types, sorting, and limits again at the central capability gateway. Playbooks still use explicit fixed or bounded AI-produced query plans when query order belongs to a controlled process.
+The Agent maps a natural request to a complete typed query (list, first, count, search, or a total or count per group), and the runtime validates all fields, operators, types, sorting, and limits again at the central capability gateway. Playbooks still use explicit fixed or bounded AI-produced query plans when query order belongs to a controlled process.
 
-For product catalogs, give important values friendly labels, types, visitor phrases, and usage notes, such as price, created date, availability, and name. Natural requests like "cheapest product" or "two newest products" work best when those fields are clearly marked as sortable or filterable.
+For product catalogs, mark the important fields for **Filter**, **Sort**, **Search**, **Total** or **Group**, such as price, created date, availability and name. Natural requests like "cheapest product", "two newest products" or "revenue per month" then need one tool call.
 
 ### Allowed Domains
 

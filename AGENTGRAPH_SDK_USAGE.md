@@ -22,8 +22,8 @@ release checklist and does not authorize publishing or changing the SDK.
   `AgentGraphPublicApiCompatibilityTest`.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
   cancellation, projection-authority, and side-effect fault-injection tests.
-- The bounded 0.16 integration evidence is preserved in
-  [the historical RC2 integration record](AGENTGRAPH_0_16_RC2_INTEGRATION.md).
+- The bounded 0.16 integration evidence is kept in the package repository's
+  documentation archive.
 
 ## Ownership boundary
 
@@ -44,10 +44,10 @@ Agent deployment, exact Playbook pin, workflow contract, and deterministic
 policy decide whether that call is executable. A mutable draft, latest-version
 lookup, global tool registry, or unpinned child graph cannot enter production.
 
-When a Playbook is open, the Agent receives only its matching continuation tool
-plus `cancel_active_playbook`; it retains approved knowledge tools so a side
-question does not have to mutate the Playbook checkpoint. A different Playbook
-cannot start until the current run is terminal.
+When a Playbook is open, the Agent receives its tool (to supply the pending
+value or read the status) plus `cancel_playbook` (ADR 0040); it keeps its other
+read tools so a side question does not mutate the Playbook checkpoint. A
+different Playbook cannot start until the current run is terminal.
 
 ## SDK surfaces used
 
@@ -162,9 +162,7 @@ The earlier claim-token migration must also be present. Synchronous execution
 now requires the node-execution table and its receipt retention policy. 0.18
 adds no migration beyond 0.17. Restart all PHP execution processes on the same
 dependency set. Existing immutable Playbook artifacts are not widened or
-rewritten: publish new Playbooks and then obtain new, hash-bound Agent candidate
-evidence through the normal release lifecycle before
-activation. A test with a different model cannot certify an unchanged candidate.
+rewritten: publish new Playbooks and then publish the Agents that use them.
 
 Diagnostic event listeners cannot abort confirmed execution in 0.18. Recovery
 fault tests therefore suspend and abandon an execution Fiber at a durable

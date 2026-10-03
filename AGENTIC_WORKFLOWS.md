@@ -60,19 +60,18 @@ Answer, and Finish are not Playbook primitives. Request Input is a typed
 waitpoint; Result is an internal process outcome. The Agent owns the eventual
 chat response.
 
-## Waitpoints and side questions
+## Inputs, waitpoints and side questions
 
-Request Input and Approval create typed AgentGraph interrupts. A visitor answer
-resumes only when it validates against the current interrupt contract. A side
-question remains an Agent turn and does not consume or corrupt the pending
-waitpoint.
+A Playbook is one Agent tool whose arguments are its input schema, declared on
+the Entry step (ADR 0040). The Agent collects the values in conversation; if a
+required value is missing or invalid, the tool names it and nothing starts.
 
-Typed and configured Choice answers can use deterministic validation before
-model dispatch. Free-text replies require a source-bound Agent interpretation;
-short acknowledgements and side requests do not automatically consume the
-waitpoint. Every proposed answer still validates against the current interrupt
-contract. Approval, form, and operator-review interrupts retain their dedicated
-typed paths.
+Request Input and Approval create typed AgentGraph interrupts for values that
+exist only mid-process and for approvals. While a run waits for input, the same
+tool takes that value; it resumes only when it validates against the current
+interrupt contract. An Approval is decided on a confirmation card with Confirm
+or Cancel, never by text. A side question remains an Agent turn and does not
+consume the waitpoint. `cancel_playbook` stops an open run at any time.
 ## Capabilities
 
 A Capability step selects one backend contract. Common forms are:

@@ -1,0 +1,143 @@
+{
+  "version": 1,
+  "status": "request-bound-grid-forecast-candidate",
+  "base_url": "https://api.open-meteo.com",
+  "forecast": {
+    "request": {
+      "method": "GET",
+      "path_template": "/v1/forecast",
+      "query_params": {
+        "latitude": "{{latitude}}",
+        "longitude": "{{longitude}}",
+        "current": "temperature_2m",
+        "temperature_unit": "celsius",
+        "timezone": "GMT",
+        "cell_selection": "land",
+        "forecast_days": "1"
+      },
+      "extra_headers": {},
+      "body_template": null,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location_id": {
+            "type": "string",
+            "title": "Location Id",
+            "pattern": "^[1-9][0-9]{0,15}$"
+          },
+          "latitude": {
+            "type": "number",
+            "title": "Latitude",
+            "minimum": -90,
+            "maximum": 90
+          },
+          "longitude": {
+            "type": "number",
+            "title": "Longitude",
+            "minimum": -180,
+            "maximum": 180
+          }
+        },
+        "required": [
+          "location_id",
+          "latitude",
+          "longitude"
+        ],
+        "additionalProperties": false
+      },
+      "request_schema": {}
+    },
+    "response": {
+      "schema": {},
+      "json_path": "",
+      "output_mapping": {},
+      "error_mapping": {}
+    },
+    "effect": {
+      "type": "read",
+      "requires_confirmation": false,
+      "idempotency_header": null,
+      "write_integrity_policy": {}
+    },
+    "execution": {
+      "timeout": 15,
+      "retry": {
+        "attempts": 0,
+        "delay_ms": 0,
+        "backoff": false,
+        "unsafe_methods": false
+      }
+    },
+    "strategies": {
+      "request_codec": "core/none",
+      "response_decoder": "open-meteo/forecast-v1",
+      "outcome_classifier": "core/http_status",
+      "pagination": "core/none"
+    },
+    "metadata": {
+      "batch_mode": "single_only",
+      "max_items": 0,
+      "input_policies": {
+        "location_id": {
+          "source": "literal",
+          "entity_type": "location",
+          "exact_source_required": true,
+          "typo_tolerance": "none",
+          "ambiguity": "reject"
+        },
+        "latitude": {
+          "source": "literal",
+          "entity_type": "location",
+          "exact_source_required": true,
+          "typo_tolerance": "none",
+          "ambiguity": "reject"
+        },
+        "longitude": {
+          "source": "literal",
+          "entity_type": "location",
+          "exact_source_required": true,
+          "typo_tolerance": "none",
+          "ambiguity": "reject"
+        }
+      },
+      "result_identity": {
+        "input": "location_id",
+        "response_path": "request_binding.location_id",
+        "normalizer": "exact",
+        "required": true
+      }
+    }
+  },
+  "bindings": [
+    {
+      "source_pointer": "/data/id",
+      "target_input": "location_id",
+      "value_type": "string",
+      "entity_domain": "location",
+      "canonical": {
+        "mode": "request_tuple_v1",
+        "max_age_seconds": 300
+      }
+    },
+    {
+      "source_pointer": "/data/latitude",
+      "target_input": "latitude",
+      "value_type": "number",
+      "entity_domain": "location",
+      "canonical": {
+        "mode": "request_tuple_v1",
+        "max_age_seconds": 300
+      }
+    },
+    {
+      "source_pointer": "/data/longitude",
+      "target_input": "longitude",
+      "value_type": "number",
+      "entity_domain": "location",
+      "canonical": {
+        "mode": "request_tuple_v1",
+        "max_age_seconds": 300
+      }
+    }
+  ]
+}

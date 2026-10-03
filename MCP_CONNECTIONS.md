@@ -1,18 +1,18 @@
-# MCP Data Sources
+# MCP Servers
 
-Status: implemented in the current development version. Provider profiles are
+Provider profiles are
 connection presets, not certification of third-party accounts or every tool
 offered by those providers.
 
-MCP connections provide reviewed reads to Agents and separately approved,
-synchronous create/update operations to published Playbooks. Every write needs
-its own operation review, an isolated staging test and confirmation of the
-visitor's concrete action. Direct Agent tools remain read-only. Command
+An MCP server connection provides reviewed reads and separately approved,
+synchronous create/update operations to Agents (as direct tools) and published
+Playbooks. Every write needs its own operation review, an isolated staging test
+and confirmation of the visitor's concrete action; a direct MCP write always
+shows the visitor a confirmation card (ADR 0038). Command
 execution, software control, local processes and asynchronous MCP writes remain
 unsupported. HTTP and MCP use the same operation workbench, immutable revisions,
 Agent/Playbook pins, capability gateway, ledger and access policy. See
-[ADR 0013](adr/0013-reviewed-integration-writes.md) for this bounded expansion and
-[the initial capability matrix](INTEGRATION_WRITE_CAPABILITIES.md).
+[ADR 0013](adr/0013-reviewed-integration-writes.md) for this bounded expansion.
 
 ## Operator flow
 
@@ -27,14 +27,15 @@ Composer dependency was introduced.
 
 The public transport injection API is usable, but migration still needs raw tool
 definitions, physical-send receipts, product egress controls and shared response
-limits. See the [Task C evidence and MC gates](plans/refactor-v2-3-review/EXECUTION_HANDOFF.md#task-c-verträge-und-nachweise).
+limits; the investigation is recorded in the package repository's
+documentation archive.
 The offline reproduction is `scripts/qa/mcp-client-spike.php`; it accepts an
 extracted official v1.0.0 source directory and an output JSON path, with all HTTP
 requests intercepted by fixtures.
 
 ### Guided GitHub setup
 
-1. Open **Connect > MCP data sources**, choose **GitHub**, name the connection,
+1. Open **Connect > APIs & MCP > MCP servers**, choose **GitHub**, name the connection,
    select **One Agent**, and save the account credentials. The provider endpoint
    is already filled; **Server settings** remains available for advanced setup.
 2. Select **Set up repository access**. Enter the organization or username,
@@ -88,13 +89,15 @@ disabled. The existing step, token and evidence limits still apply.
 
 ### Advanced and other providers
 
-1. Open **Connect > MCP data sources** and create a connection.
+1. Open **Connect > APIs & MCP > MCP servers** and create a connection.
 2. Choose GitHub, Tavily, HubSpot, Notion, Linear, Google Calendar, Google Docs,
-   or the advanced **Own data server** option. Only GitHub currently has curated
+   or the advanced **Own MCP server** option. Only GitHub currently has curated
    functions; other presets supply connection settings, not automatic tool approval.
    Enter the complete HTTPS MCP endpoint, including
    its path and any required trailing slash. No processes are installed on the VPS.
-3. Select the Agent and owner scope and save the authentication settings.
+3. Choose the Agents (one, selected or all; see
+   [Agent access](API_CONNECTORS.md#agent-access-and-shared-connections)) and
+   the owner scope, then save the authentication settings.
    Bearer tokens, header API keys, custom authentication headers and OAuth are
    supported. Credentials use the existing encrypted Connector storage and
    remain blank when editing saved secret fields.
@@ -106,7 +109,8 @@ disabled. The existing step, token and evidence limits still apply.
    copy the displayed callback URI to the provider, enter the client ID, optional
    secret, endpoints and scopes, then save. **Discover OAuth settings** can fill
    endpoints for review. Registration or account consent does not approve tools.
-5. Select **Review operations** (**Advanced data access** for GitHub).
+5. Select **Import tools** to import several tools under one review (see
+   below), or **Import one tool** (**Advanced data access** for GitHub).
    Search the importable tools and review the selected
    description. The original input schema is under **Technical details**;
    incompatible or excluded tools and their causes are under **Compatibility details**.
@@ -129,9 +133,9 @@ disabled. The existing step, token and evidence limits still apply.
    input policies and output mapping in the operation workbench. Test that draft
    and publish its immutable operation revision through the normal lifecycle.
 7. Attach published reads in the Agent's Connector tools or in a Playbook
-   Capability step. Writes are available only in Playbooks. Publish, test and
-   activate the resulting Agent release. Saving, discovery and operator review
-   never grant direct Agent write access.
+   Capability step; published writes work in both and always ask the visitor
+   to confirm. Publish the Agent to make the new version live. Saving,
+   discovery and operator review never grant write access by themselves.
 
 The supported structured-output schema includes FastMCP's boolean
 `x-fastmcp-wrap-result` root annotation. The original declaration and annotation
@@ -145,6 +149,39 @@ dialog. It keeps the operation identity and published revision, replaces the
 draft's discovered schema and default mapping, and requires review, testing and
 publication again. Existing Agent deployments retain their old revision pins.
 Changed fixed argument scopes get separate operation identities.
+
+### Import tools
+
+**Import tools** discovers every tool of the server and lists it in one table
+with the server's hint, its status and the access to grant:
+
+- A tool the server marks read-only (`readOnlyHint: true`, no destructive hint)
+  starts as **Read**. Every other tool starts **Off**.
+- **Read** is offered only when the server does not declare changes
+  (`readOnlyHint: false` or `destructiveHint: true`). A positive hint never
+  approves a tool by itself.
+- **Write** imports a draft without write approval. It still needs its own
+  write review (fixed targets, tenant and actor scope) and an isolated staging
+  test before publication, and visitors always confirm MCP writes (ADR 0038).
+- Tools without a supported schema are listed as unavailable.
+
+One review covers the whole import: an approved purpose, the confirmation that
+the selected read tools only read data and that no tool controls software. The
+importer re-discovers the server, rejects a selection the fresh declarations do
+not allow and stores one signed record (`mcp_server_import_review.v1`) with the
+exact selected tools, their definition hashes and effects. Each imported read
+also carries its usual signed read review, so testing, publication and the
+Gateway check each operation as before. Imported tools are drafts: test and
+publish each one, then select it for an Agent. Curated GitHub connections keep
+their guided repository setup and do not offer this import.
+
+Opening the import again compares the server with the imported operations. An
+operation whose tool the server now declares differently is marked **Changed**,
+one whose tool disappeared **Removed**; the published revision is the
+reference when one exists. Marking changes no access: published revisions and
+Agent pins stay, and a changed declaration still fails before `tools/call`.
+Selecting a changed tool refreshes its draft under the new review; it needs a
+new test and publication. Unchanged imported tools are listed as **Imported**.
 
 ### Notion account and page scope
 
@@ -209,8 +246,8 @@ purpose, matching example and required input schema. Instructions and schemas
 stay fixed within the native model invocation.
 
 Existing deployments keep their original metadata. Edit generic source fields in
-the operation workbench, review and test the operation, then publish and activate
-a new Agent deployment. This preserves request mappings and the existing data-read
+the operation workbench, review and test the operation, then publish the Agent
+again. This preserves request mappings and the existing data-read
 review. GitHub identity remains derived from the bound repository. Server-reported
 diagnostics cannot be changed through the source fields.
 
@@ -218,7 +255,7 @@ diagnostics cannot be changed through the source fields.
 
 The MCP client, discovery, schema import, authentication, data review and
 execution are provider-independent. A server can be connected through **Own MCP
-data server** without adding application code. The GitHub setup and image
+server** without adding application code. The GitHub setup and image
 projection are optional provider-specific conveniences, not another runtime.
 
 Applications can add named connection presets through
@@ -500,10 +537,10 @@ a confidential client remains on the manual setup path.
 - Business result pagination and asynchronous tool completion need a separately
   reviewed contract; HTTP pagination/continuation settings cannot be applied to
   an MCP tool. Catalog pagination is supported.
-- Direct Agent tools remain read-only and input-grounded. Dependent reads and
-  separately reviewed synchronous create/update operations use Playbooks.
-  Software-control tools, bulk writes, deletes and asynchronous MCP writes are
-  excluded. HTTP writes retain their existing governed Playbook contracts.
+- Direct Agent tools are input-grounded reads and separately reviewed
+  synchronous create/update writes that the visitor confirms (ADR 0038).
+  Dependent reads use Playbooks. Software-control tools, bulk writes, deletes
+  and asynchronous MCP writes are excluded.
 - Existing MCP write histories and unresolved outcomes remain available for
   review and reconciliation; they are not converted to reads or retried.
 

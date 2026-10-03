@@ -32,6 +32,7 @@
 - Bring-your-own-key provider configuration: the Composer package contains no maintainer-owned AI credential, while host and per-Agent keys remain installation-owned secrets
 - URL ingestion safety checks (blocks localhost/private networks by default, revalidates redirects, enforces size and content-type limits)
 - Workflow HTTP Request and API Connector safety checks for localhost/private-network targets by default
+- Per-Agent Safety settings: blocked words and email/phone/link masking or blocking for visitor messages and answers, enforced before storage, model input, streaming and delivery (see [Agent Safety Settings](#agent-safety-settings))
 - Non-executing Integration Studio parsing that discards imported credentials, scripts, cookies, samples, file content, and remote references before AI or persistence
 - Explicit Capability Bridge inspection that validates registered server-side contracts without reflecting or exposing arbitrary Filament actions
 - Encrypted, draft-hash-bound synthetic Connector fixtures with a network-free canonical response replay path that cannot satisfy publication or live execution authority
@@ -46,7 +47,8 @@
 - Bot-scoped built-in internal data resources and hidden runtime safety scopes for `query_data_resource`
 - Content-detected, hash-bound chat attachments on a non-public disk with scheduled retention cleanup
 - Provider-authenticated Telegram, Slack, WhatsApp, Mailtrap, and Mailgun webhooks; bounded provider-host-only file downloads; and path-free durable email ingress staging
-- Agent-bound outbound webhooks with public HTTPS/DNS pinning, no redirects, exact-body HMAC signatures, transactional outbox/idempotency evidence, encrypted payload storage, and PII-minimized outcome/handoff schemas
+- Agent-bound outbound webhooks with public HTTPS/DNS pinning, no redirects, exact-body HMAC signatures, transactional outbox/idempotency evidence, encrypted payload storage, PII-minimized schemas and redacted, explicitly opted-in payload content
+- A token-scoped, rate-limited read API for submissions, conversations and handoffs with explicit read scopes
 - Raw channel payload capture disabled by default; when explicitly enabled for debugging, secret-key values are redacted and strings, object breadth, nesting, and invalid UTF-8 are bounded before queue or database persistence
 - Local release credential scans over both release-eligible source files and every text file in the exact commercial ZIP; findings expose only SHA-256 fingerprints, and the release allowlist has no wildcard mechanism
 
@@ -57,6 +59,33 @@ must use synthetic data; fixtures are not a sanctioned store for captured
 production payloads. Fixture rows are removed with their owning operation, and
 an intentional contract change requires a new fixture instead of mutating old
 evidence.
+
+## Agent Safety Settings
+
+Each Agent's **Safety** section (Agent editor, AI setup) is published with the
+Agent version; `WorkflowSafetyBoundary` enforces it.
+
+- Personal data masking replaces email addresses, phone numbers or links with
+  a translated placeholder. For visitor messages the masked text is what is
+  stored and sent to the AI provider; the original is not persisted. For
+  answers the masked text is stored, shown, streamed and sent to channels and
+  webhooks. Masking does not apply to attachments, tool results kept for the
+  conversation transcript, knowledge source links, confirmation cards (they
+  show the values a write will use) or messages exchanged with a human
+  operator during a handoff.
+- Masking or blocking visitor email addresses or phone numbers also hides
+  them from lead capture, handoff and Playbooks, because the model never
+  receives them; the Safety section says so when this is selected. Use it
+  only where the Agent should not collect them.
+- Phone detection accepts international numbers, national numbers with a
+  trunk prefix and North American numbers. It does not treat dates, prices,
+  version numbers, IBANs, card numbers or labelled order and customer numbers
+  as phone numbers, and it does not recognize every possible format; it is a
+  data-minimization aid, not a guarantee.
+- Blocked words match whole words; topic limits are model instructions, not
+  deterministic filters.
+- Built-in checks for instruction overrides, credentials and prompt leakage
+  cannot be switched off.
 
 ## Public Runtime Deprecations
 
@@ -178,7 +207,7 @@ Doctor warns in production when input, output, variables, and meta are all captu
 
 Knowledge search failures return a generic user-facing error. Internal logs and retrieval diagnostics include the Agent ID/public ID where appropriate, exception class, and a SHA-256 query fingerprint, but not the raw query, provider secrets, credential values, or exception messages. Retrieval-query Playbook values are redacted from terminal run variables and trace payloads.
 
-Scheduled knowledge-gap detection reads only terminal committed Chat Turns and requires the redacted `knowledge_searched` plus `safe_capability_fallback` evidence pair and an assistant message without sources. It stores a SHA-256 normalized-question fingerprint, an encrypted bounded question excerpt, and occurrence metadata limited to the Agent deployment hash and configured context area. Operator resolution and ignore notes are encrypted. Provider prompts, credentials, connector payloads, and complete model responses are not copied into the knowledge-gap ledger.
+Scheduled knowledge-gap detection reads only terminal committed Chat Turns and requires a knowledge retrieval status of `empty` or `insufficient_evidence` and an assistant message without sources. It stores a SHA-256 normalized-question fingerprint, an encrypted bounded question excerpt, and occurrence metadata limited to the Agent deployment hash and configured context area. Operator resolution and ignore notes are encrypted. Provider prompts, credentials, connector payloads, and complete model responses are not copied into the knowledge-gap ledger.
 
 The built-in `bots` data resource is scoped to the current bot by default. Only override that resource in the host app when you intentionally want a global bot catalog exposed to workflow data queries.
 
@@ -245,6 +274,34 @@ response body. Versioned payload allowlists omit conversation text, customer
 contact data, handoff reason/summary, internal notes, operator identity,
 evidence references, credentials, and database IDs. Manual dead-letter retries
 require an identifiable authorized operator and an encrypted reason audit.
+
+Payload content is off by default. An admin may opt an endpoint into the fields
+of new submissions and the last 5, 10 or 20 messages of the event's
+conversation. The opt-in is part of the verified contract: changing it pauses
+the endpoint until a new signed test passes. Opted-in content is captured with
+the event, stored encrypted, and redacted before it is stored: credential-like
+field names, schema fields marked `sensitive`, bearer and basic credentials
+and runtime secrets are removed; email, phone and link types that the Agent's
+live Safety settings mask or block are masked (all three when those settings
+cannot be read). Each delivery sends only the content its endpoint opted into,
+within `outbound_webhooks.max_payload_bytes`. Deleting a conversation's
+history also removes its messages and feedback comment from stored events, so
+pending deliveries and retries no longer send them. Admin playground, Agent
+test and editor test records never produce events.
+
+## Read API
+
+The read API (`docs/READ_API.md`) returns submissions, conversations and
+handoffs by the public ids used in webhook payloads. It accepts only Agent
+access tokens (HMAC-hashed at rest) that grant `submissions:read`,
+`conversations:read` or `handoffs:read` by name; `*` grants none of them, and
+a read-only token cannot chat. A token reads only its own Agent's records and,
+when it has allowed areas, only conversations in those areas. Records of other
+Agents, other areas and admin tests answer `404`. Revoked, inactive and expired
+tokens answer `401`; each token has a per-minute limit and invalid tokens are
+limited per IP. Responses never contain internal numeric ids, secrets or tool
+arguments, and text passes the same redaction as webhook content. Cursors are
+encrypted and bound to the token's Agent.
 
 ## Data Resource Admin Authorization
 

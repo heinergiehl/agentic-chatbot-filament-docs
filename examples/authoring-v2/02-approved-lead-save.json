@@ -1,0 +1,88 @@
+{
+  "schemaVersion": 2,
+  "name": "Approved lead save",
+  "description": "Collect an email, require approval, execute an approved write, and return the process outcome.",
+  "steps": [
+    {
+      "id": "entry",
+      "kind": "entry",
+      "label": "Entry",
+      "position": { "x": 100, "y": 220 },
+      "data": {}
+    },
+    {
+      "id": "request_email",
+      "kind": "requestInput",
+      "label": "Request email",
+      "position": { "x": 380, "y": 220 },
+      "data": {
+        "prompt": "Which email address should I save?",
+        "variableName": "lead_email",
+        "inputType": "email",
+        "required": true
+      }
+    },
+    {
+      "id": "approve_save",
+      "kind": "approval",
+      "label": "Approve save",
+      "position": { "x": 660, "y": 220 },
+      "data": {
+        "prompt": "Should I save {{lead_email}} for follow-up?",
+        "variableName": "lead_save_approved",
+        "confirmLabel": "Save it",
+        "cancelLabel": "Do not save"
+      }
+    },
+    {
+      "id": "store_lead",
+      "kind": "capability",
+      "label": "Save lead",
+      "position": { "x": 960, "y": 120 },
+      "data": {
+        "actionKey": "store_submission",
+        "inputMapping": {
+          "schema_key": "lead_capture",
+          "payload": {
+            "email": "{{lead_email}}",
+            "source": "approved_lead_save"
+          },
+          "status": "confirmed"
+        },
+        "outputVariable": "lead_submission"
+      }
+    },
+    {
+      "id": "saved_result",
+      "kind": "result",
+      "label": "Return saved result",
+      "position": { "x": 1260, "y": 120 },
+      "data": {
+        "resultTemplate": "The lead was saved for {{lead_email}}.",
+        "statusValue": "saved"
+      }
+    },
+    {
+      "id": "declined_result",
+      "kind": "result",
+      "label": "Return declined result",
+      "position": { "x": 960, "y": 340 },
+      "data": {
+        "resultTemplate": "The visitor declined the write.",
+        "statusValue": "declined"
+      }
+    }
+  ],
+  "transitions": [
+    { "id": "entry_email", "sourceStepId": "entry", "targetStepId": "request_email" },
+    { "id": "email_approval", "sourceStepId": "request_email", "targetStepId": "approve_save" },
+    { "id": "approval_valid", "sourceStepId": "approve_save", "targetStepId": "store_lead", "path": "valid" },
+    { "id": "approval_invalid", "sourceStepId": "approve_save", "targetStepId": "declined_result", "path": "invalid" },
+    { "id": "store_result", "sourceStepId": "store_lead", "targetStepId": "saved_result" }
+  ],
+  "annotations": [],
+  "conversationMemoryPolicy": "inherit",
+  "policies": {},
+  "compiler": { "version": 1 },
+  "viewport": { "x": 80, "y": 80, "zoom": 0.78 }
+}

@@ -1,7 +1,7 @@
 # Known Limitations
 
-> **Version**: 0.19.0<br>
-> **Last updated**: 2026-09-05
+> **Version**: 0.19.0, plus the changes listed under Unreleased in the changelog<br>
+> **Last updated**: 2026-10-03
 
 This page documents known constraints, upstream limitations, and workarounds.
 
@@ -108,7 +108,7 @@ provider and model. Model output is always an untrusted proposal.
 or may ask for clarification. It still cannot grant a capability, bypass an
 approval, change a deployment pin, or authorize a write.
 
-**Workaround**: Add representative Agent quality scenarios for unexpected
+**Workaround**: Add representative Agent tests for unexpected
 wording, active Playbook replies, side questions, cancellation, and provider
 failure. Use a model that reliably supports the declared tool contract.
 
@@ -136,3 +136,56 @@ Schema-v2 Ask steps can compile structured fields into `collectForm` runtime nod
 **Impact**: Invalid JSON or non-list structured field payloads are ignored by the compiler and will not become form fields.
 
 **Workaround**: Keep structured fields as a JSON array of field objects or use the semantic editor controls, then run workflow validation before publishing.
+
+---
+
+## 12. Channels send the final answer
+
+The web widget streams the answer while it is written. Telegram, Slack,
+WhatsApp and email send the committed answer once it is complete; Telegram
+shows a typing indicator meanwhile.
+
+**Impact**: long answers appear in channels only at the end of the turn.
+
+---
+
+## 13. Streaming needs a shared cache and one PHP worker per open chat
+
+The widget's streaming request reads the draft the queue worker writes into the
+cache. With a per-process store such as `array` the widget shows only the
+final answer. Each open chat holds one PHP worker until its turn ends.
+
+**Workaround**: share one cache store (database or Redis) between web and queue
+processes, size PHP-FPM workers for concurrent chats, or set
+`AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS=0` to let the widget poll instead.
+
+---
+
+## 14. Not built yet
+
+- Voice messages in channels are not transcribed.
+- Knowledge Sources cannot crawl a whole website from a start URL or sitemap;
+  add pages as individual URL sources.
+- MCP resources are not offered as a knowledge source type, and MCP prompts are
+  ignored.
+- There is no inbound trigger endpoint that starts a Playbook or a proactive
+  message from another system.
+- Knowledge generations that no published version pins are kept; storage grows
+  when re-synced content changes.
+
+---
+
+## 15. French and Spanish are machine translated
+
+English and German are complete and reviewed. French and Spanish cover every
+text but were machine translated and not reviewed by native speakers. Override
+single texts in `lang/vendor/filament-agentic-chatbot/{locale}/`; see
+[Localization](LOCALIZATION.md).
+
+---
+
+## 16. Agent tests run on demand
+
+Agent tests run against the saved draft when an admin starts them, one test per
+request. There is no scheduled test run, and failing tests warn but never block
+publishing.

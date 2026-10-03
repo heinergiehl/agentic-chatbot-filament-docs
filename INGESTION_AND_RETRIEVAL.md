@@ -17,7 +17,7 @@ Ingestion is the pipeline that prepares source content for retrieval. It runs on
 | Source Type | Description                                      | Example                                        |
 | ----------- | ------------------------------------------------ | ---------------------------------------------- |
 | **Text**    | Raw text content pasted directly                 | Product FAQ, policy text, release notes        |
-| **File**    | Uploaded documents                               | PDF manuals, text files                        |
+| **File**    | Uploaded documents                               | PDF manuals, DOCX files, CSV and XLSX tables   |
 | **URL**     | Public web pages crawled and extracted           | Documentation sites, blog posts, help articles |
 | **API**     | JSON records fetched through a saved connector   | Product catalogs, CMS records, public datasets |
 
@@ -25,7 +25,7 @@ Ingestion is the pipeline that prepares source content for retrieval. It runs on
 
 For each source, the plugin:
 
-1. **Extracts** readable content (HTML parsing for URLs, PDF extraction for files, raw text for text sources, JSON field mapping for API sources)
+1. **Extracts** readable content (HTML parsing for URLs, PDF, DOCX, CSV and XLSX extraction for files, raw text for text sources, JSON field mapping for API sources)
 2. **Normalizes** the text (strips boilerplate, normalizes whitespace)
 3. **Chunks** the content into smaller searchable sections
 4. **Embeds** each chunk using the configured embedding model
@@ -43,11 +43,35 @@ URL sources are fetched through a safe HTTP fetcher before extraction:
 | Max bytes | `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` | 5 MiB | Caps cumulative response bytes for one URL redirect chain or API pagination fetch; headers and transfer progress are checked before mapping |
 | Max redirects | `AGENTIC_CHATBOT_INGESTION_MAX_REDIRECTS` | 3 | Follows a small redirect chain and revalidates every hop |
 | Private network guard | `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS` | `false` | Blocks localhost, RFC1918, reserved, and private IP targets |
-| Content types | `ingestion.allowed_content_types` | HTML, text, Markdown, PDF | Rejects unsupported response bodies for URL ingestion |
+| Content types | `ingestion.allowed_content_types` | HTML, text, Markdown, PDF, CSV, DOCX, XLSX | Rejects unsupported response bodies for URL ingestion |
 
 Redirect targets are resolved and checked per hop, so a public URL cannot redirect into localhost or a private subnet unless private-network ingestion is explicitly enabled. User-facing ingestion errors use stable categories such as unsafe URL, unsupported content type, oversized response, or too many redirects.
 
 HTML table extraction now renders tables as valid Markdown with a header separator row, which gives the chunker and retrieval layer a more predictable text representation.
+
+### Office Files And Tables
+
+| Format | Extraction |
+| ------ | ---------- |
+| DOCX | Body text of `word/document.xml`: headings (from heading styles or outline levels), list items, paragraphs and tables. Headers, footers, comments and images are skipped. |
+| CSV | One Markdown table; the first row is the header. Comma, semicolon, tab and pipe delimiters are detected from the first line; a UTF-8 BOM is removed and non-UTF-8 text is read as Windows-1252. |
+| XLSX | One Markdown table per visible sheet under a `## Sheet name` heading, read with OpenSpout. Dates are formatted, hidden sheets are skipped, at most 200 columns are kept. |
+
+DOCX and XLSX files are ZIP containers. Before any part is parsed the archive is
+checked: at most 5,000 parts, a part may not expand past
+`AGENTIC_CHATBOT_INGESTION_MAX_EXTRACTED_BYTES` (default 10 MiB), all parts
+together may not expand past four times that limit, and a part above 1 MiB may
+not expand more than 200 times its compressed size. Every XML part is scanned
+in full: a part that is not UTF-8, contains a document type declaration or
+declares a worksheet row wider than 16,384 columns is refused, so no entity is
+expanded. A table may hold at most 50,000 rows, and the same byte limit applies
+to the Markdown it renders (short rows count with the empty cells that pad them
+to the widest row). A damaged or oversized file fails ingestion with a stable
+error; the previous index stays active.
+
+The chunker keeps tables together while they fit one chunk. A larger table is
+split into row groups and every group repeats the header row and separator, so
+each chunk still names its columns.
 
 ### API Knowledge Sources
 
@@ -61,7 +85,35 @@ API sources let an existing **API Connector** feed structured JSON records into 
 Price: {{price}} EUR
 ```
 
-Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. The same `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` budget applies across all pages in one fetch, so a chunked or misleadingly declared response cannot grow without bound before JSON mapping. Auto sync can periodically queue API sources through `php artisan filament-agentic-chatbot:sync-knowledge-sources`. After a successful re-ingest, previous API documents for that source are replaced, which removes records that no longer appear in the API response while preserving the old index if the new sync fails. Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
+Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. The same `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` budget applies across all pages in one fetch, so a chunked or misleadingly declared response cannot grow without bound before JSON mapping. After a successful re-ingest, the new generation holds only the records of the latest response, so records that disappeared are no longer found; the old index stays active if the new sync fails. API and URL sources can be re-synced on a schedule (see Scheduled Re-Sync). Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
+
+### Scheduled Re-Sync
+
+URL and API sources can be fetched again **never**, **daily** or **weekly**
+(`sync_frequency`). The package schedules
+`filament-agentic-chatbot:sync-knowledge-sources` every 15 minutes, so the host
+must run `php artisan schedule:run` every minute (see Operations). **Re-sync
+now** on the source queues the same run at once.
+
+A re-sync fetches through `SafeHttpFetcher` (URL) or the API Connector (API)
+with the usual size limits, then compares the SHA-256 content hash with the
+active generation built under the current index contract:
+
+- unchanged: the source returns to `completed`, the active generation stays,
+  no chunks are written and no embedding call is made;
+- changed: a new generation is staged and embedded; the previous generation
+  stays active until the new one is ready;
+- failed: the source shows `failed` with the error, the active generation stays,
+  and the next attempt follows a backoff of 15 minutes, 1 hour, 4 hours, then
+  12 hours, never later than the interval. A success resets the backoff.
+
+Agent deployments pin a content version, not live content. Each pin names the
+source and the exact generation (id, content hash and contract hash) that was
+active at publish time, and retrieval reads only those pinned generations. A
+re-sync therefore never changes what a live Agent answers from: the Agent
+editor shows the new generation as a change to publish, and publishing pins it.
+Older generations stay stored, so published versions and rollbacks keep
+working.
 
 ### Chunking Strategy
 
@@ -189,16 +241,6 @@ an explicit no-evidence result. The Agent must cite only supplied reference
 numbers and answer naturally that reliable published evidence was unavailable
 instead of inventing a grounded answer. There is no second answer-composer or
 shadow answerability runtime that can override this result.
-
-```php
-'grounding' => [
-    'default_mode' => 'optional',
-    'source_backed_topics' => [],
-    'minimum_evidence_count' => 1,
-    'minimum_answerability' => 0.70,
-    'abstain_when_unavailable' => true,
-],
-```
 
 Knowledge retrieval output is an untrusted structured envelope containing the retrieval strategy, evidence quality, degradation state, evidence reference range, and bounded context. Citation IDs are checked against the final evidence pack; invalid IDs are removed before output. Context truncation happens at sentence or word boundaries rather than cutting a sentence mid-stream. Once retrieval has been attempted, an insufficient result cannot be rewritten into a grounded answer by the assistant or response composer.
 

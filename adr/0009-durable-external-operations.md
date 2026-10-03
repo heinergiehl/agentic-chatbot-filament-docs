@@ -106,3 +106,24 @@ Exactly-once execution across an arbitrary external network is not assumed.
 The supported guarantees rely on local fencing, provider idempotency where
 available, immutable correlation, and explicit reconciliation of unknown
 outcomes.
+
+Historical answer presentation is a read-only use of these existing receipt
+boundaries, not continuation or execution authority. New private, optional
+receipt members bind fully displayed curated records, their ordinals and field
+pointers to the canonical assistant message and freshly comparable scope.
+The existing commit owns this write; reading history never backfills a proof.
+Older receipts remain valid for their original recovery purpose but cannot
+establish unrecorded display order. An unavailable or ambiguous historical
+source leads to clarification, never a fabricated current capability receipt.
+An answer that explicitly leaves an independent concern unverified may still
+retain one uniquely displayed curated read record. The source-limited path
+uses the original encrypted read receipt and a private presentation receipt
+captured from the supported, displayed source claim during composition and
+bound by the canonical commit. Required field context is retained together.
+It retains only exact scalar support fields displayed in that claim; a public
+per-read summary or a matching value elsewhere in the answer is not field proof.
+It cannot infer an order among multiple records, recover undisplayed fields,
+or backfill old partial answers that lack the private presentation receipt.
+This is presentation-only and grants no continuation, new read or write authority.
+The private version/data classification and rollback requirements are documented
+in [Upgrading](../../UPGRADING.md#historical-references-to-displayed-records).

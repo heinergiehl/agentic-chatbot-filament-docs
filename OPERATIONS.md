@@ -1,20 +1,52 @@
 # Operations Guide
 
-Runtime Recovery v3 is an unreleased ABI v31 candidate. For its maintenance,
-upgrade and safe return order, use [UPGRADING](../UPGRADING.md#runtime-recovery-v3-maintenance-and-return-procedure).
-The [host acceptance order](plans/runtime-recovery-v3/HOST_ACCEPTANCE.md) binds
-the remaining checks to an exact candidate. No host activation follows from
-package verification alone. Distinguish quota/model-window admission,
-stored-payload limits and model projection; unknown effects retain their
-ledger until reconciliation. Diagnosis and transport never authorize a retry.
+This guide covers what a host must run and watch: queue workers, the
+scheduler, the shared cache for streaming, retention, reconciliation and
+recovery commands. Upgrade steps are in [UPGRADING](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
+
+## Admin Navigation And Access
+
+The plugin adds one navigation group, "Agentic Chatbot" by default, with four
+sections:
+
+- **Build**: Agents, Playbooks, Knowledge. Safety settings and tests are part
+  of the Agent editor.
+- **Connect**: Channels, APIs & MCP, Data, Webhooks. The section opens the
+  Connect overview, which also links API access tokens and Capability Bridge.
+- **Inbox**: handoffs that wait for an operator (open, assigned or waiting for
+  the operator) and pending action reviews, with one count badge. Both lists
+  share tabs and start with the pending items.
+- **Insights**: Conversations, Submissions, Usage.
+
+Playbook runs have no list of their own. Open a Playbook's **Runs** action or
+the conversation page; each row opens the run inspector. The plugin class sets
+the group, order, labels, icons and shown sections; see
+[Public API](PUBLIC_API.md#filament-plugin).
+
+Every signed-in panel user sees **Conversations**. Without host Gates and with
+`bot_conversations.authorization.require_gates` off (the default outside
+production), panel users can read conversations. Define the
+`filament-agentic-chatbot.view-bot-conversations` and
+`filament-agentic-chatbot.manage-bot-conversations` Gates to restrict them; in
+production the package requires them. When a Gate denies a user, the list shows
+"No access to conversations" instead of records and a record URL answers 403
+with the same text. A record-aware Gate needs an `AdminAuthorizationQueryScope`
+binding so the list stays limited to the user's records.
 
 ## Queue Worker
 
-Ingestion jobs run on Laravel queues.
+Widget chat turns, ingestion, channel messages, Playbook delays and webhook
+deliveries run on Laravel queues. Chat turns use the `agentic-chat` queue
+(`AGENTIC_CHATBOT_CHAT_QUEUE`) on the host's default connection
+(`AGENTIC_CHATBOT_CHAT_QUEUE_CONNECTION`):
 
 ```bash
-php artisan queue:work
+php artisan queue:work --queue=agentic-chat,default --timeout=150 --tries=1
 ```
+
+Set the queue connection's `retry_after` above the chat job timeout (360
+seconds for the default 120-second chat execution limit). A `sync` queue cannot
+stream widget chat.
 
 For production, use an async queue connection such as `database`, Redis, SQS, or Horizon. If you use Laravel's `database` queue driver, migrate the host app queue tables before starting the worker:
 
@@ -114,46 +146,37 @@ Monitor old `pending`, `retry_scheduled`, and `delivering` rows and new
 uses the reasoned manual retry in **Connect > Webhooks**. See [Outbound
 Webhooks](OUTBOUND_WEBHOOKS.md).
 
-## Quality Operations
+## Knowledge Gaps
 
-The package registers two commands with Laravel Scheduler every five minutes:
+The package registers one command with Laravel Scheduler every five minutes:
 
 ```bash
-php artisan filament-agentic-chatbot:run-due-quality-scenarios
 php artisan filament-agentic-chatbot:collect-knowledge-gaps
 ```
 
-The first atomically claims due, active **Published Agent** scenarios and queues each run once. A stale claim becomes eligible again after the configured lease window; a worker or dispatch failure clears the claim, records a bounded error code and failure count, and schedules another attempt. Playbook draft tests and archived scenarios cannot enable automation.
+It inspects already committed Chat Turns. It persists a gap only when durable
+runtime evidence records `knowledge_searched=true` with an empty or
+insufficient retrieval result, the canonical answer has no sources, and the
+conversation is not an admin live test. Question excerpts and resolution notes
+are encrypted; occurrences remain immutable and deduplicated per Chat Turn.
+Existing history is intentionally not inferred or backfilled.
 
-The second inspects already committed Chat Turns. It persists a gap only when durable operator evidence records `knowledge_searched=true` and `safe_capability_fallback`, the canonical answer has no sources, and the conversation is not an admin live test. Question excerpts and resolution notes are encrypted; occurrences remain immutable and deduplicated per Chat Turn. Existing history is intentionally not inferred or backfilled.
-
-Production requires Laravel Scheduler and an asynchronous queue worker. Automated tests use the same Agent provider/model and credential resolution as a manual Published Agent quality run—an existing per-Agent key still takes precedence over the central provider key, and no quality-specific API key is stored.
+Gaps appear in the Agent's **Analytics** page under **Knowledge**. An operator
+can create an Agent test from the question, then verify the gap as resolved by
+choosing a published Knowledge Source of the same Agent and recording a note.
+Deleting that source reopens the gap.
 
 ```env
-AGENTIC_CHATBOT_QUALITY_OPERATIONS_ENABLED=true
-AGENTIC_CHATBOT_QUALITY_OPERATIONS_QUEUE_CONNECTION=database
-AGENTIC_CHATBOT_QUALITY_OPERATIONS_QUEUE=agentic-chatbot-quality
-AGENTIC_CHATBOT_QUALITY_OPERATIONS_DISPATCH_LIMIT=25
-AGENTIC_CHATBOT_QUALITY_OPERATIONS_CLAIM_STALE_AFTER_MINUTES=30
 AGENTIC_CHATBOT_KNOWLEDGE_GAP_DETECTION_ENABLED=true
 AGENTIC_CHATBOT_KNOWLEDGE_GAP_LOOKBACK_DAYS=30
 AGENTIC_CHATBOT_KNOWLEDGE_GAP_SCAN_LIMIT=500
 ```
 
-Run the worker for a dedicated queue when configured:
+The probe is non-mutating with `--dry-run`:
 
 ```bash
-php artisan queue:work database --queue=agentic-chatbot-quality
-```
-
-Operational probes are non-mutating with `--dry-run`:
-
-```bash
-php artisan filament-agentic-chatbot:run-due-quality-scenarios --dry-run
 php artisan filament-agentic-chatbot:collect-knowledge-gaps --dry-run
 ```
-
-See [Quality Operations](QUALITY_OPERATIONS.md) for the state, evidence, incident, and resolution contracts.
 
 ## Chat Attachment Retention
 
@@ -213,23 +236,20 @@ after changing a disk, worker identity, or public webhook hostname. Slack,
 WhatsApp, Mailtrap, and Mailgun diagnostics become available only after the corresponding
 `AGENTIC_CHATBOT_CHANNELS_*_ENABLED` acceptance flag is deliberately enabled.
 
-## Scheduled API Source Sync
+## Scheduled Knowledge Re-Sync
 
-API knowledge sources can be configured with **Auto Sync** and a sync interval in the source form. The plugin exposes a command that queues due API sources:
+URL and API knowledge sources have a **Re-sync** setting: never, daily or
+weekly. The package registers
+`filament-agentic-chatbot:sync-knowledge-sources --limit=50` with the Laravel
+scheduler every 15 minutes (on one server, without overlap). The host must run
+the scheduler, for example with this cron entry:
 
 ```bash
-php artisan filament-agentic-chatbot:sync-knowledge-sources
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
 ```
 
-Call it from Laravel's scheduler every minute or every few minutes:
-
-```php
-use Illuminate\Support\Facades\Schedule;
-
-Schedule::command('filament-agentic-chatbot:sync-knowledge-sources')->everyMinute();
-```
-
-Useful options:
+Set `AGENTIC_CHATBOT_KNOWLEDGE_SOURCE_SYNC_SCHEDULE_ENABLED=false` to remove the
+registration and call the command yourself. Useful options:
 
 ```bash
 php artisan filament-agentic-chatbot:sync-knowledge-sources --dry-run
@@ -238,7 +258,19 @@ php artisan filament-agentic-chatbot:sync-knowledge-sources --source=123
 php artisan filament-agentic-chatbot:sync-knowledge-sources --limit=25
 ```
 
-The command only queues sources whose `next_sync_at` is due. It skips busy sources and inactive bots. Successful dispatch records `meta.api.sync.last_scheduled_at` and advances `meta.api.sync.next_sync_at`.
+The command queues sources whose `next_sync_at` is due. It skips sources that
+are already queued or processing and sources no active Agent uses. A queued
+run fetches the source again through the same safe fetcher and size limits,
+compares the content hash with the active generation and builds a new
+generation only when the content changed; an unchanged run makes no embedding
+calls. The previous generation stays active until the new one is ready.
+
+A success sets `last_synced_at`, clears `sync_failures` and plans the next run
+one interval later. A failure keeps the active generation, shows the source as
+failed with its error, increments `sync_failures` and retries after 15 minutes,
+1 hour, 4 hours and then every 12 hours (never later than the interval). A
+live Agent keeps reading the generation pinned in its deployment; the Agent
+editor shows the new generation as a draft change until the Agent is published.
 
 ## AI Usage Reconciliation
 
@@ -354,8 +386,7 @@ volume, and the age of `reserved` calls. Expiry without a complete receipt is
 idempotent and retains the monthly reservation until evidence arrives. Legacy
 failed calls whose reservations were released can still be reconciled.
 
-AI Usage offers an explicitly authorized manager a receipt review and application
-flow. Trusted CLI operators can preview a bounded per-request receipt with
+Trusted CLI operators can preview a bounded per-request receipt with
 `--call=<public-uuid> --evidence=<local-json-path>` and apply that reviewed version
 with the required operator, reason and force options. The same transaction owns
 settlement, unique provider receipt claims and the encrypted audit. It never
@@ -626,6 +657,46 @@ AGENTIC_CHATBOT_BOT_ACCESS_TOKEN_LAST_USED_THROTTLE_MINUTES=5
 
 Session and IP chat rate limits are configured independently with `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_MAX_REQUESTS_PER_MINUTE_PER_IP`.
 
+## Streaming And The Shared Cache
+
+While the worker runs a widget turn, the widget's request stays open and relays
+the answer draft that the worker writes to the cache
+(`AGENTIC_CHATBOT_CHAT_STREAM_CACHE_STORE`, default store). Web and queue
+processes must share that store: database, Redis, or file on one host, not
+`array`. Each open chat holds one PHP worker until its turn ends; size PHP-FPM
+workers for concurrent chats. `AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS`
+(default 100, 0 disables streaming) bounds how long the request relays before
+the widget falls back to polling. See [Chat Widget](CHAT_WIDGET.md).
+
+## Scheduler
+
+Run the Laravel scheduler every minute:
+
+```cron
+* * * * * cd /path/to/app && php artisan schedule:run >> /dev/null 2>&1
+```
+
+The package registers these commands:
+
+| Command | Schedule | Purpose |
+| --- | --- | --- |
+| `filament-agentic-chatbot:maintain-outbound-webhooks` | every minute | Ends idle conversations (`conversation.ended`), delivers and retries webhooks |
+| `filament-agentic-chatbot:reconcile-ai-usage` | every minute | Settles expired usage reservations |
+| `filament-agentic-chatbot:reconcile-workflow-resume-deliveries` | every minute | Redispatches due Playbook delays |
+| `filament-agentic-chatbot:maintain-connector-completions` | every minute | Durable connector completions |
+| `filament-agentic-chatbot:prune-direct-read-continuations` | every 5 minutes | Removes expired read continuations |
+| `filament-agentic-chatbot:collect-knowledge-gaps` | every 5 minutes | Collects knowledge gaps |
+| `filament-agentic-chatbot:sync-knowledge-sources` | every 15 minutes | Re-syncs URL and API sources set to daily or weekly |
+| `filament-agentic-chatbot:prune-action-reviews` | daily 02:15 | Removes expired action reviews |
+| `filament-agentic-chatbot:prune-chat-attachments` | daily 02:30 | Removes expired chat attachments |
+| `filament-agentic-chatbot:prune-channel-inbound-attachments` | daily 02:35 | Removes expired channel attachments |
+| `filament-agentic-chatbot:prune-conversation-diagnostics` | daily 02:40 | Removes expired diagnostics |
+
+Usage reconciliation, resume reconciliation, knowledge sync, knowledge gaps and
+connector completions can be switched off in config when the host runs the same
+command centrally; the webhook maintenance command is always scheduled because
+the read API reports the conversation status it maintains.
+
 ## Go-Live Baseline
 
 Before production launch:
@@ -636,14 +707,13 @@ Before production launch:
 - If app DB is MySQL, set `AGENTIC_CHATBOT_DB_CONNECTION=agentic_chatbot_pgsql` and configure `AGENTIC_CHATBOT_DB_*` PostgreSQL env vars
 - Queue worker process is supervised (systemd/Supervisor/Horizon)
 - Database queue installs have migrated `jobs`, `failed_jobs`, and `job_batches`
-- Laravel scheduler calls `filament-agentic-chatbot:sync-knowledge-sources` if API source auto sync is used
-- Laravel Scheduler is supervised for automated Quality Tests runs and Knowledge Operations
-- Quality automation uses an asynchronous supervised queue connection, not `sync`
+- Laravel scheduler runs every minute
+- Web and queue processes share one cache store
 - `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` with a strong signing key
 - If `AGENTIC_CHATBOT_COMMERCIAL_MODE=true`, set `AGENTIC_CHATBOT_ANYSTACK_ID`, `AGENTIC_CHATBOT_DOCS_URL`, and `AGENTIC_CHATBOT_SUPPORT_EMAIL`
-- Domain allowlist configured per bot
+- Domain allowlist configured per Agent
 - Header-only widget token transport for public embeds
-- Every active Agent has one hash-verified Agent deployment
+- Every active Agent is published (no **Republish needed**) and its tests pass
 - Knowledge sources show completed chunks before public launch
 - At least one successful load test run against a production-like environment
 
@@ -665,7 +735,7 @@ Track:
 
 - If ingestion fails: inspect `bot_knowledge_sources.meta.error`, retry ingestion from Sources table.
 - If ingestion is pending: inspect `bot_knowledge_sources.meta.retry_after` and `bot_knowledge_sources.meta.retry_delay_seconds`.
-- If API auto sync does not run: inspect `bot_knowledge_sources.meta.api.sync.next_sync_at`, run the sync command with `--dry-run`, and verify Laravel Scheduler is active.
+- If a scheduled re-sync does not run: inspect `bot_knowledge_sources.next_sync_at` and `sync_failures`, run the sync command with `--dry-run`, and verify that `php artisan schedule:run` runs every minute.
 - If you changed vector backend/model settings: use `Re-Ingest Bot Sources` (bot page) or `Re-Ingest All Sources` (sources list).
 - If bot setup still feels unclear: use `Test Retrieval`, `Test Bot Answer`, and `Setup Check` before you debug deeper infrastructure.
 - If chat rate-limited: reduce traffic burst and add retry backoff in clients.
@@ -676,7 +746,7 @@ Track:
 
 For Playbooks that use Data Resources:
 
-- Define the required resources in **Agentic Chatbot > Connect > Data Resources**. Choose an Eloquent model, then select columns from the detected database table instead of typing column names by hand.
+- Define the required resources in **Agentic Chatbot > Connect > Data**. Choose an Eloquent model, then select columns from the detected database table instead of typing column names by hand.
 - Use config-backed resources only as install-time seeds or reviewed defaults. After migrations, **Sync from config** can create or update UI-managed resources when you intentionally want that.
 - Restrict each bot to the minimum required resource keys and narrow fields per bot when needed.
 - Add `field_metadata` for fields users may describe naturally, especially dates, numbers, prices, status enums, and names. This helps generated Playbooks map phrases like "newest", "top", "highest", "lowest", or "cheapest" to safe sort/filter fields.
@@ -684,27 +754,9 @@ For Playbooks that use Data Resources:
 - Verify the confirmation text contains only policy-approved business fields. Confirm that stale versions, invalid values, multiple matches, replays, and cross-tenant targets fail closed and that the side-effect ledger records the exact result identity.
 - Re-check permissions, migrations, and cache after changing global resources.
 - Validate one real Playbook run against representative production data before go-live.
-## Runtime Release Gate
 
-Before shipping runtime changes, run:
+## Upgrade Checks
 
-```bash
-composer assurance:runtime-release
-```
-
-The command blocks on Agent routing, evidence, write safety, pending Playbook
-state, security, observability, model compatibility, release operations, or
-operational-quality regressions. Its redacted JSON report is written to
-`build/runtime-release-report.json` and contains aggregate test counts,
-durations, named scenario results, quality thresholds, Wilson 95% intervals,
-failed test identifiers, and exact rerun commands. It does not store PHPUnit
-output, prompts, payloads, credentials, or model responses.
-
-After applying the Candidate Quality evidence migration, rerun every
-release-gated Candidate Quality scenario before activation. Existing rows have
-no integrity signature and are intentionally ineligible; the same applies after
-rotating `APP_KEY`. Do not backfill or copy signatures between environments.
-
-Protected tags additionally require the complete native structured-tools, prompt-JSON tools, and restricted/no-tools provider matrix, live provider evals for the two supported profiles, capability rejection for the restricted profile, PostgreSQL fresh-install/upgrade/rollback evidence, and the 1,000-iteration soak. For host upgrade checks, see [supported-upgrade smoke and recovery evidence](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#supported-upgrade-smoke-and-recovery-evidence).
+For host upgrade checks, see [supported-upgrade smoke and recovery evidence](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#supported-upgrade-smoke-and-recovery-evidence).
 
 `filament-agentic-chatbot:doctor` reports removed runtime-mode and engine environment variables by name. Delete those variables; there is no replacement mode selector. Values are never printed. Doctor also reports an active Agent that lacks one verified Agent deployment and fails invalid deployment or Playbook pins.

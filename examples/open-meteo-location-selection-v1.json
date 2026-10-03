@@ -1,0 +1,188 @@
+{
+  "version": 1,
+  "status": "bounded-location-selection-candidate-not-weather",
+  "base_url": "https://geocoding-api.open-meteo.com",
+  "source": {
+    "request": {
+      "method": "GET",
+      "path_template": "/v1/search",
+      "query_params": {
+        "name": "{{query}}",
+        "count": "12",
+        "language": "en",
+        "format": "json"
+      },
+      "extra_headers": {},
+      "body_template": null,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "query": {
+            "type": "string",
+            "minLength": 2,
+            "maxLength": 120,
+            "title": "Place name and optional region"
+          }
+        },
+        "required": [
+          "query"
+        ],
+        "additionalProperties": false
+      },
+      "request_schema": {}
+    },
+    "response": {
+      "schema": {},
+      "json_path": "",
+      "output_mapping": {},
+      "error_mapping": {}
+    },
+    "effect": {
+      "type": "read",
+      "requires_confirmation": false,
+      "idempotency_header": null,
+      "write_integrity_policy": {}
+    },
+    "execution": {
+      "timeout": 15,
+      "retry": {
+        "attempts": 0,
+        "delay_ms": 0,
+        "backoff": false,
+        "unsafe_methods": false
+      }
+    },
+    "strategies": {
+      "request_codec": "core/none",
+      "response_decoder": "open-meteo/geocoding-v1",
+      "outcome_classifier": "core/http_status",
+      "pagination": "core/none"
+    },
+    "metadata": {
+      "batch_mode": "single_only",
+      "max_items": 0,
+      "input_policies": {
+        "query": {
+          "source": "literal",
+          "exact_source_required": true,
+          "typo_tolerance": "none",
+          "ambiguity": "clarify"
+        }
+      }
+    }
+  },
+  "target": {
+    "request": {
+      "method": "GET",
+      "path_template": "/v1/get",
+      "query_params": {
+        "id": "{{location}}",
+        "language": "en",
+        "format": "json"
+      },
+      "extra_headers": {},
+      "body_template": null,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "location": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]{0,15}$",
+            "title": "Public Open-Meteo location ID"
+          }
+        },
+        "required": [
+          "location"
+        ],
+        "additionalProperties": false
+      },
+      "request_schema": {}
+    },
+    "response": {
+      "schema": {},
+      "json_path": "",
+      "output_mapping": {},
+      "error_mapping": {}
+    },
+    "effect": {
+      "type": "read",
+      "requires_confirmation": false,
+      "idempotency_header": null,
+      "write_integrity_policy": {}
+    },
+    "execution": {
+      "timeout": 15,
+      "retry": {
+        "attempts": 0,
+        "delay_ms": 0,
+        "backoff": false,
+        "unsafe_methods": false
+      }
+    },
+    "strategies": {
+      "request_codec": "core/none",
+      "response_decoder": "open-meteo/geocoding-v1",
+      "outcome_classifier": "core/http_status",
+      "pagination": "core/none"
+    },
+    "metadata": {
+      "batch_mode": "single_only",
+      "max_items": 0,
+      "input_policies": {
+        "location": {
+          "source": "literal",
+          "exact_source_required": true,
+          "typo_tolerance": "none",
+          "ambiguity": "clarify",
+          "entity_type": "place"
+        }
+      },
+      "result_identity": {
+        "input": "location",
+        "response_path": "id",
+        "normalizer": "exact",
+        "required": true
+      },
+      "context_contract": {
+        "version": 1,
+        "fields": {
+          "country": {
+            "type": "string",
+            "title": "ISO country code"
+          },
+          "region": {
+            "type": "string",
+            "title": "Region"
+          }
+        },
+        "checks": [
+          {
+            "field": "country",
+            "source": "result",
+            "path": "country_code",
+            "operator": "equals",
+            "normalizer": "exact"
+          },
+          {
+            "field": "region",
+            "source": "result",
+            "path": "admin1",
+            "operator": "equals",
+            "normalizer": "casefold"
+          }
+        ]
+      }
+    }
+  },
+  "binding": {
+    "source_pointer": "/data/results/0/id",
+    "target_input": "location",
+    "value_type": "string",
+    "entity_domain": "place",
+    "offer": {
+      "max_candidates": 12,
+      "max_age_seconds": 300,
+      "mode": "bounded_selection_v1"
+    }
+  }
+}

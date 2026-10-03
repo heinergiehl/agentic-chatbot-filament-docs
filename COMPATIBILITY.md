@@ -22,7 +22,7 @@ The Docker/PostgreSQL setup is a reproducible release-validation host, not a req
 
 The product UI and Laravel AI integration expose Gemini, OpenAI, Anthropic, xAI, OpenRouter, DeepSeek, Groq, Mistral, Ollama, Azure OpenAI, and OpenAI-compatible chat gateways. Embedding adapters include Gemini, OpenAI, OpenRouter, Mistral, Ollama, Azure OpenAI, Cohere, Jina AI, and Voyage AI.
 
-An available adapter is not automatically a release-certified provider/model pair. Live certification is artifact-scoped and exists only for the provider/model/profile rows named by the protected `WORKFLOW_TURN_EVAL_MATRIX` and its retained successful report. The source candidate does not claim live certification for credentials or profiles that were not run. Before production, run Doctor and saved quality tests with the exact provider, model, region, account policy, and structured-output/tool profile you will use.
+An available adapter is not a certified provider/model pair. Releases do not certify live provider/model pairs. Before production, run Doctor and the Agent tests with the exact provider, model, region, account policy, and structured-output/tool profile you will use.
 
 ## Browser widget and channels
 
@@ -32,4 +32,4 @@ An available adapter is not automatically a release-certified provider/model pai
 
 ## What “certified” means
 
-For a release to be called certified, all required local gates must pass for the exact source commit and the exact ZIP hash: deterministic runtime gate, dependency audits, complete provider profile matrix, live evals, restricted-capability rejection, Laravel 12/13 PostgreSQL installs, supported upgrade, migration rollback/re-apply, 1,000-iteration soak, and the reference-host Golden Path. A skipped or unavailable external credential is reported as untested, never as passed.
+For a release to be called certified, all required local gates must pass for the exact source commit and the exact ZIP hash: source quality and dependency audits, calibrated retrieval with real pgvector, Laravel 12/13 PostgreSQL installs, supported upgrade, migration rollback/re-apply, and the reference-host Golden Path. A skipped or unavailable external credential is reported as untested, never as passed.

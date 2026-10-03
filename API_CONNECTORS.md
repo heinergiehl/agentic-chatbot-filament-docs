@@ -6,17 +6,17 @@ parameter and schema descriptions are deduplicated when identical and labelled b
 origin when different. Schema titles allow 200 characters; combined descriptions
 allow 2,000. Overlength is an import/validation error, not silent truncation. Typed
 examples, including `false`, `0` and `null`, remain annotations, never defaults.
-Full metadata counts toward deployment and request budgets. See [upgrade steps](../UPGRADING.md).
+Full metadata counts toward deployment and request budgets. See [upgrade steps](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
-Remote [MCP data sources](MCP_CONNECTIONS.md) use the same saved operation,
+Remote [MCP servers](MCP_CONNECTIONS.md) use the same saved operation,
 test/publication and Agent/Playbook execution boundaries. Their tools are
 discovered through MCP and use an explicit protocol transport; ordinary API
 Connectors define HTTP and MCP operations. Both support published reads and
-confirmed Playbook writes through the existing capability gateway. MCP writes
-add a separate signed create/update review and isolated exact-candidate staging
-evidence; direct Agent tools remain read-only. See
-[MCP connections](MCP_CONNECTIONS.md) and
-[governed integration writes](INTEGRATION_WRITE_CAPABILITIES.md).
+confirmed writes, as direct Agent tools (ADR 0038) or Playbook steps, through the
+existing capability gateway. MCP writes add a separate signed create/update
+review and isolated exact-candidate staging evidence and always ask the visitor
+to confirm. See
+[MCP connections](MCP_CONNECTIONS.md) and [Side Effect Integrity](SIDE_EFFECT_INTEGRITY.md).
 
 API Connectors turn an approved HTTP API operation into a versioned chatbot and
 workflow capability. The connector owns the remote service
@@ -375,7 +375,7 @@ Empty collections produce no query pair. Nested collections, null collection
 members, unsupported style combinations, literal spaces in space-delimited
 items, literal pipes in pipe-delimited items, and brackets in deep-object names
 are rejected with an explicit mapping error. Configure an API-specific mapping
-or registered strategy for those cases. The S4 candidate imports optional
+or registered strategy for those cases. The importer keeps optional
 parameters without adding them to `required`; absent arguments are removed before
 template resolution, including serialized query pairs and request headers. An
 older Playbook variable cannot fill an omitted caller input. Zero and false remain
@@ -475,7 +475,7 @@ than turning a server value into visitor input. Installing a host resolver does
 not alter `literal`, `enum`, or `local_resolver` admission; host-resolver
 execution requires the published `capability_resolver` source.
 
-The unreleased S1 candidate adds explicit public domain interpretation under
+Explicit public domain interpretation follows
 [ADR 0034](adr/0034-public-interpreted-input-and-native-continuation.md). A reviewed
 field may publish `source: interpreted`, `field_role: public_domain` and
 `exact_source_required: false`. The positive role declaration belongs to the
@@ -485,13 +485,13 @@ mutable author preset that fills the source only for declared public domain
 fields without an explicit source. The Publisher drops that preset from the
 immutable contract. Existing source choices remain explicit and authoritative.
 
-The S4 candidate exposes this profile in the native Operation workbench. Select
+The Operation workbench exposes this profile. Select
 the profile, classify each reviewed field as `public_domain`, then select
 `Selected review profile` for that row. The publication preview shows field paths
 and compiled source, role and evidence mode before/after, including nested fields
 and array items.
 Profile selection alone changes no field. Incompatible exact evidence or other
-protected controls fail compilation. Test the candidate and publish a new
+protected controls fail compilation. Test the draft and publish a new
 revision normally; preview and saving do not change existing published revisions
 or Agent deployments.
 
@@ -525,9 +525,7 @@ nor approval. Retained inputs still rebind their original visitor sources throug
 the existing Connector context. S2 admits the current visitor message and the
 visitor messages actually retained in native history, capped at twelve previous
 conversation messages and reduced by published history/token limits. Summaries,
-assistant prose and tool content do not become input authority. New Agent
-candidates need runtime ABI v23 and compiler ABI v16 through normal publication.
-Existing live operations and pointers are not migrated or activated by S1/S2.
+assistant prose and tool content do not become input authority.
 
 For a published direct read, `attested_calendar_year` binds an integer
 `calendar_year` input from one explicit year in the current visitor message or
@@ -645,242 +643,20 @@ and `current` (provider forecast facts). The grid coordinates can differ from
 the requested place. This is a model forecast, not a location-ID echo or station
 observation. No coordinate-equality or proximity heuristic is applied. See
 [ADR 0027](adr/0027-canonical-request-tuples-and-grid-forecasts.md). Normal
-Workbench evidence and fresh Connector/Agent publication are required; the
-local weather candidate remains paused pending model/UI acceptance.
+Workbench evidence and fresh Connector and Agent publication are required.
 
-### Pending direct-read context
+### How the Agent calls an operation
 
-A question can leave a direct read pending across several visitor replies.
-For example, a product lookup may already have a product identifier and a
-maximum price while still needing the supplier. The runtime can retain each
-admitted public input independently and ask for the missing field. Bounded
-arrays and objects are supported when their full schema is safe for retention;
-sensitive nested fields exclude the value from this path. The runtime binds
-new values to the latest visitor message. Before reuse, it checks each retained
-value against its original persisted user message, message hash, and exact
-published input policy. A generated question or assistant answer cannot supply
-visitor input. A provider result can supply a current read dependency only
-under the explicit contract above, and is never retained as a visitor source.
-Invalid replacement values cannot silently
-reuse an older value for the same field.
-
-A normal `continue` fills pending or unresolved fields and preserves already
-resolved API inputs as well as conditions. A source-bound value for the open
-region, for example, cannot silently replace the stored city. A changed resolved
-value requires the existing explicitly attested `revise` action. Published
-context dependencies may invalidate affected inputs; those inputs then accept
-a fresh value. A model proposal cannot replace a resolved input without this
-authority. An unchanged canonical alias or
-object with reordered keys is still the same value; list order remains material.
-The current unreleased ABI v31 candidate uses required `input` and optional
-closed `request`, `conditions` and `evidence` for every direct HTTP/MCP and
-Data Resource read. Domain fields, including a field named `request`, stay
-inside `input`; only admitted domain values reach provider mappings. A partial
-native object schema does not replace full pinned-schema validation at dispatch.
-
-`request` allows only `ref`, `action`, `remove`, `unresolved` and `repair`.
-The server resolves and rechecks an offered opaque draft/result reference.
-Ref and action must appear together. Without a ref, input is independent and
-inherits no task. Draft continue fills missing or unresolved members; revise
-permits replacements. Cancel uses empty input and only ref/action, closes
-exactly the selected draft and performs no external call. Result revise/refresh
-starts a new admitted read with fresh scope and source checks. Refresh takes
-empty input and no new conditions, remove or unresolved; result continue/cancel
-and draft refresh are invalid. Each offered result selection is independent,
-including multiple results from one operation. A failed sibling cannot undo
-another successful read, and untouched verified siblings are not queried again.
-
-Closed objects patch by member; arrays replace/remove as a whole. Remove needs
-a selected revise. Remove and unresolved use concrete offered `/input/...` or
-`/conditions/...` pointers, at most 32 unique entries each, without array indices
-or wildcards. Set/remove and set/unresolved overlaps fail before mutation.
-Omission retains a member; null requires its nullable schema and literal source,
-while false, zero and allowed empty lists remain values. Invalid controls or
-protected evidence leave the draft unchanged. A valid revise with an invalid
-domain replacement blocks its old dispatch value and retains other valid sources
-inert. An unresolved optional member cannot fall back to a provider default.
-The Gateway independently checks the resulting complete input before dispatch.
-Normal question prose needs no tool or durable question text.
-
-Conditions that are distinct from API arguments require an optional
-`metadata.context_contract` on the published operation. The advanced authoring
-field is **Agent direct-read conversation conditions**. This example assumes
-the API input schema declares a numeric `price_limit` and the provider returns
-`supplier.company` and `price`:
-
-```json
-{
-  "version": 1,
-  "fields": {
-    "company": {"type": "string", "title": "Company"},
-    "max_price": {"type": "number", "title": "Maximum price"}
-  },
-  "checks": [
-    {"field": "company", "source": "result", "path": "supplier.company", "operator": "equals", "normalizer": "casefold"},
-    {"field": "max_price", "source": "input", "path": "price_limit", "operator": "lte", "normalizer": "numeric"},
-    {"field": "max_price", "source": "result", "path": "price", "operator": "lte", "normalizer": "numeric"}
-  ]
-}
-```
-
-The closed contract allows 1–16 named scalar fields and 1–32 checks within
-32 KB. Fields have a public title, an optional description, and one of `string`,
-`integer`, `number`, or `boolean`. Strings may declare a bounded alias map.
-Every field needs at least one check. Context is optional visitor input;
-checks run only for conditions actually admitted from a source message.
-Declaring a field does not supply a default or force a condition on every call.
-
-For a country explicitly named by the visitor, a published alias such as
-`context_contract.fields.country.aliases: {"Deutschland": "Germany"}` can
-normalize that name to the provider's value. Configure context aliases in the
-operation's **Context contract** JSON and publish a new revision and Agent
-candidate. This does not infer an unstated country from a city or region.
-
-An `input` check compares already admitted API arguments before dispatch. Its
-path must reference a compatible field in the published input schema. A
-`result` check compares returned provider metadata before result identity,
-answer projection, or evidence admission. Paths are concrete dot paths, at most
-eight segments and 256 bytes, with numeric array indices but no wildcards or
-executable expressions. The operators are `equals`, `lte`, and `gte`; `lte`
-means the observed value must be no greater than the admitted condition.
-Strings use `exact` or `casefold`, numbers require `numeric`, and booleans use
-`exact`. Credential-bearing field names and paths are rejected.
-
-Missing or incompatible provider metadata fails the check. A conflict returns
-only the declared field and a machine reason; it never exposes the rejected
-provider value as a fact or as question context. Independent successful reads
-remain available. The model can ask which condition or identifier the visitor
-intends, but cannot waive a failed predicate. A provider location, company,
-variant, or other relationship is evidence only when the published contract
-identifies metadata the provider actually supplies. Model world knowledge is
-not a substitute for that evidence.
-
-For an operation with a context contract, the native call may omit `conditions`
-or supply an empty object when there are no new conditions. A null, list or
-scalar parent is invalid. Within
-the object, omitted known fields and null values also mean no new value; they
-never erase retained conditions. Supplied values must satisfy the declared
-types and source checks. Unknown keys, invalid shapes and wrong types remain
-rejected without coercion. `request.unresolved` can name offered condition
-pointers whose new values are omitted; an absent optional condition is not an
-ambiguity. Invalid or unbound proposals receive
-local correction before dispatch or task changes.
-
-The focused tool-free assessment verifies the complete admitted API/context
-proposal using the exact deployment provider and model. It receives published
-field meanings, the current message, exact pending selection, verified sources
-and value-free association hints. It supplies no replacement values or questions.
-Negative or malformed/unavailable verdicts return `correct_arguments` with
-`not_started`, without mutating pending state. The ordinary source binder and
-gateway remain authoritative. These checks do not prove model understanding;
-representative model tests remain necessary.
-
-The assessment uses one model step, at most 1,024 output tokens and 20 seconds
-within the existing turn deadline. Usage is recorded as
-`agent_connector_context_assessment`. Its 16-entry per-turn cache includes failures
-and binds the complete canonical proposal, selected live revision and source
-hashes, deployment, pin and authority scope. Operations without context or
-source reassignment incur no assessment call.
-
-An earlier field assignment can be corrected with optional `evidence.rebind`, for
-example `[{"from":"input:location","to":"context:region"}]` alongside current
-`input: {"location": "Miami"}` and `conditions: {"region": null}`. This requires
-`request: {ref: "<offered draft handle>", action: "revise"}` for the same live open task and a
-published target opt-in: `metadata.input_policies.<field>.pending_source_rebinding`
-or `metadata.context_contract.fields.<field>.pending_source_rebinding` must be
-strictly `true`. Absence or false denies reassignment. The input-policy authoring
-row offers **Allow correcting an earlier field assignment**; context fields use
-the advanced JSON contract. Publish a new operation revision and Agent candidate
-to change these permissions.
-
-Both endpoints must be public scalar visitor-literal fields using exact binding,
-`latest_message_only` and no resolver. Up to 16 closed references may name concrete
-root fields; duplicate donors/targets, cycles, self-references, conflicting current
-assignments, confirmations and read-proof collisions are rejected. Donors are
-read from the original verified snapshot before applying current replacements.
-Their original literals must pass the target schema and its own aliases. The
-original source message/hash and task age remain unchanged; a donor disappears
-unless a separately admitted current value replaces it. Required missing donors
-and dependent inputs remain unresolved. The reviewer checks the resulting
-proposal with the verified references; shared source admission runs again before
-partial persistence/reuse and independently at the gateway before dispatch.
-Invalid references create no question, execution receipt or checkpoint change.
-Existing result predicates and task isolation remain enforced. See
-[ADR 0022](adr/0022-coherent-connector-continuations.md) for the coordinated ABI v7
-candidate boundary.
-
-Evidence offers only published protected protocols: `input_confirmation` with
-an `offer_id`, `read_inputs` with original dependency references, and `rebind`
-where explicitly allowed. The server binds the whole current reply; a
-model-supplied `reply_evidence` is rejected. Reply binding does not establish
-semantic consent. Committed offer, revision, source, scope and Gateway checks
-remain required. Invalid proofs cannot partially mutate a draft.
-
-The native protocol no longer offers `__pending`, `__request`, `__prior_read`,
-`__unset` or the former clarification/context controls. Source policy does not
-select a second native grammar. Connector Context v6 persists bounded member
-sources and unresolved pointers; historical v3/v4/v5 readers do not convert
-old artifacts or authorize productive use. Republish a fresh Agent candidate.
-See [the current runtime contract](AGENT_RUNTIME_ARCHITECTURE.md#direct-read-capability-invocation)
-and [Upgrading](../UPGRADING.md) for publication and maintenance boundaries.
-
-Questions are bounded by unresolved state, not wording or operation name. A
-repeated state with the same admitted values and issue stops further questions;
-progress to another missing field or condition can continue, up to six distinct
-question states for a request. At most 16 requests fit in the private 64 KB
-snapshot. Adding another request never evicts an existing one. These bounds do
-not extend the Agent's model-step or capability-call budgets.
-
-Resolver choices also retain the pending request, so a subsequent choice can
-continue it. Every supplied field is schema-validated before partial input is
-retained. Reverified original values remain available to explain a later result
-mismatch and enforce the question budget; they do not become new user input or
-authorize a different lookup.
-
-The snapshot is a separate encrypted `bot_chat_turns.connector_context` envelope,
-committed with the canonical assistant outcome. Answer receipts remain
-presentation evidence and cannot restore pending values. Within an executing
-turn, input admission may re-read that turn's own private checkpoint to correct
-a tool proposal without losing admitted fields. The exact current turn,
-deployment, scope, and user-source hash must match; earlier source messages
-still require canonically committed turns. An empty current checkpoint takes
-precedence over older pending requests. This does not permit a later turn to
-read an uncommitted checkpoint or bypass an explicit request for a visitor reply.
-Reuse across turns requires the
-same bot, conversation, exact Agent deployment ID and hash, pinned capability,
-context area, and freshly attested authority scope. The reader inspects at most
-32 consecutive earlier turns and does not skip incompatible, incomplete, or
-unverifiable turns to reach older context. Completion and cancellation persist
-an empty snapshot when no requests remain, so older requests cannot reappear.
-The internal `agent_runtime.connector_context_ttl_minutes` policy defaults to
-30 minutes and is bounded to 1–1440. Expiry is measured from the request's
-original creation time;
-another question does not renew it. This TTL limits reuse, not physical storage
-retention or deletion. Retained values require explicit selection and verified
-continuation authority. A new independent read needs admitted current-message
-input; no linguistic value-only classifier grants or denies scope. Source and
-scope admission also run independently at the execution gateway.
-Every semantically unresolved condition also stays open until a current
-source-bound answer resolves that field. Answering one question cannot discard
-other ambiguities, and null cannot accept an old value as a new answer. A known
-condition that conflicts with provider results remains available for a corrected
-lookup. An explicitly pending API input must be supplied even if its base schema
-marks it optional.
-
-The context contract is pinned in the immutable operation revision and Agent
-deployment. Adding or changing it requires testing and republishing both;
-absent contracts leave existing serialized pins and hashes unchanged. Run the
-additive migration described in [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#unreleased-source-bound-connector-clarification-context).
-Existing questions are not backfilled into authoritative context.
-
-This mechanism applies to direct Agent reads. Publication rejects nonempty
-context contracts on writes, and Playbooks keep their own input, policy, and
-pre-execution validation. An arbitrary OpenAPI `string` does not provide a
-geographic, business, or identity relation automatically. Publish the relevant
-schema, aliases, deterministic resolver, identity evidence, and context checks
-for the operation. This feature adds no external resolver service, background
-job, or second conversation scheduler. The architectural decision is recorded
-in [ADR 0010](adr/0010-source-bound-connector-clarification-context.md).
+Each published read operation that the Agent deployment pins is one flat tool.
+Its arguments are the operation's published input schema; the Gateway
+validates them against the pinned contract, scope, credentials and egress
+policy before dispatch. Invalid or missing arguments return a short error to
+the Agent, which asks the visitor in its own words and calls the tool again; no
+partial request is kept between turns. A write operation is a separate tool
+that only proposes the call: the visitor confirms the exact values on a card
+(ADR 0038) and the write runs once. The Connector Context contract
+(`connector_context`) is still authored and pinned with an operation, but the
+Agent runtime does not read it.
 
 ### Direct-read answer evidence
 
@@ -1074,8 +850,9 @@ Direct Agent read tools, Playbook Capability steps, and the operation workbench
 are consumers of the same published contract and the same capability execution
 gateway. Production binds the exact published revision ID, full contract hash,
 input-schema hash, and environment binding into the immutable Agent or Playbook
-deployment. A direct Agent tool is allowed only for a read-only operation;
-writes, approvals and durable waits require a Playbook. Scalar inputs from
+deployment. A direct Agent write tool only proposes; it runs after the
+visitor confirms the exact values, unless the Agent turns confirmation off for
+an HTTP write. Batch or durable background writes require a Playbook. Scalar inputs from
 another direct read require an explicit Agent read-dependency link and the
 current evidence proof described above. If
 an operation or environment binding changes before dispatch or confirmation,
@@ -1092,10 +869,34 @@ test service as well. WRITE publication still requires successful staging
 evidence for the exact saved candidate; its persistent publication gate is
 unchanged.
 
+## Agent access and shared connections
+
+**Which Agents can use this connection?** applies to API Connectors and MCP
+servers alike:
+
+- **One Agent** stores the Agent on the connection (`bot_id`). Only that Agent
+  can discover or call its operations. Guided GitHub setup uses this mode. If
+  the Agent is deleted, the connection serves no Agent.
+- **Selected Agents** keeps one connection with its credentials for several
+  Agents (`agent_access = assigned` plus rows in
+  `bot_api_connector_assignments`). An admin adds or removes only Agents they
+  may edit; assignments to other Agents are kept. A connection without assigned
+  Agents serves none, and a call without an Agent context never matches.
+- **All Agents** (`agent_access = all`, the value of every shared connection
+  created before this mode existed) requires the explicit acknowledgment.
+
+Each Agent still selects operations in its own editor, and its deployment pins
+each operation revision with the connection's environment binding, hash
+verified as before. Assigning another Agent changes no existing pin.
+Removing an Agent takes effect at its next call: the Gateway's visibility check
+denies the operation (`scope`) even though the published version still pins it,
+until the Agent is published again without it. Leaving **Selected Agents**
+clears every assignment, so no stale assignment can grant access later.
+
 ## Owner-scoped connectors
 
-A connector may be global, bot-scoped, or additionally scoped by
-`owner_type`/`owner_id`. An owner-scoped operation is visible and executable
+A connector may serve all Agents, selected Agents or one Agent, and may
+additionally be scoped by `owner_type`/`owner_id`. An owner-scoped operation is visible and executable
 only when a transient, server-attested runtime authority context matches the
 conversation, bot/token, actor/tenant, and owner pair. The normal catalog can
 derive that context from the matching conversation; exact Playbook execution

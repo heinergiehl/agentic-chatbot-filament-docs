@@ -2,7 +2,7 @@
 
 This is an operator sequence, **not release evidence**. Do not commit completion checkboxes. The exact artifact manifests, hashed local gate reports, and reference-host staging report carry status.
 
-GitHub Actions is intentionally disabled with `on: []` in both workflow stubs. Pushes, pull requests, tags, and manual actions therefore start no GitHub-hosted runner and cost zero Actions minutes. Run the release gates on the operator-controlled host. Live provider evals can still incur provider API charges.
+GitHub Actions is intentionally disabled with `on: []` in both workflow stubs. Pushes, pull requests, tags, and manual actions therefore start no GitHub-hosted runner and cost zero Actions minutes. Run the release gates on the operator-controlled host. Exact-artifact ingestion probes can still incur provider API charges.
 
 ## Before approval
 

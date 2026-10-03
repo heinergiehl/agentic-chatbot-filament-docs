@@ -6,11 +6,9 @@ after sixteen fields or 2,000 characters. Field metadata labels allow 80 charact
 and descriptions 240; overlength is rejected instead of silently shortened. Normal
 deployment and request budgets still apply to the complete offer.
 
-Data Resources define which live application records an Agent may read through a direct tool or a governed Playbook `query_data_resource` step. A published Playbook may additionally create or update one scoped record through `mutate_data_resource` only when the resource has an explicit write policy. Direct Agent tools never receive Data Resource write authority.
+Data Resources define which live application records an Agent may read through a direct tool or a governed Playbook `query_data_resource` step. When the resource has an explicit write policy, an assigned Agent with write permission also gets one direct tool per enabled operation (`create_<key>`, `update_<key>`) that creates or updates one scoped record after the visitor confirms it (ADR 0038), and a published Playbook may do the same through `mutate_data_resource`.
 
-The chat engine can also answer safe meta questions such as "what data resources can you access?" without running a database query. That answer comes from the generic capability catalog and uses the same bot-approved Data Resource policy described here. It lists approved resources and safe fields, but it does not expose table names, model classes, hidden scope values, or sensitive fields.
-
-A direct Agent query also has to match an exact purpose from the visitor's latest message. Generic words such as `name`, `status`, or `id` cannot authorize an unrelated default read, an explicit request not to use the named resource hides and blocks its tool, and a duplicate call for the same completed purpose reuses the already delivered evidence instead of querying again. The model can select only the modes, fields, filters, sort argument, and limits frozen into the immutable Agent deployment; runtime upgrades do not silently rename an older deployment's pinned tool arguments.
+The Agent sees each approved Data Resource as one tool. The model decides from the conversation when to call it and supplies the arguments; the Gateway validates them against the frozen schema, applies the server-bound scope, field policy and limits, and rejects anything else. Meta questions such as "what data can you access?" are answered by the model from its tool descriptions; they do not run a query and expose no table names, model classes, hidden scope values or sensitive fields. The model can select only the modes, fields, filters, sort argument, and limits frozen into the immutable Agent deployment; runtime upgrades do not silently rename an older deployment's pinned tool arguments. An identical repeated call within one turn returns the earlier result instead of querying again.
 
 They are different from Knowledge Sources:
 
@@ -21,93 +19,55 @@ They are different from Knowledge Sources:
 
 ## Recommended Setup
 
-1. Open **Agentic Chatbot > Connect > Data Resources**.
-2. Follow the guided setup flow:
-   - **Choose records**: name the resource and select the Laravel model.
-   - **Approve information**: choose the smallest set of fields Agents may see, filter, or rank. Opt into text search only for fields whose table size and indexing can support it.
-   - **Results and ranking**: keep default and maximum result counts chat-sized, and review the database query budget under its collapsed advanced section.
-   - **Playbook writes**: leave write operations empty unless a published Playbook must create or update records. If enabled, mark the minimum writable, required-on-create, and exact-identity fields and configure an optimistic-lock column for updates.
-   - **Safety scope**: explicitly choose Agent/tenant-scoped or intentionally global. Scoped resources require at least one always-on ownership filter such as `bot_id = current Agent`; global resources require an explicit confirmation.
-3. Open the target Agent and approve only the Data Resources that Agent may use.
-4. Narrow returned, filterable, or sortable fields on the Agent only when it needs stricter rules than the global resource.
-5. On an existing resource, use **Preview safe records**. The preview selects an active Agent that already approves the resource and runs the real normalized contract, ownership scope, query compiler, cost guard, statement budget, and safe serializer. Request-bound actor or tenant scopes fail closed and direct the admin to the Agent live test instead of inventing an identity.
+1. Open **Agentic Chatbot > Connect > Data** and choose **New Data Resource**.
+2. Pick the **Model**. The screen proposes a name, a key and one row per column with its label, type and switches:
+   - **Show**: the Agent may return the field. **Filter** and **Sort** let it narrow and order records. **Search** adds the field to the `search` argument (text fields). **Total** allows `sum`, `avg`, `min` and `max` (numeric fields; dates: earliest and latest). **Group** allows one count or total per value (short strings, choices, booleans, dates). **Linked record** returns a column of a `belongsTo` record next to its key, for example the customer name.
+   - Secret columns never appear: secret-like names (password, token, secret, API or private key, credential), hidden attributes and encrypted casts. Untick **Show** for anything else the Agent should not see.
+   - Proposed defaults: every other column is shown and filterable (text and JSON only through search), numbers, dates and strings are sortable, numbers (not keys or foreign keys) and dates can be totalled, choices, booleans, dates, short or category-like strings and linked keys can be grouped, and a `*_id` column is linked when the model declares the relation with a `BelongsTo` return type and the related model has a label column such as `name` or `title`.
+3. Under **Records**, choose whose rows the Agent reads: **The visitor's rows** (signed-in user, optionally with the user type column, or the conversation), **This Agent's rows** (Agent ID or public ID), **The tenant's rows**, **All rows** (requires the confirmation) or **Custom** scope filters for several bindings or host-defined sources. A table with a `bot_id` column starts with **This Agent's rows**.
+4. Fill in **When to use**: Agent publication needs it to tell this tool apart from the others. Leave **Writes** closed unless the Agent must create or update records. Choose **Create records** or **Update records** and tick **Write** on the fields the visitor may set. Updates need a **Record key** (the primary key by default) and a **Version column** (an integer version or `updated_at`).
+5. **Limits** (collapsed) holds the result styles, default order, row limits, statement timeout and estimated-row budget with safe defaults.
+6. **Preview** shows what the Agent gets from the current, unsaved settings: a sample of up to three records and the exact tools (name, description and argument schema).
+7. Open the target Agent and approve only the Data Resources that Agent may use. Narrow returned, filterable or sortable fields on the Agent only when it needs stricter rules than the global resource.
 
 The global Data Resource is the maximum policy. Bot-level settings can only select or narrow it.
 
 ## What The Guardrails Do
 
-The form reads available Eloquent models and database columns, then presents them as searchable dropdowns. Admins should not type model classes or column names by hand during normal setup. This avoids spelling mistakes and keeps the allowed query policy aligned with the real database schema.
+The screen offers only discovered Eloquent models and their columns; admins never type model classes or column names. On save, every field must be a column of the chosen model, at least one field must be shown, a global resource needs the confirmation, and writes need an owner scope, a writable field and, for updates, a record key and a version column. Model and key cannot change after creation, because Agent approvals and Playbooks bind them.
 
-Validation still runs on save. If a model cannot be inspected or a column no longer exists, the form rejects the invalid value instead of creating a broken Agent or Playbook policy.
+Saving a resource without changes keeps its contract hash. Field settings the screen does not show (descriptions, aliases, explicit operator lists and fields marked sensitive, as written by **Sync from config**) stay as they are, and so do the stored field order and, while no update is enabled, the record key, version column and **Write** marks. A column left completely off is not stored. Changing a field's **Filter** or **Search** switch replaces its explicit operator list. A field that is shown again or hidden is returned by default exactly when shown.
 
-If no field is marked **Returned by default**, the runtime does not fall back to every returnable field. It returns only the first safe returnable field by default, or an explicit answer-ready field if one exists. This keeps newly created resources conservative until an admin intentionally broadens the answer.
+Marking a field sensitive (config) is a hard exclusion, not a presentation hint: contract compilation removes it from returns, filters, search and ranking, and it never reaches direct Agent tools or Playbook query results.
 
-Marking a field **Sensitive** is a hard exclusion, not a presentation hint. The Filament form clears and disables return, answer, filter, text-search, and ranking options for that field, while contract compilation removes it again defensively. Sensitive fields never reach direct Agent tools or Playbook query results.
+The preview needs an Agent for a per-Agent resource: it uses the Agent you came from, else the first active Agent you may manage that approves the resource. Visitor and tenant scopes have no value outside a chat, so the preview shows their tools but no sample; try them in the widget.
 
 Filter values use one shared semantic normalizer at model binding and deterministic query validation. Integer, number, boolean, date, date-time, URL, email, JSON, enum, string, and text declarations therefore cannot silently degrade into an arbitrary scalar comparison. Invalid formats fail before SQL compilation.
 
-### Published filter evidence
+### Direct Agent queries
 
-Direct filters require source evidence as well as a valid type. A scalar
-`value` can carry its exact visitor spelling in `source_value`; list predicates
-use parallel `values` and `source_values`. Without a separate source spelling,
-the proposed value itself must be grounded in the visitor message. Booleans
-follow the same rule. The model cannot invent an enum, identifier, date or
-boolean merely because it satisfies the schema.
+Each approved resource is one tool, `query_data_<key>`. Its arguments come from the pinned contract and appear only when the resource allows them:
 
-Host-defined resources may publish `filter_input_policies` for allowed filter
-fields. These policies become part of the resource contract hash and Agent
-pin. No separate UI policy editor is added by this runtime change. For example:
+| Argument | Meaning |
+| --- | --- |
+| `mode` | `list`, `first`, `count` as allowed, and `aggregate` when the resource has a field marked **Total** or **Group** |
+| `filters` | typed conditions on filterable fields; all must match |
+| `search` | up to five words (100 characters) matched case-insensitively against the **Search** fields that hold text (not numbers, dates, booleans or JSON); every word must occur in at least one of them; counts as one filter clause |
+| `aggregate` | `count` (default), `sum`, `avg`, `min`, `max`; `sum` and `avg` need a numeric field, `min` and `max` a numeric or date field |
+| `aggregate_field` | the field for `sum`, `avg`, `min`, `max` |
+| `group_by` | one **Group** field; one result per value |
+| `group_by_period` | `day`, `week`, `month` or `year` for a date `group_by` field (default `day`) |
+| `select`, `sort_by`, `sort_direction`, `limit`, `cursor` | rows to return, order, page size and next page |
 
-```php
-'filter_input_policies' => [
-    'status' => ['aliases' => ['offene' => 'open', 'geschlossene' => 'closed']],
-    'created_at' => [
-        'date_formats' => ['d.m.Y'],
-        'relative_dates' => [
-            'timezone' => 'Europe/Berlin',
-            'storage_timezone' => 'UTC',
-            'expressions' => ['letzten Monat' => ['unit' => 'month', 'offset' => -1]],
-        ],
-    ],
-],
-```
+A grouped result returns at most `max_groups` groups (default 50, at most 100) and says `has_more` when there are more. Groups are ordered by their value, largest first (`sort_direction: asc` for the smallest), with NULL values last and the group key as tie-breaker; date buckets are ordered oldest first (`desc` for the newest). Date buckets are computed from the stored value (usually UTC; PostgreSQL `timestamp with time zone` columns in the connection's session time zone) with database functions on MySQL, MariaDB, PostgreSQL and SQLite: `YYYY-MM-DD` for a day, the Monday of a week, `YYYY-MM` and `YYYY`. A `select` or `sort_by` together with an aggregate is rejected, not ignored.
 
-The surrounding field metadata must declare compatible types and allowed enum
-values. An alias maps only to such a published canonical value. Relative
-calendar expressions use the immutable source turn's attested `received_at`
-and the pinned timezone, including daylight-saving boundaries. A whole period
-uses `period` with `between`; date-time periods compile to a lower-inclusive,
-upper-exclusive range. Date-time relative phrases cannot be reduced to a
-guessed scalar timestamp. Date-time policies require a storage timezone.
+Aggregates, groups and linked labels are limited to returnable fields that are not sensitive: they never reveal a value the resource would not return as a row. Scope filters, field filters and search apply before aggregation, and the same cost guard and statement budget run on the aggregate query.
 
-A later reply may explicitly reference a visitor source with
-`visitor_reference: {message_id, quote}`. A selected active draft's original
-field source or latest recorded field correction is eligible. Admission verifies
-the original committed turn, exact quote and unchanged authority scope again.
-A correction invalidates the old field source, and current corrected values
-must bind to that correction's quote. A relative date cited from an older
-eligible visitor source keeps that source turn's time anchor.
+A field with **Linked record** returns the configured column of the related record under the relation's name (`customer_id` and `customer`). Listed and first records always carry such a key with its label, even when `select` leaves the key out, so the Agent never has to guess which record a row belongs to; a grouped result on the key carries the label per group. Only a `belongsTo` relation of the model whose foreign key is that field qualifies, and only a method declared with a `BelongsTo` return type is inspected: a method is never guessed from a column name or called without that declaration. The column must be visible on the related model: hidden attributes, encrypted casts and secret-like names (password, token, key) are refused, and an invalid setting shows no label rather than a value. Labels are loaded with one key lookup per query through the related model's own query, so its global scopes apply; that lookup is bounded by the returned keys, runs inside the statement timeout (also when the related model uses another connection) and does not run through the cost guard.
 
-RC-02 candidate: a selected Data Resource draft now retains verified field
-sources through side questions and reloads. The model copies one offered
-opaque `__pending` handle; the server resolves its exact ID and revision.
-Omitted fields remain in the draft, while
-`__unset` removes named fields. When an ordinary committed text question has
-no draft, the tool may offer a bounded question turn. A filter may then include
-`question_turn_id` beside `message_id` and `quote` in `visitor_reference`.
-The server checks the offered turn, canonical assistant question, original
-visitor source, scope, deployment and age before using the quote. No adjacent
-successful query is required. A proposed question without assistant delivery
-does not create this offer.
+A `sum` beyond PHP's integer range is returned as an exact decimal string instead of being capped.
 
-A scalar filter may instead carry
-`source_reference: {evidence_id, pointer}` for an explicitly published
-[read dependency](AGENT_RUNTIME_ARCHITECTURE.md#published-read-dependencies).
-It cannot combine this proof with another source form, an array predicate or a
-calendar period. The canonical `value` must match the actual linked source
-value after the field's type normalization. The adapter and execution gateway
-resolve the same proof; rejected references execute no query.
+The result names what was applied: `query` echoes mode, limit, selected fields, sort, filter fields and operators, searched fields and the aggregate, without filter values or search words. Rows come with `count`, `has_more`, `next_cursor` and, when the last page is reached, `total`; an aggregate returns `value` and `matched`, a grouped aggregate `groups` (`group`, the linked label, `value`, and `count` for functions other than count). An invalid argument returns a short correctable error naming the allowed values; nothing is queried.
 
 Safety scope filters are always applied by the runtime and hidden from both the Agent model and Playbook authors. They do not need to be exposed as normal visitor filters, so ownership columns such as `bot_id` can stay out of tool schemas and the Playbook editor while still protecting rows.
 
@@ -169,11 +129,11 @@ The runtime query boundary is a typed `DataQuery` AST. An AI Task may produce th
 
 The action accepts either the fixed Capability mapping or its explicit nested `query` object, but compilation and execution receive only the validated AST. Invalid fields, operators, types, limits, clauses, or list sizes fail closed; the runtime does not drop, clamp, merge, or repair them. `count` is available only when the resource contract explicitly allows it. List queries return a bounded opaque `next_cursor` when another page exists.
 
-`contains` is LIKE-escaped and exists in a pinned contract only for fields explicitly opted into **Allow text search**, listed in `contains_scan_fields`, or given an explicit `filter_operators` policy. This keeps broad scans opt-in.
+`contains` is LIKE-escaped and exists in a pinned contract only for fields explicitly opted into **Search**, listed in `contains_scan_fields`, or given an explicit `filter_operators` policy. This keeps broad scans opt-in.
 
 The default `DataQueryCostGuard` runs `EXPLAIN` without `ANALYZE` and rejects PostgreSQL, MySQL, and MariaDB plans above the resource's pinned estimated-row budget before the visitor query executes. The same boundary applies the pinned positive statement timeout with PostgreSQL transaction-local settings, MySQL `max_execution_time`, or MariaDB `max_statement_time`, restoring prior settings when the surrounding database session can outlive the query. UI-managed resources cannot disable this timeout. SQLite keeps its lightweight behavior only in local/testing; production Data Resource queries fail closed on SQLite, and Doctor inventories active resource connections before launch. Hosts may still replace the public `DataQueryCostGuard` contract with a stricter implementation; direct code-reviewed resource configuration remains the expert boundary that may explicitly set a zero timeout.
 
-Changing text-search permission, the statement timeout, or the estimated-row budget changes the Data Resource contract hash. Republish every Playbook bound to that resource, then publish a new Agent deployment to grant the reviewed versions. A live direct Agent tool keeps its immutable published snapshot until the Agent is deliberately republished. Existing installations must run the package migrations to add the nullable `query_safety` column used by UI-managed resources. Doctor reports the missing column and inventories active deployments whose pinned action or resource contract is stale; resolve that blocking list in the upgrade maintenance window before reopening chat traffic.
+Changing text-search permission, aggregate, group or linked-record settings, the statement timeout, or the estimated-row budget changes the Data Resource contract hash. Republish every Playbook bound to that resource, then publish a new Agent deployment to grant the reviewed versions. A live direct Agent tool keeps its immutable published snapshot until the Agent is deliberately republished. Existing installations must run the package migrations to add the nullable `query_safety` column used by UI-managed resources. Doctor reports the missing column and inventories active deployments whose pinned action or resource contract is stale; resolve that blocking list in the upgrade maintenance window before reopening chat traffic.
 
 This keeps the editor simple while preserving the safety boundary configured in Filament.
 
@@ -185,9 +145,17 @@ Access is deny-by-default. A direct query requires the exact verified Agent depl
 
 Playbook authors see the approved resource labels, friendly field names, limits, and runtime scope summary. They do not need to know the database table shape to build a safe lookup.
 
-## Governed Playbook Mutations
+## Governed Mutations
 
-`mutate_data_resource` is a Playbook-only write capability. It supports one scoped `insert` or one optimistic `update`; arbitrary SQL, bulk changes, deletes, and direct model-selected writes are not available. Enabling a resource for reads does not enable writes.
+A write supports one scoped `insert` or one optimistic `update`; arbitrary SQL, bulk changes and deletes are not available. Enabling a resource for reads does not enable writes.
+
+### Direct Agent writes
+
+An Agent with write permission that has the resource assigned gets one tool per enabled operation. The tool schema contains only the visitor-writable fields; the ownership scope and the version column are set by the server. An update names the record by its identity fields, which it cannot change, and passes the version from a previous read. A direct update reaches only records the current visitor owns: its ownership scope must bind a server-attested identity of one visitor (`conversation.id`, or `actor.id` together with `actor.type`, or `widget_context.actor.id` together with `widget_context.actor.type`, because an actor id is unique only per actor type). `conversation.owner_id` is the access token owner in token and channel conversations, and signed tenant or attribute values can be shared by many visitors, so they do not count. For a resource scoped only to the Agent, a tenant, a token owner, a signed attribute or a static value, the update tool is not published unless the admin turns on **Allow updating any record** for that update in the Agent editor; such an update always asks the visitor to confirm, whatever the confirmation switch says. Inserts are not restricted. Execution checks the pinned reach again and refuses an update whose pin does not satisfy this rule. The call only proposes: the widget shows every value in full on a card (a payload with more than 24 values or a value over 2,000 characters is refused) and the write runs once when the visitor presses **Confirm** (or at once if the Agent's **Ask visitor to confirm** switch is off). It uses the same pinned contract, scope, host model policy, transaction, optimistic lock and side-effect ledger as a Playbook step. Republish the Agent after changing the write policy.
+
+### Playbook mutations
+
+`mutate_data_resource` is the Playbook form of the same write.
 
 The published resource contract pins:
 
@@ -206,12 +174,12 @@ Changing any mutation rule changes the resource contract hash. Republish the Pla
 
 ### Configure and use a write step
 
-1. In **Approve information**, mark only the submitted business fields as **Can be written**. Mark every required create value and every exact update-identity field. Ownership columns, primary keys, creation timestamps, and the optimistic-lock column remain protected from submitted values.
-2. In **Playbook writes**, explicitly enable **Create one scoped record**, **Update one scoped record**, or both. Updates need an integer or date-time version column with that exact field type. Approve the identity and version for reads when the Playbook must first retrieve a target.
-3. In **Safety scope**, bind the ownership column to the trusted Agent, tenant, or actor. A visitor-supplied identity never replaces this scope. A missing required actor or tenant fails closed.
+1. In **Writes**, choose **Create records**, **Update records** or both, and tick **Write** on the submitted business fields only. Required-on-create follows the column (not nullable, no default). Ownership columns, primary keys, timestamps and the version column stay protected from submitted values.
+2. For updates, keep the **Record key** (the exact identity fields) and choose an integer or date-time **Version column**. Show the key and version when the Playbook must first read the target.
+3. Under **Records**, bind the owner column to the trusted visitor, Agent or tenant. A visitor-supplied identity never replaces this scope. A missing required actor or tenant fails closed.
 4. Give the Agent write permission and approve the resource. Add a `mutate_data_resource` Capability step to the Playbook, bound to that resource. Present the concrete create or update target and essential submitted values through the existing approval step before dispatch.
 5. Run the exact candidate through the isolated staging procedure below. Each Data Resource write step needs its own signed successful test before Playbook publication. Include denied ownership, forbidden fields, changed payload, stale version, and replay in host regression tests.
-6. Import the signed evidence, publish the unchanged Playbook, then publish its owning Agent. Ordinary Agent and release-candidate chat tests keep productive writes blocked. Saving a resource policy does not publish it or attest a successful write.
+6. Import the signed evidence, publish the unchanged Playbook, then publish its owning Agent. The Agent editor's test chat and Agent tests simulate writes and never write. Saving a resource policy does not publish it or attest a successful write.
 
 A create step supplies only the configured values; the server adds the ownership fields:
 
@@ -335,24 +303,7 @@ The direct tool describes only query modes approved in that pinned contract;
 its closed input schema carries the same mode enum. A rejected mode performs
 no database read.
 
-Within one active request, a successful bounded list can return an encrypted
-`next_page_reference`. Supply it as the sole `page_reference` argument to read
-the next verified page. Its receipt binds the complete pin, admitted query,
-deployment, scope, turn and current request inputs, and expires within 900
-seconds. The model cannot construct a cursor or alter filters alongside that
-reference. Every continuation page remains incomplete evidence of the original
-collection, including its final page; previous pages keep their own evidence.
-
-An Agent may explicitly publish a Data Resource as either endpoint of a
-read dependency. The source must return a complete `list` with exactly one
-matching row, exposed as `/data/0/field`; a `first` result does not prove that
-only one entity matched. The source field must be an approved select and the
-target must be an approved scalar filter with the pinned type. Scope filters
-cannot be dependency targets. Both capabilities belong to the same recorded
-request, and the current source must have succeeded before the target query.
-Several rows, partial pages, old evidence, Knowledge prose and undeclared
-relationships cannot supply a key. This grant does not extend to Playbook
-inputs or mutations.
+A bounded list that has more rows returns `next_cursor`; the model passes it as `cursor` with the same arguments to read the next page. The cursor only carries an offset within the pinned `max_cursor_offset`; scope and filters are applied again on every page.
 
 For latest published records, do not rely on database default NULL ordering. Use `published_at desc nulls last` plus `published_at not null` when the user explicitly asks for published records.
 
@@ -434,16 +385,17 @@ Use this when the host application has a reliable read model for duplicate detec
 
 ## Production Checklist
 
-- Keep direct Agent access read-only. Enable `mutate_data_resource` only for an explicit published Playbook business step.
+- Enable write operations only for resources an Agent or Playbook must change, and keep **Ask visitor to confirm** on unless a write is harmless.
 - Expose the smallest useful column set.
-- Mark sensitive fields whenever they must be excluded from results, filters, text search, and ranking.
+- Untick **Show** on every field the Agent does not need; in config, mark fields sensitive that must be excluded from results, filters, text search and ranking.
 - Keep result limits chat-sized.
 - Set filter field types and explicitly opt fields into `contains_scan_fields` only when the backing query can safely support that scan.
+- Mark fields as aggregatable or groupable only when totals per value are meant to be visible; grouping a large table needs an index that keeps it within the estimated-row budget.
 - Keep the default estimated-row budget and statement timeout unless measurements justify a reviewed exception; prefer adding an index or narrowing filters before raising them.
-- Keep direct Agent filters grounded in the latest visitor message; use explicit typed query fields in Playbook action mappings.
+- Keep direct Agent filters few and typed so the model can fill them from the conversation; use explicit typed query fields in Playbook action mappings.
 - Configure `field_roles` for latest, active, and published semantics instead of relying on inferred field names.
 - For latest published data, configure `published_at` as filterable and sortable so NULL draft rows cannot outrank published records.
-- Choose **Agent or tenant scoped** and add runtime filters whenever records are tenant- or Agent-specific. Choose **Intentionally global** only when every approved record may be visible to every Agent that receives the resource.
+- Choose **The visitor's rows**, **This Agent's rows** or **The tenant's rows** whenever records belong to someone. Choose **All rows** only when every approved record may be visible to every Agent that receives the resource.
 - Populate tenant authority from trusted host middleware; never copy tenant, actor, token, or conversation identity from chat/model variables.
 - Keep ownership scope fields hidden from normal filters unless visitors should explicitly filter by them.
 - Approve resources per bot instead of enabling every global resource everywhere.

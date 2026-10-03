@@ -17,7 +17,7 @@ Use this as a base and adapt with legal counsel.
 
 - Deliver assistant responses
 - Improve support workflows and answer quality
-- Verify and resolve recurring knowledge gaps with reviewed regression tests
+- Verify and resolve recurring knowledge gaps with reviewed Knowledge Sources and Agent tests
 - Receive, validate, process, and answer messages and attachments from enabled external channels
 - Monitor reliability and abuse
 

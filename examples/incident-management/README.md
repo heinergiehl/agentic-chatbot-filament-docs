@@ -28,7 +28,7 @@ The recommended admin workflow is:
 2. Open **Agentic Chatbot > Connect > Data Resources**.
 3. Create the `incidents`, `rescue_stations`, `rescuers`, and `earthquake_records` resources, choosing the matching Eloquent model and columns from the dropdowns.
 4. Mark only the safe columns as returnable, filterable, and sortable.
-5. Open the target bot and approve those resources under **Database Answers**.
+5. Open the target Agent and approve those resources under **Tools & Data > Data Resources**.
 
 For repeatable demo setup, you can still seed those global resources from config. In `config/filament-agentic-chatbot.php`, merge the example resources into `data_resources.resources`, run migrations, then use **Sync from config** in **Data Resources**:
 

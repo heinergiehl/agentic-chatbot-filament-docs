@@ -1,224 +1,125 @@
 {
-    "schemaVersion": 1,
-    "nodes": [
-        {
-            "id": "trigger_manager_question",
-            "type": "trigger",
-            "position": {
-                "x": 120,
-                "y": 160
-            },
-            "data": {
-                "label": "Manager Question",
-                "triggerType": "user_message"
-            }
+  "schemaVersion": 2,
+  "name": "Incident manager live status",
+  "description": "Load approved operational resources and return a bounded incident-status result to the Agent.",
+  "steps": [
+    {
+      "id": "entry",
+      "kind": "entry",
+      "label": "Entry",
+      "position": { "x": 100, "y": 180 },
+      "data": {}
+    },
+    {
+      "id": "query_open_incidents",
+      "kind": "capability",
+      "label": "Load open incidents",
+      "position": { "x": 380, "y": 180 },
+      "data": {
+        "actionKey": "query_data_resource",
+        "inputMapping": {
+          "resource_key": "incidents",
+          "allowed_resource_keys": ["incidents"],
+          "mode": "list",
+          "filters": [{ "field": "status", "operator": "in", "value": ["open", "monitoring"] }],
+          "select": ["external_id", "category", "severity", "status", "location_name", "casualty_count", "summary", "occurred_at"],
+          "sort": [{ "field": "occurred_at", "direction": "desc" }],
+          "limit": 10
         },
-        {
-            "id": "query_open_incidents",
-            "type": "action",
-            "position": {
-                "x": 420,
-                "y": 160
-            },
-            "data": {
-                "label": "Load Open Incidents",
-                "actionKey": "query_data_resource",
-                "inputMapping": {
-                    "resource_key": "incidents",
-                    "mode": "list",
-                    "filters": {
-                        "status": [
-                            "open",
-                            "monitoring"
-                        ]
-                    },
-                    "select": [
-                        "external_id",
-                        "category",
-                        "severity",
-                        "status",
-                        "location_name",
-                        "casualty_count",
-                        "summary",
-                        "occurred_at"
-                    ],
-                    "sort": {
-                        "column": "occurred_at",
-                        "direction": "desc"
-                    },
-                    "limit": 10
-                },
-                "outputVariable": "open_incidents"
-            }
+        "outputVariable": "open_incidents"
+      }
+    },
+    {
+      "id": "query_active_stations",
+      "kind": "capability",
+      "label": "Load active stations",
+      "position": { "x": 660, "y": 180 },
+      "data": {
+        "actionKey": "query_data_resource",
+        "inputMapping": {
+          "resource_key": "rescue_stations",
+          "allowed_resource_keys": ["rescue_stations"],
+          "mode": "list",
+          "filters": [{ "field": "status", "operator": "equals", "value": "active" }],
+          "select": ["id", "name", "region", "status", "available_vehicles", "capabilities"],
+          "sort": [{ "field": "name", "direction": "asc" }],
+          "limit": 10
         },
-        {
-            "id": "query_active_stations",
-            "type": "action",
-            "position": {
-                "x": 720,
-                "y": 160
-            },
-            "data": {
-                "label": "Load Active Stations",
-                "actionKey": "query_data_resource",
-                "inputMapping": {
-                    "resource_key": "rescue_stations",
-                    "mode": "list",
-                    "filters": {
-                        "status": "active"
-                    },
-                    "select": [
-                        "id",
-                        "name",
-                        "region",
-                        "status",
-                        "available_vehicles",
-                        "capabilities"
-                    ],
-                    "sort": {
-                        "column": "name",
-                        "direction": "asc"
-                    },
-                    "limit": 10
-                },
-                "outputVariable": "active_stations"
-            }
+        "outputVariable": "active_stations"
+      }
+    },
+    {
+      "id": "query_available_rescuers",
+      "kind": "capability",
+      "label": "Load available rescuers",
+      "position": { "x": 940, "y": 180 },
+      "data": {
+        "actionKey": "query_data_resource",
+        "inputMapping": {
+          "resource_key": "rescuers",
+          "allowed_resource_keys": ["rescuers"],
+          "mode": "list",
+          "filters": [{ "field": "status", "operator": "equals", "value": "available" }],
+          "select": ["id", "station_id", "name", "role", "status", "certifications", "shift_ends_at"],
+          "sort": [{ "field": "name", "direction": "asc" }],
+          "limit": 25
         },
-        {
-            "id": "query_available_rescuers",
-            "type": "action",
-            "position": {
-                "x": 1020,
-                "y": 160
-            },
-            "data": {
-                "label": "Load Available Rescuers",
-                "actionKey": "query_data_resource",
-                "inputMapping": {
-                    "resource_key": "rescuers",
-                    "mode": "list",
-                    "filters": {
-                        "status": [
-                            "available",
-                            "assigned"
-                        ]
-                    },
-                    "select": [
-                        "id",
-                        "station_id",
-                        "name",
-                        "role",
-                        "status",
-                        "certifications",
-                        "shift_ends_at"
-                    ],
-                    "sort": {
-                        "column": "status",
-                        "direction": "asc"
-                    },
-                    "limit": 20
-                },
-                "outputVariable": "rescuers"
-            }
+        "outputVariable": "available_rescuers"
+      }
+    },
+    {
+      "id": "query_recent_earthquakes",
+      "kind": "capability",
+      "label": "Load recent earthquakes",
+      "position": { "x": 1220, "y": 180 },
+      "data": {
+        "actionKey": "query_data_resource",
+        "inputMapping": {
+          "resource_key": "earthquake_records",
+          "allowed_resource_keys": ["earthquake_records"],
+          "mode": "list",
+          "select": ["external_id", "magnitude", "region", "depth_km", "occurred_at"],
+          "sort": [{ "field": "occurred_at", "direction": "desc" }],
+          "limit": 10
         },
-        {
-            "id": "query_recent_earthquakes",
-            "type": "action",
-            "position": {
-                "x": 1320,
-                "y": 160
-            },
-            "data": {
-                "label": "Load Recent Earthquakes",
-                "actionKey": "query_data_resource",
-                "inputMapping": {
-                    "resource_key": "earthquake_records",
-                    "mode": "list",
-                    "filters": {
-                        "magnitude": {
-                            "operator": "gte",
-                            "value": 4
-                        }
-                    },
-                    "select": [
-                        "external_id",
-                        "magnitude",
-                        "region",
-                        "depth_km",
-                        "occurred_at"
-                    ],
-                    "sort": {
-                        "column": "occurred_at",
-                        "direction": "desc"
-                    },
-                    "limit": 5
-                },
-                "outputVariable": "recent_earthquakes"
-            }
-        },
-        {
-            "id": "retrieve_operational_sops",
-            "type": "knowledgeBase",
-            "position": {
-                "x": 1620,
-                "y": 160
-            },
-            "data": {
-                "label": "Retrieve SOPs",
-                "query": "{{input}}",
-                "topK": 5,
-                "minSimilarity": 0.6,
-                "outputVariable": "sop_context"
-            }
-        },
-        {
-            "id": "ai_compose_manager_answer",
-            "type": "aiAgent",
-            "position": {
-                "x": 1920,
-                "y": 160
-            },
-            "data": {
-                "label": "Compose Manager Answer",
-                "systemPrompt": "You are an operational incident-management assistant for managers. Use live operational records first. Use SOP and knowledge context only for procedure and policy guidance. Be concise, factual, and explicit about uncertainty. Never invent incident, staff, station, or earthquake records. Do not expose rescuer phone numbers.",
-                "userPromptTemplate": "Manager question:\n{{input}}\n\nOpen incidents:\n{{open_incidents.records}}\n\nActive stations:\n{{active_stations.records}}\n\nRescuers:\n{{rescuers.records}}\n\nRecent earthquakes:\n{{recent_earthquakes.records}}\n\nSOP context:\n{{sop_context}}\n\nWrite an answer with: current status, relevant risks, available response capacity, and recommended next operational step.",
-                "temperature": 0.2,
-                "maxTokens": 600,
-                "outputVariable": "manager_answer",
-                "streamToChat": true
-            }
-        }
-    ],
-    "edges": [
-        {
-            "id": "edge_trigger_to_incidents",
-            "source": "trigger_manager_question",
-            "target": "query_open_incidents"
-        },
-        {
-            "id": "edge_incidents_to_stations",
-            "source": "query_open_incidents",
-            "target": "query_active_stations"
-        },
-        {
-            "id": "edge_stations_to_rescuers",
-            "source": "query_active_stations",
-            "target": "query_available_rescuers"
-        },
-        {
-            "id": "edge_rescuers_to_earthquakes",
-            "source": "query_available_rescuers",
-            "target": "query_recent_earthquakes"
-        },
-        {
-            "id": "edge_earthquakes_to_sops",
-            "source": "query_recent_earthquakes",
-            "target": "retrieve_operational_sops"
-        },
-        {
-            "id": "edge_sops_to_answer",
-            "source": "retrieve_operational_sops",
-            "target": "ai_compose_manager_answer"
-        }
-    ]
+        "outputVariable": "recent_earthquakes"
+      }
+    },
+    {
+      "id": "compose_status",
+      "kind": "aiTask",
+      "label": "Compose operational status",
+      "position": { "x": 1500, "y": 180 },
+      "data": {
+        "systemPrompt": "Summarize only the supplied operational records. Do not invent incidents, people, capacity, or recommendations.",
+        "inputTemplate": "Open incidents: {{open_incidents}}\nActive stations: {{active_stations}}\nAvailable rescuers: {{available_rescuers}}\nRecent earthquakes: {{recent_earthquakes}}",
+        "outputVariable": "manager_status",
+        "temperature": 0.1,
+        "maxTokens": 900
+      }
+    },
+    {
+      "id": "result",
+      "kind": "result",
+      "label": "Return status",
+      "position": { "x": 1780, "y": 180 },
+      "data": {
+        "resultTemplate": "{{manager_status}}",
+        "statusValue": "completed"
+      }
+    }
+  ],
+  "transitions": [
+    { "id": "entry_incidents", "sourceStepId": "entry", "targetStepId": "query_open_incidents" },
+    { "id": "incidents_stations", "sourceStepId": "query_open_incidents", "targetStepId": "query_active_stations" },
+    { "id": "stations_rescuers", "sourceStepId": "query_active_stations", "targetStepId": "query_available_rescuers" },
+    { "id": "rescuers_earthquakes", "sourceStepId": "query_available_rescuers", "targetStepId": "query_recent_earthquakes" },
+    { "id": "earthquakes_compose", "sourceStepId": "query_recent_earthquakes", "targetStepId": "compose_status" },
+    { "id": "compose_result", "sourceStepId": "compose_status", "targetStepId": "result" }
+  ],
+  "annotations": [],
+  "conversationMemoryPolicy": "inherit",
+  "policies": {},
+  "compiler": { "version": 1 },
+  "viewport": { "x": 60, "y": 80, "zoom": 0.62 }
 }

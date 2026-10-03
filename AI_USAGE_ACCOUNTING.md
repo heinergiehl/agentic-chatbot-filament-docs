@@ -35,6 +35,59 @@ The database uniquely binds a provider request ID to one call, shared by native
 and operator-supplied receipts. Replaying the same call is idempotent; reusing a
 receipt for another call is rejected. The ledger stores no API keys or prompts.
 
+## Usage overview
+
+**Insights > Usage** opens on this month: cost, tokens, conversations and cost
+per conversation of visitor traffic, a cost-per-day chart (all Agents or one),
+Agents ranked by cost with their monthly token and cost budget use, the most
+expensive conversations and a per-model table. Agent tests, the chat playground
+and editor AI count as **Tests and editor** and stay out of the visitor
+figures. A cost counts only for a settled call priced in the configured
+currency; calls without a price or without usage data are counted next to the
+cost instead of being shown as zero. Every number drills down to **All calls**,
+the per-call list with exact tokens, price version and accounting details.
+
+## Model prices
+
+Each call is priced with the tariff in force when it starts. Three sources
+exist, and the first one with a version in force at that time wins:
+
+1. Prices set in **Usage > Model prices** (stored in `ai_model_prices`, cached
+   until a price changes). A panel price has input, optional cached input and
+   output per million tokens in the configured currency and a "valid from"
+   date. Reasoning uses the output rate, cache writes and embeddings the input
+   rate; Anthropic cache writes cost 1.25 times the input rate for a 5-minute
+   and 2 times for a 1-hour lifetime, as Anthropic bills them.
+   Setting a price needs the usage manage ability
+   (`bot_usage_events.authorization.manage_ability`) for all calls: an admin
+   limited to some calls by a record-aware Gate cannot set one.
+2. `usage.pricing` in the host config (format below).
+3. Package defaults (`DefaultModelPrices`): standard-tier list prices in USD for
+   Gemini, OpenAI, Anthropic and Mistral models, checked on 2026-10-03 against
+   [Gemini](https://ai.google.dev/gemini-api/docs/pricing),
+   [OpenAI](https://developers.openai.com/api/docs/pricing),
+   [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing) and
+   [Mistral](https://docs.mistral.ai/inference/pricing). Every Ollama model is
+   free by default (in the configured currency) because it runs locally. Moving aliases such as
+   `mistral-small-latest`, OpenAI-compatible, OpenRouter and Azure endpoints have
+   no default. The defaults are list prices: verify them against your provider
+   contract and override them where they differ.
+
+Only exact provider and model ids are priced; a dated snapshot id needs its own
+price. Saving a first price for a model in the panel also prices that model's
+earlier settled calls that ran without a price, from the "valid from" date on.
+For defaults or config prices added later, run:
+
+```bash
+php artisan filament-agentic-chatbot:price-ai-usage --dry-run
+php artisan filament-agentic-chatbot:price-ai-usage [--provider=gemini] [--model=gemini-3.5-flash]
+```
+
+It prices a settled call only when its tokens are known and no tariff was
+frozen for it, with the tariff in force at its start, and adds the amount to the
+call's monthly budget periods in the same transaction. A known amount or a frozen
+tariff is never replaced. Calls without usage data stay unpriced.
+
 ## Configured tariffs
 
 Flat tariffs remain supported for standard text calls. Their explicit integer
@@ -111,8 +164,11 @@ unsupported request dimensions prevent a hard cost reservation; actual receipt
 dimensions determine settlement. Unexpected model identities retain measured
 tokens but do not reuse the requested model's price.
 
-Bundled Gemini GenerateContent tariffs cover tokenized input modalities and
-text/thinking output, including the distinct Gemini 2.5 audio-input/cache rates.
+Default Gemini tariffs cover tokenized input modalities and text/thinking
+output, including the distinct Gemini 2.5 audio-input/cache rates. Default
+Anthropic tariffs price 5-minute and 1-hour cache writes separately, so a cache
+write without its lifetime split stays unpriced; long-context calls of Claude
+Sonnet 4 and 4.5 above 200,000 prompt tokens are left unpriced.
 Provider-hosted tool fees, cache storage duration, regional or speed surcharges,
 image-generation units, credits and taxes are not inferred from token totals.
 Observed uncovered charges leave the call cost unknown. The UI must not call
@@ -121,35 +177,13 @@ such an amount a complete or reconciled provider bill. Price sources:
 [Anthropic](https://platform.claude.com/docs/en/about-claude/pricing),
 [OpenAI service tiers](https://developers.openai.com/api/reference/resources/responses/methods/create).
 
-## Audited local non-dispatch
-
-A reviewed local middleware throw **before HTTP dispatch** can resolve a
-reservation without a provider receipt only through the separate
-`AiUsageNonDispatchReconciliationService`. The current registered proof covers
-Candidate 165 Row A call 3762: it checks the product-recorded throw-site
-fingerprint, run/row binding and unchanged attempt report with no admitted wire
-request for that call. The service requires an operator, reason and reviewed
-version, then atomically records an encrypted append-only audit and releases
-the reservation as a verified zero-dispatch amount. The operator must inspect
-the source site and attempt report before applying the preview. This path does
-not apply to timeouts, lost provider responses or other calls such as 3714.
-
-Run the additive migration first. The local qualification helper
-`scripts/qualify/ResolveCandidate165NonDispatch.php` provides a read-only
-`PREVIEW` and a version/hash-bound `APPLY` for the registered call. No provider
-request is sent by either command.
-
 ## Operator receipt review
 
-In **AI Usage**, an explicitly authorized manager can open an eligible call and
-choose **Review receipt**. The two-step action accepts verified evidence, shows
-the five counters, exact calculated amount, tariff and call version, then applies
-that reviewed result. Scope and management authorization are checked again at
-application time. The actor comes from the Filament login. The receipt is an
+A call that ended without usage data can be settled from a verified
+per-request provider receipt by a trusted server operator. The receipt is an
 operator attestation against an original per-request provider record; the plugin
-cannot authenticate a pasted document as a provider invoice.
-
-The existing CLI offers the same domain operation for trusted server operators:
+cannot authenticate a pasted document as a provider invoice. The panel shows the
+result in the call's accounting details; it offers no receipt entry.
 
 ```bash
 php artisan filament-agentic-chatbot:reconcile-ai-usage --call=<public-uuid> --evidence=/private/receipt.json
