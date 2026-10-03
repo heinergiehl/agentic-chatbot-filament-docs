@@ -16,8 +16,9 @@ recovery rules must be controlled.
 
 The editor therefore has two deliberately separate layers:
 
-1. **Setup > When to use** defines the immutable invocation contract: bounded outcome, positive
-   start rule, exclusions, and realistic matching requests.
+1. **Setup > When to use** defines the immutable invocation contract. It asks
+   what the Playbook does, when the Agent should start it, when it should not,
+   and what visitors might say (realistic matching requests).
 2. **Inputs** (on the Entry step) define the Playbook's input schema: the
    values the Agent collects before it starts the Playbook.
 3. **Steps** defines what happens only after the Agent has chosen the Playbook.
@@ -57,23 +58,27 @@ canvas edits) are listed under **Not connected** with a Remove fix.
 
 ## Starting a draft
 
-A new Playbook opens with **How should this Playbook start?**:
+**Create Playbook** asks for a name, what the Playbook does, the Agent (needed
+to test and publish) and **How do you want to start?**:
 
-- **Describe your process** creates an AI draft from a few sentences (shown
-  when draft generation is configured);
+- **Describe your process** creates an AI draft from a few sentences with the
+  Agent's AI model (the Agent is then required);
 - a template: **Callback request**, **Appointment request**, **Lead
   qualification**, **Order status**, **Return request**, **Support ticket** or
   **Quote request**;
 - **Start empty** keeps Entry only.
 
+The editor applies the choice once when it opens. A Playbook that still has
+only Entry later offers the same choices in the editor.
+
 A template adds its Entry details, fills **When to use** where it is still
 empty and connects ordinary steps as one undoable edit. It grants no
 permission and selects no resource. Every template except Order status runs on
-built-in features: the visitor confirms a card (Approval) and the case goes to
-your team through **Hand over to a person**; lead qualification first checks
-the budget and hands only a fitting lead to sales. Order status reads through a
-**Query data** step marked "Choose your orders Data Resource." until you select
-it. The canvas fits all steps into view after a template, an import or an AI
+built-in features: the visitor confirms a card (**Ask visitor to confirm**) and
+the case goes to your team through **Hand over to team**; lead qualification
+first checks the budget and hands only a fitting lead to sales. Order status
+reads through a **Query data** step; until it has data, the problem list shows
+"Choose the data this step reads." with **Choose data**. The canvas fits all steps into view after a template, an import or an AI
 draft, and on every open. A flow that would only fit below 70 % zoom opens at
 70 % with its Entry step in view; **Fit view** still shows every step.
 
@@ -82,7 +87,7 @@ Finish. Saved API operations are chosen inside **Run operation**. Entry is
 automatic; notes live in the canvas toolbar.
 
 Review generated capabilities, branches, waitpoints, and write approvals before
-publishing. AI Draft can propose structure but cannot grant dependencies.
+publishing. Describe your process can propose structure but cannot grant dependencies.
 
 ## Testing
 
@@ -183,29 +188,45 @@ Filament's `.dark` class; it does not install global CSS or Tailwind preflight.
 
 Keyboard focus, canvas zoom/pan, drag/drop, connection handles, undo/redo,
 autosave, and unsaved-state warnings remain part of the editor contract. The
-header carries the view switch, undo and redo, the problem count, Test and
-Publish; everything else (Describe your process, When to use, Variables,
-Versions, Test runs, settings, JSON export and import, full screen,
-remove all steps) is in its "..." menu.
+editor has one header. On the left: back to the Playbooks (or to the Agent's
+tools when the editor was opened from there), the name (click it to rename)
+and the save state. On the right: List or Canvas, undo and redo, the problem
+count (only when there is something to fix), **Test** and **Publish**
+(**Published** when the draft has no changes since). Everything else is in one
+"..." menu: **Playbook** (name and description, the Agent, versions, Playbook
+runs, discard unpublished changes), **Build** (Describe your process, saved
+details, download or import a Playbook file), **View** (full screen) and
+**Danger zone** (remove all steps, delete the Playbook). The header stays on one
+line: as it narrows, the List/Canvas labels, then Test, the problem label, the
+save state and finally Publish collapse to icons with tooltips; undo and redo
+stay. The rail keeps **Setup** and **Add step**.
 
 ## Problems
 
 One problem list replaces separate review counters. The header shows the
-count; **Problems** in the rail lists each finding as one sentence, for example
-"This Agent may not save data, so “Request callback” cannot run." Clicking a
-problem opens its step or setup field. Where a fix exists it is a button next
-to the sentence:
+count and opens the list; each finding is one sentence, for example "This
+Agent may not save data, so “Request callback” cannot run." Clicking a problem
+opens its step or setup field. The header, the step markers and the step panel
+read the same list: while a check runs, a fixed problem disappears at once and
+a new one appears only when the check has finished, so the count does not jump.
+The editor opens with the server's findings for the saved draft, and while the
+draft has unsaved changes the autosave reports them, so there is no separate
+first check. Where a fix exists it is a button next to the sentence:
 
 | Problem | Fix |
 |---|---|
+| No Agent uses the Playbook yet | **Choose Agent** opens the Assign Agent dialog; a blocker when a step reads data |
+| A query step has no data yet | **Choose data** lists the Data Resources the Agent may read or may be given, or **Create Data Resource** opens the form in a new tab |
 | A path has no end, or a step has no next step | **End here** adds a Result |
 | A step is not connected | **Remove** |
 | A step saves data without an Approval before it | **Ask first** adds an Approval before the step |
 | The linked Agent may not save (or read) data | **Allow saving** / **Allow reading** |
 
-The Agent fixes change only the Agent's saved draft through the same settings
-boundary as the Agent editor (Agent edit permission, compare-and-set baseline)
-and never publish the Agent. Publication validation and
+The Agent fixes (permissions, a Data Resource for a query step) change only the
+Agent's saved draft through the same settings boundary as the Agent editor
+(Agent edit permission, compare-and-set baseline, assignment policy) and never
+publish the Agent. Choosing data also filters the query by a collected Entry
+detail whose name matches a filter field. Publication validation and
 `PlaybookInputSchema` stay the authority; the server sends each finding with a
 stable `code` and, where it has one, an `action` the editor maps to its fix.
 Steps show only a small marker with their problem count.
