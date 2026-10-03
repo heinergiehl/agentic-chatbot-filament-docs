@@ -87,6 +87,7 @@ This release overhauls the plugin. Breaking changes are allowed in the `0.x` lin
 
 - One navigation group with **Build** (Agents, Playbooks, Knowledge), **Connect** (Channels, APIs & MCP, Data, Webhooks, and an overview with access tokens), **Inbox** (handoffs waiting for an operator and pending action reviews, one badge) and **Insights** (Conversations, Submissions, Usage). The plugin class configures group, sort, shown sections, labels and icons. Playbook runs are listed on each Playbook and conversation. Conversations stay in the menu; a denied user sees "No access to conversations". Action reviews open on pending ones with readable names.
 - Admin text uses namespaced PHP translation files with semantic keys, one file per area, publishable with `php artisan vendor:publish --tag=filament-agentic-chatbot-translations` and overridable per key. English and German are complete; French and Spanish cover every admin, runtime, widget and editor text by machine translation (not reviewed by native speakers). Helper texts and disclaimers that restated the obvious were removed, and release jargon replaced.
+- The turn inspector, the conversation page's diagnostics, Knowledge error notices and Playbook version summaries are translated; label and value lines on the Agent's Website tab follow each language's punctuation.
 - Upgrade note (breaking): `UiText`, the SHA-1 `raw` keys and the old `filament-agentic-chatbot.php` group files are removed; republish translation files and move overrides to the new keys. Overrides for removed keys are ignored.
 
 ### Removed
