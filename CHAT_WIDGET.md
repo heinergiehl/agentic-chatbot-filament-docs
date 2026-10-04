@@ -31,8 +31,8 @@ Per bot, you can customize all of these from the Filament panel:
 | **Title**             | Header text in the chat panel                | "Support Assistant"             |
 | **Subtitle**          | Smaller text below the title                 | "Always here to help"           |
 | **Welcome message**   | Greeting in an empty conversation           | "Hi! How can I help you today?" |
-| **Empty-state hint**  | Short guidance below the welcome heading     | "Choose a topic or ask freely." |
-| **Conversation starters** | Up to four titled prompts with optional icons | "Track my order"              |
+| **Empty-state hint**  | Optional line below the welcome heading      | "Answers within seconds."       |
+| **Conversation starters** | Up to eight titled prompts with optional icon and group | "Track my order"    |
 | **Avatar**            | Agent image or the built-in fallback         | `/images/support-agent.png`      |
 | **Accent color**      | Primary color for the header and send button | `#f97316` (orange)              |
 | **Template**          | Visual style preset (see below)              | `aurora`                        |
@@ -46,17 +46,22 @@ Per bot, you can customize all of these from the Filament panel:
 
 ### Conversation Starters And Icons
 
-A conversation starter has three fields:
+A conversation starter has four fields:
 
-- `label`: the short title visible in the empty state
-- `prompt`: the exact visitor message sent when the starter is selected
+- `label`: the short title on the chip (up to 40 characters)
+- `prompt`: the exact visitor message sent when the chip is selected (up to 180 characters)
 - `icon`: an optional semantic key from the safe icon list
+- `group`: an optional short heading such as "Explore" or "Feedback" (up to 24 characters)
 
-The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. The widget renders at most four starters, uses native buttons, and sends the selected prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
+An Agent has up to eight starters. The empty state shows them as compact chips: the label and icon are visible, the prompt is the chip's tooltip and accessible description. The first four show at once; **More suggestions** reveals the rest and moves focus to the first new chip. Starters with a group appear under that heading, groups in the order they first appear and ungrouped starters first; without groups the chips are one flat list. Labels are inserted as text and stay on one line.
+
+After the first message the starters leave the conversation. A **Suggestions** button next to the message input (hidden when the Agent has none, during a handoff and disabled while a turn runs) opens them as a panel over the bottom of the message list: a flat list of at most two rows, with **More suggestions** for the rest. Choosing a chip sends its prompt and closes the panel; Escape or a click elsewhere closes it and returns focus to the button.
+
+The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. Chips are native buttons and send the prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
 
 The Website tab keeps access, code, installation guidance, and appearance together. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; area overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
 
-Starter titles and prompt descriptions wrap to remain readable. Keep the welcome message and starter labels concise so visitors can scan the choices. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
+Keep the welcome message and starter labels short so visitors can scan the choices; a long label ends with an ellipsis on a narrow chip. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
 
 Long welcome messages appear as body text below the localized “How can I help?” heading. The configured message is preserved in full. Short greetings remain the heading. All twelve templates share this hierarchy and the compact header actions, with template-specific colors and geometry in light and dark mode. The subtitle is descriptive text without an animated availability indicator.
 
@@ -75,7 +80,7 @@ Developers can extend the safe list in the published configuration. The icon val
 ],
 ```
 
-Existing `quick_prompts` string lists are accepted when an older bot is loaded. The next save writes the structured `conversation_starters` format.
+The former `quick_prompts` string list is no longer read. The migration `move_widget_quick_prompts_to_conversation_starters` rewrites stored widget settings (base, areas and area overrides) to `conversation_starters` once.
 
 ## File Attachments
 
@@ -92,6 +97,18 @@ hashes to the durable `client_turn_id`, and stores files on a private disk. It
 rejects an unknown or unverified model capability instead of silently dropping
 the file. Supported defaults are JPEG, PNG, WebP, PDF, JSON, CSV, Markdown, and
 UTF-8 plain text.
+
+Files also arrive by paste and drop. Ctrl/Cmd+V in the message field adds
+pasted files and images (a screenshot without a file name is called
+`screenshot-YYYY-MM-DD-HHMM.png`); files dropped on the open panel are added
+the same way, with a "Drop files to attach" overlay while they are dragged
+over it. Both use the picker's checks and messages. Pasted text is never
+touched: a clipboard with text and an image pastes the text. Pending images
+show a small thumbnail (an object URL, revoked on remove, send and unmount);
+every other file keeps the plain chip, and names are always inserted as text.
+When attachments are off for the Agent, or the composer is busy, paste is
+ignored and a dropped file is neither added nor reported, but the browser is
+still kept from opening it in place of the page.
 
 ```env
 AGENTIC_CHATBOT_ATTACHMENTS_ENABLED=true
@@ -115,15 +132,16 @@ status lines, errors, cards, progress labels, handoff states) come from
 `resources/lang/{locale}/widget.php` for the Agent's widget language; English
 and German are complete, French and Spanish are shipped too. A text field left
 empty in the Website tab (title, subtitle in **Standard** mode, welcome
-message, empty-state hint, input placeholder) shows the translated default.
+message, input placeholder) shows the translated default; an empty hint
+shows nothing.
 Texts you write are shown as written, so write them in the widget language.
 
 When the live Agent version allows several languages and the Agent has no
 written visitor texts (welcome message, hint, placeholder, custom subtitle or
 conversation starters), the widget follows the visitor's browser language
-among those languages. Otherwise it keeps the widget language. The
-"Choose a suggestion" line appears only when conversation starters exist; a
-written hint always appears. Answers follow the visitor's language within the
+among those languages. Otherwise it keeps the widget language. Only a
+written hint appears; the widget adds no default hint next to the starters.
+Answers follow the visitor's language within the
 Agent's languages independently of the widget texts.
 
 To change a built-in text, publish the translations and edit

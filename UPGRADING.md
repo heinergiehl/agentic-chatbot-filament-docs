@@ -120,6 +120,7 @@ The migrations, among others:
 | `AgentDeploymentPublisher::publishCandidate` | `persist`; `AgentReleaseService` offers `publish`, `restore` and `versions` |
 | Agent Access Token `*` | does not grant the new read API scopes (`submissions:read`, `conversations:read`, `handoffs:read`) |
 | `UiText` and `filament-agentic-chatbot.php` translation file | namespaced area files; republish with `--tag=filament-agentic-chatbot-translations` and move overrides to the new keys |
+| Widget `quick_prompts`, plain-string starters | `conversation_starters` objects (`label`, `prompt`, optional `icon` and `group`, up to 8); the migration converts stored settings, host Solution Kits must use the objects |
 
 New settings: `CHAT_STREAM_RELAY_SECONDS` and `CHAT_STREAM_CACHE_STORE`,
 `OUTBOUND_WEBHOOK_CONVERSATION_IDLE_MINUTES` (default 30),

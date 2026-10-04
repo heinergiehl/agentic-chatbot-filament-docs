@@ -109,7 +109,7 @@ Add a chatbot to your website or product frontend using the generated script sni
 
 *The widget's welcome screen, captured from the local demo. Set your own branding and conversation starters in Filament.*
 
-The browser integration includes streaming responses, private attachments, bounded page context, and a typed widget SDK with lifecycle events for application integration.
+The browser integration includes streaming responses, private attachments (picker, paste or drop, with image thumbnails), up to eight conversation starters shown as compact chips, bounded page context, and a typed widget SDK with lifecycle events for application integration.
 
 After creating and testing an Agent, copy its generated embed snippet into your website layout. It has this form:
 

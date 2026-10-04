@@ -92,9 +92,13 @@ publishing. Describe your process can propose structure but cannot grant depende
 ## Testing
 
 **Test** in the header opens the test chat beside the steps. It runs the saved
-draft directly (not the Agent's choice of tools): fill the details of Entry,
-write the visitor's first message, and confirm cards as a visitor would. The
-step the run waits at is highlighted in the step list and on the canvas. Reads
+draft directly (not the Agent's choice of tools): write the visitor's message
+and confirm cards as a visitor would. As in a chat, the linked Agent's model
+fills Entry's details from what the visitor wrote (one extra model call per
+start, recorded in AI usage) and the server checks them; a missing or invalid
+value gets a short question, and the next message is read together with the
+earlier ones. The **Details** fields are optional: a value typed there wins over
+the message. The step the run waits at is highlighted in the step list and on the canvas. Reads
 use live data; nothing is saved: the Gateway blocks every write of a test and
 the step continues as simulated ("Test: nothing was saved."). **Play sample**
 starts a run with the first **When to use** example and sample details for

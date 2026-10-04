@@ -454,8 +454,14 @@ authorizes capability replay.
 
 ## Capability And Side-Effect Boundary
 
-Direct read tools and Playbook nodes do not receive ambient permission. A
-direct read is authorized only by the exact verified Agent deployment pin bound
+Direct read tools and Playbook nodes do not receive ambient permission.
+
+A Playbook Connector's Agent read/write permission follows its verified published
+operation effect, including MCP reads transported with HTTP POST. Raw HTTP
+steps still derive their permission from the HTTP method. Mutable node fields
+cannot override the pinned Connector effect; an unresolved contract fails closed.
+
+A direct read is authorized only by the exact verified Agent deployment pin bound
 to that admitted turn; activating a newer deployment does not mutate an
 already-running turn. At
 Playbook execution time,
