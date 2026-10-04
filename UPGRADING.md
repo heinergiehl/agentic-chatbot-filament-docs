@@ -46,8 +46,16 @@ not converted.
 
 ### 3. Update and migrate
 
+A configuration file published from 0.19.x calls
+`QualityOperationsConfiguration`, which 0.20.0 removes, so the application
+cannot boot with it. Move it aside before updating, publish the new file and
+carry your changes over (the table in step 6 lists renamed keys):
+
 ```bash
+mv config/filament-agentic-chatbot.php config/filament-agentic-chatbot.php.0.19
 composer update heiner/filament-agentic-chatbot
+php artisan vendor:publish --tag=filament-agentic-chatbot-config
+# re-apply your changes from config/filament-agentic-chatbot.php.0.19, then delete it
 php artisan migrate
 php artisan filament:assets
 php artisan config:clear && php artisan view:clear && php artisan route:clear

@@ -35,7 +35,7 @@ The widget streams answers while the queue worker runs the turn (ADR 0042), supp
 
 1. Back up the application database and the plugin's PostgreSQL connection, and keep the 0.19.0 package and configuration.
 2. Pause public chat, let open Playbook runs and confirmation cards finish, and stop queue workers.
-3. Install 0.20.0, run `php artisan migrate`, refresh Filament assets, clear caches and run Doctor.
+3. Move a published `config/filament-agentic-chatbot.php` aside (it references a class 0.20.0 removes), install 0.20.0, publish the new configuration and carry your changes over, then run `php artisan migrate`, refresh Filament assets, clear caches and run Doctor.
 4. Run the Laravel scheduler every minute, a queue worker for the `agentic-chat` queue, and a cache store shared by web and queue processes.
 5. Publish every Playbook, then every Agent, after checking Safety, Built-in tools and the confirmation switch of each assigned write. Recreate important former quality scenarios as Agent tests.
 
