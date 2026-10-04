@@ -152,7 +152,8 @@ texts, so browsers load the new script.
 ## Appearance On Host Pages
 
 The panel is opaque on every template, so host content never shows through
-it. The widget switches to its dark palette when the host page has a `dark`
+it. Host CSS on bare elements (such as `p { color: gray }`) does not change the
+widget's text colors or sizes. The widget switches to its dark palette when the host page has a `dark`
 class or `data-theme="dark"` on an ancestor, as Filament panels do. Text,
 cards, confirmation cards and progress labels meet WCAG AA contrast in light
 and dark; links and the Confirm and Submit buttons derive an AA-readable shade

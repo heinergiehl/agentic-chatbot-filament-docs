@@ -4,6 +4,15 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.2] - 2026-10-04
+
+A drop-in update of the 0.20 line: no migrations and no configuration changes. The widget script version changes, so browsers load the new widget.
+
+### Widget
+
+- Answers use the full width of the panel: a sender line above the answer shows the Agent's avatar, name and time ("Support team" for operator replies), and the avatar column beside the answer is gone. In the normal panel size the answer text is about a sixth wider, and lists, nested lists and quotes take less room, so long answers need less scrolling. Visitor messages keep their right-aligned bubble without an avatar.
+- Widget text keeps its own colors and sizes when the host page styles bare elements such as `p` or `li` (for example a global gray paragraph color made answer headings gray).
+
 ## [0.20.1] - 2026-10-04
 
 A drop-in update of the 0.20 line: no migrations and no configuration changes. The widget script version changes, so browsers load the new widget.

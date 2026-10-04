@@ -4,6 +4,15 @@ This document covers required steps when upgrading between public releases.
 Start with the section for the release you are moving to; older sections stay
 below for hosts that skip releases.
 
+## Upgrading to v0.20.2
+
+This covers the move from `0.20.0` or `0.20.1` to `0.20.2` ([CHANGELOG.md](CHANGELOG.md)).
+It is a drop-in update: run `composer update heiner/filament-agentic-chatbot`.
+There are no migrations and no configuration changes. Widget answers now take
+the full panel width under a sender line with the Agent's avatar, name and time;
+host CSS that targeted `.frw-assistant-wrap .frw-avatar` or `.frw-sender-label`
+no longer has an element to style.
+
 ## Upgrading to v0.20.1
 
 This covers the move from `0.20.0` to `0.20.1` ([CHANGELOG.md](CHANGELOG.md)).
@@ -881,7 +890,7 @@ Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequired
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.20.1`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
+The current Commercial Early Access release is **`v0.20.2`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
