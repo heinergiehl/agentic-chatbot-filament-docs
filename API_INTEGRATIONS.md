@@ -112,7 +112,6 @@ The endpoint returns the final Agent message in a stable JSON shape. If the Agen
 | `403` | `bot_access_token_revoked` | Token was revoked and cannot be reactivated. |
 | `403` | `bot_access_token_forbidden` | Token is for another bot, area, or ability. |
 | `422` | `area_not_allowed` | The bot itself does not allow the requested area. |
-| `422` | `ai_input_token_limit_exceeded` | Prompt was blocked before the provider call. |
 | `409` | `chat_turn_input_mismatch` | The supplied turn ID was already used for a different request. |
 | `409` | `conversation_turn_in_progress` | Another turn currently owns this conversation. Retry after it finishes. |
 | `409` | `chat_turn_outcome_unknown` | The previous outcome cannot be proven; the server refuses unsafe automatic re-execution. |
@@ -122,6 +121,8 @@ The endpoint returns the final Agent message in a stable JSON shape. If the Agen
 | `429` | `ai_bot_monthly_cost_budget_exceeded` | Bot monthly cost budget is exhausted. |
 | `429` | `ai_access_token_monthly_cost_budget_exceeded` | Access token monthly cost budget is exhausted. |
 | `429` | `ai_cost_budget_pricing_missing` | A cost budget is configured but provider/model pricing is missing, so the request is blocked fail-closed. |
+
+A turn whose request does not fit the token's or the Agent's input token limit is not an HTTP error. It returns `200` with a fixed notice that the conversation has become too long; no model answer is generated and the turn is not retried.
 
 ## Laravel HTTP Client Example
 

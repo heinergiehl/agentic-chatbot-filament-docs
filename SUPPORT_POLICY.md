@@ -27,16 +27,16 @@ Priority depends on a reproducible report containing plugin version, Laravel/Fil
 
 ## SemVer before 1.0
 
-- Patch releases (`0.19.x`) are intended to be backward compatible defect and security fixes for the same minor line.
+- Patch releases (`0.20.x`) are intended to be backward compatible defect and security fixes for the same minor line.
 - Minor releases (`0.x.0`) may contain breaking runtime, configuration, schema, or public-API changes. Every breaking change must be in `CHANGELOG.md`, `UPGRADING.md`, and the versioned release notes.
 - Deprecated productive paths are not kept indefinitely. A deprecation period is provided only when the release notes explicitly name it.
 - Security fixes may remove an unsafe path without a normal deprecation window.
 
 ## Supported lines and EOL
 
-- Current target line: `0.19` (approved for local production assurance; buyer-visible only after release publication).
-- Previous line: `0.18` security/critical EOL: `2026-12-04`.
-- The previously announced `0.17` security/critical EOL remains `2026-12-03`.
+- Current line: `0.20`.
+- Previous line: `0.19` security/critical EOL: `2027-01-02`.
+- The previously announced `0.18` security/critical EOL remains `2026-12-04` and the `0.17` EOL remains `2026-12-03`.
 - The current minor receives supported defect and security fixes. The immediately previous minor receives critical/security fixes for 90 days after its successor is released; other fixes require upgrading.
 - Older minors and prereleases are EOL. They may continue to run, but no fix, compatibility, or security claim is made.
 - A future successor's release notes must publish the resulting EOL date. Material EOL changes require at least 60 days' notice unless an urgent security or upstream compatibility issue makes continued support unsafe.

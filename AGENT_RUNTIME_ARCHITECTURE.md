@@ -516,6 +516,16 @@ has baseline protection only, which is what the default settings mean.
 - Topic limits (`only_topics`, `never_topics`, at most 500 characters each)
   are model-interpreted: `SystemPrompt` adds them as topic rules after the
   assistant profile. They are not a deterministic guarantee.
+- Strict topic mode (`strict_topics`, `off_topic_message`; ADR 0044) adds
+  firm scope rules and `TopicScopeGate`: one small model call before the loop
+  (stage `scope_gate`). Out of scope, the runner commits the refusal without
+  the loop (`decision` and `scope_gate` `out_of_scope`); a failed call
+  continues under the strict rules (`scope_gate: failed`). Replies to a
+  Playbook run that waits for the visitor and messages without text skip
+  the gate. A card decision is settled before the gate; its text is checked,
+  and off topic it gets the fixed outcome without the loop
+  (`confirmation_outcome`, `scope_gate: out_of_scope`). The keys are
+  in the contract only when the mode is on.
 - Blocked words and phrases (at most 40, 120 characters each) match whole
   words, case-insensitively and Unicode-aware (`TermMatcher`); a trailing `*`
   matches word beginnings. They apply to visitor messages, answers or both.

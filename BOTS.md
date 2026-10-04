@@ -107,6 +107,22 @@ they were published with.
 - **Only talk about** and **Never talk about** describe topics in plain
   language. They become rules in the Agent's instructions, so the model
   applies them; they are not a hard filter.
+- **Stay strictly on topic** (off by default) makes **Only talk about** the
+  Agent's scope and requires it; what the Agent's tools, Playbooks and
+  knowledge cover also counts. Before each answer a short check with the
+  Agent's own model decides whether the message is in scope. A message
+  outside it gets the **Refusal for other topics** (empty uses a translated
+  default) without tools or a model answer. Greetings, thanks, questions
+  about the Agent and follow-ups still get normal replies. The check costs
+  one small model call per message (stage `scope_gate` in Usage); if it
+  fails, the Agent answers under strict instructions instead. Replies to a
+  Playbook that waits for the visitor are not checked. A Confirm or Cancel
+  on a card always takes effect; text sent with it is checked, and when it
+  is off topic the visitor gets the fixed outcome message instead of a model
+  answer. The check reads only the message text: a message with
+  only an attachment is not checked, and the content of attached files is
+  left to the strict instructions.
+  See [ADR 0044](adr/0044-strict-topic-scope-gate.md).
 - **Blocked words** are matched as whole words, ignoring case: "Ass" does not
   match "Assistent". End a word with `*` to also match longer words
   ("Konkurrenz*"). Choose whether visitor messages, answers or both are

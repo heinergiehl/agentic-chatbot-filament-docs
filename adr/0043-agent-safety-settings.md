@@ -37,7 +37,9 @@ for a handful of checkboxes was also more setup than the checks were worth.
    without `safety` keep baseline protection only.
 3. **Topic limits are instructions.** They are bounded (500 characters each)
    and rendered by `SystemPrompt` as topic rules. Meaning is interpreted by the
-   model; no deterministic check claims to enforce them.
+   model; no deterministic check claims to enforce them. Amended by ADR 0044:
+   strict topic mode adds firm scope rules and a scope gate before the Agent
+   loop; its keys enter `contract.safety` only when the mode is on.
 4. **Deterministic checks are precise.** Blocked terms match whole words,
    case-insensitively and Unicode-aware, with an optional trailing `*` for
    word beginnings (`TermMatcher`). Personal data detection

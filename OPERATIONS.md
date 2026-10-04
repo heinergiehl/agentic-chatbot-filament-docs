@@ -503,7 +503,7 @@ The source form displays setup guidance when File Upload is selected and the
 configuration is invalid. File submission stays blocked until repaired; Manual
 Text, URL, and API Source remain usable. Pre-1.0 public files require the explicit
 `filament-agentic-chatbot:migrate-knowledge-source-files` dry run and reviewed
-`--execute` cutover described in [UPGRADING.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#unreleased-private-knowledge-source-uploads).
+`--execute` cutover described in [UPGRADING.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#0200-private-knowledge-source-uploads).
 
 ## Health Check
 

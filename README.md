@@ -6,7 +6,7 @@ This repository is the public documentation source. The Filament marketplace has
 
 The files here mirror the package's canonical docs; `scripts/release/docs-drift-check.php` in the package lists the mirrored guides and fails when a copy differs. Keep the marketplace page independent of the package release number.
 
-The last published release is `v0.19.0`. **Release status:** Approved. Only the local exact-source and exact-artifact release authority may publish the buyer-visible release; the GitHub release and attached archive are authoritative. These guides describe the package including the changes listed under **Unreleased** in the [changelog](CHANGELOG.md), which ship with the next release.
+The current release is `v0.20.0`. **Release status:** Approved. The GitHub release and its attached archive are authoritative. These guides describe `v0.20.0`; changes listed under **Unreleased** in the [changelog](CHANGELOG.md) ship with the next release.
 
 ## What the package provides
 
@@ -36,7 +36,7 @@ Docker is used for reproducible release validation, not imposed as a customer de
 
 ```bash
 composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.19
+composer require heiner/filament-agentic-chatbot:^0.20
 ```
 
 Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel before running the installer:
@@ -104,14 +104,14 @@ Reference and release:
 - [Agent runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md) and [AgentGraph SDK usage](AGENTGRAPH_SDK_USAGE.md)
 - [Compatibility and certification](COMPATIBILITY.md)
 - [Upgrade guide](UPGRADING.md) and [Changelog](CHANGELOG.md)
-- [Release notes v0.19.0](RELEASE_NOTES_v0.19.0.md)
+- [Release notes v0.20.0](RELEASE_NOTES_v0.20.0.md)
 - [Shipping checklist](SHIP_CHECKLIST.md)
 - [Support](SUPPORT_POLICY.md) and [Refund and license terms](REFUND_AND_LICENSE.md)
 - [Marketplace product page](FILAMENT_PLUGIN_PAGE.md)
 
-## Next release boundary
+## Upgrading to 0.20.0
 
-The next release overhauls the plugin: one transcript-based Agent loop, writes with visitor confirmation, built-in handoff and lead capture, one-step publish with restore, Agent tests, Safety settings, Playbooks as tools with a step-list editor, streaming, shared knowledge and connections, webhook events and a read API. It is a breaking upgrade: Quality Tests, Guardrail Policies and the release candidate flow are removed, the scheduler and a shared cache are required, and every Playbook and Agent must be published again. Read [Upgrading](UPGRADING.md) before installing it.
+`v0.20.0` overhauls the plugin: one transcript-based Agent loop, writes with visitor confirmation, built-in handoff and lead capture, one-step publish with restore, Agent tests, Safety settings, Playbooks as tools with a step-list editor, streaming, shared knowledge and connections, webhook events and a read API. It is a breaking upgrade: Quality Tests, Guardrail Policies and the release candidate flow are removed, the scheduler and a shared cache are required, and every Playbook and Agent must be published again. Several migrations drop tables and columns and cannot be rolled back, so back up the database first. Read [Upgrading](UPGRADING.md) before installing it.
 
 ## Support and license
 

@@ -34,6 +34,14 @@ to get an answer.
   **Create test** for negative feedback and for a question the knowledge did
   not answer.
 - **By hand:** **Tests > New test**.
+- **Off-topic checks:** when **Stay strictly on topic** is on in the draft,
+  **Add off-topic checks** creates one test with four typical off-topic
+  requests (a poem, Python decorators, an election, a recipe) and one request
+  built from the scope text, in the Agent's default language. Each off-topic
+  answer must contain the first sentence of the refusal (the Agent's own
+  text or the translated default); the in-scope answer must not. The checks
+  are text checks, so a run needs no grading call. Edit the requests when
+  they belong to the Agent's topics.
 
 A new test opens for editing, so you can add text checks or a rubric.
 

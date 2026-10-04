@@ -4,18 +4,19 @@ This document covers required steps when upgrading between public releases.
 Start with the section for the release you are moving to; older sections stay
 below for hosts that skip releases.
 
-## Upgrading to the overhauled version
+## Upgrading to v0.20.0
 
-This covers the move from `0.19.x` to the next release, listed as
-**Unreleased** in [CHANGELOG.md](CHANGELOG.md). It is a breaking upgrade:
-plan a maintenance window, and expect to publish every Playbook and Agent
-again. Old test and demo records that no longer fit (quality scenarios,
-guardrail policies, candidate test evidence) are dropped, not converted.
+This covers the move from `0.19.x` to `0.20.0` ([CHANGELOG.md](CHANGELOG.md)).
+It is a breaking upgrade: plan a maintenance window, and expect to publish
+every Playbook and Agent again. Old test and demo records that no longer fit
+(quality scenarios, guardrail policies, candidate test evidence) are dropped,
+not converted.
 
 ### 1. Before you update
 
 1. Back up the application database and the plugin's PostgreSQL connection,
-   and keep the old package version and configuration for a rollback.
+   and keep the old package version and configuration. The backup is the only
+   way back (see "Rollback" below).
 2. Note host customizations that change: published translation files, a
    published `widget/script.blade.php`, a host `AdminAuthorizationQueryScope`
    for knowledge sources, custom channel drivers, and code that calls
@@ -140,6 +141,18 @@ connections get such writes only with their webhook secret configured.
 - Check **Insights > Usage > Model prices** and set prices for models without
   a default before relying on cost budgets.
 
+### Rollback
+
+Several 0.20.0 migrations drop tables and columns (quality scenarios and runs,
+guardrail policies, candidate evidence, the former knowledge source owner
+column, `ai_usage_non_dispatch_resolutions`) or rewrite stored settings. Their
+data cannot be rebuilt: `php artisan migrate:rollback` stops at these
+migrations or leaves the removed data gone, and 0.20.0 makes no rollback claim
+for them.
+To go back, stop web and queue processes, restore the backup taken in step 1,
+reinstall the 0.19.0 package with its configuration and published assets, and
+clear the caches. Data written after the upgrade is lost by the restore.
+
 ---
 
 ## Earlier changes in this release
@@ -147,7 +160,7 @@ connections get such writes only with their webhook secret configured.
 The sections below record changes made before the overhaul that ship in the
 same release. Run their steps as part of the migration above.
 
-## Unreleased: private knowledge source uploads
+## 0.20.0: private knowledge source uploads
 
 Older published configurations may contain only `knowledge_sources.authorization`.
 Missing upload settings now resolve to disk `local`, visibility `private`, and
@@ -191,7 +204,7 @@ Existing source-owned files are skipped when their private contract is valid.
 See [Knowledge source file storage](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#knowledge-source-file-storage)
 for ongoing checks.
 
-## Unreleased: concrete Playbook write approval
+## 0.20.0: concrete Playbook write approval
 
 Explicit Approval steps now capture and show the exact downstream action before
 waiting for the visitor. The prepared request stays immutable; a trusted input
@@ -200,7 +213,7 @@ request and another confirmation. Pending approvals created by older code have
 no captured request and cannot grant a write silently after the upgrade. The
 existing engine confirmation at the write step obtains the required proof.
 Custom button labels and cancellation retain their authored behavior.
-## Unreleased: governed Data Resource writes
+## 0.20.0: governed Data Resource writes
 
 Run `php artisan migrate` to add the append-only Data Resource staging-evidence
 table before importing evidence or publishing a write Playbook. Configure a
@@ -228,7 +241,7 @@ write ledgers, unknown outcomes and evidence remain retained. A rollback with
 stored evidence requires restoring a verified backup; it cannot silently drop
 that history. See [runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md).
 
-## Unreleased: remote MCP connections
+## 0.20.0: remote MCP connections
 
 Run package migrations before opening Connector administration. The additive
 MCP migration adds `api_connectors.transport` (existing rows default to `http`)
@@ -292,7 +305,7 @@ Remove their deployment dependencies and connections first, or restore a verifie
 backup with its matching package version. See [MCP Data Sources](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md)
 for setup, provider-specific prerequisites and the supported protocol subset.
 
-## Unreleased: verifiable usage and configured token costs
+## 0.20.0: verifiable usage and configured token costs
 
 New calls retain the exact tariff, provider/model identity, currency, unit scale
 and integrity hash in `AiUsageCall.meta.pricing_snapshot` before dispatch.
@@ -346,7 +359,7 @@ provider invoices or a claim to include account credits, taxes, storage,
 provider-hosted tool fees or other charges. See
 [AI usage reconciliation](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md#ai-usage-reconciliation).
 
-## Unreleased: explicit task context and model-step budgets
+## 0.20.0: explicit task context and model-step budgets
 
 The runtime now supplies capability-specific instructions only when those tools
 are available. Conversation summaries preserve their newest bounded turn records.
@@ -851,7 +864,7 @@ Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequired
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.19.0`**. **Release status:** Approved. Only the local exact-source and exact-artifact release authority may publish its buyer-visible artifact.
+The current Commercial Early Access release is **`v0.20.0`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 

@@ -84,6 +84,15 @@ Agent version; `WorkflowSafetyBoundary` enforces it.
   data-minimization aid, not a guarantee.
 - Blocked words match whole words; topic limits are model instructions, not
   deterministic filters.
+- Strict topic mode adds a scope check before the Agent loop: one call to the
+  Agent's own provider with the scope text, the names and descriptions of the
+  Agent's tools, the knowledge source names, the previous answer and the
+  visitor's message, recorded in usage as `scope_gate`. Its decision is a
+  model judgment, not a guarantee. It fails open: when the check fails, the
+  Agent answers under strict instructions. An off-topic message gets the
+  refusal without tools, so nothing is read or written for it. Attachments
+  are not sent to the check: a message with only an attachment skips it,
+  and what a file asks for is left to the strict instructions.
 - Built-in checks for instruction overrides, credentials and prompt leakage
   cannot be switched off.
 
