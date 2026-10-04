@@ -14,6 +14,10 @@ A drop-in update of the 0.20 line: no migrations and no configuration changes. T
 - Until the first words arrive, the status line shows the elapsed time from the third second on, for example "Thinking… · 7s".
 - On screens wider than 640 px, **Expand chat** in the header turns the panel into a tall panel above the launcher (`clamp(560px, 46vw, 760px)` wide, `--fac-expanded-width` to change it); Escape or **Collapse chat** restores it, and the choice is remembered per Agent and area. Hide the button with `data-expandable="false"`, the component's `:expandable="false"` or the SDK option `expandable: false`.
 
+### Installation
+
+- `filament-agentic-chatbot:install` ends with the current next steps (create an Agent, try it with **Test**, then **Publish** it) instead of the removed release candidate flow.
+
 ## [0.20.0] - 2026-10-04
 
 This release overhauls the plugin. Breaking changes are allowed in the `0.x` line; follow "Upgrading to v0.20.0" in [UPGRADING](UPGRADING.md) and publish every Agent and Playbook again. Several migrations drop tables and columns and cannot be rolled back: back up the database first; the way back is restoring that backup with the 0.19.0 package.
