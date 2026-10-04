@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.3] - 2026-10-04
+
+A drop-in update of the 0.20 line: no migrations and no configuration changes. The Playbook editor script version changes, so browsers load the new editor.
+
+### Playbook editor
+
+- The Canvas view draws the **Approved** and **Declined** branches of an "Ask visitor to confirm" step when the Playbook stores them under the runtime names `valid` and `invalid`, as the List view already did. AI task branches stored as `success`, `default` or `error` attach to the handles their card shows. Opening or moving steps on the Canvas keeps the stored branch names unchanged.
+
 ## [0.20.2] - 2026-10-04
 
 A drop-in update of the 0.20 line: no migrations and no configuration changes. The widget script version changes, so browsers load the new widget.

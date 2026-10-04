@@ -21,25 +21,25 @@ GitHub Actions is intentionally disabled with `on: []` in both workflow stubs. P
 3. Commit and push the approved package candidate to the repository's default branch. Do not create or push a version tag.
 4. On that exact approved clean commit, resolve one Composer graph and build the exact candidate ZIP as described in `docs/RELEASE_ASSURANCE.md`.
 5. Install that ZIP from package HEAD into the local Docker/PostgreSQL reference host. Capture fresh screenshots and run the Golden Path, public widget smoke, real Agent chat, Agent/Playbook execution, queue processing, and trace inspection. Run `npm --prefix tests/e2e run test:playbook-editor` when the changed boundary requires it. Retain its machine-readable `reference_host_candidate` report.
-6. Run `composer release:record-evidence -- --version=0.20.2 --candidate-host-evidence=/absolute/path/to/reference-host-candidate.json --output=build/release/local-release-evidence-0.20.2.json`. The helper requires approved status, executes the local gates itself, including `composer assurance:docs-drift`, and writes passing machine-readable envelopes only for commands that exit successfully. It binds report hashes, source commit, Composer lock, and commercial ZIP without hand-edited pass state.
+6. Run `composer release:record-evidence -- --version=0.20.3 --candidate-host-evidence=/absolute/path/to/reference-host-candidate.json --output=build/release/local-release-evidence-0.20.3.json`. The helper requires approved status, executes the local gates itself, including `composer assurance:docs-drift`, and writes passing machine-readable envelopes only for commands that exit successfully. It binds report hashes, source commit, Composer lock, and commercial ZIP without hand-edited pass state.
 7. Confirm the working tree is clean, HEAD is the default branch's exact upstream commit, `gh auth status` passes, and no local tag, remote tag, draft release, or published release exists for the version. The publisher repeats these checks.
 8. Prepare the tag and draft Release, without a `v` prefix in the version:
 
 ```bash
 composer release:publish-local -- \
   --phase=prepare \
-  --version=0.20.2 \
+  --version=0.20.3 \
   --evidence=/absolute/path/to/local-release-evidence.json
 ```
 
 9. Confirm preparation reports `status: "prepared"`. The tag now exists and the three byte-verified assets remain in a draft Release. Nothing is buyer-visible through the Release yet.
-10. Deploy exact tag `v0.20.2` to VPS staging. Require the exact package commit and ZIP digest plus passed migrations, Doctor, Widget, and Agent/Playbook checks. Retain the machine-readable staging report with exact host commit and lock digest.
+10. Deploy exact tag `v0.20.3` to VPS staging. Require the exact package commit and ZIP digest plus passed migrations, Doctor, Widget, and Agent/Playbook checks. Retain the machine-readable staging report with exact host commit and lock digest.
 11. Finalize the draft:
 
 ```bash
 composer release:publish-local -- \
   --phase=finalize \
-  --version=0.20.2 \
+  --version=0.20.3 \
   --evidence=/absolute/path/to/local-release-evidence.json \
   --staging-evidence=/absolute/path/to/vps-staging-evidence.json
 ```
