@@ -4,6 +4,15 @@ This document covers required steps when upgrading between public releases.
 Start with the section for the release you are moving to; older sections stay
 below for hosts that skip releases.
 
+## Upgrading to v0.20.1
+
+This covers the move from `0.20.0` to `0.20.1` ([CHANGELOG.md](CHANGELOG.md)).
+It is a drop-in update: run `composer update heiner/filament-agentic-chatbot`.
+There are no migrations and no configuration changes. The widget script
+version changes with the release, so browsers load the new widget. A host
+that wants to keep the panel at its normal size sets `data-expandable="false"`
+on the script tag or `:expandable="false"` on the Blade component.
+
 ## Upgrading to v0.20.0
 
 This covers the move from `0.19.x` to `0.20.0` ([CHANGELOG.md](CHANGELOG.md)).
@@ -872,7 +881,7 @@ Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequired
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.20.0`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
+The current Commercial Early Access release is **`v0.20.1`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 

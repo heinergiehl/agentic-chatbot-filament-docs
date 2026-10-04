@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.1] - 2026-10-04
+
+A drop-in update of the 0.20 line: no migrations and no configuration changes. The widget script version changes, so browsers load the new widget.
+
+### Widget
+
+- Streamed answers flow evenly instead of jumping in bursts: the widget reveals the received draft at a pace that follows the backlog and trails the stream by about a quarter second. Markdown answers render as Markdown while they stream, with the rules of the committed HTML: nested lists, code blocks in list items, aligned tables, numbered lists that start above 1, setext headings and escapes render as they will stay, and raw HTML and images are left out as on the server. Open emphasis and code show in their final form and a link shows as its label until its target is complete, so raw syntax never appears and the committed answer replaces the preview without a visible jump. Finished blocks are kept between frames, so long answers stream as smoothly as short ones. A pulsing caret marks the end of the text while it is written.
+- Until the first words arrive, the status line shows the elapsed time from the third second on, for example "Thinking… · 7s".
+- On screens wider than 640 px, **Expand chat** in the header turns the panel into a tall panel above the launcher (`clamp(560px, 46vw, 760px)` wide, `--fac-expanded-width` to change it); Escape or **Collapse chat** restores it, and the choice is remembered per Agent and area. Hide the button with `data-expandable="false"`, the component's `:expandable="false"` or the SDK option `expandable: false`.
+
 ## [0.20.0] - 2026-10-04
 
 This release overhauls the plugin. Breaking changes are allowed in the `0.x` line; follow "Upgrading to v0.20.0" in [UPGRADING](UPGRADING.md) and publish every Agent and Playbook again. Several migrations drop tables and columns and cannot be rolled back: back up the database first; the way back is restoring that backup with the 0.19.0 package.

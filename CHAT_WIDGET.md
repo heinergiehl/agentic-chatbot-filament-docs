@@ -158,7 +158,13 @@ cards, confirmation cards and progress labels meet WCAG AA contrast in light
 and dark; links and the Confirm and Submit buttons derive an AA-readable shade
 from the accent color. On screens up to 640 px wide the open panel becomes a
 full-screen sheet within the safe areas, sized to the visible viewport so the
-on-screen keyboard does not cover the composer. Every control has a visible
+on-screen keyboard does not cover the composer. On wider screens the header
+has an **Expand chat** button: the panel grows into a tall panel above the
+launcher (`clamp(560px, 46vw, 760px)` wide) for long answers, tables and forms,
+and **Collapse chat** or Escape returns it to its normal size. The choice is
+remembered per Agent and area in the visitor's browser; phones keep the
+full-screen sheet. Set `data-expandable="false"` (or the component's
+`:expandable="false"`) to hide the button. Every control has a visible
 focus outline, and animations and smooth scrolling are off when the visitor
 prefers reduced motion.
 
@@ -172,6 +178,7 @@ the widget:
 | `--fac-offset-x` | Distance from the left or right edge (desktop) | `24px` |
 | `--fac-offset-y` | Distance from the bottom | `24px` (phones: `12px` or the safe area) |
 | `--fac-focus-ring` | Focus outline color | the accent color |
+| `--fac-expanded-width` | Width of the expanded panel (desktop) | `clamp(560px, 46vw, 760px)` |
 
 Colors come from the Agent's accent color and template; use
 `data-accent="inherit"` with `data-accent-css-var` to take the accent from a
@@ -242,6 +249,8 @@ Use an explicit prop only when a page should intentionally override the selected
 <x-filament-agentic-chatbot::chat-widget bot-public-id="YOUR_BOT_PUBLIC_ID" />
 ```
 
+Pass `:expandable="false"` to hide the button that expands the panel on wider screens.
+
 ### Option 2: Script Tag
 
 Add a single `<script>` tag to any HTML page:
@@ -289,6 +298,7 @@ Common optional attributes:
 | `data-empty-state-hint` | Short guidance below the empty-state heading |
 | `data-compact` | `true` or `false` |
 | `data-size-preset` | `compact`, `comfortable`, or `spacious` |
+| `data-expandable` | `false` hides the button that expands the panel on wider screens (default `true`) |
 | `data-font-preset` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |
 | `data-show-sources` | `true` or `false` |
 | `data-lang` | UI language code such as `en`, `de`, `fr`, or `es` |
@@ -402,6 +412,8 @@ Streaming admission persists the turn and queues its execution before emitting `
 When the turn is committed while the response is open, the response sends the stored outcome (`activity`, then `message_complete` or `error`) exactly as a repeated request would, then `data: [DONE]`. After 15 seconds without an event the response sends an SSE comment (`: keep-alive`), so proxies keep it open and a disconnected client ends the request. When the client disconnects or `api.chat_stream.relay_seconds` (`AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS`, default 100, capped at the PHP limit minus 10 seconds; 0 disables streaming) is used up first, the response ends with `data: [DONE]` and the widget reads the committed outcome from the authorized turn projection. The committed message replaces the draft; a draft is never kept beside or instead of the committed message, and a failed turn shows its error instead of the draft. A disconnect, reload or repeated request falls back to turn polling and history reconciliation without running the turn again. A repeated request for a completed turn delivers its canonical `message_complete` or `error` event without executing it again.
 
 Drafts are presentation only. They are held in the cache store (`api.chat_stream.cache_store`, `AGENTIC_CHATBOT_CHAT_STREAM_CACHE_STORE`, default store), which web and queue processes must share; with a per-process store such as `array` the widget simply shows the committed answer. Before any draft text is sent, the output checks (standard profile and the Agent's Safety settings) accept the whole text written so far, masked personal data is shown masked, and the newest word plus 24 bytes are held back. A rejected draft is cleared and the committed answer carries the Agent's fallback message. After a Playbook step in a turn, only the committed answer is shown. The SSE request stays open while its turn runs and holds one PHP worker until then: size PHP-FPM workers for concurrent chats. A single-process server (`php artisan serve` or `php -S` without `PHP_CLI_SERVER_WORKERS`) still delivers the answer, but other requests wait until the turn ends; set `relay_seconds` to 0 there.
+
+The widget shows a draft as it will look when committed. Drafts arrive in bursts about every 100 ms; the widget reveals the received text at an even pace that follows the backlog, so it flows instead of jumping and trails the stream by about a quarter second. Markdown answers render as Markdown while they stream, with the same rules as the committed HTML (including nested lists, code in list items and aligned tables; raw HTML and images are left out): finished blocks stay in place, open emphasis and code show in their final form, and a link shows as its label until its target is complete, so raw Markdown syntax never appears. When the committed answer continues the shown draft, the reveal finishes before the committed HTML replaces the preview; otherwise the committed answer shows at once. Until the first words arrive, the status line shows the elapsed time from the third second on (for example "Thinking… · 7s").
 
 The terminal `message_complete` or `error` projection may contain the frozen `public_chat_turn_lifecycle.v1` envelope consumed by the SDK. It is transport-neutral and replay-stable.
 
