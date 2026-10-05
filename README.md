@@ -6,7 +6,7 @@ This repository is the public documentation source. The Filament marketplace has
 
 The files here mirror the package's canonical docs; `scripts/release/docs-drift-check.php` in the package lists the mirrored guides and fails when a copy differs. Keep the marketplace page independent of the package release number.
 
-The current release is `v0.20.3`. **Release status:** Approved. The GitHub release and its attached archive are authoritative. These guides describe `v0.20.3`; changes listed under **Unreleased** in the [changelog](CHANGELOG.md) ship with the next release.
+The current release is `v0.20.4`. **Release status:** Approved. The GitHub release and its attached archive are authoritative. These guides describe `v0.20.4`; changes listed under **Unreleased** in the [changelog](CHANGELOG.md) ship with the next release.
 
 ## What the package provides
 
@@ -104,10 +104,14 @@ Reference and release:
 - [Agent runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md) and [AgentGraph SDK usage](AGENTGRAPH_SDK_USAGE.md)
 - [Compatibility and certification](COMPATIBILITY.md)
 - [Upgrade guide](UPGRADING.md) and [Changelog](CHANGELOG.md)
-- [Release notes v0.20.3](RELEASE_NOTES_v0.20.3.md), [v0.20.2](RELEASE_NOTES_v0.20.2.md), [v0.20.1](RELEASE_NOTES_v0.20.1.md) and [v0.20.0](RELEASE_NOTES_v0.20.0.md)
+- [Release notes v0.20.4](RELEASE_NOTES_v0.20.4.md), [v0.20.3](RELEASE_NOTES_v0.20.3.md), [v0.20.2](RELEASE_NOTES_v0.20.2.md), [v0.20.1](RELEASE_NOTES_v0.20.1.md) and [v0.20.0](RELEASE_NOTES_v0.20.0.md)
 - [Shipping checklist](SHIP_CHECKLIST.md)
 - [Support](SUPPORT_POLICY.md) and [Refund and license terms](REFUND_AND_LICENSE.md)
 - [Marketplace product page](FILAMENT_PLUGIN_PAGE.md)
+
+## Upgrading to 0.20.4
+
+`v0.20.4` is a drop-in update from `v0.20.0`, `v0.20.1`, `v0.20.2` or `v0.20.3`: run `composer update heiner/filament-agentic-chatbot` and then `php artisan filament:assets`; it has no migrations and no configuration changes. Admins who may view but not manage Agents open them in a read-only view, and Gemini 3 Agents may pin a thinking level.
 
 ## Upgrading to 0.20.3
 

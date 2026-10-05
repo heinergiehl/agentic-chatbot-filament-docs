@@ -96,6 +96,10 @@ Adding or removing a capability changes only the form draft and preserves other 
 
 **Permissions & technical details** is collapsed by default and groups the mode control, effective permissions, Data Resource field policies and limits, and capture rules. Blocking assignment warnings remain visible above the sections with a repair action. The mode labels remain **Read access**, **Approved write actions**, and **Read access and approved write actions**, mapped to `query_only`, `write_only`, and `query_and_write`. Direct writes and lead capture need a mode with approved write actions; Playbook writes additionally need their published confirmation and policy contracts. The tab query ID remains `behavior`.
 
+### Read-only view
+
+An admin whose Gates allow viewing Agents (`filament-agentic-chatbot.view-bots`) but not managing them (`filament-agentic-chatbot.manage-bots`) opens an Agent from the list in a read-only view at `/{panel}/bots/{record}`; the edit page stays forbidden for them. The view shows the saved draft with all fields disabled: Overview, AI Setup, Knowledge & capabilities, Website (with the embed code), Advanced and Versions, plus the release state and an **Analytics** link. It has no save, **Publish**, **Restore**, **Test** or assignment actions, and it leaves out the **Tests** tab and **API key overrides**. Knowledge, API/MCP, data and Playbook rows appear only when the viewer may see that record. Every write still checks `manage-bots` on the server, also for a user who could manage the Agent and opens the view. Users who can manage the Agent see an **Edit** action there, and the list opens the edit page for them.
+
 The native page inherits the host font and primary color. Its scoped panel CSS is registered as a versioned package asset, so a standard Filament panel needs no package-source Tailwind scan or host theme build. A panel without the plugin receives no package assets from plugin registration.
 
 ### Safety

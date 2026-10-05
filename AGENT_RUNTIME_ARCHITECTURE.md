@@ -231,6 +231,11 @@ versions remain readable and are refused for execution.
 The local Ollama configuration extension pins an optional boolean
 `runtime_config.agent.ollama_think` as `model.ollama_think`; only the exact
 Ollama driver accepts it, and an absent value preserves the server default.
+Likewise, an optional `runtime_config.agent.gemini_thinking_level` (`low`,
+`medium` or `high`) is pinned as `model.gemini_thinking_level` for the exact
+Gemini driver and a Gemini 3 model; the runtime contract validator refuses any
+other value, and an absent value preserves the provider default. Thinking
+tokens are billed as output, so a lower level is a cost control.
 
 Publication freezes:
 

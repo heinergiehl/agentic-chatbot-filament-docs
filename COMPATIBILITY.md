@@ -1,6 +1,6 @@
 # Compatibility and Certification Matrix
 
-Target release: `0.20.3`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
+Target release: `0.20.4`. **Release status:** Approved. This matrix separates installable support from evidence produced for one exact release artifact.
 
 ## Framework and runtime
 

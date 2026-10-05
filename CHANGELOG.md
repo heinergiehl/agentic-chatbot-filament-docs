@@ -4,6 +4,16 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.4] - 2026-10-05
+
+A drop-in update of the 0.20 line: no migrations and no configuration changes. The Agent panel stylesheet changes, so run `php artisan filament:assets` after updating.
+
+### Agents
+
+- Admins who may view Agents but not manage them (`view-bots` without `manage-bots`) open an Agent from the list in a read-only view at `/{panel}/bots/{record}` instead of getting no link: the saved setup with disabled fields, Knowledge & capabilities, Website and Versions, without save, Publish, Restore, Test or assignment actions. The Tests tab and API key overrides are left out, and knowledge, API/MCP, data and Playbook rows appear only when the viewer may see that record. The edit page still requires `manage-bots`, and so does every write. Analytics breadcrumbs link such users to the view.
+- The Agent panels expose no client-callable record readers: the Settings, Website, Versions and Tests panels no longer offer public methods that return the Agent record or another Agent's website hosts, so a browser request cannot read an Agent past the host query scope.
+- Gemini 3 Agents may pin a thinking level: `runtime_config.agent.gemini_thinking_level` set to `low`, `medium` or `high` is pinned at publication as `model.gemini_thinking_level` and sent with every Agent request as the Gemini thinking level. Thinking tokens are billed as output, so a lower level reduces cost. Without the key the provider default stays. Publication and the runtime contract validator refuse other drivers, Gemini models before version 3 and other values. The editor has no field for it.
+
 ## [0.20.3] - 2026-10-04
 
 A drop-in update of the 0.20 line: no migrations and no configuration changes. The Playbook editor script version changes, so browsers load the new editor.

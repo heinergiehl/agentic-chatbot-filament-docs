@@ -17,6 +17,12 @@ Ollama Agent authoring may set the strictly boolean
 omission preserves the provider default. Other drivers and non-boolean values
 are rejected.
 
+Gemini 3 Agent authoring may set `runtime_config.agent.gemini_thinking_level`
+to `low`, `medium` or `high`. Publication pins it as
+`model.gemini_thinking_level` and every Agent request sends it as the Gemini
+thinking level; omission preserves the provider default. Other drivers, Gemini
+models before version 3 and other values are rejected.
+
 ## Filament plugin
 
 Register a new plugin instance on each Filament panel. `widgetEnabled()` affects

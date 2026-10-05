@@ -33,6 +33,11 @@ production the package requires them. When a Gate denies a user, the list shows
 with the same text. A record-aware Gate needs an `AdminAuthorizationQueryScope`
 binding so the list stays limited to the user's records.
 
+Agents follow the same rule with `filament-agentic-chatbot.view-bots` and
+`filament-agentic-chatbot.manage-bots`. A user with only the view Gate opens
+an Agent in a read-only view; every change needs the manage Gate (see
+[Agents](BOTS.md#read-only-view)).
+
 ## Queue Worker
 
 Widget chat turns, ingestion, channel messages, Playbook delays and webhook

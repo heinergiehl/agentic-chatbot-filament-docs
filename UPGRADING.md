@@ -4,6 +4,17 @@ This document covers required steps when upgrading between public releases.
 Start with the section for the release you are moving to; older sections stay
 below for hosts that skip releases.
 
+## Upgrading to v0.20.4
+
+This covers the move from `0.20.0`, `0.20.1`, `0.20.2` or `0.20.3` to `0.20.4` ([CHANGELOG.md](CHANGELOG.md)).
+It is a drop-in update: run `composer update heiner/filament-agentic-chatbot`,
+then `php artisan filament:assets` so the panel serves the changed Agent page
+stylesheet. There are no migrations and no configuration changes. Admins with
+`view-bots` but without `manage-bots` now open Agents in a read-only view; check
+that your Gates grant `view-bots` only to users who may see Agent setups.
+Gemini 3 Agents may set `runtime_config.agent.gemini_thinking_level`; Agents
+without it keep the provider default.
+
 ## Upgrading to v0.20.3
 
 This covers the move from `0.20.0`, `0.20.1` or `0.20.2` to `0.20.3` ([CHANGELOG.md](CHANGELOG.md)).
@@ -898,7 +909,7 @@ Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequired
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.20.3`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
+The current Commercial Early Access release is **`v0.20.4`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
 
 The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
 
