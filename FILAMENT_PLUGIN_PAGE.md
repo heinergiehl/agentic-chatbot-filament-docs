@@ -85,9 +85,9 @@ See the [MCP server setup guide](https://github.com/heinergiehl/agentic-chatbot-
 
 A **Playbook** is a visual workflow for a specific task that needs a defined sequence of steps. You describe when the Agent should use it and build the process inside Filament as a step list or on a canvas, starting from a description or a template. The Agent invokes it when a matching request needs that process.
 
-![Filament visual workflow builder with input, decision, approval and human handoff steps for a support Playbook](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-09-08-playbook-editor.png)
+![Playbook step list in Filament: a start step that collects a reason and contact email, a visitor confirmation that branches into Confirmed and Cancelled, a handoff request to the team, and a result at the end of each branch](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-10-05-playbook-editor.png)
 
-*A support Playbook: collect a support brief, choose a priority, request approval, and hand the conversation to your team.*
+*The Human handoff Playbook from the Customer Support & Human Handoff Solution Kit in the step list, captured from the local demo. It collects a reason and contact email, asks the visitor to confirm, then hands the conversation to your team. **Canvas** shows the same Playbook as a diagram.*
 
 For example, a support Playbook could collect an issue description, look up an allowed record, branch on the result, ask for confirmation, and call your configured ticket-creation action. You supply the relevant data access and integration; the Playbook defines how those steps fit together.
 
@@ -105,9 +105,9 @@ The Agent remains responsible for the conversation. A Playbook defines the contr
 
 Add a chatbot to your website or product frontend using the generated script snippet. Configure its appearance and welcome experience in Filament, including style templates, colors, titles, suggested messages, and source presentation.
 
-<img src="https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-09-08-chatbot-widget.png" alt="AI chatbot widget with a custom welcome screen and conversation starters for documentation, APIs and database questions" width="380" />
+<img src="https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-10-05-chatbot-widget.png" alt="Chat widget welcome screen for a demo Agent named Mission Control, with a welcome heading, conversation starters grouped under Explore and Live data, a More suggestions toggle, and a message field with an attachment button" width="380" />
 
-*The widget's welcome screen, captured from the local demo. Set your own branding and conversation starters in Filament.*
+*The welcome screen of the demo's Mission Control Agent, captured from the local demo. Set your own title, welcome text and conversation starters in Filament.*
 
 The browser integration includes streaming responses, private attachments (picker, paste or drop, with image thumbnails), up to eight conversation starters shown as compact chips, bounded page context, and a typed widget SDK with lifecycle events for application integration.
 
