@@ -1,10 +1,18 @@
 # Agentic AI Chatbot Builder
 
+> **Product Hunt launch offer: save $50 with PH50**
+>
+> **Single Project: $99.99 instead of $149.99. Studio: $229.99 instead of $279.99.** All prices are in USD, plus applicable taxes. Offer ends October 13, 2026.
+>
+> **Enter PH50 at checkout to receive the discount.** Select your plan, click **Have a coupon?**, enter **PH50**, then click **Apply Coupon** before paying. The discount is not applied automatically.
+>
+> [Choose your license and apply PH50](https://checkout.anystack.sh/agentic-chatbot).
+
 Build and manage AI chatbots for your Laravel application directly in Filament. Configure each chatbot's instructions, knowledge base, approved tools, and embeddable chat widget, then test its answers and tool choices before making it available to users.
 
 An Agent can choose when to answer a question, search your knowledge sources, read permitted application data, or invoke a visual Playbook for a task that needs several steps. You define the tools and access it receives. Application actions remain subject to authorization, confirmation, and execution rules.
 
-**Commercial Early Access** · **Filament 5** · **Laravel 12 and 13** · **Bring your own AI provider keys**
+**Self-hosted commercial plugin** · **Filament 5** · **Laravel 12 and 13** · **Bring your own AI provider keys**
 
 - [Try the live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
 - [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
@@ -208,9 +216,9 @@ No. An Agent can answer questions, use its knowledge base, and perform approved 
 
 The default license allows use in one Licensed Application, including that application's SaaS use and development, staging, and production environments. Your host application remains responsible for tenancy, billing, users, business data, privacy, and final production policy. Broader rights depend on your purchase terms.
 
-## Early access, documentation, and support
+## Documentation and support
 
-This product is sold as **Commercial Early Access**. Validate the provider, model, integrations, and operating environment you intend to use. An available adapter does not certify every provider or account configuration, and AI responses can be wrong.
+Validate the provider, model, integrations, and operating environment you intend to use. An available adapter does not certify every provider or account configuration, and AI responses can be wrong.
 
 - [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
 - [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
