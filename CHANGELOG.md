@@ -4,6 +4,14 @@ All notable changes to this package will be documented in this file.
 
 ## [Unreleased]
 
+## [0.20.5] - 2026-10-06
+
+A drop-in update of the 0.20 line: no migrations and no configuration changes. The widget script version changes, so browsers load the new widget.
+
+### Widget
+
+- The empty state lays out conversation starters by its own width: a narrow panel shows two-column tiles with the group name as a caption and four at once behind **More suggestions**; a wide panel, such as the expanded one, shows every starter in one card per group. Starters fade in one after another when the panel opens, **More suggestions** and **Show fewer** move the content smoothly instead of jumping, and after an expand or collapse the starters play in again in the new layout. Reduced motion turns the movement off. The composer's Suggestions panel keeps its chips.
+
 ## [0.20.4] - 2026-10-05
 
 A drop-in update of the 0.20 line: no migrations and no configuration changes. The Agent panel stylesheet changes, so run `php artisan filament:assets` after updating.
