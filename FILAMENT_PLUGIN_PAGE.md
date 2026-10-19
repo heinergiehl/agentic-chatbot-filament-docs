@@ -2,7 +2,7 @@
 
 Answer support questions, help customers check their orders and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
 
-Try the live fictional shop: a visitor asks a public delivery FAQ and receives an answer from your Sources. After signing in through your host app, the customer checks **Order status**, reviews a proposed **delivery address** change and presses **Confirm**. An unresolved question goes through **Handoff** to your team's Inbox. You supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
+Try the live fictional shop: first sign in as fictional **Alex** or **Sam** without a password to open chat. Ask a delivery or returns FAQ grounded in the shop's policy Sources, check your own **Order status**, then review a proposed **delivery address** change and press **Confirm**. An unresolved question goes through **Handoff** to the staff Inbox. For your installation, you supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
 
 [Try the demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Read the setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 

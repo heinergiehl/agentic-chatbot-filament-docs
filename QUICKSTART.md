@@ -13,8 +13,8 @@ The [Example Shop](https://filament-agentic-chatbot.heinerdevelops.tech/shop)
 runs the published v1.0.0 package. It is a fictional shop with isolated sample
 orders, not an included commerce integration for your installation.
 
-1. Open the shop chat and ask “How do delivery and returns work?” Compare the answer and its Source citation with the [shop policy](https://filament-agentic-chatbot.heinerdevelops.tech/shop/policy).
-2. Select **Sign in**, choose **Alex** and continue without a password. Each browser session receives separate fictional customers and orders. Ask “Show my order status.” The account page also lists your sample orders.
+1. Open the shop, select **Sign in**, choose **Alex** and continue without a password. Each browser session receives separate fictional customers and orders. The live shop requires sign-in before opening chat.
+2. Open the shop chat and ask “How do delivery and returns work?” Compare the answer and its Source citation with the [shop policy](https://filament-agentic-chatbot.heinerdevelops.tech/shop/policy). Then ask “Show my order status.” The account page also lists your sample orders.
 3. Ask to change the delivery address on processing order **A-1002**, using fictional street, city and postal code values. The address-change Playbook reads the current order and presents native **Confirm** and **Cancel** controls. Review the order and proposed values before Confirm. Then reload **Account** to inspect the address and version; Cancel leaves the address unchanged. Shipped orders cannot use this address change.
 4. Ask for a person about a fictional damaged parcel. Handoff creates a private staff Inbox request and internal database notification. A staff reply requires an authorized operator; no email or response time is promised. The completed acceptance verified a stored reply in authorized owner history, but did not capture it in the live widget or establish automatic foreground polling.
 5. Use **Switch fictional identity** and select **Sam**. Sam has separate orders and cannot read or change Alex's orders. A fresh browser session uses separate data again.
