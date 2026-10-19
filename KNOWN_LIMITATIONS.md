@@ -1,10 +1,13 @@
 # Known Limitations
 
-> **Version**: 1.0.0 (selected release candidate, unreleased)<br>
+> **Version**: 1.0.0 (selected release; verify published identity below)<br>
 > **Last updated**: 2026-10-19
 
-The last shipped version is `0.20.5`. These constraints apply when
-evaluating the **1.0 candidate**, expected as `v1.0.0` subject to final acceptance.
+These constraints apply to the **1.0 candidate**, selected as `v1.0.0` subject
+to the required gates and publisher finalization. The canonical
+[GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0)
+identifies published status and the exact source/archive. Approval alone does
+not certify acceptance or publication. The upgrade baseline remains `0.20.5`.
 The release contract conditionally authorizes `1.0.0` for intended publication
 on `2026-10-19`; it does not certify a final source or archive.
 The 0.20.5-to-1.0 procedure and development rehearsal are recorded in

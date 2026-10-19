@@ -1,6 +1,6 @@
 # Support and Version Policy
 
-Commercial support helps you install, configure and operate the plugin in your Laravel/Filament application within your purchase entitlement. Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Existing entitlements are unchanged.
+Commercial support helps you install, configure and operate the plugin in your Laravel/Filament application within your purchase entitlement. Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Existing entitlements are unchanged.
 
 ## Contact and hours
 

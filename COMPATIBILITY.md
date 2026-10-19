@@ -3,9 +3,10 @@
 Target release: `1.0.0`.<br>
 **Release status:** Approved, conditional on required gates and publication.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication.
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication.
 
-This guide describes the **1.0 candidate**. It is not a released stable version.
+This guide describes the **1.0 candidate** requirements. Verify published status
+and artifact identity against the canonical GitHub Release linked above.
 Use the supported ranges below when preparing a candidate host, and read the
 limits beside each item. A supported range is not a certification of every
 version, provider or deployment.
@@ -109,5 +110,6 @@ duplicate delivery, worker interruption/recovery and unknown-write evidence,
 plus the reviewed dialogue evaluation. A long-duration soak is optional.
 **No long-duration soak occurred**. Simulated scheduler or bounded recovery
 checks do not certify production concurrency or sustained resource stability.
-Final source, lock, archive and public-docs identities remain pending; no final
-1.0 certification is claimed here.
+Final certification requires the fixed eight gates on exact source C, lock L,
+archive Z and pinned public docs D. Local C1 evidence does not certify a later
+artifact; use the canonical GitHub Release for published identity.

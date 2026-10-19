@@ -8,7 +8,7 @@ For a shop, one Agent answers a public delivery FAQ from a Source, checks **Orde
 
 **Release status:** Approved, conditional on required gates and publication.
 
-> Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. See the [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) and [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
+> Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. See the [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) and [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
 Commercial proprietary software. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI provider and hosting costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
@@ -22,8 +22,11 @@ Commercial proprietary software. The default license covers one legal entity and
 
 Answer a public delivery question from your approved Sources.
 
-This FAQ image is historical and predates the citation-width fix. A current
-live-flow capture is pending; it does not demonstrate the current candidate.
+Actual anonymous FAQ answer and Source citation, captured on 2026-10-19 with
+`claude-haiku-5-5` at effort `low` and `gemini-embedding-001` at 1,536 dimensions.
+This is local C1 evidence, not final source/archive certification. The other
+images retain their dated capture scope; see the
+[screenshot provenance](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#evidence-and-release-readiness).
 
 ![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
 

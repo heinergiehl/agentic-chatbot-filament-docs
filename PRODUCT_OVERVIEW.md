@@ -2,7 +2,7 @@
 
 Filament Agentic Chatbot helps customers answer support questions, check their orders and confirm permitted changes. Configure it in Laravel and Filament, host it yourself and use your own AI provider keys.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Start with the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment). Match these instructions to your download using [Compatibility](COMPATIBILITY.md).
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Start with the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment). Match these instructions to your download using [Compatibility](COMPATIBILITY.md).
 
 ## A shop conversation
 
@@ -17,8 +17,11 @@ This is a configuration recipe, not an included commerce integration or a record
 
 Answer a public delivery question from your approved Sources.
 
-This FAQ image is historical and predates the citation-width fix. A current
-live-flow capture is pending; it does not demonstrate the current candidate.
+Actual anonymous FAQ answer and Source citation, captured on 2026-10-19 with
+`claude-haiku-5-5` at effort `low` and `gemini-embedding-001` at 1,536 dimensions.
+This is local C1 evidence, not final source/archive certification. The other
+images retain their dated capture scope; see the
+[screenshot provenance](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#evidence-and-release-readiness).
 
 ![Signed-in shop customer viewing the status of their own order](images/agentic-chatbot/w10-2-order-status.png)
 

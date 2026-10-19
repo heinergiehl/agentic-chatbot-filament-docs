@@ -6,7 +6,7 @@
 **Upgrade baseline:** `0.20.5`<br>
 **Previous-line security/critical EOL:** `2027-01-17` (conditional on the intended publication date)
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Final local core acceptance is incomplete; full dialogue evaluation is optional qualification. If the stable criteria fail, revise the selection before any tag. If publication moves, revise metadata and mirror D before freezing a new source. No gate result is asserted by approval metadata.
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Local C1 core reports are dated evidence for their named artifact; final exact-candidate acceptance requires the fixed gates. Full dialogue evaluation is optional qualification. If the stable criteria fail, revise the selection before any tag. If publication moves, revise metadata and mirror D before freezing a new source. No gate result is asserted by approval metadata.
 
 ## What changes from 0.20.5
 
@@ -114,25 +114,35 @@ and [Security and privacy](SECURITY_AND_PRIVACY.md) before production access.
 
 ## Evidence and release readiness
 
-Documentation baseline: reviewed merge
-`85fa4d2d3e94b51d4e6d39c2f1e1027284b58e4c`. Final source C is selected only
-after independent review and orchestrator checks/merge of these docs. Neither
-this baseline nor the private mirror commit is final exact-source certification.
+Local evidence below was recorded on 2026-10-19 against C1 source
+`07a31f21d88ef869c3cbf6883be1e90065db2476`, Composer lock SHA-256
+`7f4732634c423a18be34b3b93d164b594183352020b1d442fc42b999c5a7f062` and ZIP SHA-256
+`b9d947c796e5955c2066e7b44f970a23087954a5e17bc0a204d800a3ba04451a`.
+C1 is a local acceptance artifact. Documentation and release-policy changes
+require a new source/archive identity and final gates; neither approval metadata
+nor this evidence table certifies that later artifact.
 
 | Evidence | Current boundary |
 | --- | --- |
 | Preliminary golden path | W11.1 records two of six complete criteria on its named historical candidate. It is not final 1.0 acceptance. |
-| W111b continuation | The latest phase-one record at `9e1180d030f4e1a95c63b5d3e9d3cc48ca5e6628` is preparation only, on source `91f1d405676124718220d875cc74691540636aff`; criteria 3, 4 and 5 remain incomplete. Earlier unknown costs remain unknown. |
+| C1 native FAQ | Anonymous public Turn 2 completed with a real citation to Agent 1 / Source 1 / Generation 1 / chunk 1. Haiku 5.5 at low effort; Gemini embedding-001, 1,536 dimensions. The earlier pre-dispatch failed turn is retained. |
+| C1 customer core | Signed own-order read, one exact native Confirm write, same-request replay and distinct-turn duplicate fencing, and foreign-order read/change refusal are recorded in `fast-haiku-stage-core`. Earlier partial Inbox/Playbook results are superseded by the continuation below. |
+| C1 Inbox and Playbook continuation | `fast-haiku-remainder` records one operator reply visible after normal visitor history refresh; automatic polling did not show it within 45 seconds. Its later `PHASE3_REPORT.md` records native confirmation 4 completing the existing Graph/WorkflowRun once, ledger attempt 1 and order version 1 to 2. The final model answer retained conservative result wording; no completion screenshot or extra answer-polishing turn is claimed. Earlier caller failures remain recorded. |
+| C1 accounting | Historical unknown outcomes and unmeasured embedding costs retain their full holds; no unknown cost is declared zero. |
 | Merged corrections | Host configuration preserves required widget areas; Anthropic replay omits historical thinking blocks; App data staging binds the original principal and actor map through dispatch. Reviewed deterministic regressions do not replace rerunning the live scenarios. |
-| Final gates | Exact-source/archive certification and current local core acceptance are pending. Full dialogue evaluation is optional qualification. Public GitHub/Filament delivery and rendering are pending. |
+| Final gates | The eight required gates must pass on final C/L/Z with pinned D before publication. C1 local reports require review for valid reuse and do not establish final artifact installation or host validation. Full dialogue evaluation is optional qualification. Verify publication against the canonical GitHub Release. |
 | Long-duration soak | `long_duration_soak=not_run`; optional under `release-1.0-risk-focused.v1`. |
 
 The recorded five-target database matrix and 0.20.5 upgrade/restore rehearsal
 support their named sources and environments. They do not certify this future
 release ZIP. Current static UI evidence also does not replace live acceptance.
-The retained FAQ image is historical, predates the citation-width fix and awaits
-an actual current live-flow capture; the other retained images have their own
-recorded provenance. No setup-time or completed shop acceptance claim is made.
+The FAQ image is the actual 2026-10-19 C1 anonymous answer/citation capture;
+no 375 px recapture is claimed. The other images retain their dated provenance.
+FAQ PNG SHA-256: `8544582e04b4048c40f14a5ada33e7f81f291a826afacfdde091c13d6a12d31f`.
+Full provenance is in source file `docs/release/W10.2_SCREENSHOT_EVIDENCE.md`. The local reports
+are retained under `.claude/worktrees/w111b/.tmp/w111b-prep/fast-haiku-faq-run`,
+`fast-haiku-stage-core` and `fast-haiku-remainder`; they are operator evidence,
+not files in the purchased archive. No setup-time or final-host claim is made.
 
 Release policy `release-1.0-risk-focused.v1` makes a multi-hour soak optional.
 **No long-duration soak occurred**. Bounded fault/recovery tests and simulated

@@ -8,7 +8,7 @@ below for hosts that skip releases.
 
 **Release status:** Approved, conditional on required gates and publication.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. The intended `0.20` security/critical EOL is `2027-01-17`, 90 days after the intended publication date. If publication moves, revise the date, EOL and mirror pin before freezing a new source candidate.
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. The intended `0.20` security/critical EOL is `2027-01-17`, 90 days after the intended publication date. If publication moves, revise the date, EOL and mirror pin before freezing a new source candidate.
 
 This is a migration from `0.20.5`, not a drop-in patch. Begin with the
 [ordered procedure](#ordered-0205-to-10-procedure), then use the breaking-change
@@ -26,7 +26,7 @@ requires a quiesced host and a verified paired backup; it covers pending cards,
 explicit dependent publication, restart checks and restoration.
 
 The reference below keeps the exact old and new names. It does not authorize
-production installation of the unreleased candidate.
+production installation before required gates and verified publication.
 
 ### Fixed local release evidence inventory
 
