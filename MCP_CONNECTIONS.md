@@ -6,12 +6,12 @@ offered by those providers.
 
 An MCP server connection provides reviewed reads and separately approved,
 synchronous create/update operations to Agents (as direct tools) and published
-Playbooks. Every write needs its own operation review, an isolated staging test
+Workflows. Every write needs its own operation review, an isolated staging test
 and confirmation of the visitor's concrete action; a direct MCP write always
 shows the visitor a confirmation card (ADR 0038). Command
 execution, software control, local processes and asynchronous MCP writes remain
 unsupported. HTTP and MCP use the same operation workbench, immutable revisions,
-Agent/Playbook pins, capability gateway, ledger and access policy. See
+Agent/Workflow pins, tool gateway, ledger and access policy. See
 [ADR 0013](adr/0013-reviewed-integration-writes.md) for this bounded expansion.
 
 ## Operator flow
@@ -50,9 +50,9 @@ requests intercepted by fixtures.
    documentation entry point.
 4. **Test and add to Agent draft** discovers the actual tool declarations,
    binds the repository in the executable contracts, prepares descriptions and
-   examples, and tests every selected read through the capability gateway.
+   examples, and tests every selected read through the tool gateway.
    Only after all pass does it publish their revisions and append the selection
-   to the saved Agent draft. Existing capabilities remain assigned.
+   to the saved Agent draft. Existing tools remain assigned.
 5. Follow **Review Agent release** to publish and test the candidate, then
    activate it. The live Agent keeps its previous deployment until activation.
    A saved connection, a prepared tool and a live Agent are distinct states.
@@ -99,7 +99,7 @@ disabled. The existing step, token and evidence limits still apply.
    [Agent access](API_CONNECTORS.md#agent-access-and-shared-connections)) and
    the owner scope, then save the authentication settings.
    Bearer tokens, header API keys, custom authentication headers and OAuth are
-   supported. Credentials use the existing encrypted Connector storage and
+   supported. Credentials use the existing encrypted API connection storage and
    remain blank when editing saved secret fields.
 4. For OAuth, save the connection and select **Connect account**. If no client ID
    is saved, the app discovers the server's OAuth metadata and registers a public
@@ -130,10 +130,12 @@ disabled. The existing step, token and evidence limits still apply.
    restrict or expand access. Guided GitHub setup derives them from the fixed
    owner and repository automatically.
 6. Import the selected tool as a draft. Review its purpose, matching examples,
-   input policies and output mapping in the operation workbench. Test that draft
-   and publish its immutable operation revision through the normal lifecycle.
-7. Attach published reads in the Agent's Connector tools or in a Playbook
-   Capability step; published writes work in both and always ask the visitor
+   input policies and output mapping in the operation workbench. A publisher can
+   **Save and enable** a reviewed READ after contract validation; a configure-only
+   operator can **Save draft**. WRITES still require isolated staging evidence
+   and explicit Publish. The Agent's separate Publish pins the exact revision.
+7. Attach published reads in the Agent's API connection tools or in a Workflow
+   Tool step; published writes work in both and always ask the visitor
    to confirm. Publish the Agent to make the new version live. Saving,
    discovery and operator review never grant write access by themselves.
 
@@ -195,7 +197,7 @@ For one FAQ, review the discovered page-fetch function and bind its page ID in
 **Fixed arguments**. Do not grant a workspace-wide search tool merely to let the
 Agent find that one page. Include the FAQ's name, scope and exact source link in
 **Source in chat**, then test the operation and Agent candidate before activation.
-Additional pages or a search-and-fetch Playbook require their own reviewed scope.
+Additional pages or a search-and-fetch Workflow require their own reviewed scope.
 
 Notion requires HTTPS for the OAuth callback except for HTTP loopback development
 addresses such as `127.0.0.1`. A named development host ending in `.localhost`
@@ -212,7 +214,7 @@ Published MCP operation metadata can include `mcp_source` version 1: `label`
 The URL must use HTTPS without credentials, query strings, fragments or
 whitespace. Recognized credential literals are rejected. The source must be
 appropriate for public chat display. Scope enforcement remains in the executable
-request contract and capability policy, not this descriptive field.
+request contract and tool policy, not this descriptive field.
 
 The operation revision and Agent deployment pin this metadata. The model receives
 one compact source entry per connection and distinct source, with a short source
@@ -240,7 +242,7 @@ model before activation; compact metadata alone does not guarantee correct routi
 
 Discovery retains bounded `serverInfo` name, version and optional title for
 diagnostics. These values are server-reported, not verified source facts. Raw
-server instructions, icons and the entire remote capability catalogue are not
+server instructions, icons and the entire remote tool catalogue are not
 injected into the model. The model still receives each assigned operation's
 purpose, matching example and required input schema. Instructions and schemas
 stay fixed within the native model invocation.
@@ -345,7 +347,7 @@ incomplete or attributed target tags fail the read. Source limits apply before
 body selection. Document projection preserves paragraph and HTML break lines;
 it does not execute markup or treat document text as instructions.
 
-Productive Connector answers preserve selected public contact details, such as
+Productive API connection answers preserve selected public contact details, such as
 a support email address. Credential fields, known credential values and
 intrinsic authentication secrets remain redacted. The separate trace and
 diagnostic redaction policy still applies, including configured personal-data
@@ -363,9 +365,9 @@ a declared selection, not a claim to have inspected image content. Existing
 provider trees and oversized sources fail explicitly. No image is downloaded or
 executed, and the Agent does not need to invent an input path.
 
-## Reviewed Playbook writes
+## Reviewed Workflow writes
 
-Use advanced tool review to select **Create or update through a Playbook**, explicitly approve **Create one record** or
+Use advanced tool review to select **Create or update through a Workflow**, explicitly approve **Create one record** or
 **Update one record**, and bind at least one precise target in **Fixed arguments**. The
 reviewed target values must be required request-schema constants outside model
 inputs. Approve the actual data operation; neither a tool name nor remote
@@ -382,9 +384,9 @@ and use a narrower server tool when its schema cannot express that boundary.
 In the existing operation workbench:
 
 1. Keep confirmation enabled, **Single item only**, invocation identity and
-   Playbook-run scope. Select **Reject duplicate** or **Return saved completed
+   Workflow-run scope. Select **Reject duplicate** or **Return saved completed
    result**. The latter reads an already persisted success for the exact
-   invocation without another provider call. Unknown outcomes require manual
+   invocation without another provider call. Unverified actions require manual
    reconciliation. No provider-idempotency header or automatic retry is supported.
 2. Configure a business-success predicate and a remote record identity path. For
    a result envelope containing `structuredContent: {status: "created", id: "T-42"}`,
@@ -400,8 +402,15 @@ In the existing operation workbench:
    environment binding and credentials, with the same Agent/owner scope and
    tool definition. Run the existing explicitly confirmed staging-write test.
    An unavailable isolated endpoint or incompatible definition blocks publication.
-5. Publish the successfully evidenced exact operation, select it in a Playbook
-   Capability step after an Approval step, then publish its owning Agent.
+   The staging binding of an MCP Connection follows the same rules as an API
+   Connection ([API connections](API_CONNECTORS.md), ADR 0049): a staging
+   Connection on the production origin is accepted only as a verified test
+   account (reviewed adapter, or host policy plus administrator review), never
+   by a different token alone. The Connection form offers the test-account
+   fields for API connections; an MCP Connection keeps using a separate
+   endpoint until its form offers them.
+5. Publish the successfully evidenced exact operation, select it in a Workflow
+   Tool step after an Approval step, then publish its owning Agent.
    Ordinary Agent tests, candidate comparisons and workbench read tests cannot
    perform this write.
 
@@ -433,7 +442,7 @@ curated read-only endpoint remain read-only.
 | Notion | `https://mcp.notion.com/mcp` | Save and select **Connect account** for dynamic client registration and OAuth; a standard Notion integration token does not authenticate this endpoint. |
 | Linear | `https://mcp.linear.app/mcp` | Restricted API key as bearer token, or OAuth. |
 | Google Calendar | `https://calendarmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth. |
-| Google Docs | `https://docsmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth; writes require separate Playbook review and isolated staging evidence. |
+| Google Docs | `https://docsmcp.googleapis.com/mcp/v1` | Workspace Developer Preview access, enabled service and Google OAuth; writes require separate Workflow review and isolated staging evidence. |
 
 Current provider setup references: [GitHub](https://github.com/github/github-mcp-server),
 [Tavily](https://docs.tavily.com/documentation/mcp),
@@ -518,7 +527,7 @@ without saved account credentials. Responses are bounded and checked before
 the client ID and discovered endpoints are saved in encrypted credential storage.
 Registration is serialized per connection, never automatically retried, and
 cannot overwrite a concurrently changed connection or an existing client ID.
-It creates no Agent capabilities. A provider requiring a registration secret or
+It creates no Agent tools. A provider requiring a registration secret or
 a confidential client remains on the manual setup path.
 
 ## Current limits
@@ -526,7 +535,7 @@ a confidential client remains on the manual setup path.
 - No local `stdio` processes, package installation, legacy standalone SSE
   transport, resources/prompts, MCP Apps, server-requested sampling/elicitation,
   or MCP Tasks. Unsupported server requests fail closed.
-- Discovery accepts the existing bounded Connector JSON Schema subset. References,
+- Discovery accepts the existing bounded API connection JSON Schema subset. References,
   unions and unsupported constraints are reported rather than silently removed.
   Input objects are restricted to declared properties, including the unconstrained
   `additionalProperties: {}` form. Nonempty schema-valued additional properties
@@ -539,7 +548,7 @@ a confidential client remains on the manual setup path.
   an MCP tool. Catalog pagination is supported.
 - Direct Agent tools are input-grounded reads and separately reviewed
   synchronous create/update writes that the visitor confirms (ADR 0038).
-  Dependent reads use Playbooks. Software-control tools, bulk writes, deletes
+  Dependent reads use Workflows. Software-control tools, bulk writes, deletes
   and asynchronous MCP writes are excluded.
 - Existing MCP write histories and unresolved outcomes remain available for
   review and reconciliation; they are not converted to reads or retried.
@@ -547,3 +556,64 @@ a confidential client remains on the manual setup path.
 Package tests cover discovery, OAuth, versioned import, guarded runtime execution,
 guided GitHub preparation, direct Agent reads and failure handling with controlled server responses. Real
 provider accounts and VPS deployment require their own integration verification.
+
+## Refresh health
+
+The existing **Connect account** browser flow, state/session binding, PKCE,
+resource indicators and encrypted token storage are unchanged. Productive MCP
+refreshes use the same existing `ConnectorCredentialService` as API connections.
+Replay remains disabled unless the encrypted credential contract explicitly
+contains the reviewed boolean `refresh_replay_safe_reviewed: true`. No built-in
+provider profile automatically grants that review. See
+[OAuth refresh resilience](API_CONNECTORS.md#oauth-refresh-resilience-and-health)
+for retry budgets, rotation uncertainty and concurrent-worker fencing.
+
+A successful browser reconnection clears the connection health warning. A queued
+warning for superseded credentials or a changed connection environment is not
+delivered. The list shows **OK**, **Reconnect required**, **Refresh uncertain,
+retrying** for reviewed uncertainty, or **Last refresh failed** with a time.
+Reviewed uncertainty does not request reconnection; a definitive invalid/revoked
+grant on the next request does. Neither a transient refresh failure nor a
+health warning changes the Connection's enabled setting.
+
+## Reviewed no-change errors
+
+An MCP `isError` result or mutable no-change hint alone leaves a dispatched WRITE
+UNKNOWN. A provider can instead supply a separately reviewed, pinned
+`response.outcome.mcp_no_change` sub-contract with `version: 1`:
+
+- `provider_contract.reference` identifies the reviewed provider documentation;
+  `provider_contract.sha256` pins that documentation snapshot.
+- `schema` validates the **whole exact response envelope**, with closed root and
+  `structuredContent` objects. It requires `isError` as boolean `const: true`
+  and `structuredContent` as an object. Use the supported Tool schema subset,
+  including field titles. Optional extra fields must be declared explicitly.
+- `when` positively compares concrete `structuredContent` fields with typed
+  values using `equals`, `eq`, `in`, or bounded `all`/`any` groups. Negation,
+  missing fields and protocol flags cannot prove no effect.
+
+This sub-contract is **host/API-authored only**; the MCP form has no editor for
+it. Saving other response fields preserves an existing `mcp_no_change` key.
+Changed drafts still require validation, exact access review and staging evidence
+before publication. Publication adds
+`metadata.mcp_no_change_evidence_version: 1` to the immutable revision. Older
+revisions without this discriminator retain their previous interpretation even
+if they already contain an outcome key named `mcp_no_change`.
+
+For example, a reviewed provider contract can require both
+`structuredContent.code == "REJECTED"` and `structuredContent.changed == false`.
+The signed MCP write review covers this error contract and the existing staging
+and publication evidence pins it in the immutable revision. Editing it invalidates
+the review and requires fresh staging evidence and publication. The saved MCP
+access-review dialog shows the provider error contract for explicit review.
+
+Only an exact schema-valid matching error, without conflicting business success,
+becomes FAILED (`mcp_rejected_no_effect`), with no automatic retry. Every malformed,
+missing, partial, conflicting or unreviewed result stays UNKNOWN and requires
+reconciliation. Existing contracts without this opt-in retain their original
+UNKNOWN classification. No remote flag changes publication authority.
+
+Before dispatch the existing client checks the selected declaration's full
+fingerprint, including schemas and annotations, in the same session. Drift
+refuses `tools/call` and tells the operator to discover and review the current
+declaration before publishing again.

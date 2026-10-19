@@ -61,11 +61,42 @@ mismatch fails before any provider request.
 
 The conversation transcript is the Agent's only dialogue state. Each committed
 assistant `BotMessage` stores the tool calls and tool results of its turn in
-`meta.agent_transcript` (version 1). The next turn replays them as native
+`meta.agent_transcript` (version 2, which keeps Laravel AI replay blocks under
+`replay_blocks` and `replay_provider`). The next turn replays them as native
 assistant tool-call and tool-result messages before the visible answer, so
 follow-ups such as "and in Celsius?" use the same mechanism as any coding
 agent. The public message serializer exposes only allowlisted meta keys, so
 the transcript never reaches visitors.
+
+Confirmation decisions and reconciled outcomes are server-generated transcript
+pairs with matching, non-null SDK `resultId` values derived from the persisted
+confirmation or reconciliation event identity. Legacy pairs with missing result
+IDs receive the same stable correlation IDs at read time without rewriting stored
+history; mismatched server pairs are omitted. Canonical provider-issued IDs and
+replay blocks remain unchanged. Gemini rejects these unsigned
+`function_call` steps. Its adapter projects the complete pairs as labelled input
+data, preserving their exact arguments and results without inventing or borrowing
+a thought signature. Actual Gemini replay blocks retain their native order and
+signatures. Incomplete server pairs fail before provider dispatch.
+
+Anthropic signed thinking binds the original top-level system instructions,
+tools and preceding messages. New invocations can change that prefix through
+Confirm's read-only tools, time or display context, history truncation, or result
+compaction. `RuntimeAgent` therefore projects every new SDK invocation's input
+without Anthropic `thinking` and `redacted_thinking` blocks. This includes input
+carried forward when the runner restarts within a turn. It removes the entire
+input thinking prefix, never a middle block followed by older retained thinking,
+and never reintroduces dropped historical blocks on later turns. Native tool
+calls, IDs, order and result evidence remain in the wire history, subject to the
+existing whole-turn budget and older-result compaction rules. Stored transcript
+blocks are not rewritten. Thinking returned by the active SDK loop stays native
+and ordered on every continuation of that invocation; thinking generation and
+the pinned model/effort are unchanged. OpenAI reasoning and Gemini replay data
+are unaffected. The tradeoff is that Anthropic loses historical thinking context
+on each new invocation, while retaining the conversation's text and tool
+evidence. This uses Anthropic's permitted removal of all or an oldest prefix of
+thinking, rather than retrying a rejected prefix or restoring write tools. See
+the [preserved thinking contract](https://platform.claude.com/docs/en/build-with-claude/preserved-thinking).
 
 - `conversation.session_memory.history_turns` (0 to 100, default 20 from
   `chat.session_memory.history_turns`, "Turns to remember" in the editor) is
@@ -89,6 +120,10 @@ the transcript never reaches visitors.
   results are replaced by a short placeholder that tells the model to call the
   tool again when it needs the data.
 - Unpaired tool calls or results are dropped, because providers reject them.
+  The Gemini wire adapter also removes empty text parts and empty user/model
+  output steps, including an empty output alongside a tool call. Native
+  call/result pairs, IDs, thought signatures and non-text replay data remain
+  intact, including the pair appended after Confirm.
 - Files a visitor attached on an earlier turn are replayed on that turn's
   message within the attachment count and byte limits left after the current
   turn's files. Unavailable or changed files are omitted with a note that asks
@@ -172,6 +207,10 @@ no provider-specific prompts.
 - Provider exceptions are mapped to bounded error codes and safe answers in
   the visitor's language: the current message when it is clear, else the latest
   clear earlier visitor message, else the Agent default language. Raw exception text and provider bodies are never shown to visitors.
+  If a later provider request fails after a tool completed, the safe answer retains
+  the SDK's completed native call/result pairs and pending confirmation cards.
+  The turn commits and replays those messages without repeating the tool or
+  treating a proposed write as saved.
 - `WorkflowExecutionOutcomeUnknownException` is rethrown so durable turn
   handling keeps the turn reconcilable.
 - `AgentExecutionBudget` gives the whole turn one deadline (90 seconds by
@@ -216,9 +255,16 @@ call.
 
 The model writes the answer from the compact Playbook tool result. The turn
 result keeps the run's canonical state (run projection, pending input, outcome
-flags) from `AgentPlaybookResultProjector`; without model text, and for an
-unknown outcome, the Playbook's fixed status text is the answer. Independent
-reads in the same turn keep their sources.
+flags) from `AgentPlaybookResultProjector`. A completed run's fixed result text
+is composed only from attested fields. If it cannot attest every requested
+field, that presentation is partial and degraded. When the model supplies the
+answer, the unused composition's degradation, status and composition policy
+do not apply; the turn keeps decision `playbook_<mode>`. This does not attest
+model prose or alter the run's execution evidence. Without model text, the
+answer is canonical technical status text, with no result values, and partial
+evidence stays degraded. Unknown outcomes always retain the fixed uncertainty
+text, reconciliation requirement and non-retryable status, even when the model
+supplies text. Independent reads in the same turn keep their sources.
 
 ## Agent Deployment Authority
 
@@ -231,6 +277,13 @@ versions remain readable and are refused for execution.
 The local Ollama configuration extension pins an optional boolean
 `runtime_config.agent.ollama_think` as `model.ollama_think`; only the exact
 Ollama driver accepts it, and an absent value preserves the server default.
+Claude 5.5 Agents may set `runtime_config.agent.anthropic_effort` to `low`,
+`medium`, `high`, `xhigh` or `max`. Publication validates the exact Anthropic
+model and pins `model.anthropic_effort`; the conversational loop maps it to
+`output_config.effort`. Missing effort preserves the provider default (medium).
+The bounded topic-scope classifier uses low effort independently.
+Invalid or foreign effort fails publication and runtime validation.
+
 Likewise, an optional `runtime_config.agent.gemini_thinking_level` (`low`,
 `medium` or `high`) is pinned as `model.gemini_thinking_level` for the exact
 Gemini driver and a Gemini 3 model; the runtime contract validator refuses any
@@ -242,13 +295,36 @@ Publication freezes:
 - behavior and response policy;
 - exact provider, driver, base URL, model, input/output limits, and monthly
   token/cost policy;
-- allowed knowledge and data authority;
+- allowed knowledge and data authority: the knowledge source set, index
+  profile (index version, embedding provider, model, dimensions), retrieval
+  settings and the knowledge update mode (ADR 0046). A frozen version
+  (`knowledge_authority.v1`, every version from before 1.0) also pins one
+  generation per source; a current version (`knowledge_authority.v2`) pins
+  none, and `LiveKnowledgeGenerationResolver` selects, once per retrieval, the
+  newest completed and verified generation of each pinned source built with the
+  pinned profile. The selected `(source, generation)` pairs are recorded in the
+  retrieval diagnostics of the turn's execution evidence. Neither format lets a
+  retrieval change the source set, permissions, retrieval settings or profile;
 - exact published Connector operation revision, contract and input schema
   hashes, effect, environment binding, discovery metadata and optional MCP
   source metadata, and for writes the confirmation policy (`visitor` or `none`);
 - exact Playbook workflow ID, deployment ID, deployment hash, tool identity,
   and structured invocation contract; and
 - the release metadata needed to verify the contract.
+
+Package-owned implementation pins use reviewed behaviour-contract versions
+(ADR 0058): reserved core Connector strategy keys and their package dependencies
+use `ConnectorStrategyRegistry::CORE_CONTRACT_VERSIONS`, and package action
+handlers use `PackageImplementationContracts::ACTION_VERSIONS`. New bindings
+carry `owner: package`. Bug and security fixes preserving the pinned input,
+output and effect meaning keep the version. Semantic changes require an explicit
+version bump and reviewed republication. Host strategies and action handlers
+keep their source fingerprints. Legacy core version-1 hashes remain stored and
+compare by key and version. Legacy action digests are verified in full with the
+retained package handler fingerprints, preserving schema and policy checks and
+the original invocation and provider idempotency identity. Artifact hashes
+still verify the original bytes; no stored artifacts are rewritten. The version
+inventory is `tests/Fixtures/V1/package-implementation-contracts.json`.
 
 `AgentReleaseService::publish` makes that immutable artifact live in one
 transaction (ADR 0041): it locks the Agent row and every referenced Playbook,
@@ -267,6 +343,14 @@ the durable turn. A missing, foreign, mutable, or hash-invalid deployment fails
 closed. Later authoring changes require publication of a new deployment; they
 cannot alter an in-flight or historical turn.
 
+Knowledge is the one bounded exception to "content changes need Publish": a
+current version reads refreshed content of its pinned sources (ADR 0046). A
+revoked source fails every retrieval that pins it until a version without it is
+published; the deployment bytes are never edited. When the global embedding
+profile differs from a live version's pinned profile, the status presenter shows
+Publish needed (`AgentDeploymentFreshness::knowledgeProfileChanged`); the
+version keeps querying with its pinned profile, and restore is not blocked.
+
 ## Direct Read Execution
 
 Connector and Data Resource tools call
@@ -279,15 +363,28 @@ blocks direct reads at the Gateway. Typed outcomes distinguish success,
 no match, partial results, failures and unknown outcomes; a partial or failed
 read cannot authorize a release.
 
+Connector request preparation accepts the operation pin, `Bot`, conversation and
+server-attested `RuntimeAuthorityContext` directly. Dialogue callers also pass
+their admitted turn's variables and message. Read-back reconciliation uses the
+same preparer with its encrypted ledger pin and freshly reattested authority,
+without constructing a chat turn or entering the Agent loop. Its existing
+attempt fence, pinned account, shared transport deadline and terminal
+reconciliation compare-and-set remain authoritative (ADR 0050).
+
 ## Direct Write Execution
 
 A write tool call first passes `CapabilityExecutionGateway::admitAgentWrite`
-(pin, write permission, argument schema, Connector planning; nothing is claimed
+(pin, argument schema, Connector planning, and for App data updates a scoped
+record/policy check and version snapshot; nothing is claimed
 or sent). With confirmation policy `visitor`, `AgentToolConfirmations::propose`
 stores an `AgentToolConfirmation` with the encrypted arguments, bound by
 `AgentWriteBinding` to Agent, conversation, deployment, the complete pin and the
-authority scope. The tool result tells the model that nothing was saved; the
-assistant message meta `agent_confirmations` carries the public card. A newer
+authority scope. The direct App data update schema exposes only `record` and `changes`.
+`expected_version` is server-bound from the admitted record, encrypted with
+the proposal and checked again under the execution lock. A supplied model
+version is rejected; an intervening record change still refuses Confirm.
+The tool result tells the model that nothing was saved; the assistant message
+meta `agent_confirmations` carries the public card. A newer
 proposal of the same tool in the conversation supersedes an older pending one.
 
 The visitor decides with an explicit `confirmation: {id, decision}` field of the
@@ -303,7 +400,8 @@ transcript and the model reports it with read tools only. Another turn that find
 the record decided answers with its status without a model call; a repeated
 delivery of the deciding turn replays the stored outcome.
 
-With confirmation policy `none` (an explicit Agent setting; never for MCP) the
+With confirmation policy `none` (an explicit Agent setting; never for MCP or
+visitor-bound App data writes) the
 call executes at once through the same Gateway path with an invocation key bound
 to the turn and payload. Admin test conversations (test chat and Agent tests)
 only simulate writes (ADR 0041). Channel conversations receive confirmation-required
@@ -360,9 +458,9 @@ during the turn still takes over. The committed payload carries the public
 `visitor` and a pinned submission schema (the built-in `lead` schema or a
 registered one). Its card is worded in the visitor's language and carries the
 consent notice. A confirmed lead becomes one `BotSubmission` with its audit row
-under a confirmation-bound ledger claim. Like any direct write it needs the
-Agent-wide write permission (publication refuses it otherwise); the handoff
-does not. Release capability coverage ignores both tools.
+under a confirmation-bound ledger claim. Its switch in Tools is its
+assignment; there is no Agent-wide write permission (ADR 0054). Release
+capability coverage ignores both tools.
 
 ## Playbook Invocation
 
@@ -461,10 +559,23 @@ authorizes capability replay.
 
 Direct read tools and Playbook nodes do not receive ambient permission.
 
-A Playbook Connector's Agent read/write permission follows its verified published
+A Playbook step is authorized by the pinned Workflow version; the Agent has no
+permission mode (ADR 0054). A Connector step's effect is its verified published
 operation effect, including MCP reads transported with HTTP POST. Raw HTTP
-steps still derive their permission from the HTTP method. Mutable node fields
-cannot override the pinned Connector effect; an unresolved contract fails closed.
+steps derive their effect from the HTTP method. Mutable node fields cannot
+override the pinned Connector effect; an unresolved contract counts as a write.
+The `generate_image` HTTP destination and authentication headers come only from
+host configuration. Its exact-host allowlist refuses wildcards; the outbound
+guard pins validated public DNS addresses, refuses private/reserved targets,
+disables redirects and proxies, and bounds response bytes and time. Its handler
+contract version `2` refuses older image pins, with reviewed republication
+required for affected Workflows and Agents (ADR 0058).
+
+An action whose effect is not classified never runs. A live version compiled
+before 1.0 with `authority.capability_mode` is executed only when no pin and no
+step of a pinned Workflow version (including sub-Workflows) reaches the effect
+that mode denied; otherwise `AgentDeploymentRepository` refuses it
+(`permission_mode_not_representable`, see `LegacyPermissionMode`).
 
 A direct read is authorized only by the exact verified Agent deployment pin bound
 to that admitted turn; activating a newer deployment does not mutate an
@@ -490,6 +601,19 @@ change an immutable pin, authorize a write, confirm a different payload, or
 turn an uncertain provider outcome into success.
 
 ## Conversation And Waitpoints
+
+Newly compiled Run operation steps carry a closed `operationPaths` contract in
+their immutable artifact. AgentGraph selects Done only for explicit definite
+success statuses, or `simulated` under the run's server-owned Preview/Quality
+mode. A halted state retains its owning AgentGraph waitpoint unchanged and takes
+no Path until resolution. A resumed Step may use only its own interrupt and claim.
+Settled review, failure, and uncertain outcomes have separate paths;
+unknown statuses fail closed. A disconnected non-Done path terminates local
+routing with its outcome. It does not settle the external write or grant another
+step permission. A loop into an unsettled ledger claim refuses redispatch.
+Authoring conversion never visits published artifacts, so retained artifacts
+keep their original edge and waitpoint semantics. See the
+[builder contract](PLAYBOOK_BUILDER.md#run-tool-paths).
 
 General questions and side questions remain Agent turns. A running Playbook
 continues only through its deployment-bound tool: the model decides from the
@@ -583,6 +707,11 @@ neither recording nor diagnosis changes productive decisions.
   Agent conversation memory enters through an explicit conversation-thread
   boundary. Historical `workflow_memories` rows remain available only to export
   and privacy cleanup; they are never a runtime or operator-edit fallback.
+  Pre-1.0 AgentGraph actor records under identities longer than 191 characters
+  remain available to export and privacy cleanup but are not recalled. Operator
+  editing moves a valid key to the hashed actor scope atomically on the
+  AgentGraph database connection. Keys longer than 255 characters stay intact
+  and return a skipped move report until exported and recreated with a shorter key.
 - One capability ledger owns each external side effect.
 - Canonical outcomes are persisted before JSON or SSE serialization.
 - Unknown post-dispatch outcomes block automatic replay and require
@@ -674,8 +803,11 @@ pinned Playbooks against the running package's strategy implementations,
 published operation state and current Connector environment binding. A failing
 pin blocks the step and names the affected capability for the operator. A live
 version that fails verification later, or whose pins the runtime now refuses,
-is shown as "Republish needed" in the editor, the Agent list and the launch
-dashboard. The productive Gateway still authorizes each request independently
+is shown as "Publish needed" in the editor, the Agent list and the launch
+dashboard (ADR 0045). The Agent lifecycle (Draft, Live, Paused) is derived
+from the live pointer and `is_active`; the first Publish of a Draft sets
+`is_active` in the publication's transaction, and Pause and Resume change only
+`is_active`. The productive Gateway still authorizes each request independently
 at execution time.
 
 Playbooks are optional advanced process automation. The existing React Flow

@@ -7,7 +7,7 @@ authenticated with Agent access tokens.
 
 ## Tokens And Scopes
 
-Create a token under **Connect > Agent Access Tokens** and select only the
+Create a token under **Connect > Developers > Access tokens** and select only the
 read scopes the integration needs:
 
 | Scope | Endpoints |

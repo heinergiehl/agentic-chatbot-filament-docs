@@ -2,11 +2,13 @@
 
 This page explains how content enters the system and how the assistant finds relevant context at question time.
 
-Retrieval is a deployment-pinned Agent capability. A published Agent receives a
-closed knowledge-search tool only for the exact completed sources and retrieval
-policy copied into its immutable deployment. A Playbook may also declare a
-bounded Knowledge Capability step. Neither path reads mutable, implicit, or
-globally available sources.
+Retrieval is a deployment-pinned Agent tool. A published Agent receives a
+closed knowledge-search tool only for the exact sources, index profile and
+retrieval policy copied into its immutable deployment. A Workflow may also
+declare a bounded Knowledge Tool step. Neither path reads mutable,
+implicit, or globally available sources. Which completed generation of a pinned
+source is read depends on the version's knowledge update mode (ADR 0046, see
+Knowledge update modes below).
 
 ## Ingestion
 
@@ -17,9 +19,9 @@ Ingestion is the pipeline that prepares source content for retrieval. It runs on
 | Source Type | Description                                      | Example                                        |
 | ----------- | ------------------------------------------------ | ---------------------------------------------- |
 | **Text**    | Raw text content pasted directly                 | Product FAQ, policy text, release notes        |
-| **File**    | Uploaded documents                               | PDF manuals, DOCX files, CSV and XLSX tables   |
-| **URL**     | Public web pages crawled and extracted           | Documentation sites, blog posts, help articles |
-| **API**     | JSON records fetched through a saved connector   | Product catalogs, CMS records, public datasets |
+| **Files**    | Up to 50 uploaded files, one document per file   | PDF manuals, DOCX files, CSV and XLSX tables   |
+| **Website**     | Same-host crawl, sitemap or explicit single page | Documentation sites, blog posts, help articles |
+| **API**     | JSON records fetched through a saved API connection   | Product catalogs, CMS records, public datasets |
 
 ### What Happens During Ingestion
 
@@ -34,20 +36,41 @@ For each source, the plugin:
 
 If all steps succeed, the source status moves to `completed`. If any step fails, the source shows `failed` with error details visible in the Filament panel.
 
-### Safe URL Fetching
+### Safe Website Fetching
 
-URL sources are fetched through a safe HTTP fetcher before extraction:
+Website sources use the shared outbound SSRF guard on every request and every
+redirect, pinning checked public DNS addresses into the connection. Only the
+exact host is allowed, with no HTTPS downgrade and no private-network override.
+The user agent is `filament-agentic-chatbot/1.0`. robots.txt failure other than
+404/410 fails discovery closed. Shared cache locks enforce two in-flight
+requests per host and a shared start interval of at least 500 ms, increased by
+Crawl-delay (clamped to 0.5 through 10 seconds).
 
-| Setting | Env / Config | Default | Description |
-| ------- | ------------ | ------- | ----------- |
-| Max bytes | `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` | 5 MiB | Caps cumulative response bytes for one URL redirect chain or API pagination fetch; headers and transfer progress are checked before mapping |
-| Max redirects | `AGENTIC_CHATBOT_INGESTION_MAX_REDIRECTS` | 3 | Follows a small redirect chain and revalidates every hop |
-| Private network guard | `AGENTIC_CHATBOT_ALLOW_PRIVATE_NETWORK_URLS` | `false` | Blocks localhost, RFC1918, reserved, and private IP targets |
-| Content types | `ingestion.allowed_content_types` | HTML, text, Markdown, PDF, CSV, DOCX, XLSX | Rejects unsupported response bodies for URL ingestion |
+Bounds: 5 MiB per response and decompressed sitemap, five redirects, link depth
+five, sitemap nesting three levels below the root, 50,000 URLs per sitemap,
+maximum pages 1 through 2,000 (default 200), and total requests no more than
+`maximum pages × 3 + 20`. Website pages accept HTML, XHTML and plain text only;
+PDFs and other formats are skipped. Sitemaps accept XML and gzip.
 
-Redirect targets are resolved and checked per hop, so a public URL cannot redirect into localhost or a private subnet unless private-network ingestion is explicitly enabled. User-facing ingestion errors use stable categories such as unsafe URL, unsupported content type, oversized response, or too many redirects.
+`bot_website_crawl_runs` holds durable status, progress counters, up to 50
+translated errors, a work checkpoint and `dateTime` business dates. Each queue
+delivery performs one discovery/fetch unit or one provider batch. Interrupted
+deliveries resume the staged generation. Only completion activates it, under
+the existing source and Agent locks. Cancellation, discovery failure, capacity
+refusal and a heartbeat older than the run’s 900-second timeout cannot activate.
 
-HTML table extraction now renders tables as valid Markdown with a header separator row, which gives the chunker and retrieval layer a more predictable text representation.
+All candidate pages are prepared and capacity checked before new embeddings.
+Unchanged pages reuse embeddings when their profile matches. Three transient
+page attempts with backoff precede carry-forward of retained text/vectors.
+Only a 404/410, complete sitemap absence or unbounded completed link discovery
+confirms removal. Bounds and other failures preserve unconfirmed old content;
+an empty candidate fails closed. Daily/weekly runs use the existing scheduled
+sync command and ingestion queue configuration. A shared database/Redis cache,
+asynchronous worker and scheduler are required. Set worker timeout to at least
+300 seconds and queue retry_after above 300. The source UI polls active runs only.
+
+See [Website and Files sources](KNOWLEDGE_SOURCES.md#website) for fields, operator
+actions, limits and the database capacity remedy (pgvector or fewer pages).
 
 ### Office Files And Tables
 
@@ -75,7 +98,7 @@ each chunk still names its columns.
 
 ### API Knowledge Sources
 
-API sources let an existing **API Connector** feed structured JSON records into the bot's knowledge base. In the source form, choose a connector, endpoint path, records JSON path, stable record ID path, and a content mapping template such as:
+API sources let an existing **API connection** feed structured JSON records into the bot's knowledge base. In the source form, choose an API connection, endpoint path, records JSON path, stable record ID path, and a content mapping template such as:
 
 ```text
 {{name}}
@@ -85,17 +108,17 @@ API sources let an existing **API Connector** feed structured JSON records into 
 Price: {{price}} EUR
 ```
 
-Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API Connector authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. The same `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` budget applies across all pages in one fetch, so a chunked or misleadingly declared response cannot grow without bound before JSON mapping. After a successful re-ingest, the new generation holds only the records of the latest response, so records that disappeared are no longer found; the old index stays active if the new sync fails. API and URL sources can be re-synced on a schedule (see Scheduled Re-Sync). Use workflow API Connector nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
+Each mapped API record becomes its own knowledge document, so citations can point back to the record URL when `url_path` is configured. API connection authentication is reused for the fetch. Paginated APIs can use page-number, offset, cursor, or response-provided next URL pagination with `max_pages` and `max_records` safety limits. The same `AGENTIC_CHATBOT_INGESTION_MAX_FETCH_BYTES` budget applies across all pages in one fetch, so a chunked or misleadingly declared response cannot grow without bound before JSON mapping. After a successful re-ingest, the new generation holds only the records of the latest response, so records that disappeared are no longer found; the old index stays active if the new sync fails. API and Website sources can be re-synced on a schedule (see Scheduled Re-Sync). Use workflow API connection nodes instead for live/user-specific data such as order status, account balances, or actions that write to another system.
 
 ### Scheduled Re-Sync
 
-URL and API sources can be fetched again **never**, **daily** or **weekly**
+Website and API sources can be fetched again **never**, **daily** or **weekly**
 (`sync_frequency`). The package schedules
 `filament-agentic-chatbot:sync-knowledge-sources` every 15 minutes, so the host
 must run `php artisan schedule:run` every minute (see Operations). **Re-sync
 now** on the source queues the same run at once.
 
-A re-sync fetches through `SafeHttpFetcher` (URL) or the API Connector (API)
+A re-sync fetches through `SafeHttpFetcher` (Website) or the API connection (API)
 with the usual size limits, then compares the SHA-256 content hash with the
 active generation built under the current index contract:
 
@@ -107,13 +130,72 @@ active generation built under the current index contract:
   and the next attempt follows a backoff of 15 minutes, 1 hour, 4 hours, then
   12 hours, never later than the interval. A success resets the backoff.
 
-Agent deployments pin a content version, not live content. Each pin names the
-source and the exact generation (id, content hash and contract hash) that was
-active at publish time, and retrieval reads only those pinned generations. A
-re-sync therefore never changes what a live Agent answers from: the Agent
-editor shows the new generation as a change to publish, and publishing pins it.
-Older generations stay stored, so published versions and rollbacks keep
-working.
+### Knowledge update modes
+
+Every published Agent version pins its source set, its index profile (index
+version, embedding provider, model and dimensions) and its retrieval settings.
+The draft setting **Knowledge updates** (`runtime_config.knowledge.update_mode`)
+decides, at Publish, which generations retrieval reads (ADR 0046):
+
+- **Current knowledge** (`current`, the default of Agents created in the
+  panel): each retrieval reads, per pinned source, the newest
+  completed generation built with the pinned profile. A completed re-sync
+  reaches visitors without a Publish. A queued, running, failed or partial
+  refresh never replaces the last usable generation. The version is stored as
+  `knowledge_authority.v2` with `update_mode: current` and pins no generation.
+- **Published knowledge** (`frozen`): every source pins the exact generation
+  (id, content hash and contract hash) that was active at publish time, and
+  retrieval reads only those generations. A re-sync shows as a change to
+  publish. This is the unchanged `knowledge_authority.v1` format. Every Agent
+  created before 1.0, and every Agent without the setting, is frozen; an upgrade
+  never switches an Agent to current knowledge.
+
+A retrieval resolves its generations once, before any search, and the vector
+stage, the lexical stage and the Gateway's scope check read that same set; a
+refresh that completes during a search cannot mix generations. The selected
+generation must verify completely (contract hash, documents, chunks) and be
+searchable in the configured vector backend, or the search fails closed with
+`knowledge_generation_unavailable`; it never falls back to older content or
+another profile. The diagnostics record the mode and the
+`(source_id, generation_id)` pairs read; the turn's execution evidence stores
+them and a replayed turn returns them unchanged.
+
+Adding or removing a source and changing the update mode are draft changes that
+need Publish. Restoring a current version restores its sources, profile and
+mode, not the content its sources had when it was published; restoring a frozen
+version restores its exact generations. Restore is refused when a pinned source
+was revoked or no retained generation can serve the version any more. Workflow
+knowledge steps keep frozen pins.
+
+### Embedding profile changes
+
+Query embeddings always use the pinned provider, model and dimensions with the
+credentials resolved for that provider, never the current global default. When
+the Settings page changes the embedding profile, the sources are rebuilt under
+the new profile while live versions keep answering with their pinned profile
+(a current version keeps reading the newest generation of that profile). The
+Agent shows **Publish needed**; Publish is the cutover and is refused until
+every source has a completed generation under the new profile. If the pinned
+provider has no usable key, the vector stage reports
+`embedding_credentials_missing` and the launch check names the provider.
+
+### Retention
+
+`filament-agentic-chatbot:prune-knowledge-generations` (scheduled daily at
+02:50, `knowledge_sources.generation_retention.schedule_enabled`) archives
+generations that nothing needs any more. A generation is kept while it is a
+source's active or staging generation, is pinned by any frozen Agent version
+(live or restorable) or Workflow deployment, is read by a live current version
+now, or was superseded or failed less than
+`knowledge_sources.generation_retention.days` ago
+(`AGENTIC_CHATBOT_KNOWLEDGE_GENERATION_RETENTION_DAYS`, default 30, minimum 1).
+Archiving sets the status `archived` and `archived_at`, removes documents,
+chunks, vectors in the configured backend and backend-switch copies, and keeps
+the row with its public id, hashes, counts and index contract as provenance.
+Stored citations keep their own label and preview. Vectors of an archived
+generation in a backend other than the configured one are not removed. Use
+`--dry-run` to list eligible generations and `--days` to override the window
+for one run.
 
 ### Chunking Strategy
 
@@ -151,16 +233,58 @@ Supported embedding providers in the package credential checks are Gemini, OpenA
 
 ## Vector Backends
 
-Vectors are stored in a dedicated backend optimized for similarity search.
+Chunk text and metadata always live in the package tables. The vectors live in
+the configured backend (`AGENTIC_CHATBOT_VECTOR_BACKEND`):
 
-### pgvector (Recommended)
+| Backend | Storage | Search | Use it for |
+| --- | --- | --- | --- |
+| `database` (default) | `bot_knowledge_vectors` on the package connection (MySQL, MariaDB, PostgreSQL or SQLite) | exact cosine similarity in PHP | small and medium knowledge without extra infrastructure |
+| `pgvector` | `vector(N)` column on a PostgreSQL package connection | pgvector; ivfflat index up to 2,000 dimensions, exact above | larger knowledge |
+| `chroma` | a Chroma collection | Chroma | a separate vector service |
 
-PostgreSQL with the `pgvector` extension. This is the recommended backend because:
+### database (default)
 
-- runs alongside your existing PostgreSQL database
-- no additional infrastructure required
-- supports exact and approximate nearest neighbor search
-- production-proven at scale
+Each vector is stored as little-endian float32 values with its precomputed
+norm, its dimension and the identity of its embedding profile (index version,
+provider, model, dimensions). Vectors that are not a list of numbers, contain a
+value that is not finite in float32, have a zero norm or the wrong dimension
+are rejected before anything is written.
+
+A search first restricts the rows to the exact source generations the
+published Agent version pins and to their embedding identity, then streams
+them in batches, scores each with cosine similarity and keeps the best
+`top_k` in bounded memory. Equal scores are ordered by chunk id, so results are
+deterministic. Results match an exact cosine reference and pgvector exact
+search (`VectorBackendParityTest`). Lexical and hybrid retrieval read the same
+pinned generations.
+
+Because every pinned chunk is scored, the backend limits what one Agent may
+search. Doctor warns above `AGENTIC_CHATBOT_VECTOR_DATABASE_WARNING_CHUNKS`
+(default 800 chunks) and the hard limit is
+`AGENTIC_CHATBOT_VECTOR_DATABASE_MAX_CHUNKS` (default 3,000). Both are counted
+at 1,536 dimensions; larger embeddings lower them proportionally, so 3,072
+dimensions allow 400 and 1,500. The hard limit is checked:
+
+- before an import is embedded, for every Agent the source is assigned to;
+- again when the new version is activated, under locks, so parallel imports
+  of shared sources cannot pass together;
+- when an Agent is published (assigning an indexed source to another Agent
+  cannot bypass it);
+- at search time, failing closed.
+
+Activation locks assigned Agents in id order before the Source, matching
+Publish and Add answer. It checks the assignment set again under these locks;
+a concurrent assignment change fails ingestion and keeps the previous complete
+generation active. Retry ingestion after assignments have settled.
+
+A refused import marks the source failed with the remedy, keeps the previous
+complete version active and is not retried. ADR 0047 records the measured
+latencies behind the defaults.
+
+### pgvector
+
+PostgreSQL with the `pgvector` extension. Set a PostgreSQL package connection
+(the application's default connection, or `AGENTIC_CHATBOT_DB_CONNECTION`):
 
 ```env
 AGENTIC_CHATBOT_VECTOR_BACKEND=pgvector
@@ -172,11 +296,14 @@ AGENTIC_CHATBOT_DB_USERNAME=postgres
 AGENTIC_CHATBOT_DB_PASSWORD=secret
 ```
 
-> **Important:** The plugin uses its own database connection (`AGENTIC_CHATBOT_DB_CONNECTION`) so vector data stays separate from your main application database.
+The package registers that connection only because `AGENTIC_CHATBOT_DB_DATABASE`
+(or `AGENTIC_CHATBOT_DB_URL`) is set and `config/database.php` does not define
+it. Migrations create the extension, the `vector(N)` column and, up to 2,000
+dimensions, an ivfflat index when the backend is `pgvector` at migration time.
 
 ### ChromaDB
 
-A standalone vector database. Use this when you want to separate vector storage from PostgreSQL entirely:
+A standalone vector database:
 
 ```env
 AGENTIC_CHATBOT_VECTOR_BACKEND=chroma
@@ -187,9 +314,24 @@ AGENTIC_CHATBOT_CHROMA_COLLECTION=filament-agentic-chatbot
 
 Chroma filtering is strict. If all nearest-neighbor results fall below the configured threshold, retrieval returns no chunks. There is no threshold-bypass compatibility path.
 
+### Switching backends
+
+`php artisan filament-agentic-chatbot:switch-knowledge-backend {database|pgvector|chroma}`
+copies every ready knowledge generation's vectors into the target backend for
+the same chunk rows and verifies each copy (count, checksum and a retrieval
+probe) while the configured backend keeps serving. `--dry-run` shows the plan
+and writes nothing. Vectors are copied only when the chunks carry the
+generation's embedding identity; otherwise the source must be re-embedded with
+a normal ingestion (`--reembed` queues it). When everything that sources and
+live Agent versions need is verified, the command prints the configuration
+cutover. It never edits configuration, never deletes the old vectors and never
+moves package tables. After the cutover, published versions keep their pins
+and read the verified copies. See [Operations](OPERATIONS.md#switching-backends)
+for the full procedure.
+
 ## Retrieval
 
-Retrieval finds relevant chunks when the published Agent searches its pinned knowledge or a Playbook runs a knowledge Capability step.
+Retrieval finds relevant chunks when the published Agent searches its pinned knowledge or a Workflow runs a knowledge Tool step.
 
 ### What Happens During Retrieval
 
@@ -233,8 +375,12 @@ Retrieval returns a typed result with `status`, `strategy`, `evidence_quality`, 
 Diagnostics contain a query fingerprint, per-stage latency/candidate counts, index version plus embedding identity, selected strategy, calibration dataset/version, and reranker budget/capability status. They do not contain the raw retrieval query. Workflow traces and terminal workflow variables also redact raw retrieval-query values.
 
 The immutable Agent deployment pins the exact knowledge sources available to a
-turn. `AgentKnowledgeTurn` exposes one bounded `search_agent_knowledge` tool only
-when such pins exist, and every search crosses `CapabilityExecutionGateway`.
+turn. The Agent loop offers one bounded `search_knowledge` tool (`KnowledgeTool`)
+only when such pins exist, and every search crosses `CapabilityExecutionGateway`,
+which resolves the generations once (`LiveKnowledgeGenerationResolver`) and
+blocks the search when a pinned source was revoked (`knowledge_source_revoked`)
+or no verified generation matches the pinned profile
+(`knowledge_generation_unavailable`).
 The gateway accepts only usable retrieval evidence from those sources; empty,
 insufficient, degraded-below-threshold, unavailable, and failed results become
 an explicit no-evidence result. The Agent must cite only supplied reference
@@ -248,7 +394,7 @@ Run `php artisan migrate` to create the PostgreSQL FTS index, then re-ingest eve
 
 ### Knowledge Readiness
 
-An Agent knowledge capability can retrieve evidence only when the Agent
+An Agent knowledge tool can retrieve evidence only when the Agent
 deployment pins at least one completed source with chunks. Completed sources
 without chunks, pending sources, failed sources, and mutable authoring-only
 attachments do not make retrieval ready.
@@ -288,12 +434,14 @@ Re-ingest when:
 - The source content has changed (updated docs, new FAQ entries)
 - You changed the chunking strategy (size, overlap, token mode)
 - You switched embedding models or dimensions
-- You changed the vector backend
 - Retrieval quality has degraded after configuration changes
 
-Use the **Re-ingest** action on individual sources or the bulk re-ingest on the bot page inside Filament. Re-ingestion replaces all existing chunks for that source.
+A vector backend change does not need re-ingestion; use the switch command
+described above.
 
-Deleting a source queues vector cleanup. Chroma receives the collected chunk IDs and deletes matching vector IDs asynchronously; pgvector remains idempotent because vectors live on database chunk rows that are removed by cascade.
+Use the **Re-ingest** action on individual sources or the bulk re-ingest on the bot page inside Filament. Re-ingestion builds a new generation for that source; Agents with current knowledge read it when it completes, frozen versions after their next Publish. A revoked source is never ingested again.
+
+Deleting a source queues vector cleanup. Chroma receives the collected chunk IDs and deletes matching vector IDs asynchronously; the database and pgvector backends remain idempotent because their vectors are removed with the chunk rows by cascade.
 
 ## Queue Behavior
 
@@ -322,3 +470,9 @@ If ingestion stays `pending` too long:
 - [Bots](BOTS.md) — per-bot retrieval configuration
 - [Agent Runtime Architecture](AGENT_RUNTIME_ARCHITECTURE.md) — how retrieval fits into the parent-agent runtime
 - [Core Concepts](CORE_CONCEPTS.md) — how ingestion fits into the overall architecture
+
+Website extraction passes the already fetched `body`, `content_type` and
+canonical `url` through `ExtractsContent`; custom extractors never fetch the
+Website URL themselves. Unchanged-vector reads are limited to one document
+batch on database, pgvector and Chroma. Lower `ingestion.max_fetch_bytes`
+limits apply to responses and expanded sitemaps as well.

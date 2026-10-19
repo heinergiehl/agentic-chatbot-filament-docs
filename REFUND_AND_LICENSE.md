@@ -1,6 +1,13 @@
 # Refund and License Terms
 
-This summary clarifies the default commercial boundary. The checkout, invoice, order confirmation, marketplace terms, and any signed agreement control when they expressly differ. Have the terms reviewed for the jurisdictions in which the plugin is sold.
+A purchase licenses the self-hosted plugin for your application. AI provider usage and hosting are separate costs. This summary clarifies the default commercial boundary and does not announce a stable release of the 1.0 candidate. The checkout, invoice, order confirmation, marketplace terms, and any signed agreement control when they expressly differ. Have the terms reviewed for the jurisdictions in which the plugin is sold.
+
+The selected `v1.0.0` release has conditional authorization for intended
+publication on `2026-10-19`; required gates and publisher finalization remain pending.
+Candidate documentation does not make that version available through checkout,
+extend an update/support entitlement or change the license already granted by
+your order. Check the delivered version before following its setup or upgrade
+instructions.
 
 ## Licensed use
 
@@ -27,4 +34,4 @@ Send the purchase ID, purchase date, plugin version, supported-stack details, sa
 
 ## Warranty and responsibility
 
-The plugin is provided on an “as is” and “as available” basis to the maximum extent permitted by law. AI output, external side effects, model/provider availability, and buyer-authored workflows require staging, review, least-privilege credentials, monitoring, backups, and normal production controls. Nothing in these terms excludes liability or statutory rights that cannot legally be excluded.
+The plugin is provided on an “as is” and “as available” basis to the maximum extent permitted by law. AI output, external side effects, model/provider availability, and buyer-authored Workflows require staging, review, least-privilege credentials, monitoring, backups, and normal production controls. Nothing in these terms excludes liability or statutory rights that cannot legally be excluded.

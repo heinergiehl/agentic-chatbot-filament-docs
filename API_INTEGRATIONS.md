@@ -6,7 +6,7 @@ Agent Access Tokens are server-side secrets. Do not embed them in browser JavaSc
 
 ## Create An Agent Access Token
 
-1. Open **Agentic Chatbot > Connect** and choose **API access / tokens** in Filament. The existing Agent Access Tokens URL remains available.
+1. Open **Agentic Chatbot > Connect > Developers** and choose **Access tokens** in Filament.
 2. Select the bot.
 3. Give the token a clear name such as `Telegram production`.
 4. Set **Channel** to classify where the token is used, for example `API`, `Web Widget Bridge`, `Telegram`, or `Slack`.
@@ -66,16 +66,16 @@ Content-Type: application/json
 | --- | --- | --- |
 | `message` | Yes | User message passed to the active Agent. |
 | `session_id` | Yes | Stable conversation key controlled by the integration. Use one per external chat/user/thread. |
-| `client_turn_id` | Recommended | Stable ID for this one user turn. Reuse it only when retrying the identical request. Alternatively send the same value as an `Idempotency-Key` header. |
+| `client_turn_id` | Production default: yes | Stable ID for this one user turn. Reuse it only when retrying the identical request. Alternatively send the same value as an `Idempotency-Key` header. |
 | `area` | No | Context area, for example `public`, `member`, `admin`, or a custom area such as `manager`. |
 
-Every accepted response includes `X-Chat-Turn-Id`. The server generates an ID when the request omits one, but integrations should provide their own stable delivery/event ID so a timeout retry cannot run the same Agent turn, Playbook, or external action twice. Reusing an ID with different message, resolution, area, or transport returns `409 chat_turn_input_mismatch`. A completed, waiting, failed, or cancelled turn returns its stored response without re-running the Agent or Playbook; `X-Chat-Turn-Replayed: true` identifies that path.
+Every accepted response includes `X-Chat-Turn-Id`. The `api.require_client_turn_id` setting (`AGENTIC_CHATBOT_CHAT_REQUIRE_CLIENT_TURN_ID`) defaults to `true` in production and `false` elsewhere. When it is disabled and the request omits the ID, the server generates a new one for each delivery; that request cannot be deduplicated even with a valid signed token. Integrations should provide their own stable delivery/event ID for timeout retries. A decided confirmation card independently prevents another execution. Reusing an ID with different message, resolution, area, or transport returns `409 chat_turn_input_mismatch`. A completed, waiting, failed, or cancelled turn returns its stored response without re-running the Agent or Workflow; `X-Chat-Turn-Replayed: true` identifies that path.
 
 Only one executing turn is allowed per conversation. Before returning a busy response, admitting a different client-turn ID, or answering the turn-status endpoint, the runtime reconciles an already-terminal bound AgentGraph result into the canonical Chat Turn exactly once without dispatching workflow nodes again. A genuinely active duplicate returns `202 chat_turn_in_progress` with `Retry-After`; a different ID returns `409 conversation_turn_in_progress`. If the server cannot prove whether an interrupted turn completed, it records `unknown` and returns `409 chat_turn_outcome_unknown` instead of risking duplicate side effects. An operator must verify the external outcome and use the audited reconciliation command documented in the Operations guide; clients must not work around the lock with another ID.
 
 ### Success Response
 
-The endpoint returns the final Agent message in a stable JSON shape. If the Agent invokes a Playbook, run metadata and structured button/card fields are included.
+The endpoint returns the final Agent message in a stable JSON shape. If the Agent invokes a Workflow, run metadata and structured button/card fields are included.
 
 ```json
 {
@@ -220,4 +220,4 @@ After migrations and token setup, run:
 php artisan filament-agentic-chatbot:qa-enterprise-smoke --host=your-app.test
 ```
 
-Use **Agentic Chatbot > Insights > Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.
+Use **Agentic Chatbot > Conversations > Usage** to inspect recorded usage events, filter by token channel or owner type, and review token/cost trends on the bot **Analytics** page.

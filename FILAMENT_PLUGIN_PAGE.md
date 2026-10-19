@@ -1,234 +1,80 @@
-# Agentic AI Chatbot Builder
+# AI Support Agent & Chatbot for Filament
 
-> **Product Hunt launch offer: save $50 with PH50**
->
-> **Single Project: $99.99 instead of $149.99. Studio: $229.99 instead of $279.99.** All prices are in USD, plus applicable taxes. Offer ends October 13, 2026.
->
-> **Enter PH50 at checkout to receive the discount.** Select your plan, click **Have a coupon?**, enter **PH50**, then click **Apply Coupon** before paying. The discount is not applied automatically.
->
-> [Choose your license and apply PH50](https://checkout.anystack.sh/agentic-chatbot).
+Answer support questions, help customers check their orders and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
 
-Build and manage AI chatbots for your Laravel application directly in Filament. Configure each chatbot's instructions, knowledge base, approved tools, and embeddable chat widget, then test its answers and tool choices before making it available to users.
+Picture a shop's support conversation: a visitor asks a public delivery FAQ and receives an answer from your Sources. After signing in through your host app, the customer checks **Order status**, reviews a proposed **delivery address** change and presses **Confirm**. An unresolved question goes through **Handoff** to your team's Inbox. You supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
 
-An Agent can choose when to answer a question, search your knowledge sources, read permitted application data, or invoke a visual Playbook for a task that needs several steps. You define the tools and access it receives. Application actions remain subject to authorization, confirmation, and execution rules.
+[Try the demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Read the setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 
-**Self-hosted commercial plugin** · **Filament 5** · **Laravel 12 and 13** · **Bring your own AI provider keys**
+Commercial proprietary software for your application. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI usage and infrastructure costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
-- [Try the live demo](https://filament-agentic-chatbot.heinerdevelops.tech/)
-- [Read the quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
-- [Check compatibility and provider support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md)
+## Three concrete uses
 
-## What you can build
+### Answer shipping and returns questions
 
-### Customer support and onboarding chatbots
+Attach selected text, Files, Website or JSON API Sources. The Agent searches that content and can include citations in its answer. Review answers with your own content and provider before serving visitors.
 
-Create a support chatbot that answers questions from your documentation, explains product features, and helps users find relevant information. Answers can include source citations. Your team can review conversations and feedback in Filament and take over through the Human Handoff Desk when needed.
+### Help signed-in customers with an order
 
-### Internal AI assistants with access to Laravel data
+Expose approved Eloquent fields through an App data tool. Bind orders to the customer and tenant from your host identity, then configure an allowed address update. The customer confirms the proposed values before that personal write runs. Filament Resource import helps propose a Tool Draft; you still review scopes, fields and permissions.
 
-Build an assistant that helps users look up information in your application. For example, it could retrieve a permitted order or find a record through a configured API. You choose the Eloquent resources, fields, filters, scopes, and API operations it may use; access stays within those approved boundaries.
+### Continue a conversation with your support team
 
-### Conversational workflows for application tasks
+Enable Handoff, choose authorized notification recipients and configure business hours. Operators can assign the conversation, add internal notes, reply in the same chat and explicitly return it to the Agent.
 
-Guide a user through collecting details, checking a condition, requesting approval, and calling a configured application action. The optional visual Playbook Builder lets you define those steps and inspect the resulting run. Each use case depends on the data, integrations, and permissions you configure.
+## Start with an Agent; add a Workflow when needed
 
-## What makes the chatbots agentic?
+Give each Agent its instructions, provider, model, Sources and Tools. **Test** runs the saved Draft and simulates writes. **Publish** creates an immutable Version; **Restore** selects an earlier Version while keeping Live/Paused availability. Pause and Resume control whether the Agent answers visitors.
 
-Each Agent handles the conversation and selects from the knowledge and tools attached to its live version. It can ask for clarification when required information is missing and use an optional Playbook when a request matches that Playbook's purpose.
+A Workflow is never required for ordinary or knowledge-grounded chat. Add one when a task needs a defined sequence, input collection, a decision or team approval. The Workflow Builder provides a step list and canvas for that bounded process.
 
-Data, API and MCP tools read what you approved. A tool that changes data only proposes the change: the visitor sees the exact values on a card and the write runs once after **Confirm**. Built-in switches let an Agent hand the conversation to your team or save a lead. An Agent does not receive unrestricted access to your database, application code, or arbitrary APIs.
+![Shop chat showing a delivery answer and its Source citation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-faq.png)
 
-A Playbook is never required for ordinary or knowledge-grounded chat. You can start with a knowledge assistant and add tools or visual workflows as your use case grows.
+Answer a public delivery question from your approved Sources.
 
-## Build and manage AI chatbots in Filament
+Historical FAQ capture: the citation card predates the current layout fix.
 
-Manage multiple Agents from your existing admin panel, with separate instructions, providers, models, knowledge settings, access rules, and widget presentation. The plugin adds one navigation group with four sections: **Build**, **Connect**, **Inbox** and **Insights**. Its name, order, labels and shown sections are set on the plugin class.
+![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
 
-### Customize each chatbot for its role
+Read Order status after the customer's normal host login.
 
-- **Behavior and answers:** define the Agent's purpose, instructions, tone, and response policy.
-- **AI provider and model:** choose the configured provider and model for each Agent.
-- **Knowledge and tools:** attach the sources, Laravel Data Resources, API Connector operations, and optional Playbooks that serve its role. Developers can register custom application capabilities.
-- **Chat experience:** adjust the widget's style template, colors, title, welcome guidance, suggested messages, and source presentation.
-- **Access:** configure the intended audience and permitted website origins, alongside the permissions enforced by your application.
+![Delivery address confirmation showing the target order, proposed values and Confirm and Cancel controls](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-address-confirm.png)
 
-For example, a public support chatbot can use product documentation and a support Playbook, while an internal assistant uses a different model and selected application data. Each Agent has its own configuration and permitted tools.
+Review a permitted delivery address change before confirming.
 
-### From configuration to a tested chatbot
+![Authorized operator replying to the customer's handed-off conversation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-handoff.png)
 
-1. **Create an Agent.** Define its role, response behavior, provider, and model.
-2. **Connect its knowledge and tools.** Attach selected sources, Data Resources, API Connector operations, host capabilities, and optional Playbooks.
-3. **Test representative conversations.** Check answers, tool choices, missing information, and failure behavior.
-4. **Test and publish the Agent.** Chat with the saved draft in **Test** (writes are simulated), then **Publish** to make it live as a new immutable version; **Restore** brings back an earlier version. Publishing leaves the Agent's availability unchanged.
-5. **Make it available where needed.** Configure availability and website access, then embed its chat widget or use a supported server or channel integration.
+Continue an unresolved conversation in the team's Inbox.
 
-Saved changes reach visitors only when you publish. Availability, website access, and credential changes take effect when saved. This lets you improve a draft while the live Agent keeps its published configuration.
+![Workflow step list for collecting an issue and handing it to the team](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-workflow.png)
 
-## Knowledge bases and RAG with source citations
+Add a Workflow when support needs a defined sequence.
 
-Connect text, files (including PDF, Word, CSV and Excel), web pages, and JSON API sources to an Agent's knowledge base. One source can serve several Agents, and URL and API sources can re-sync daily or weekly. Retrieval-augmented generation (RAG) retrieves relevant source material to help the Agent answer questions using your content.
+## Connect only the data and operations you choose
 
-- Configure retrieval settings for each Agent.
-- Include source citations in answers where available.
-- Re-ingest sources when their content changes.
-- Review source use, user feedback, and knowledge gaps to identify content that needs improvement.
+App data tools expose selected records and fields. API tools expose reviewed operations from your configured Connections; MCP tools connect to supported remote servers. An adapter's availability does not certify every provider, model or server configuration. Read the [MCP guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md) before connecting a server.
 
-Source retrieval helps ground answers; AI output still needs testing and review for your intended use case.
+Confirmation is on by default. Personal App data tool writes, MCP writes, lead capture and updates with **Allow updating any record** require confirmation. Administrators may disable **Ask visitor to confirm** for eligible operations, such as a reviewed non-personal write. Team approval is separate. Authorization and execution controls still apply when visitor confirmation is disabled.
 
-## Connect Laravel Eloquent data and APIs
+An Unverified action means the result could not be established and needs reconciliation. AI output can be wrong; test your data boundaries, failure behavior and representative questions. Read the [known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md).
 
-Use **Data Resources** to expose selected Eloquent data on one setup screen with explicit field, filter, sort, search, total, group, scope, result, and query-budget controls. The Agent sees linked record names instead of raw keys, and optional inserts and updates run only after visitor confirmation.
+## Embed on your website
 
-Use **API Connectors** to define the operations an Agent or Playbook may call. **Integration Studio** can import OpenAPI, Postman, or cURL definitions into inactive drafts for review. Developers can also register host application capabilities explicitly.
+Copy the generated script from **Channels** after allowing the intended domains. Configure the welcome text and appearance in Filament.
 
-Versioned operation bindings, authorization checks, confirmation, duplicate-execution controls, redaction, and reconciliation govern execution. These controls support application integrations while keeping the permitted actions explicit.
+Production uses **tokenless bootstrap**: the loader calls the origin-checked `/bootstrap` endpoint and keeps short-lived access tokens in memory. Signed-in customer data additionally needs trusted host identity and explicit Tool scopes. [Widget integration guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
 
-## Connect remote MCP servers
+## Setup overview
 
-Connect an existing remote **Model Context Protocol (MCP)** server over HTTPS, import its tools in one step and choose per tool whether Agents may read with it. Tools the server marks read-only start as reads; every other tool stays off until you choose. A write tool needs its own review and staging test, and visitors confirm every MCP write. One connection can serve several Agents. The guided GitHub setup prepares access to a specific repository's documentation, files, issues, and commits.
+1. **Check your host.** You need a compatible Laravel/Filament app, supported database, your own AI provider account, persistent queue worker, scheduler and shared cache. Production App data tools require a supported server database. [Requirements and tested configurations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md).
+2. **Install after purchase.** Use the private Composer repository and credentials from Anystack. Follow the [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) to register the plugin, grant access and run the installer.
+3. **Create and test.** Start with an anonymous FAQ Agent, add a Source and test representative questions. Configure identity and record scopes separately before adding personal Tools.
+4. **Publish and embed.** Review readiness, publish the Agent, allow the website and verify a conversation in your deployment.
 
-See the [MCP server setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md) for authentication and supported connections.
+For an existing installation, follow the [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) before changing the package. The linked compatibility and setup guides identify their documentation target; match them to your download. Demo content may differ from your installed package.
 
-## Visual workflow builder with optional Playbooks
+## Support and license
 
-A **Playbook** is a visual workflow for a specific task that needs a defined sequence of steps. You describe when the Agent should use it and build the process inside Filament as a step list or on a canvas, starting from a description or a template. The Agent invokes it when a matching request needs that process.
+Support covers installation/configuration guidance and reproducible defect triage within your entitlement. Contact `webdevislife2021@gmail.com` with sanitized reproduction steps. [Support policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md) defines hours and first-response targets.
 
-![Playbook step list in Filament: a start step that collects a reason and contact email, a visitor confirmation that branches into Confirmed and Cancelled, a handoff request to the team, and a result at the end of each branch](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-10-05-playbook-editor.png)
-
-*The Human handoff Playbook from the Customer Support & Human Handoff Solution Kit in the step list, captured from the local demo. It collects a reason and contact email, asks the visitor to confirm, then hands the conversation to your team. **Canvas** shows the same Playbook as a diagram.*
-
-For example, a support Playbook could collect an issue description, look up an allowed record, branch on the result, ask for confirmation, and call your configured ticket-creation action. You supply the relevant data access and integration; the Playbook defines how those steps fit together.
-
-Playbooks can collect input, branch on conditions, request approvals, call capabilities, wait for a result, perform AI tasks, transform values, and hand work to a person.
-
-- Combine input, decision, action, and result steps.
-- Use bounded iteration and sub-Playbooks for reusable processes.
-- Try a Playbook in the editor's test chat before publishing it.
-- Inspect runs, checkpoints, waits, cancellations, and execution traces.
-- Drafts never change live chat; **Publish** makes a new immutable version live.
-
-The Agent remains responsible for the conversation. A Playbook defines the controlled process for the requests that need one.
-
-## Embeddable chat widgets for your website
-
-Add a chatbot to your website or product frontend using the generated script snippet. Configure its appearance and welcome experience in Filament, including style templates, colors, titles, suggested messages, and source presentation.
-
-<img src="https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/2026-10-05-chatbot-widget.png" alt="Chat widget welcome screen for a demo Agent named Mission Control, with a welcome heading, conversation starters grouped under Explore and Live data, a More suggestions toggle, and a message field with an attachment button" width="380" />
-
-*The welcome screen of the demo's Mission Control Agent, captured from the local demo. Set your own title, welcome text and conversation starters in Filament.*
-
-The browser integration includes streaming responses, private attachments (picker, paste or drop, with image thumbnails), up to eight conversation starters shown as compact chips, bounded page context, and a typed widget SDK with lifecycle events for application integration.
-
-After creating and testing an Agent, copy its generated embed snippet into your website layout. It has this form:
-
-```html
-<script
-    src="https://your-app.example/filament-agentic-chatbot/widget"
-    data-bot="YOUR_BOT_PUBLIC_ID"
-    data-area="public"
-    data-size-preset="comfortable"
-    data-font-preset="modern-sans"
-    data-show-sources="true"
-    defer
-></script>
-```
-
-Use the URL and Agent ID from your own generated snippet. Widget appearance and welcome settings are managed in the Agent editor.
-
-Production embeds use a **tokenless bootstrap**: the snippet contains no permanent browser credential. The loader calls the origin-checked `/bootstrap` endpoint and keeps short-lived access tokens in memory. Configure a dedicated signing key and an exact Allowed Domains entry for each intended website origin.
-
-[Read the widget setup and integration guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
-
-## Human handoff, conversation review, and tests
-
-Operate your chatbots from Filament with conversation history, feedback, usage reporting, privacy actions, and execution traces. The **Inbox** collects handoffs and action reviews that wait for a person, with a count badge. The Human Handoff Desk supports assignment, internal notes, operator replies, and an explicit return to the Agent.
-
-Versioned Solution Kits provide reviewed starting configurations, including Customer Support & Human Handoff. Tests in the Agent editor replay saved conversations against the draft and check tool calls, answer text and a rubric; failing tests show as warnings before publishing.
-
-Outbound webhooks report conversations, submissions, feedback, handoffs, Playbook results and budget thresholds to your systems, optionally with redacted content, and a token-authenticated read API returns the details. **Usage** shows cost and tokens per Agent and day with shipped default model prices that you can override. The admin UI is available in English and German, with machine-translated French and Spanish. Telegram is available by default; Slack, WhatsApp Cloud API, Mailtrap and Mailgun email adapters are opt-ins that require provider setup and validation in your deployment. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) and [channel setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md) for its configuration and availability requirements.
-
-## Requirements and installation
-
-This is a commercial Laravel package installed in your own application. You need a compatible Laravel and Filament installation, your own AI provider account and keys, a supported database and vector store, a supervised asynchronous queue worker, and the Laravel scheduler.
-
-PostgreSQL with pgvector is the documented release-validation database path. ChromaDB is an alternative vector-store adapter that buyers must validate in their own environment. Docker is used for reproducible release checks; it is not a requirement for customer hosting.
-
-### 1. Install with Composer
-
-After purchasing a license, copy the private Composer repository URL from your Anystack account. Run these commands inside your Laravel application, replacing the example URL with the one Anystack provides:
-
-```bash
-composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot
-```
-
-Use the buyer credentials shown by Anystack when Composer requests authentication. Keep license credentials out of your application repository. Check the [compatibility matrix](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md) before choosing a package release.
-
-### 2. Register the plugin in Filament
-
-Add the plugin to your existing panel provider's `plugins()` list before running the installer. This example shows the relevant registration; keep the rest of your panel configuration and existing plugins:
-
-```php
-use Filament\Panel;
-use Heiner\FilamentAgenticChatbot\FilamentAgenticChatbotPlugin;
-
-public function panel(Panel $panel): Panel
-{
-    return $panel->plugins([
-        FilamentAgenticChatbotPlugin::make(),
-    ]);
-}
-```
-
-### 3. Configure and finish setup
-
-Follow the [quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) to configure your database, vector store, AI provider, and keys. Then run the installer:
-
-```bash
-php artisan filament-agentic-chatbot:install
-```
-
-The installer checks panel registration, publishes configuration, runs migrations, and executes Doctor setup diagnostics. Resolve reported failures before serving users. Start an asynchronous queue worker for ingestion and background work:
-
-```bash
-php artisan queue:work
-```
-
-Use a supervised worker in production, run the Laravel scheduler every minute, and give web and queue processes one shared cache store so answers stream. Complete the quickstart's website-access setup, then create and test an Agent before embedding it for users.
-
-Available package versions are listed in your Anystack account. The installation guides and compatibility matrix identify their documentation target; confirm that it matches the package you are installing. Before upgrading an existing installation, follow the [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) for backups, migrations, and any breaking changes.
-
-## Common questions
-
-### Is this a hosted chatbot service?
-
-No. The builder runs inside your Laravel application and is managed through Filament. You operate the application, queues, database, storage, backups, and monitoring. Model requests go to the AI provider you configure.
-
-### Are AI usage fees included?
-
-No. This is bring-your-own-key software. You supply your own provider credentials and pay provider and infrastructure costs separately from the plugin license.
-
-### Do I need a workflow for every chatbot?
-
-No. An Agent can answer questions, use its knowledge base, and perform approved reads without a Playbook. Add a visual workflow when a task requires a defined sequence, approval, or application action.
-
-### Can I use it in a SaaS application?
-
-The default license allows use in one Licensed Application, including that application's SaaS use and development, staging, and production environments. Your host application remains responsible for tenancy, billing, users, business data, privacy, and final production policy. Broader rights depend on your purchase terms.
-
-## Documentation and support
-
-Validate the provider, model, integrations, and operating environment you intend to use. An available adapter does not certify every provider or account configuration, and AI responses can be wrong.
-
-- [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md)
-- [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md)
-- [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
-- [Support policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
-
-Support contact: `webdevislife2021@gmail.com`. Published response targets are first-response targets, not a resolution guarantee.
-
-## License
-
-This is commercial proprietary software. Unless your purchase record grants a broader tier, the default scope is one legal entity and one Licensed Application. Redistribution of the plugin or resale of a general-purpose hosted builder is not permitted.
-
-[Read the refund and license terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
+You run the application, database, queues, backups and monitoring. Requests use your configured AI provider account. SaaS use of your Licensed Application is permitted under the default license; redistribution of the plugin and resale as a general-purpose hosted builder require separate rights. [Refund and license terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).

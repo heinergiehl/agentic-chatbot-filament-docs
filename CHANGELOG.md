@@ -2,7 +2,73 @@
 
 All notable changes to this package will be documented in this file.
 
-## [Unreleased]
+## [1.0.0] - 2026-10-19
+
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. The dated heading records the intended publication date.
+Prepared, unpublished [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) describe the candidate
+changes and evidence limits. Upgrade baseline: 0.20.5. Follow the ordered procedure
+in [UPGRADING.md](UPGRADING.md#ordered-0205-to-10-procedure); rollback requires
+paired database and storage backups.
+
+### Breaking changes for 1.0
+
+- Laravel AI changes from `^0.11.2` to `^1.2.1`; AgentGraph from `0.18.1` to
+  `0.19.0`; Filament requires `^5.10.2`. Review SDK response/usage contracts
+  and host integrations before updating.
+- WhatsApp is removed: `WhatsAppCloudChannelDriver`,
+  `WhatsAppChannelMessageRenderer`, channel registration and `channels.whatsapp`
+  configuration are removed. Existing WhatsApp connections, threads, delivery
+  events and staged inbound attachments are deleted; historical conversations
+  and messages remain. The deleted connections' webhook URLs stop resolving.
+  Choose a supported channel.
+- Fresh installs use the host database and the `database` vector backend.
+  Existing pgvector installs must explicitly retain their effective database
+  and vector configuration. No automatic relocation or re-ingestion occurs.
+- Administration uses explicit abilities, with upgrade detection for existing
+  host Gates. The Agent permission mode is removed; draft conversion preserves
+  previously denied authority. App data tools add visitor identity pairs and
+  optional host read policies; package-internal models require explicit opt-in.
+- Settings owns app-wide embedding keys and billing acceptance. Scheduler and
+  queue heartbeats expose missing workers. Draft, Live and Paused form the Agent
+  lifecycle; reviewed dependent publication preserves unrelated drafts.
+- Sources support Website crawling and multiple Files with staged generations;
+  published source sets stay pinned. Customer identity is rechecked at execution.
+- Connections add durable Unverified actions, read-back reconciliation, refresh
+  health and readable confirmation cards. An unknown write is never replayed
+  by an upgrade; historical artifacts retain their original bytes and hashes.
+- Workflow editing uses shared commands, structural Paths, explicit For each
+  bodies, a Runs drawer, saved-Draft Test and recoverable saves. The Workflow
+  Agent prompt editor and separate Runs page are removed.
+- Insights separates operational outcomes from answer quality and records
+  Knowledge answer publication state. UI terminology and translations align
+  across English, German, French and Spanish.
+- The panel navigation has five items: Build, Connect, Inbox, Conversations
+  (Insights, with Submissions and Usage as tabs) and Settings (General, Health,
+  Developer tool providers). The Connect overview is removed, Setup is the
+  Health tab of Settings at the same URL, and the heartbeat banner is one
+  dismissible line for administrators on the Agents list and Health. Hosts can
+  opt into Overview dashboard widgets with `dashboardWidgets()`. See
+  [UPGRADING.md](UPGRADING.md#navigation-health-page-heartbeat-banner-and-overview-widgets-uxb2).
+
+### Upgrade and release assurance
+
+- The supported smoke baseline is now `0.20.5`; obsolete `0.17.5` helper paths
+  are replaced. Smoke runs require an explicit `--target-version` in the 1.0
+  line, preserve host config, use upgrade preflight/apply and restore backups.
+- The release contract selects `1.0.0` with conditional authorization; required
+  local gates and publisher finalization remain pending. The recorded host
+  rehearsal is development evidence, not certification of the selected archive.
+- Release order is local verification, GitHub tag and published Release, then
+  direct Live update. Separate VPS deployment staging is not required; product
+  App data write-test staging and permits remain required.
+- Host actor staging now binds the original operator and validated actor map
+  through dispatch. Anthropic invocations omit historical thinking blocks from
+  provider replay while preserving canonical history and the current SDK loop.
+  Deterministic regression evidence is separate from live acceptance.
+- Release policy `release-1.0-risk-focused.v1` makes the multi-hour soak optional
+  while retaining exact-candidate fault/recovery evidence and all other gates.
+  **No long-duration soak occurred**; bounded tests do not certify sustained
+  production operation. This policy change does not approve the candidate.
 
 ## [0.20.5] - 2026-10-06
 
@@ -18,6 +84,7 @@ A drop-in update of the 0.20 line: no migrations and no configuration changes. T
 
 ### Agents
 
+- The Agent editor has seven tabs. **Website & channels** is split into **Channels** (embed code, allowed websites, **Customize widget** with a live preview in a slide-over, other channels) and **Handoff and access** (**Pause** and **Resume**, handoff recipients and business hours, the Agent's own API keys under **Advanced**); the tab query values are `channels` and `access`. Each tab states once with a badge whether it goes live on Publish or applies immediately. **Instructions** shows where the key of the selected model comes from, the Agents list can Pause and Resume, a Publish that goes live links to the embed code, and users who may edit an Agent are sent from the read-only view to the editor.
 - Admins who may view Agents but not manage them (`view-bots` without `manage-bots`) open an Agent from the list in a read-only view at `/{panel}/bots/{record}` instead of getting no link: the saved setup with disabled fields, Knowledge & capabilities, Website and Versions, without save, Publish, Restore, Test or assignment actions. The Tests tab and API key overrides are left out, and knowledge, API/MCP, data and Playbook rows appear only when the viewer may see that record. The edit page still requires `manage-bots`, and so does every write. Analytics breadcrumbs link such users to the view.
 - The Agent panels expose no client-callable record readers: the Settings, Website, Versions and Tests panels no longer offer public methods that return the Agent record or another Agent's website hosts, so a browser request cannot read an Agent past the host query scope.
 - Gemini 3 Agents may pin a thinking level: `runtime_config.agent.gemini_thinking_level` set to `low`, `medium` or `high` is pinned at publication as `model.gemini_thinking_level` and sent with every Agent request as the Gemini thinking level. Thinking tokens are billed as output, so a lower level reduces cost. Without the key the provider default stays. Publication and the runtime contract validator refuse other drivers, Gemini models before version 3 and other values. The editor has no field for it.

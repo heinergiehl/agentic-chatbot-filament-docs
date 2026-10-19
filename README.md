@@ -1,56 +1,54 @@
 # Agentic Chatbot for Filament
 
-A Laravel and Filament package for building, testing, publishing, and operating AI Agents in your own application. An Agent answers from your content, reads and writes approved business data with visible visitor confirmation, hands over to people, and stays observable. Knowledge, data, APIs, MCP servers and Playbooks are attached only when an Agent needs them.
+Answer support questions, help customers check their orders and let them confirm permitted changes in chat. Configure the Agent in **Laravel and Filament**, **self-host** it, and use **your own AI provider keys**.
 
-This repository is the public documentation source. The Filament marketplace has a separate entry point: configure its `docs_url` to the raw [`FILAMENT_PLUGIN_PAGE.md`](FILAMENT_PLUGIN_PAGE.md), not this README. That standalone page uses absolute GitHub links because Filament does not resolve repository-relative documentation links.
+For a shop, one Agent answers a public delivery FAQ from a Source, checks **Order status** after the customer's host login, asks them to **Confirm** a **delivery address** change, and offers **Handoff** to the team's Inbox. You configure the order model, fields, record scopes and policy first; the plugin does not automatically access customer data.
 
-The files here mirror the package's canonical docs; `scripts/release/docs-drift-check.php` in the package lists the mirrored guides and fails when a copy differs. Keep the marketplace page independent of the package release number.
+[Demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy](https://checkout.anystack.sh/agentic-chatbot) · [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 
-The current release is `v0.20.5`. **Release status:** Approved. The GitHub release and its attached archive are authoritative. These guides describe `v0.20.5`; changes listed under **Unreleased** in the [changelog](CHANGELOG.md) ship with the next release.
+**Release status:** Approved, conditional on required gates and publication.
 
-## What the package provides
+> Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. See the [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) and [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
-- Agents with their own instructions, model, knowledge, tools, Safety settings and widget; a test chat on the saved draft, saved Agent tests, and **Publish** and **Restore** of immutable versions
-- Shared knowledge sources from text, files (PDF, DOCX, CSV, XLSX and more), web pages and JSON APIs, with daily or weekly re-sync
-- Data Resources set up on one screen: list, count, search, totals and groups, linked record names, and confirmed inserts and updates
-- API Connectors, an Integration Studio for OpenAPI, Postman and cURL, and MCP servers with one-step tool import; one connection can serve several Agents
-- Writes as tools that run only after the visitor confirms the exact values on a card
-- Built-in human handoff to an Inbox and lead capture into Submissions
-- Optional Playbooks for multi-step processes, built as a step list from templates or a description
-- A streaming widget with tokenless bootstrap, typed SDK, private attachments and confirmation cards; Telegram, Slack, WhatsApp Cloud API, Mailtrap and Mailgun email
-- Outbound webhooks with optional redacted content, a read API, usage reporting with default model prices, and English, German, French and Spanish UI
+Commercial proprietary software. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI provider and hosting costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
-## Supported target
+## Three use cases
 
-- PHP 8.3+ with `ext-zip`
-- Laravel 12.61.1+ or 13.12.0+
-- Filament 5.7.6+
-- `laravel/ai` `^0.11.2` for provider and multi-step tool execution
-- `heiner/agent-graph` `0.18.1` as the exact stable runtime dependency
-- PostgreSQL 16 + pgvector is the certified Golden Path; ChromaDB is a supported buyer-staged alternative
-- A supervised queue worker, the Laravel scheduler every minute, and a cache store shared by web and queue processes
+- **Public FAQ:** answer shipping and returns questions from selected Sources, with citations when retrieved content supports the answer.
+- **Customer order support:** look up only the signed-in customer's orders and confirm an allowed address change.
+- **Team support:** send an unresolved question to the Inbox so an operator can continue the conversation.
 
-Docker is used for reproducible release validation, not imposed as a customer deployment model. See [Compatibility and Certification](COMPATIBILITY.md).
+![Shop chat showing a delivery answer and its Source citation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-faq.png)
 
-## Install after purchase
+Answer a public delivery question from your approved Sources.
 
-```bash
-composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYSTACK-PRODUCT.composer.sh
-composer require heiner/filament-agentic-chatbot:^0.20
-```
+This FAQ image is historical and predates the citation-width fix. A current
+live-flow capture is pending; it does not demonstrate the current candidate.
 
-Register `FilamentAgenticChatbotPlugin::make()` in the desired Filament panel before running the installer:
+![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
 
-```bash
-php artisan filament-agentic-chatbot:install
-php artisan queue:work --queue=agentic-chat,default --timeout=150 --tries=1
-```
+Read Order status after the customer's normal host login.
 
-The installer checks panel registration before publishing configuration, running migrations, and executing Doctor. Then add the scheduler (`* * * * * php artisan schedule:run`); see the [Quickstart](QUICKSTART.md).
+![Delivery address confirmation showing the target order, proposed values and Confirm and Cancel controls](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-address-confirm.png)
 
-## Public widget
+Review a permitted delivery address change before confirming.
 
-Production snippets contain no long-lived token:
+![Authorized operator replying to the customer's handed-off conversation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-handoff.png)
+
+Continue an unresolved conversation in the team's Inbox.
+
+## Setup overview
+
+Requirements: PHP 8.3+ with Composer-required extensions, Composer 2.2+, Laravel 12.61.1+ or 13.12.0+, Filament 5.10.2+ within 5.x, a supported database, a persistent queue worker, the scheduler and a cache shared by web and workers. Package storage supports MySQL 8.4+, MariaDB 11.4+, PostgreSQL 15+ and SQLite 3.39+. Production App data tools require a supported server database. [Compatibility and measured scope](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md).
+
+1. Buy access and configure your private Anystack Composer repository. After publication, install with `composer require heiner/filament-agentic-chatbot:^1.0`. Until then, evaluate only the owner's exact candidate artifact; the constraint may have no available version.
+2. Register `FilamentAgenticChatbotPlugin::make()`, grant administrator access explicitly and configure your provider key.
+3. Run `php artisan filament-agentic-chatbot:install`, supervise the worker and run the scheduler every minute.
+4. Create an Agent, add a Source, **Test**, then **Publish**. Configure **Allowed hosts** and copy the embed. **Restore** selects an earlier Version while preserving Live/Paused availability.
+
+Follow the [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) for the anonymous FAQ path and the separate authenticated-data recipe. The latter covers the host identity endpoint, record scopes and authorization in queue workers. Installation does not include an AI provider account.
+
+## Website integration
 
 ```html
 <script
@@ -64,77 +62,33 @@ Production snippets contain no long-lived token:
 ></script>
 ```
 
-Set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10`, use a dedicated signing key, and configure every intended browser origin in Allowed Domains. The loader calls the tokenless, origin-checked `/bootstrap` endpoint, keeps the returned token in memory, and renews it before expiry. Session IDs are lookup keys, not anonymous conversation authority.
+Use the generated URL and Agent ID. Production uses tokenless bootstrap at `/bootstrap`, short-lived tokens, a dedicated signing key and **Allowed hosts**. Set `AGENTIC_CHATBOT_WIDGET_SIGNING_TTL_MINUTES=10`. [Widget setup](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
 
-## Documentation
+## Tools and confirmation
 
-Start here:
+Sources supply reference content. App data tools expose selected Eloquent fields and records; API tools and MCP tools expose selected operations. Optional Workflows define bounded multi-step processes. Ordinary FAQ chat needs no Workflow. A published Version pins the Agent's configuration and Tool contracts.
 
-- [Product overview](PRODUCT_OVERVIEW.md)
-- [Quickstart and Golden Path](QUICKSTART.md)
-- [Core concepts](CORE_CONCEPTS.md)
+Confirmation is on by default. Personal App data tool writes, MCP writes, lead capture and updates with **Allow updating any record** require it. Administrators may disable **Ask visitor to confirm** for eligible operations. Team approval is separate; disabling confirmation does not bypass authorization. Unverified actions need reconciliation, and AI answers still need review for your use case.
 
-Build:
+## Privacy and retention
 
-- [Agents](BOTS.md) and [Agent tests](AGENT_TESTS.md)
-- [Knowledge sources](KNOWLEDGE_SOURCES.md) and [Ingestion and retrieval](INGESTION_AND_RETRIEVAL.md)
-- [Agents and Playbooks](AGENTIC_WORKFLOWS.md), [Playbook Builder](PLAYBOOK_BUILDER.md), [Playbook JSON schema](WORKFLOW_JSON_SCHEMA.md) and [Playbook prompt templates](WORKFLOW_PROMPT_TEMPLATES.md)
-- [Solution Kits](SOLUTION_KITS.md)
+Review the [Data retention policy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md) and adapt the [Privacy policy template](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRIVACY_POLICY_TEMPLATE.md) to your host and provider use. Session-history export uses `GET /api/filament-agentic-chatbot/chat/{botPublicId}/history/export?session_id=...`; deletion uses `DELETE /api/filament-agentic-chatbot/chat/{botPublicId}/history` with the session identity and authorization required by the chat API. These endpoints cover the transcript and scoped memory, not complete account erasure. Active or unresolved work can block deletion; business evidence and backups follow the host's retention policy.
 
-Connect:
+## Guides
 
-- [Data Resources](DATA_RESOURCES.md)
-- [API Connectors](API_CONNECTORS.md), [Integration Studio](INTEGRATION_STUDIO.md), [MCP servers](MCP_CONNECTIONS.md) and [Durable connectors](DURABLE_CONNECTORS.md)
-- [Widget](CHAT_WIDGET.md), [Context areas](CONTEXT_AREAS.md) and [Channels](CHANNELS.md)
-- [Server API](API_INTEGRATIONS.md), [Outbound webhooks](OUTBOUND_WEBHOOKS.md) and [Read API](READ_API.md)
-- [OpenAI-compatible providers](OPENAI_COMPATIBLE_PROVIDERS.md)
+- [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md), [Troubleshooting](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/TROUBLESHOOTING.md), [Compatibility](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md)
+- [Product overview](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRODUCT_OVERVIEW.md), [Core concepts](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CORE_CONCEPTS.md), [Glossary](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/GLOSSARY.md)
+- [Agents](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md), [Agent templates](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_TEMPLATES.md), [Agent tests](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_TESTS.md)
+- [Sources](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWLEDGE_SOURCES.md), [Ingestion and retrieval](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/INGESTION_AND_RETRIEVAL.md), [App data tools](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RESOURCES.md)
+- [API tools](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_CONNECTORS.md), [MCP tools](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md), [Integration Studio](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/INTEGRATION_STUDIO.md), [API integrations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/API_INTEGRATIONS.md)
+- [Workflow Builder](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYBOOK_BUILDER.md), [Workflows](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTIC_WORKFLOWS.md), [Workflow prompt templates](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/WORKFLOW_PROMPT_TEMPLATES.md), [Workflow JSON schema](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/WORKFLOW_JSON_SCHEMA.md)
+- [Website widget](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md), [Channels](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANNELS.md), [Audiences](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CONTEXT_AREAS.md), [Conversations and messages](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CONVERSATIONS_AND_MESSAGES.md)
+- [Outbound webhooks](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OUTBOUND_WEBHOOKS.md), [Read API](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/READ_API.md), [Durable Connections](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DURABLE_CONNECTORS.md), [Side-effect integrity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SIDE_EFFECT_INTEGRITY.md)
+- [Privacy and retention](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/DATA_RETENTION_POLICY.md), [Privacy policy template](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PRIVACY_POLICY_TEMPLATE.md), [Security and privacy](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SECURITY_AND_PRIVACY.md)
+- [Operations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPERATIONS.md), [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md), [Ship checklist](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SHIP_CHECKLIST.md), [AI usage accounting](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AI_USAGE_ACCOUNTING.md)
+- [OpenAI-compatible providers](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/OPENAI_COMPATIBLE_PROVIDERS.md), [Localization](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/LOCALIZATION.md), [AgentGraph SDK usage](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENTGRAPH_SDK_USAGE.md), [Public host API](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PUBLIC_API.md), [Runtime architecture](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/AGENT_RUNTIME_ARCHITECTURE.md)
+- [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md), [Changelog](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHANGELOG.md), [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md), [License/refunds](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md), [Product page](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/FILAMENT_PLUGIN_PAGE.md)
 
-Operate:
+The runtime dependency is `heiner/agent-graph` `0.19.0`; it installs transitively. Supported constraints and historical certification evidence are in Compatibility.
 
-- [Conversations and messages](CONVERSATIONS_AND_MESSAGES.md)
-- [AI usage and prices](AI_USAGE_ACCOUNTING.md)
-- [Localization](LOCALIZATION.md)
-- [Security and privacy](SECURITY_AND_PRIVACY.md), [Data retention](DATA_RETENTION_POLICY.md) and [Privacy policy template](PRIVACY_POLICY_TEMPLATE.md)
-- [Operations](OPERATIONS.md)
-- [Known limitations](KNOWN_LIMITATIONS.md)
-
-Reference and release:
-
-- [Public API](PUBLIC_API.md)
-- [Agent runtime architecture](AGENT_RUNTIME_ARCHITECTURE.md) and [AgentGraph SDK usage](AGENTGRAPH_SDK_USAGE.md)
-- [Compatibility and certification](COMPATIBILITY.md)
-- [Upgrade guide](UPGRADING.md) and [Changelog](CHANGELOG.md)
-- [Release notes v0.20.5](RELEASE_NOTES_v0.20.5.md), [v0.20.4](RELEASE_NOTES_v0.20.4.md), [v0.20.3](RELEASE_NOTES_v0.20.3.md), [v0.20.2](RELEASE_NOTES_v0.20.2.md), [v0.20.1](RELEASE_NOTES_v0.20.1.md) and [v0.20.0](RELEASE_NOTES_v0.20.0.md)
-- [Shipping checklist](SHIP_CHECKLIST.md)
-- [Support](SUPPORT_POLICY.md) and [Refund and license terms](REFUND_AND_LICENSE.md)
-- [Marketplace product page](FILAMENT_PLUGIN_PAGE.md)
-
-## Upgrading to 0.20.5
-
-`v0.20.5` is a drop-in update from `v0.20.0` through `v0.20.4`: run `composer update heiner/filament-agentic-chatbot`; it has no migrations, no configuration changes and no panel assets to publish. The widget lays out conversation starters by its width, with tiles in a narrow panel and group cards in a wide one.
-
-## Upgrading to 0.20.4
-
-`v0.20.4` is a drop-in update from `v0.20.0`, `v0.20.1`, `v0.20.2` or `v0.20.3`: run `composer update heiner/filament-agentic-chatbot` and then `php artisan filament:assets`; it has no migrations and no configuration changes. Admins who may view but not manage Agents open them in a read-only view, and Gemini 3 Agents may pin a thinking level.
-
-## Upgrading to 0.20.3
-
-`v0.20.3` is a drop-in update from `v0.20.0`, `v0.20.1` or `v0.20.2`: run `composer update heiner/filament-agentic-chatbot`; it has no migrations and no configuration changes. The Playbook editor's Canvas view draws the Approved and Declined branches of "Ask visitor to confirm" steps again.
-
-## Upgrading to 0.20.2
-
-`v0.20.2` is a drop-in update from `v0.20.0` or `v0.20.1`: run `composer update heiner/filament-agentic-chatbot`; it has no migrations and no configuration changes. Widget answers use the full panel width under a sender line, and widget text keeps its own colors and sizes on host pages that style bare elements.
-
-## Upgrading to 0.20.1
-
-`v0.20.1` is a drop-in update from `v0.20.0`: run `composer update heiner/filament-agentic-chatbot`; it has no migrations and no configuration changes. It makes streamed widget answers flow evenly as formatted Markdown, shows the elapsed time while an Agent works and adds an expandable widget panel.
-
-## Upgrading to 0.20.0
-
-`v0.20.0` overhauls the plugin: one transcript-based Agent loop, writes with visitor confirmation, built-in handoff and lead capture, one-step publish with restore, Agent tests, Safety settings, Playbooks as tools with a step-list editor, streaming, shared knowledge and connections, webhook events and a read API. It is a breaking upgrade: Quality Tests, Guardrail Policies and the release candidate flow are removed, the scheduler and a shared cache are required, and every Playbook and Agent must be published again. Several migrations drop tables and columns and cannot be rolled back, so back up the database first. Read [Upgrading](UPGRADING.md) before installing it.
-
-## Support and license
-
-Support: `webdevislife2021@gmail.com`. Response targets, supported release lines, and previous-line EOL dates are defined in [Support Policy](SUPPORT_POLICY.md).
-
-The plugin is commercial proprietary software. The purchase record defines project/entity scope. Unless a broader tier is stated, the default is one legal entity and one Licensed Application, including its non-production environments. SaaS use of that application is allowed; plugin redistribution and resale of a general-purpose hosted builder are not.
+Support: `webdevislife2021@gmail.com`. You operate the host app, queues, database, backups and provider account. Response targets are first-response targets, not resolution guarantees.

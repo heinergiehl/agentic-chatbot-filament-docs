@@ -1,119 +1,69 @@
 # Product Overview
 
-Filament Agentic Chatbot adds AI Agents to a Laravel + Filament app. An Agent
-answers from your content, reads and writes approved business data with
-visible visitor confirmation, hands over to people, and stays observable,
-without building the assistant admin and runtime layer yourself.
+Filament Agentic Chatbot helps customers answer support questions, check their orders and confirm permitted changes. Configure it in Laravel and Filament, host it yourself and use your own AI provider keys.
 
-> Commercial Early Access: the `0.x` line is sold and usable in real host apps,
-> but still pre-`1.0`. Expect a few rough edges, validate every rollout in
-> staging, and treat buyer feedback as part of the rollout.
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Start with the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment). Match these instructions to your download using [Compatibility](COMPATIBILITY.md).
 
-For a first rollout, follow the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment):
-create one Agent, connect only the knowledge and tools it needs, test it in the
-editor's chat, and publish. Add a Playbook only for a multi-step process.
+## A shop conversation
 
-## Navigation
+1. A visitor asks about delivery. The Agent searches the shop's approved Sources and can cite the content used.
+2. The visitor signs in through the shop's existing login and asks for Order status. An App data tool reads only the customer's scoped orders.
+3. The customer asks to change a delivery address, checks the proposed values and presses **Confirm**. The host's field rules, ownership and model policy govern the update.
+4. An unresolved issue goes through **Handoff** to the Inbox, where an operator can reply.
 
-The plugin adds one navigation group, **Agentic Chatbot**:
+This is a configuration recipe, not an included commerce integration or a recorded end-to-end shop demonstration. You provide the order model, identity, scopes, policies and production validation.
 
-| Section | Contents |
-| --- | --- |
-| **Build** | Agents (with Safety settings, tests and versions in the editor), Playbooks, Knowledge |
-| **Connect** | Channels, APIs & MCP, Data, Webhooks; the overview holds access tokens |
-| **Inbox** | Handoffs and action reviews that wait for a person, with a count badge |
-| **Insights** | Conversations, Submissions, Usage |
+![Shop chat showing a delivery answer and its Source citation](images/agentic-chatbot/w10-2-faq.png)
 
-The plugin class configures the group, order, labels, icons and shown sections.
+Answer a public delivery question from your approved Sources.
 
-## Feature Areas
+This FAQ image is historical and predates the citation-width fix. A current
+live-flow capture is pending; it does not demonstrate the current candidate.
 
-### Agents
+![Signed-in shop customer viewing the status of their own order](images/agentic-chatbot/w10-2-order-status.png)
 
-- Separate instructions, provider, model, knowledge, tools and widget per Agent
-- **Test**: a chat beside the editor that runs the saved draft, shows tool calls
-  and simulates writes
-- **Publish** makes the draft live as an immutable version; **Versions >
-  Restore** brings back an earlier one
-- **Tests**: saved conversations with tool, text and rubric checks, run against
-  the draft; failing tests warn when publishing
-- **Safety**: topic limits, blocked words, masking or blocking of personal data
-- A token budget for the conversation history, so long conversations keep
-  answering
-- Solution Kits create a complete inactive Agent for a use case, starting with
-  Customer Support & Human Handoff
+Read Order status after the customer's normal host login.
 
-### Knowledge
+![Delivery address confirmation showing the target order, proposed values and Confirm and Cancel controls](images/agentic-chatbot/w10-2-address-confirm.png)
 
-- Text, files (Markdown, HTML, JSON, text-based PDF, DOCX, CSV, XLSX), web
-  pages and JSON APIs
-- A shared library: one source can serve several Agents
-- Daily or weekly re-sync for URL and API sources; unchanged content is not
-  re-indexed
-- Answers with citations; a live Agent uses the content version it was
-  published with
+Review a permitted delivery address change before confirming.
 
-### Data, APIs and MCP
+![Authorized operator replying to the customer's handed-off conversation](images/agentic-chatbot/w10-2-handoff.png)
 
-- Data Resources: one-screen setup for an Eloquent model; list, count, search,
-  totals and counts per group, linked record names
-- API Connectors with immutable published operations and an Integration Studio
-  for OpenAPI, Postman and cURL import
-- MCP servers: import all tools of a remote server in one step; one connection
-  for several Agents
-- Writes as direct tools with a confirmation card; the write runs once after
-  the visitor confirms, and unknown outcomes are reported as unknown
+Continue an unresolved conversation in the team's Inbox.
 
-### Playbooks
+![Workflow step list for collecting an issue and handing it to the team](images/agentic-chatbot/w10-2-workflow.png)
 
-- Optional processes such as a callback, appointment, return or quote request
-- The Agent calls a Playbook like a tool and collects its inputs in
-  conversation; the visitor can cancel at any time
-- Editor with a step list and an optional canvas, seven templates, an AI draft
-  from a description, autosave, a test chat and one-click publishing
-- Runs listed on each Playbook and conversation
+Add a Workflow when support needs a defined sequence.
 
-### Widget and Channels
+## What to configure
 
-- One-script embed with tokenless signed bootstrap and per-Agent domain
-  allowlists
-- Streamed answers, confirmation cards, private attachments, twelve style
-  templates and a typed NPM SDK
-- Telegram, and opt-in Slack, WhatsApp Cloud API, Mailtrap and Mailgun email
-  through the same Agent runtime
+| Area | What it provides | Boundary |
+| --- | --- | --- |
+| Agent | Instructions, provider/model, Sources and Tools; Test, Publish and Restore | Test uses the saved Draft with simulated writes. A published Version pins configuration; availability is Live or Paused. |
+| Sources | Text, Files, Websites and JSON API content; retrieval with citations | Retrieval supports grounding, not guaranteed answer correctness. Database vector search has capacity limits. |
+| App data tools | Approved Eloquent reads, inserts and updates; Filament Resource import proposals | Review fields and row scopes. Import grants no panel privileges; production queries require a server database. |
+| API tools and MCP tools | Selected operations from configured Connections | Check protocol/authentication and staging requirements in the relevant guides. |
+| Workflow | Optional bounded multi-step process in a step list or canvas | Ordinary conversation needs no Workflow; one active Workflow per conversation. |
+| Inbox | Handoff, team approvals and Unverified actions | Configure authorized recipients and operate reconciliation deliberately. |
+| Conversations | Conversations, submissions, feedback, usage and operational analytics | Absence of Handoff is not proof of resolution or time saved. |
 
-### People and Automation
+Confirmation is on by default. Personal App data tool writes, MCP writes, lead capture and updates with **Allow updating any record** require it. Eligible operations can have **Ask visitor to confirm** disabled by an administrator. Team approval is separate, and all operations remain subject to authorization and execution checks. An Unverified action needs reconciliation rather than an unproven replay.
 
-- Built-in human handoff and lead capture, one switch each
-- Handoff Desk with assignment, internal notes, replies in the existing chat
-  and an explicit return to the Agent
-- Outbound webhooks for conversations, submissions, feedback, handoffs,
-  Playbook results, action reviews and budget thresholds, with optional
-  redacted content
-- A read API for submissions, conversations and handoffs
+## Setup and responsibility
 
-### Insights and Operations
+Install through your private Composer repository, register the plugin, grant access explicitly, configure your provider key, then run the installer and background services. The [Quickstart](QUICKSTART.md) separates anonymous FAQ setup from customer identity, scopes and policy evaluation in queue workers.
 
-- Conversation review, feedback, citation coverage and knowledge gaps
-- Usage: cost and tokens per Agent and day, budgets, default model prices and
-  price overrides in the panel
-- English and German UI; French and Spanish by machine translation
-- `php artisan filament-agentic-chatbot:doctor`, privacy export and deletion
-  endpoints, trace redaction
+You operate the host app, users, tenancy, database, provider account, queues, scheduler, shared cache and backups. Review [Known limitations](KNOWN_LIMITATIONS.md) and [Security and privacy](SECURITY_AND_PRIVACY.md) before production access.
 
-## What It Does Not Do On Its Own
+Start with the public FAQ path. Add customer Tools only after the host supplies
+trusted identity, explicit record scopes and the required policies to the queue
+worker. Recheck those boundaries with a second customer and tenant, then verify
+Confirm, Cancel and stale-data behavior in staging. The Inbox is an operational
+responsibility: notification delivery and Unverified actions need monitoring.
+Publication of an Agent Version does not verify this host integration for you.
 
-The host application still owns billing, tenancy, users and permissions beyond
-the plugin's access controls, business data and source content, and the final
-production policy.
-
-## Best Starting Points
-
-- [Core Concepts](CORE_CONCEPTS.md)
-- [Quickstart](QUICKSTART.md)
-- [Agents](BOTS.md)
-- [Knowledge Sources](KNOWLEDGE_SOURCES.md)
-- [Data Resources](DATA_RESOURCES.md)
-- [Agents and Playbooks](AGENTIC_WORKFLOWS.md)
-- [Chat Widget](CHAT_WIDGET.md)
-- [Known Limitations](KNOWN_LIMITATIONS.md)
+- [Demo](https://filament-agentic-chatbot.heinerdevelops.tech/) and [Buy](https://checkout.anystack.sh/agentic-chatbot)
+- [Sources](KNOWLEDGE_SOURCES.md), [App data tools](DATA_RESOURCES.md), [API tools](API_CONNECTORS.md) and [MCP tools](MCP_CONNECTIONS.md)
+- [Workflow Builder](PLAYBOOK_BUILDER.md), [Widget](CHAT_WIDGET.md), [Agents](BOTS.md) and [Glossary](GLOSSARY.md)
+- [Support](SUPPORT_POLICY.md) and [License/refunds](REFUND_AND_LICENSE.md)

@@ -1,6 +1,6 @@
 # Chat Widget
 
-The chat widget is the embeddable UI layer that connects end users to your configured Agent. It is the front-end for the Agent, sources, retrieval, optional Playbooks, and conversation storage already set up in Filament.
+The chat widget is the embeddable UI layer that connects end users to your configured Agent. It is the front-end for the Agent, sources, retrieval, optional Workflows, and conversation storage already set up in Filament.
 
 Do not put Agent Access Tokens in widget markup or public JavaScript. Widgets use the signed widget token (`X-filament-agentic-chatbot-Token`) and Agent domain allow-lists; Agent Access Tokens are server-side secrets for trusted backend integrations only.
 
@@ -21,6 +21,17 @@ retrieves the final committed answer through authenticated status requests.
 Reloading restores an active turn from history without sending the message
 again. A network interruption stops delivery, not accepted tool execution.
 Uncertain execution remains paused for reconciliation rather than retried.
+
+The widget sends a stable `client_turn_id` for each turn. Reusing that ID with
+the identical request replays its stored outcome; a conflicting request under
+the same ID is refused. API clients may supply the ID through `Idempotency-Key`
+instead. `api.require_client_turn_id`
+(`AGENTIC_CHATBOT_CHAT_REQUIRE_CLIENT_TURN_ID`) defaults to `true` in production
+and `false` elsewhere. When it is disabled and the ID
+is omitted, each delivery gets a new turn identity and may invoke the model
+again. Signed access and customer-context tokens can be reused until expiry;
+their signatures alone do not deduplicate chat requests. A decided confirmation
+card still cannot execute again, even when sent with a new turn identity.
 
 ## Customization Options
 
@@ -64,7 +75,7 @@ After the first message the starters leave the conversation. A **Suggestions** b
 
 The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. Chips are native buttons and send the prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
 
-The Website tab keeps access, code, installation guidance, and appearance together. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; area overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
+The **Channels** tab keeps access, the embed code, the installation status and the three placements together; **Customize widget** opens the appearance with a live preview in a slide-over. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; audience overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
 
 Keep the welcome message and starter labels short so visitors can scan the choices; a long label ends with an ellipsis on a narrow chip. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
 
@@ -141,6 +152,22 @@ message, input placeholder) shows the translated default; an empty hint
 shows nothing.
 Texts you write are shown as written, so write them in the widget language.
 
+The language rule has one order. The `data-lang` attribute only sets the
+language shown while the widget loads its configuration. Once the
+configuration arrives, the Agent's widget language decides (or the visitor's
+browser language among the Agent's languages, as described next); the
+attribute never overrides it. A widget on an English page that shows German
+texts has one of two causes:
+
+1. The Agent's widget language is German. Change it in the Agent's Website
+   tab, not in the embed.
+2. The Agent's widget language is English, but German is also an allowed
+   language of the live Agent version, the Agent has no written visitor texts,
+   and the visitor's browser prefers German. The widget then follows the
+   browser among the allowed languages. Write a visitor text (welcome message,
+   placeholder, hint, custom subtitle or a starter) or allow only English to
+   keep English.
+
 When the live Agent version allows several languages and the Agent has no
 written visitor texts (welcome message, hint, placeholder, custom subtitle or
 conversation starters), the widget follows the visitor's browser language
@@ -153,6 +180,19 @@ To change a built-in text, publish the translations and edit
 `lang/vendor/filament-agentic-chatbot/{locale}/widget.php` (see
 [Localization](LOCALIZATION.md)). The widget script version changes with the
 texts, so browsers load the new script.
+
+## Write Confirmation Cards
+
+When the Agent proposes a write, the widget shows a card with every value and
+the buttons **Confirm** and **Cancel**. A field whose Tool input declares
+`x-display` (`money`, `datetime`, `date`, `email` or `phone`, see
+[API connections](API_CONNECTORS.md)) arrives with a `text` that the server
+formatted in the conversation language, for example `€49.00` in English and
+`49,00 €` in German for the amount 4900 in `EUR`. The widget shows that text
+(HTML-escaped) instead of the raw value, keeps the raw `value` in its state, and
+shows the raw value when no `text` is sent. Messages in Slack and Telegram use
+the same text. The widget does not format values itself, so every surface
+shows the same card.
 
 ## Appearance On Host Pages
 
@@ -221,6 +261,14 @@ The widget ships with twelve visual themes:
 
 ## Embedding The Widget
 
+The Agent's **Channels** tab shows three placement cards. Each answers "where does my Agent appear":
+
+| Card | Use it when |
+| --- | --- |
+| **Any website (script tag)** | The page is on any website, with or without Laravel. The tab always shows the script tag, also for a Draft or a Paused Agent. |
+| **This Laravel app (Blade component)** | The page is part of the Laravel app that runs this package. |
+| **Inside this admin panel** | The chat bubble should appear on the pages of this Filament panel. |
+
 ### Same Laravel App / Same Origin
 
 The simplest and recommended setup is to embed the widget from the same Laravel app that serves Filament Agentic Chatbot.
@@ -234,28 +282,26 @@ If you render the widget from Blade, Livewire, or an Inertia page inside the sam
 
 ### Option 1: Blade Component (recommended for same app)
 
-In Filament, open **Agents** and confirm that the Agent is active with one verified live Agent deployment. Then run the **Use as public widget** row action and add the component to your Blade layout or page:
+Name the Agent with the `agent` attribute (its public ID, shown on the Blade component card) and add the component to your Blade layout or page:
 
 ```blade
-<x-filament-agentic-chatbot::chat-widget />
+<x-filament-agentic-chatbot::chat-widget agent="YOUR_AGENT_PUBLIC_ID" />
 ```
 
-The component resolves bots in this order:
+The component shows exactly one Agent:
 
-1. An explicit component prop, such as `bot-public-id="YOUR_BOT_PUBLIC_ID"`
-2. The bot marked **Public Widget** in the Bots table
-3. `AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`
-4. The first runnable bot
+1. The Agent named by the `agent` attribute, or
+2. when the attribute is missing, the Agent marked as the **app default**.
 
-At every level, runnable means that the Agent is active and its live deployment passes immutable artifact and dependency-closure verification. An invalid explicit or configured ID fails closed. A marked but unrunnable or multiply marked selection also fails closed instead of silently exposing a different Agent.
+There is no other fallback: not the first runnable Agent and not an environment value (`AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID` and `widget.bot_public_id` were removed in 1.0). A component with neither an attribute nor an app default renders nothing and writes one warning to the log. The same holds when the named Agent does not exist, is not **Live**, or its live version fails verification: the component fails closed and never shows a different Agent. Two marked Agents are ambiguous and also render nothing. The former attribute `bot-public-id` is ignored with a warning; rename it to `agent`.
 
-Use an explicit prop only when a page should intentionally override the selected public widget bot:
-
-```blade
-<x-filament-agentic-chatbot::chat-widget bot-public-id="YOUR_BOT_PUBLIC_ID" />
-```
+To use the app default, open the Agent's **Channels** tab and choose **Use as app default** on the Blade component card. This is one setting for the whole installation, so it needs the administration ability; the previous app default loses its mark. The button exists only on that card. Turning off `widget.public_selector.enabled` removes the app default; components then need the `agent` attribute.
 
 Pass `:expandable="false"` to hide the button that expands the panel on wider screens.
+
+### Inside The Admin Panel
+
+With `->widgetEnabled()` on the plugin or `AGENTIC_CHATBOT_WIDGET_ENABLED_IN_PANEL=true`, the panel renders the chat bubble on its pages (hook `widget.render_hook`). On an Agent's own pages it shows that Agent when it is Live; elsewhere it shows the app default, or nothing without one. The panel does not log a warning for that.
 
 ### Option 2: Script Tag
 
@@ -286,14 +332,14 @@ The script path is controlled by `widget.script_route`; update deployed snippets
 
 | Attribute  | Description                                                  |
 | ---------- | ------------------------------------------------------------ |
-| `data-bot` | The bot's public ID (found in the bot edit page in Filament) |
+| `data-bot` | The Agent's public ID (shown on the script tag card in Filament) |
 
 Common optional attributes:
 
 | Attribute | Description |
 | --------- | ----------- |
 | `data-api-base` | Laravel app base URL when the API is not inferred from the script origin |
-| `data-area` | Context area such as `public`, `member`, or `admin` |
+| `data-area` | Audience (context area) such as `public`, `member`, or `admin` |
 | `data-position` | `left` or `right` |
 | `data-template` | Style template such as `clean`, `aurora`, `control-plane`, `openai`, or `solar` |
 | `data-accent` | Hex accent color |
@@ -307,7 +353,7 @@ Common optional attributes:
 | `data-expandable` | `false` hides the button that expands the panel on wider screens (default `true`) |
 | `data-font-preset` | `modern-sans`, `humanist-sans`, `friendly-rounded`, `editorial-serif`, or `technical-mono` |
 | `data-show-sources` | `true` or `false` |
-| `data-lang` | UI language code such as `en`, `de`, `fr`, or `es` |
+| `data-lang` | UI language code such as `en`, `de`, `fr`, or `es`, used until the Agent's configuration loads; the Agent's widget language then decides (see [Language](#language)) |
 | `data-context-endpoint` | Authenticated host endpoint returning a short-lived signed customer-context token |
 
 The `data-*` attributes apply until the widget has loaded the Agent's configuration; the configuration then sets the texts, language, avatar and theme. Generated snippets carry only the texts you wrote.
@@ -326,7 +372,7 @@ Then mount it in your JavaScript:
 import { mountFilamentAgenticChatbotWidget } from "@heiner/filament-agentic-chatbot-widget";
 
 const widget = mountFilamentAgenticChatbotWidget({
-    botId: "YOUR_BOT_PUBLIC_ID",
+    botId: "YOUR_AGENT_ID",
     scriptUrl: "https://your-app.com/filament-agentic-chatbot/widget",
     apiBase: "https://your-app.com",
     area: "public",
@@ -348,7 +394,7 @@ await widget.ready;
 await widget.open();
 ```
 
-The typed, framework-free SDK creates the script element, waits for the runtime, and returns one idempotent lifecycle handle per Agent. It exposes `open()`, `close()`, `toggle()`, `getState()`, `refreshConfig()`, `refreshContext()`, `startNewConversation()`, `sendSuggestedMessage()`, `updateDisplayContext()`, `on()`, and `destroy()`. Lifecycle events never include embed tokens, signed context tokens, conversation credentials, capability inputs, or provider results.
+The typed, framework-free SDK creates the script element, waits for the runtime, and returns one idempotent lifecycle handle per Agent. It exposes `open()`, `close()`, `toggle()`, `getState()`, `refreshConfig()`, `refreshContext()`, `startNewConversation()`, `sendSuggestedMessage()`, `updateDisplayContext()`, `on()`, and `destroy()`. Lifecycle events never include embed tokens, signed context tokens, conversation credentials, tool inputs, or provider results.
 
 ### Available NPM Options
 
@@ -357,7 +403,7 @@ The typed, framework-free SDK creates the script element, waits for the runtime,
 | `botId`            | string                | **Required.** Bot public ID                |
 | `scriptUrl`        | string                | URL to the widget script endpoint          |
 | `apiBase`          | string                | Your Laravel app's base URL                |
-| `area`             | string                | Context area (`public`, `member`, `admin`) |
+| `area`             | string                | Audience (`public`, `member`, `admin`) |
 | `position`         | `'left'` \| `'right'` | Widget position on screen                  |
 | `template`         | string                | Style template name                        |
 | `accent`           | string                | Hex color for accent                       |
@@ -371,22 +417,22 @@ The typed, framework-free SDK creates the script element, waits for the runtime,
 | `showSources`      | boolean               | Show retrieved source cards                |
 | `lang`             | string                | UI language code                           |
 | `contextEndpoint`  | string                | Authenticated endpoint that returns a signed customer-context issuance |
-| `contextTokenProvider` | function           | Async/sync token provider for an existing application API client |
+| `contextTokenProvider` | function           | Async/sync token provider for an existing application API client; returns `null` for a guest |
 | `contextToken`     | string                | Initial short-lived context token; cannot renew itself |
 | `readyTimeoutMs`   | number                | SDK readiness timeout (1–60 seconds) |
 | `displayContext`   | object \| null         | Initial visitor-visible, untrusted page context |
 
 ### Host actions and public lifecycle events
 
-`sendSuggestedMessage(text, { open?: boolean })` sends bounded text through the same persistent chat endpoint, idempotency ledger, deployment, capability, and recovery boundaries as composer input. It does not create a second command path. The method fails explicitly for invalid text or an unavailable/busy widget.
+`sendSuggestedMessage(text, { open?: boolean })` sends bounded text through the same persistent chat endpoint, idempotency ledger, deployment, tool, and recovery boundaries as composer input. It does not create a second command path. The method fails explicitly for invalid text or an unavailable/busy widget.
 
 `updateDisplayContext(context)` lets an SPA describe the page currently visible to the visitor. The context requires a short label and may include an absolute HTTP(S) URL plus at most 16 scalar attributes. URL query strings, fragments, and credentials are removed; secret-like keys, nested values, control characters, oversized fields, and payloads over 4 KiB are rejected. The normalized label is visibly rendered above the composer and can be cleared by the visitor.
 
-Display context is **not signed authority**. It is encrypted with the durable turn, included in the turn's idempotency hash, and appended only to the model prompt inside an explicit untrusted-data boundary. The literal user message remains unchanged. Display context is never copied into workflow runtime variables, capability binders, actor/tenant identity, or authorization. Use signed customer and tenant context for server-attested identity and scope.
+Display context is **not signed authority**. It is encrypted with the durable turn, included in the turn's idempotency hash, and appended only to the model prompt inside an explicit untrusted-data boundary. The literal user message remains unchanged. Display context is never copied into workflow runtime variables, tool binders, actor/tenant identity, or authorization. Use signed customer and tenant context for server-attested identity and scope.
 
-The SDK supports `outcome`, `capability`, and `handoff` in addition to the basic widget lifecycle events. The server freezes a minimal lifecycle projection into the committed turn so JSON, SSE, turn polling, and replay return the same evidence. The runtime deduplicates outcomes per turn, capabilities per opaque event ID, and handoffs per public state transition for the lifetime of the mounted conversation. These payloads expose only public turn status, declared business outcome data, generic capability kind/status, and the existing safe handoff projection. They never expose internal IDs, exact capability keys, inputs/results, secrets, operator identity, notes, or SLA data.
+The SDK supports `outcome`, `capability`, and `handoff` in addition to the basic widget lifecycle events. The server freezes a minimal lifecycle projection into the committed turn so JSON, SSE, turn polling, and replay return the same evidence. The runtime deduplicates outcomes per turn, tools per opaque event ID, and handoffs per public state transition for the lifetime of the mounted conversation. These payloads expose only public turn status, declared business outcome data, generic tool kind/status, and the existing safe handoff projection. They never expose internal IDs, exact tool keys, inputs/results, secrets, operator identity, notes, or SLA data.
 
-For new Knowledge capability events, status describes the search operation,
+For new Knowledge tool events, status describes the search operation,
 not answer quality or evidence delivery. Retrieval `success`, `empty`,
 `insufficient_evidence` and `degraded` map to `succeeded`; `unavailable` and
 `failed` map to `failed`. Missing or unrecognized diagnostics map to `unknown`.
@@ -417,7 +463,7 @@ Streaming admission persists the turn and queues its execution before emitting `
 
 When the turn is committed while the response is open, the response sends the stored outcome (`activity`, then `message_complete` or `error`) exactly as a repeated request would, then `data: [DONE]`. After 15 seconds without an event the response sends an SSE comment (`: keep-alive`), so proxies keep it open and a disconnected client ends the request. When the client disconnects or `api.chat_stream.relay_seconds` (`AGENTIC_CHATBOT_CHAT_STREAM_RELAY_SECONDS`, default 100, capped at the PHP limit minus 10 seconds; 0 disables streaming) is used up first, the response ends with `data: [DONE]` and the widget reads the committed outcome from the authorized turn projection. The committed message replaces the draft; a draft is never kept beside or instead of the committed message, and a failed turn shows its error instead of the draft. A disconnect, reload or repeated request falls back to turn polling and history reconciliation without running the turn again. A repeated request for a completed turn delivers its canonical `message_complete` or `error` event without executing it again.
 
-Drafts are presentation only. They are held in the cache store (`api.chat_stream.cache_store`, `AGENTIC_CHATBOT_CHAT_STREAM_CACHE_STORE`, default store), which web and queue processes must share; with a per-process store such as `array` the widget simply shows the committed answer. Before any draft text is sent, the output checks (standard profile and the Agent's Safety settings) accept the whole text written so far, masked personal data is shown masked, and the newest word plus 24 bytes are held back. A rejected draft is cleared and the committed answer carries the Agent's fallback message. After a Playbook step in a turn, only the committed answer is shown. The SSE request stays open while its turn runs and holds one PHP worker until then: size PHP-FPM workers for concurrent chats. A single-process server (`php artisan serve` or `php -S` without `PHP_CLI_SERVER_WORKERS`) still delivers the answer, but other requests wait until the turn ends; set `relay_seconds` to 0 there.
+Drafts are presentation only. They are held in the cache store (`api.chat_stream.cache_store`, `AGENTIC_CHATBOT_CHAT_STREAM_CACHE_STORE`, default store), which web and queue processes must share; with a per-process store such as `array` the widget simply shows the committed answer. Before any draft text is sent, the output checks (standard profile and the Agent's Safety settings) accept the whole text written so far, masked personal data is shown masked, and the newest word plus 24 bytes are held back. A rejected draft is cleared and the committed answer carries the Agent's fallback message. After a Workflow step in a turn, only the committed answer is shown. The SSE request stays open while its turn runs and holds one PHP worker until then: size PHP-FPM workers for concurrent chats. A single-process server (`php artisan serve` or `php -S` without `PHP_CLI_SERVER_WORKERS`) still delivers the answer, but other requests wait until the turn ends; set `relay_seconds` to 0 there.
 
 The widget shows a draft as it will look when committed. Drafts arrive in bursts about every 100 ms; the widget reveals the received text at an even pace that follows the backlog, so it flows instead of jumping and trails the stream by about a quarter second. Markdown answers render as Markdown while they stream, with the same rules as the committed HTML (including nested lists, code in list items and aligned tables; raw HTML and images are left out): finished blocks stay in place, open emphasis and code show in their final form, and a link shows as its label until its target is complete, so raw Markdown syntax never appears. When the committed answer continues the shown draft, the reveal finishes before the committed HTML replaces the preview; otherwise the committed answer shows at once. Until the first words arrive, the status line shows the elapsed time from the third second on (for example "Thinking… · 7s").
 
@@ -431,17 +477,21 @@ The server reports progress as `chat_turn_progress.v2`. Authorized turn
 status and completed JSON include safe `progress.activity`; committed SSE sends
 an `activity` event before the final message/error. Consumers must close active
 indicators when `activity.active` is false or the canonical turn is terminal,
-including waiting, failure, cancellation and unknown outcome. The final answer
+including waiting, failure, cancellation and unverified action. The final answer
 arrives directly in that response. `truncated` indicates omitted intermediate
 events. Only public identity/category/status/time fields are delivered; counters,
 native IDs, reasons and receipt references stay in the authorized admin debugger.
-The widget reads v2 and the earlier v1 stages.
+The widget reads v2 and the earlier v1 stages. A turn that stays in the
+`queued` stage for 20 seconds (for example while no queue worker runs) changes
+its status line to "Taking longer than usual. Your message is saved; we will
+answer here." The line is replaced as soon as the turn starts processing or
+finishes, and nothing is sent again.
 
 ## Widget Security
 
 ### Signed Tokens
 
-When `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` (recommended for production), the browser loader calls `POST /api/filament-agentic-chatbot/chat/{botPublicId}/bootstrap` without a static token. The endpoint validates the area and exact browser origin against Allowed Domains, then returns a short-lived HMAC-SHA256 token with `Cache-Control: no-store`. Tokens include:
+When `AGENTIC_CHATBOT_WIDGET_SIGNING_ENABLED=true` (recommended for production), the browser loader calls `POST /api/filament-agentic-chatbot/chat/{botPublicId}/bootstrap` without a static token. The endpoint validates the area and exact browser origin against Allowed hosts, then returns a short-lived HMAC-SHA256 token with `Cache-Control: no-store`. Tokens include:
 
 - a widget audience and token version
 - the bot's public ID
@@ -477,7 +527,48 @@ The loader sends access through the `X-filament-agentic-chatbot-Token` header. Q
 
 ### Signed Customer And Tenant Context
 
-Never trust a customer ID, tenant ID, plan, cart ID, or other authority value sent as ordinary JSON or a `data-*` attribute. For personalized Agents, issue a short-lived signed context from a host-owned authenticated endpoint:
+Never trust a customer ID, tenant ID, plan, cart ID, or other authority value sent as ordinary JSON or a `data-*` attribute. Public questions need no identity: an anonymous visitor gets answers from knowledge and public tools. Personal tools need a trusted, server-attested identity, and the widget never invents one from a name, email address, order number or model output (ADR 0057).
+
+There are two supported ways to attest the customer:
+
+| Integration | Where the widget runs | Who attests the customer |
+| --- | --- | --- |
+| Same-origin Blade or SDK | Pages of the Laravel app that runs this package | The host session guard of the same app (`context.authorization.guards`), or a context endpoint of the same app |
+| External site | Any other website (script tag or SDK) | A short-lived signed context from a host-owned, authenticated endpoint |
+
+#### Authenticated quickstart
+
+1. Let customers sign in on your own site. The package adds no customer account system.
+2. Same origin: render `<x-filament-agentic-chatbot::chat-widget agent="..." />` on pages behind your login. With the default `api.include_session_auth_context`, the chat API runs with your session middleware, so the signed-in user is the actor (type is the user class, ID its key). External site: add the context endpoint below and mount the widget with `data-context-endpoint` or the SDK option `contextEndpoint`.
+3. Bind every personal app data tool to the customer with `actor.id` and `actor.type` scopes (and `tenant.id` for shops or teams), see [App data tools](DATA_RESOURCES.md#signed-in-customers-and-personal-tools).
+4. Set `AGENTIC_CHATBOT_WIDGET_SIGN_IN_ROUTE` so a personal question from a guest shows a link to your login page.
+5. On login, logout and tenant switch, call `await widget.refreshContext()` (or reload the page).
+6. When a write uses a registered Laravel model policy, or when a disabled account must be refused at once, allow the customer model in `context.host_actors.types` and define the ability `filament-agentic-chatbot.serve-customer` (see [App data tools](DATA_RESOURCES.md#host-authorization-and-transaction-behavior)).
+
+#### Same-origin Blade or SDK integration
+
+On pages served by the same Laravel app, the browser sends the session cookie to the chat API, so no extra token is needed: the authenticated guard user is attested for every request and binds conversation ownership. A different signed-in user, a guest or another tenant never reopens that conversation. A same-origin SDK mount may still use a context endpoint of the same app, for example to add a tenant or minimal attributes; the signed actor must then match the guard user or the request is refused.
+
+#### External-site integration
+
+An embed script on another website cannot discover that site's login session, and the package cannot read it. The host owns the login and a trusted context endpoint that issues a short-lived signed context from its own authenticated session. The signer is PHP code of this package (`WidgetContextToken`), so the endpoint runs in the Laravel app that holds the signing key. Never put the signing key in the browser or in another site's frontend.
+
+The widget calls `contextEndpoint` with `credentials: 'include'`, so the browser sends the session cookie of the endpoint's site. That works only when:
+
+- the endpoint and the embedding page share a site (for example `shop.example.com` and `app.example.com`), or the session cookie is set with `SameSite=None; Secure` (`SESSION_SAME_SITE=none`, `SESSION_SECURE_COOKIE=true`, HTTPS only);
+- the browser does not block third-party cookies. Safari, Firefox with strict tracking protection and Chrome with third-party cookies turned off do not send a cookie of another site, whatever its `SameSite` value. Then the endpoint sees a guest;
+- the endpoint answers credentialed CORS for the exact embedding origin. A wildcard origin is refused by browsers for credentialed requests:
+
+```php
+// config/cors.php of the app that serves the context endpoint
+'paths' => ['api/chatbot/customer-context'],
+'allowed_methods' => ['GET'],
+'allowed_origins' => ['https://shop.example.com'], // exact origin, never '*'
+'allowed_headers' => ['Accept', 'X-Requested-With'],
+'supports_credentials' => true,
+```
+
+When the login lives on the embedding site itself, or cookies cannot cross sites, use `contextTokenProvider` instead: the embedding site's own frontend asks its own backend (same site, its own session), and that backend obtains the token server to server from an endpoint you add to the Laravel app, authenticated with a server credential that never reaches the browser. The provider returns the issuance, or `null` for a guest.
 
 ```php
 use Heiner\FilamentAgenticChatbot\Models\Bot;
@@ -486,47 +577,71 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/api/chatbot/customer-context', function (Request $request) {
-    $user = $request->user() ?? abort(401);
-    $bot = Bot::query()->where('public_id', $request->string('bot'))->firstOrFail();
-    $origin = $request->header('Origin') ?: 'https://shop.example.com';
-    $area = (string) $request->string('area', 'member');
+    $headers = ['Cache-Control' => 'no-store, private', 'Pragma' => 'no-cache'];
+    $user = $request->user();
+
+    if ($user === null) {
+        return response()->noContent(204, $headers); // a guest: the widget stays anonymous
+    }
+
+    // Issue only for the Agents, areas and tenants this customer may use.
+    abort_unless($request->string('bot')->toString() === 'YOUR_AGENT_PUBLIC_ID', 403);
+    abort_unless(in_array($request->string('area')->toString(), ['public', 'member'], true), 403);
+    $bot = Bot::query()->where('public_id', 'YOUR_AGENT_PUBLIC_ID')->firstOrFail();
 
     $issuance = WidgetContextToken::issueForBot(
         bot: $bot,
-        origin: $origin,
-        area: $area,
-        actor: $user,
-        tenant: ['type' => 'store', 'id' => (string) $user->store_id],
-        attributes: [
-            'plan' => (string) $user->plan,
-            'cart_id' => (string) $user->active_cart_id,
-        ],
+        origin: 'https://shop.example.com', // the exact embedding origin
+        area: $request->string('area')->toString(),
+        actor: ['type' => 'customer', 'id' => (string) $user->getKey()],
+        tenant: ['type' => 'store', 'id' => (string) $user->current_store_id],
+        attributes: ['plan' => (string) $user->plan],
     ) ?? abort(503);
 
-    return response()->json($issuance->toArray())->withHeaders([
-        'Cache-Control' => 'no-store, private',
-        'Pragma' => 'no-cache',
-    ]);
-})->middleware('auth');
+    return response()->json($issuance->toArray())->withHeaders($headers);
+})->middleware('web');
 ```
 
-The endpoint must derive identity from its authenticated server session, enforce the requested Agent/area/tenant itself, and return `Cache-Control: no-store`. The token is signed, not encrypted: never include passwords, API keys, bearer tokens, secrets, or data that the browser must not read. The issuer rejects sensitive attribute names, unsafe keys, excessive nesting, more than 64 scalar attributes, strings over 1,000 characters, and payloads over the configured byte limit.
+The route runs with your normal web session middleware and answers guests itself, as above, instead of redirecting them to a login page. The endpoint must derive identity from its authenticated server session, enforce the requested Agent, area and tenant itself, and return `Cache-Control: no-store`. Pass the user as `['type' => ..., 'id' => ...]` or as the user model; a model is signed as its class and key only. The issuer never copies a user's name, email address or other attributes into the token; a `label` is signed only when you pass it explicitly. The token is signed, not encrypted: never include passwords, API keys, bearer tokens, secrets, or data that the browser must not read. The issuer rejects sensitive attribute names, unsafe keys, excessive nesting, more than 64 scalar attributes, strings over 1,000 characters, and payloads over the configured byte limit.
 
 Mount the SDK with exactly one renewable source:
 
 ```js
 const widget = mountFilamentAgenticChatbotWidget({
-    botId: "YOUR_BOT_PUBLIC_ID",
+    botId: "YOUR_AGENT_ID",
     area: "member",
-    contextEndpoint: "/api/chatbot/customer-context",
+    contextEndpoint: "https://app.example.com/api/chatbot/customer-context",
 });
 ```
 
-The widget calls this endpoint with `bot` and `area` query parameters, includes host cookies, disables caching, keeps the returned token in memory, and sends it only in `X-Filament-Agentic-Chatbot-Context`. The backend verifies the HMAC, token version, Agent, area, exact origin, issue time, and expiry before it creates or opens a conversation. Signed actor and tenant identity bind conversation ownership and deterministic data scopes; attributes are available as the reserved `__widget_context` workflow value and `widget_context` authority scope. Ordinary request input with the same names is stripped and cannot create authority.
+The widget calls this endpoint with `bot` and `area` query parameters, includes host cookies, disables caching, keeps the returned token in memory, and sends it only in `X-Filament-Agentic-Chatbot-Context`. A `204 No Content` answer (or `null` from `contextTokenProvider`) means a guest: the widget continues anonymously. Any other failure is an error, never a silent guest. The backend verifies the HMAC, token version, Agent, area, exact origin, issue time, and expiry before it creates or opens a conversation. Signed actor and tenant identity bind conversation ownership and deterministic data scopes; attributes are available as the reserved `__widget_context` workflow value and `widget_context` authority scope. Ordinary request input with the same names is stripped and cannot create authority.
+
+A signed context is not a permanent grant. The runtime keeps the context expiry and the Agent's context token version beside the identity, outside its fingerprint:
+
+- a queued chat turn is refused when the version was rotated before the worker ran;
+- personal tools and Workflow data steps answer `sign_in_required` once the context expired or the version was rotated, also in a turn that is already running;
+- a delayed Workflow continuation, an API connection completion and an approved Human Review that resume work for that identity are refused once the version was rotated or the host no longer allows the account. After mere expiry they resume: public steps continue, while personal steps and policy writes answer `sign_in_required` (see [Known Limitations](KNOWN_LIMITATIONS.md)).
 
 Context can authenticate a non-public area only when it contains an actor type and ID and `AGENTIC_CHATBOT_WIDGET_CONTEXT_AUTHORIZES_NON_PUBLIC_AREAS=true`. The issuing endpoint is therefore the authorization boundary. Set `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS=member,checkout` when an area must never fall back to anonymous operation.
 
-On login, logout, tenant switch, or another identity change, call `await widget.refreshContext()`. It starts a new conversation by default so two identities cannot share a conversation. Pass `{ startNewConversation: false }` only for renewal where the attested identity is guaranteed unchanged. Automatic renewal retries safe reads only; it never replays session creation, a chat send, form/feedback writes, or deletion.
+#### Login, logout and tenant switch
+
+On login, logout, tenant switch, or another identity change, call `await widget.refreshContext()`. It invalidates a renewal that is still running for the previous identity (its late answer is discarded and never reinstalls the previous token), ignores the answers of chat and history requests that were still in flight, and fetches a fresh context. It starts a new conversation by default so two identities cannot share a conversation. `refreshContext({ startNewConversation: false })` keeps the conversation only when the renewed context names the same actor and tenant; a changed identity always starts a new conversation. Automatic renewal follows the same rule: when a renewed context names another customer or tenant, or the endpoint now answers as a guest, the widget starts a new conversation at once. Automatic renewal retries safe reads only; it never replays session creation, a chat send, form/feedback writes, or deletion.
+
+The server enforces the same separation: a conversation owned by one identity is never reopened by a guest, another customer or another tenant, and its history and confirmation cards are not shown to them. A pending write stays bound to the identity, values and Agent version it was proposed with, and never moves to another conversation:
+
+| When the visitor presses Confirm | Card |
+| --- | --- |
+| Another customer or tenant in the same conversation | Closed as failed (`binding_mismatch`); nothing written |
+| The same customer, signed context expired or version rotated | Stays pending with a sign-in prompt (`sign_in_required`); the same customer confirms it after signing in again |
+| The same customer, account disabled or removed (`host_actor_denied`) | Closed as failed; nothing written |
+| The write already completed before a restart, then the account was disabled | Recovered as done from the ledger; never reported as failed |
+
+#### Sign-in for personal tools
+
+When a personal tool runs without a trusted identity, it returns `sign_in_required`: nothing is looked up or written, the Agent asks the visitor to sign in, and the assistant message carries `sign_in` in the chat and history payloads. The widget shows a link to `AGENTIC_CHATBOT_WIDGET_SIGN_IN_ROUTE`, which may be a route name, an absolute `http(s)` URL, or a path starting with `/`. Without a valid route it shows a plain sign-in notice. The server resolves `/path` against the Laravel host URL before returning it to
+the widget, including on external embeds. An absolute URL is kept as configured.
+For an external site with its own login page, configure its absolute URL.
 
 | Env Variable | Description | Default |
 | --- | --- | --- |
@@ -537,8 +652,18 @@ On login, logout, tenant switch, or another identity change, call `await widget.
 | `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS` | Comma-separated areas that require signed context | empty |
 | `AGENTIC_CHATBOT_WIDGET_CONTEXT_AUTHORIZES_NON_PUBLIC_AREAS` | Treat a signed actor as authentication for its exact area | `true` |
 | `AGENTIC_CHATBOT_WIDGET_CONTEXT_MAX_PAYLOAD_BYTES` | Maximum decoded token payload | `4096` |
+| `AGENTIC_CHATBOT_WIDGET_SIGN_IN_ROUTE` | Sign-in link for personal tools: route name, `http(s)` URL or `/path` | empty (plain notice) |
 
-The context-signing key is optional by design: existing installs can use the current widget-signing key without adding another secret. A dedicated key is useful only when operators want independent rotation. Rotate all current context tokens for one Agent by incrementing `runtime_config.widget.context_token_version`; when absent, it follows the existing widget token version.
+Hosts may also set `widget.context.required_areas` in the published configuration
+to a list of area strings, for example `['member']`. The list survives package
+configuration cutover and requires signed context even when another host setting
+allows anonymous access to that area. An empty list leaves context optional;
+malformed lists refuse package registration rather than removing protection.
+Other `widget.context` keys remain limited to the supported settings above.
+After updating the package, rebuild Laravel's configuration cache so it contains
+the preserved host list.
+
+The context-signing key is optional by design: existing installs can use the current widget-signing key without adding another secret. A dedicated key is useful only when operators want independent rotation. Rotate all current context tokens for one Agent by incrementing `runtime_config.widget.context_token_version`; when absent, it follows the existing widget token version. Rotation also revokes queued turns that were admitted with an older context.
 
 ### Conversation Credentials
 
@@ -550,7 +675,7 @@ Only a SHA-256 hash of the credential is stored in `bot_conversations.meta`. The
 
 Widget initialization and history requests have a 15-second deadline, including response-body loading. A stalled request shows the localized loading error and an explicit retry action. Late responses cannot update a newer session or its history. Host context-provider callbacks receive an optional `signal` for cancellation. Productive chat turns and external operations retain their own runtime deadlines; initialization recovery never replays a productive write.
 
-The shipped widget exposes **Start new chat** directly in the header and **Delete history and memory** in the **Chat options** disclosure beside it. Escape dismisses the disclosure first and returns focus to its control; pressing Escape again closes the chat. Moving focus or clicking outside the disclosure also dismisses it. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Playbook is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
+The shipped widget exposes **Start new chat** directly in the header and **Delete history and memory** in the **Chat options** disclosure beside it. Escape dismisses the disclosure first and returns focus to its control; pressing Escape again closes the chat. Moving focus or clicking outside the disclosure also dismisses it. Starting a new chat rotates the local conversation session and credential without calling the deletion endpoint; it remains available while the previous turn or Workflow is still running, waiting, or being reconciled. Stale responses from the previous session cannot rebind or update the new chat.
 
 History deletion remains an explicit, confirmed operation. A successful deletion immediately opens a fresh chat. If the lifecycle guard refuses deletion, the widget localizes the typed reason, keeps the old chat intact, and offers only safe recovery actions: retry when the response is retryable, or start a separate new chat while the prior conversation remains available for resolution or support.
 
@@ -589,13 +714,15 @@ cancelled when the panel/session is reset and is not used for inactive chats.
 
 ### Domain Allowlists
 
-Each bot can define a list of allowed domains. If set, the widget's CORS middleware only responds to requests from those domains. Wildcard subdomains are supported (e.g., `*.example.com`).
+Each Agent can define a list of allowed domains. If set, the widget's CORS middleware only responds to requests from those domains. Wildcard subdomains are supported (e.g., `*.example.com`).
 
 Empty allowlists are still allowed by default through `AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=true` for older installs. Treat that as a compatibility bridge, not a production target. Set `AGENTIC_CHATBOT_WIDGET_ALLOW_ALL_DOMAINS=false` and list the exact hosts before public rollout.
 
-### Context Areas And Access Rules
+In the `local` environment only, `localhost`, `127.0.0.1` and hosts ending in `.test` or `.localhost` are allowed without configuration, so a developer can try the embed code on their own machine. Look-alike names such as `localhost.example.com` are not local hosts, and no other environment (`production`, `staging`, `testing`) gets this exception.
 
-| Area     | Behavior                                                            |
+### Audiences and Access Rules
+
+| Audience | Behavior                                                            |
 | -------- | ------------------------------------------------------------------- |
 | `public` | No authentication required                                          |
 | `member` | Requires an authenticated host user or an exact-area signed actor context |
@@ -675,13 +802,30 @@ See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract
 
 ## Testing The Widget
 
-The Agent's **Website** tab includes an appearance preview with sample messages.
+**Customize widget** on the Agent's **Channels** tab includes an appearance preview with sample messages.
 It does not send a message or provide release-test evidence. Use the Agent's
-**Test** area to check a selected version or candidate. To verify an external
-installation, put the displayed script tag on an allowed host and send a
-question there; this may call the configured provider and approved reads. The
-admin page continues to report installation as unverified until an operator
-checks it manually.
+**Test** area to check a selected version or candidate.
+
+### Installation Status
+
+The tab lists, below the script tag, each host where the widget was seen:
+"Seen on {host}, last {relative time}", or "Not seen yet" for an allowed host
+that has not loaded the widget. Put the displayed script tag on a page of an
+allowed host and open that page once; the status appears on the next reload of
+the tab. Opening the page does not send a chat message and costs no provider
+usage.
+
+The first successful widget bootstrap per Agent and host writes one row to
+`agentic_widget_installations` (`bot_id`, `host`, `page_url`, `first_seen_at`,
+`last_seen_at`). Rules that keep the table small and the bootstrap fast:
+
+- Only a host that matched the Agent's allowed websites (or a local development host in the `local` environment) is stored. The host comes from the request `Origin` that passed that check. An Agent without any allowed website stores nothing, even when `widget.allow_all_domains` is on.
+- `page_url` is the path of the page only. The browser sends `window.location.pathname`; the server cuts a query or fragment, drops control characters and limits it to 255 characters. It is display text and never used for access.
+- `last_seen_at` is refreshed at most once every ten minutes per row with one conditional update. Most bootstraps cost one indexed lookup.
+- An Agent keeps at most 50 hosts. At the limit a new host is not stored, unless hosts not seen for 90 days can be removed to make room.
+- A database error is logged as a warning and never changes the bootstrap response.
+
+Rows are removed with the Agent. Seeing the widget proves that the page loaded the script and that the allowed-website check passed; it does not prove that a visitor can chat. To check a full conversation, ask a question on that page. That question calls the configured provider and may incur provider usage.
 
 ## Widget Script Source
 
@@ -698,7 +842,7 @@ fail when the build is out of date.
 ## Related Docs
 
 - [Bots](BOTS.md)
-- [Context Areas](CONTEXT_AREAS.md)
+- [Audiences (context areas)](CONTEXT_AREAS.md)
 - [API Integrations](API_INTEGRATIONS.md)
 - [Security And Privacy](SECURITY_AND_PRIVACY.md)
 
@@ -724,9 +868,9 @@ setting off hides the timeline without changing execution or answer delivery.
 Canonical completion closes activity even when terminal telemetry is missing.
 Later GET or SSE progress for the same turn cannot reopen a completed display,
 including an equal or higher progress sequence. A new turn can show its own
-progress. The queued, model, review and Capability phases use fixed localized
+progress. The queued, model, review and Tool phases use fixed localized
 labels. The activity list is not announced on every event; the concise pending
-status is announced politely. Failed and unknown outcomes use fixed public
+status is announced politely. Failed and unverified actions use fixed public
 guidance without exposing private cause codes.
 Unfinished observations become “Outcome unknown” when their activity closes;
 the widget does not invent success. Completed responses appear automatically.

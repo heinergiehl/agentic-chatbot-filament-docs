@@ -16,17 +16,17 @@ The files live in `resources/lang/{locale}/`, one file per product area:
 |---|---|
 | `common.php` | words and phrases shared by several screens (Save, Overview, Agents, statuses) and the navigation |
 | `agents.php` | Agent editor, Agents list, setup, widget settings, release and test pages |
-| `playbooks.php` | Playbook list, editor pages, runs |
-| `knowledge.php` | knowledge sources |
-| `channels.php` | channels, delivery events, outgoing webhooks, Connect overview |
-| `api-connectors.php` | API Connectors, operations, Integration Studio, capability bridge |
+| `playbooks.php` | Workflow list, editor pages, runs |
+| `knowledge.php` | Sources |
+| `channels.php` | channels, delivery events, outgoing webhooks |
+| `api-connectors.php` | API connections, operations, Integration Studio, developer tool providers |
 | `mcp.php` | MCP connections and operations |
-| `data-resources.php` | Data Resources |
-| `observe.php` | conversations, submissions, handoffs, action reviews, analytics widgets |
+| `data-resources.php` | App data tools |
+| `observe.php` | conversations, submissions, handoffs, approvals, unverified actions, analytics widgets |
 | `usage.php` | AI usage, usage events and Agent access tokens |
 | `widget.php` | built-in texts of the public chat widget (flat keys, all four languages complete) |
 | `activity.php`, `runtime.php` | visitor-facing runtime messages |
-| `workflow-editor.php` | catalog of the React Playbook editor |
+| `workflow-editor.php` | catalog of the React Workflow editor |
 
 A key is `area.group.slug`: the group is the class or view that owns the text
 (for example `edit_bot`), the slug is a short form of the English text that
@@ -35,7 +35,7 @@ used by several classes of one area sit in `{area}.shared.*`; short texts used
 in several places live in `common.*`.
 
 `activity.php` and `runtime.php` hold runtime and visitor-facing messages.
-`workflow-editor.php` is the catalog of the React Playbook editor: its `texts`
+`workflow-editor.php` is the catalog of the React Workflow editor: its `texts`
 array uses the English source copy as keys and is passed to the editor. The
 English file lists the texts the editor's `t()` calls use plus labels the
 server sends for translation, and the German file translates all of them;
@@ -44,7 +44,7 @@ server sends for translation, and the German file translates all of them;
 English is the plugin's default and source language: the `en` files define
 every key. German (`de`), French (`fr`) and Spanish (`es`) are shipped with
 every key of every file, including the widget, the runtime messages and the
-Playbook editor catalog. The German translation was reviewed; **French and
+Workflow editor catalog. The German translation was reviewed; **French and
 Spanish are machine translations** with a hand-checked glossary and are not
 reviewed by native speakers. Expect wording you may want to adjust and report
 or fix it (see below). A key that a language lacks, for example after a new
@@ -52,21 +52,30 @@ key was added to English, falls back to English, so keep your application's
 `fallback_locale` at `en`. Nothing in the package configuration assumes
 German.
 
-Register: German uses informal "du" to the admin and the visitor. French uses
-"vous" for the admin and the visitor. Spanish uses informal "tú". Product terms
-stay in English in every language: Agent (Agente in Spanish), Playbook, MCP,
-Webhook, API Connector, Solution Kit, Widget.
+Register: German uses informal "du" to the admin and the visitor and never "Sie".
+French uses "vous" for the admin and the visitor. Spanish uses informal "tú".
+Workflow, MCP, Webhook and Widget stay in English in every language, and so does
+the word Agent (Agente in Spanish). The full term list per language, including the
+decisions behind it, is in the [Glossary](GLOSSARY.md). The terms translators use
+most:
 
 | Term | de | fr | es |
 |---|---|---|---|
-| Data Resource | Datenressource | ressource de données | recurso de datos |
+| App data tool | App-Daten-Tool | outil de données de l’application | herramienta de datos de la aplicación |
+| API tool | API-Tool | outil API | herramienta de API |
+| Tool | Tool | outil | herramienta |
+| Connection | Verbindung | connexion | conexión |
 | Handoff | Übergabe | transfert | traspaso |
 | Knowledge | Wissen | connaissances | conocimiento |
+| Source | Quelle | source | fuente |
 | Submission | Einsendung | soumission | envío |
 | Live | Live | en ligne | activo |
 | Draft | Entwurf | brouillon | borrador |
+| Paused | Pausiert | en pause | en pausa |
 | Step | Schritt | étape | paso |
-| Chunk | Abschnitt | segment | fragmento |
+| Unverified action | Ungeprüfte Aktion | action non vérifiée | acción no verificada |
+| Audience | Zielgruppe | audience | audiencia |
+| Text section | Textabschnitt | section de texte | sección de texto |
 
 ## Override A Text Or Add A Language
 
@@ -115,8 +124,8 @@ Placeholders such as `:count` and plural forms such as
   English does not define, when English has a key no source uses, when German,
   French or Spanish miss or add a key compared with English, when a translation drops or adds placeholders or plural
   forms, when the key of a short negated text drops the negation, and when
-  a translation leaves the product glossary above (Data Resource, Handoff,
-  Playbook, Knowledge). French and Spanish are held to the same completeness
+  a translation leaves the product glossary above (App data tool, Handoff,
+  Workflow, Knowledge). French and Spanish are held to the same completeness
   rules as German: every English key, no extra keys, the same placeholders.
   It also checks that `activity.php` and `runtime.php` exist in every shipped
   language with the same keys and placeholders.

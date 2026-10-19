@@ -18,14 +18,14 @@ message can have checks:
 | Rubric | A model judges that the answer meets your description, for example "The answer gives the price and asks for the delivery date". |
 
 Tool names are the names the Agent sees, for example `search_knowledge`,
-`playbook_12` or the tool name of an API operation or Data Resource. The test
+`playbook_12` or the tool name of an API operation or app data tool. The test
 form suggests the tools of the saved draft. A message without checks still has
 to get an answer.
 
 ## Create tests
 
-- **From a conversation:** open a conversation under **Insights >
-  Conversations** and choose **Create test**. The visitor messages become the
+- **From a conversation:** open a conversation under
+  **Conversations** and choose **Create test**. The visitor messages become the
   test, and each message expects the tools the Agent called in its answer.
   Clicks on Confirm or Cancel are left out.
 - **From the test chat:** in the Agent editor, open **Test**, chat with the
@@ -72,7 +72,7 @@ draft and links to the Tests tab. Tests never block publishing.
 
 The rubric is graded with the tested Agent version's own provider and model:
 one short call with a fixed prompt, temperature 0 and at most 300 output
-tokens. The call is recorded in **Insights > Usage** like every model call
+tokens. The call is recorded in **Conversations > Usage** like every model call
 (stage `test_grading`). To grade with a cheaper model of the same provider,
 set `AGENTIC_CHATBOT_AGENT_TESTS_GRADING_MODEL`.
 

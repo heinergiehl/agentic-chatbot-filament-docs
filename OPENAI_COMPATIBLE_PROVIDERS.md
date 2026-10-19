@@ -24,7 +24,11 @@ In **Agentic Chatbot > Build > Agents**:
 4. Enter **Custom Base URL**.
 5. Enter the bot's chat provider API key, or rely on `AGENTIC_CHATBOT_OPENAI_COMPATIBLE_API_KEY`.
 
-The custom base URL is used for normal bot answers and workflow AI Agent nodes. If a bot uses `openai_compatible` and no base URL can be resolved from bot config or env, the runtime fails before making a provider call.
+The custom base URL is used for normal bot answers and workflow AI Agent nodes. If a bot uses `openai_compatible` and no base URL can be resolved from bot config, the **Settings** page or env, the runtime fails before making a provider call. An administrator can store the app-wide key and base URL on the **Settings** page instead of `.env`; an Agent's own key still wins.
+
+## Models Without A Verified Profile
+
+Most compatible models have no package profile. After entering a manual model ID, declare what it supports in the form: **Tool calling (required)**, **Structured output** and **Vision (images)**. The Agent saves only with tool calling declared. The declaration is stored for this provider and model and is not verified by the package; a profile under `filament-agentic-chatbot.models.capabilities` wins over it. On a saved Agent, **Check model** sends one billed request with a fixed prompt and one test tool and shows whether a tool call came back. Use it before publishing; it does not change the declaration.
 
 ## Known Base URLs
 

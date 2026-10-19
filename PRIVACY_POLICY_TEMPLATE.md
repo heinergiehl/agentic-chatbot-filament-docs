@@ -9,7 +9,7 @@ Use this as a base and adapt with legal counsel.
 - Session identifiers for conversation continuity
 - Retrieval source metadata used for citations
 - Derived answer-quality signals and encrypted excerpts when durable runtime evidence identifies a missing knowledge case
-- Files submitted through the web widget or connected Telegram, Slack, WhatsApp, or Email channels, including detected type, size, integrity hash, encrypted original filename, and retention state
+- Files submitted through the web widget or connected Telegram, Slack, or Email channels, including detected type, size, integrity hash, encrypted original filename, and retention state
 - External-channel identifiers and delivery evidence needed to receive and answer a message
 - PII-minimized outcome and handoff lifecycle events plus outbound webhook delivery evidence when an administrator enables an external automation receiver
 

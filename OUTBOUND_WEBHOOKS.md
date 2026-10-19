@@ -6,7 +6,7 @@ ticketing service, n8n, Make, or Zapier. By default they are notifications with
 public ids and status only: no contact details or conversation content are
 sent. An endpoint may opt into redacted content (see Payload Content), and a
 receiver can fetch details by id through the [Read API](READ_API.md). Webhooks
-are not instructions for the model and they never bypass the capability
+are not instructions for the model and they never bypass the tool
 gateway.
 
 ## Setup
@@ -50,9 +50,23 @@ Supported subscriptions are:
 - `handoff.updated`: a public handoff activity, status, assignment or priority changed.
 - `handoff.resolved`: an operator resolved the case.
 - `handoff.returned_to_agent`: an operator returned the conversation to the Agent.
-- `playbook.completed` and `playbook.failed`: a live Playbook run reached that
-  final state.
-- `action_review.requested`: a Playbook action waits for operator review.
+- `playbook.completed` and `playbook.failed`: a live Workflow run reached a
+  final state. A terminal staged outcome emits `playbook.completed` with
+  `data.playbook_run.status: needs_review`; this does not claim the write
+  succeeded. A resumable approval or API connection delay emits neither until settled.
+- `action_review.requested`: a Workflow action waits for operator approval
+  (shown as **Approval requested**; the event name is unchanged).
+- `capability_write.succeeded`: an external write of a tool completed.
+- `capability_write.failed`: an external write did not complete (including a
+  write rejected before it was sent).
+- `capability_write.unknown`: the result of an external write could not be
+  verified, for example a timeout after it was sent. It waits in
+  **Inbox > Unverified actions**.
+- `capability_write.reconciled`: an unverified action was resolved as
+  completed or not completed, by an operator, the reconcile command or (with
+  read-back reconciliation) automatically. Automatic checks use the same event
+  with `reconciliation.source: automatic`, omit provider values and evidence,
+  and settle succeeded only. Nothing was sent again.
 - `usage.budget_threshold`: the Agent's settled usage reached 80 or 100 percent
   of its monthly token or cost budget; each threshold and metric is sent once
   per month.
@@ -67,7 +81,7 @@ records never produce events.
 
 `webhook.test` is an explicit signed test for one destination, not a subscription.
 The form includes a masked synthetic payload preview without querying a
-conversation or executing a capability.
+conversation or executing a tool.
 
 Every payload is versioned and uses public identifiers:
 
@@ -110,11 +124,69 @@ The other events follow the same envelope. Their `subject` and `data` are:
 | `conversation.*` | `conversation` | `conversation`: id, channel, status, sequence, created_at, last_activity_at, ended_at |
 | `submission.created` | `submission` | `submission`: id, schema_key, schema_version, status, conversation_id, playbook_run_id, timestamps |
 | `feedback.received` | `feedback` | `feedback`: id, rating (`positive` or `negative`), has_comment; `conversation.id` |
-| `playbook.*` | `playbook_run` | `playbook_run`: id, status, playbook name, started_at; `conversation.id` |
+| `playbook.*` | `playbook_run` | `playbook_run`: id, status, workflow name, started_at; `conversation.id` |
 | `action_review.requested` | `action_review` | `action_review`: id, action_key, status, risk, priority, expires_at; `conversation.id`, `playbook_run.id` |
 | `usage.budget_threshold` | `usage_budget` | `budget`: period (`YYYY-MM`), metric (`tokens` or `cost`), threshold_percent, limit, used, unit, currency |
+| `capability_write.*` | `capability_write` | `capability_write`: id, transition, status, tool, surface, attempt, error_code (failed, unknown), reconciliation (reconciled: outcome, source, remote_id_present, write_repeated `false`); `conversation.id`, `playbook_run.id` |
 
 All ids are public ids; the read API accepts the same ids.
+
+Budget thresholds and tool write events deduplicate by stable internal
+occurrence keys, independent of `APP_KEY`. Only outgoing subject IDs use an
+application-key HMAC. Key rotation never makes a recorded occurrence new.
+The upgrade migration converts earlier budget-event keys from stored payload
+facts while preserving event IDs and payloads.
+
+### External write events
+
+The four `capability_write.*` events follow the canonical transitions of the
+side-effect ledger, never the rendering of a card or message (ADR 0050). Each
+transition commits one row of the write event outbox in the same database
+transaction; a worker turns it into the webhook event after commit. There is
+one event per transition and execution attempt, so a retried delivery never
+sends a second event with a new id. `subject.id` and
+`data.capability_write.id` name the write and are the same for its
+`unknown` and `reconciled` events. Events of one write may arrive out of
+order; order them by `occurred_at` and `transition`.
+
+```json
+{
+  "type": "capability_write.reconciled",
+  "subject": { "type": "capability_write", "id": "3f1c..." },
+  "data": {
+    "capability_write": {
+      "id": "3f1c...",
+      "transition": "reconciled",
+      "status": "succeeded",
+      "tool": "create_order",
+      "surface": "api_connector",
+      "attempt": 1,
+      "reconciliation": { "outcome": "succeeded", "source": "operator", "remote_id_present": true, "write_repeated": false }
+    },
+    "conversation": { "id": "8b2e..." },
+    "playbook_run": null
+  }
+}
+```
+
+`tool` is the public operation key of the write, without the internal
+`@revision:<id>` suffix, and `error_code` a bounded package
+code such as `side_effect_outcome_unknown`. The payload never contains the
+confirmed or written values, the provider response or record ID, the stored
+error text, the operator, the provider evidence or the reason; these events
+carry no opt-in content. Admin test conversations and staging tests send no
+event.
+
+Write and `usage.budget_threshold` subject identifiers are HMAC-derived with
+the application's `app.key`.
+They are stable for that key; different applications get different identifiers.
+Keep the application key stable when correlating historical events.
+The write event worker uses `chat.chat_queue.connection` and
+`chat.chat_queue.queue`. If propagation exhausts its five attempts, the Inbox
+shows **Delivery needs attention**, including for settled writes. Scoped admins
+can use **Retry delivery** to requeue propagation without sending the write
+again. Delivered write event outbox rows are retained as audit and deduplication
+evidence; the webhook delivery retention command does not prune them.
 
 ## Payload Content
 
@@ -193,7 +265,7 @@ is therefore at least once, not exactly once; the event ID provides receiver
 idempotency. If a response is lost, delivery may be retried even when the receiver
 already accepted the event. The body and event ID stay stable across retries;
 the signature timestamp is generated for each attempt. This notification retry
-contract never authorizes replay of a Capability write or continuation of a Playbook.
+contract never authorizes replay of a Tool write or continuation of a Workflow.
 
 - Any `2xx` response succeeds.
 - `408`, `425`, `429`, and `5xx` responses retry with bounded backoff. A valid
@@ -218,7 +290,20 @@ contract never authorizes replay of a Capability write or continuation of a Play
 
 Laravel Scheduler runs the maintenance command every minute. It ends idle
 conversations, redispatches missed fanout, due retries, and expired worker
-leases, then prunes terminal ledgers after the configured retention period:
+leases, then prunes terminal ledgers after the configured retention period.
+Budget threshold occurrence records for all periods are retained, even when
+retention is one day: late usage evidence can still settle calls from earlier
+periods. Pruning therefore cannot resend a converted threshold notice. Retaining
+an unconverted historical HMAC identity does not prevent a repeat notice. Repair
+missing encryption keys or ciphertext and, before admitting any new writes, rerun
+migration `2026_10_14_000023` under the complete web, worker and scheduler drain
+described in [UPGRADING.md](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#unverified-write-projections-and-webhook-occurrence-keys):
+
+```bash
+php artisan tinker --execute='(require base_path("vendor/heiner/filament-agentic-chatbot/database/migrations/2026_10_14_000023_preserve_write_projection_and_webhook_occurrences.php"))->up();'
+```
+
+Maintenance and pruning commands:
 
 ```bash
 php artisan filament-agentic-chatbot:maintain-outbound-webhooks --dry-run
@@ -272,3 +357,14 @@ On staging, replay the same ID and verify one receiver side effect, test a stale
 or modified signature, then use controlled 429/503 and lost-acknowledgement cases.
 Finally pause the endpoint before a queued attempt and verify no request arrives.
 No real receiver send or external acceptance was performed in the CP03 slice.
+
+## Handoff notifications
+
+The `handoff.created` and other webhook events are unchanged. The same Notify
+users also receive a database notification when a write of the Agent becomes
+an unverified action; see
+[Side-effect integrity](SIDE_EFFECT_INTEGRITY.md#unverified-actions). Agent **Notify**
+settings deliver separate database and email notifications to approved recipients.
+They use their own delivery ledger and retries, without invoking an endpoint or
+changing webhook subscriptions. A webhook does not count as a Notify recipient
+for Agent readiness. See [Agents](BOTS.md#handoff-notifications-and-business-hours).

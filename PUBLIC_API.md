@@ -7,7 +7,7 @@ aliases.
 
 Agent deployments and Playbook deployments are immutable and hash-verified.
 When an upgrade changes what the runtime accepts, affected Agents show
-**Republish needed**; publish them again. No artifact is rewritten. `import_basis` is MCP authoring data only, never an
+**Publish needed**; publish them again. No artifact is rewritten. `import_basis` is MCP authoring data only, never an
 execution contract. Capability Bridge's `definition_valid` means definition
 validation, not assignment, publication, execution testing or dialogue
 acceptance.
@@ -16,6 +16,13 @@ Ollama Agent authoring may set the strictly boolean
 `runtime_config.agent.ollama_think`. Publication pins it as `model.ollama_think`;
 omission preserves the provider default. Other drivers and non-boolean values
 are rejected.
+
+Claude 5.5 Agents may set `runtime_config.agent.anthropic_effort` to `low`,
+`medium`, `high`, `xhigh` or `max`. Publication validates the exact Anthropic
+model and pins `model.anthropic_effort`; the conversational loop maps it to
+`output_config.effort`. Missing effort preserves the provider default (medium).
+The bounded topic-scope classifier uses low effort independently.
+Invalid or foreign effort fails publication and runtime validation.
 
 Gemini 3 Agent authoring may set `runtime_config.agent.gemini_thinking_level`
 to `low`, `medium` or `high`. Publication pins it as
@@ -36,11 +43,13 @@ $panel->plugin(
 );
 ```
 
-The admin navigation has four sections, `Heiner\FilamentAgenticChatbot\Support\NavigationSection`:
-**Build** (Agents, Playbooks, Knowledge), **Connect** (Channels, APIs & MCP,
-Data, Webhooks), **Inbox** (handoffs and action reviews that wait for a person,
-with a count badge) and **Insights** (Conversations, Submissions, Usage). Each
-panel's plugin instance configures them:
+The admin navigation has five top-level items, `Heiner\FilamentAgenticChatbot\Support\NavigationSection`:
+**Build** (Agents, Workflows, Sources), **Connect** (Channels, Tools & data with
+API connections, MCP servers and App data tools as tabs, and Developers with
+Access tokens and Webhooks as tabs), **Inbox** (handoffs, approvals and unverified actions that wait for a person,
+with a count badge), **Conversations** (Conversations, Submissions and Usage as
+tabs) and **Settings** (General, Health and, for administrators, Developer tool
+providers as tabs). Each panel's plugin instance configures them:
 
 ```php
 use Heiner\FilamentAgenticChatbot\Support\NavigationSection;
@@ -51,16 +60,51 @@ FilamentAgenticChatbotPlugin::make()
     ->navigationSections([                // shown sections, in this order
         NavigationSection::Inbox,
         NavigationSection::Build,
-        NavigationSection::Insights,
+        NavigationSection::Conversations,
     ])
     ->navigationLabel(NavigationSection::Inbox, 'Support queue')
     ->navigationIcon(NavigationSection::Inbox, 'heroicon-o-bell');
 ```
 
-A section left out hides only its menu entries. Its pages keep their URLs and
-their authorization; hide a page from a role with the package Gates, not with
-the navigation. The order of the plugin group among the host's own groups
-follows the panel's `navigationGroups()`.
+A section left out hides only its menu entries, including the tab bar entries it
+owns (a host that lists the sections explicitly must add `NavigationSection::Settings`
+to keep the Settings item). Its pages keep their URLs and
+their authorization; hide a page from a role with the administration grants
+below, not with the navigation. The order of the plugin group among the host's
+own groups follows the panel's `navigationGroups()`.
+
+Administration needs a deliberate host grant (ADR 0053). In the `abilities`
+mode, `authorizeUsing()` is the panel's grant; each panel's plugin instance has
+its own:
+
+```php
+use Heiner\FilamentAgenticChatbot\Support\Authorization\AdminAbility;
+
+FilamentAgenticChatbotPlugin::make()
+    ->authorizeUsing(fn (User $user, string $ability): bool => match ($ability) {
+        AdminAbility::OPERATE => $user->isSupportAgent(),
+        AdminAbility::ADMIN => $user->isOwner(),
+        default => false,
+    });
+```
+
+The callback receives the panel user, one of `AdminAbility::OPERATE`,
+`CONFIGURE`, `PUBLISH` or `ADMIN` (`filament-agentic-chatbot.operate`,
+`.configure`, `.publish`, `.admin`) and the record acted on, or `null` for
+class-level checks. Only `true` grants; admin implies the other three for the
+same record. It runs after the panel access check and never widens the panel,
+the host SQL scope (`AdminAuthorizationQueryScope`) or the Capability
+Execution Gateway. Declaring the `$record` parameter makes the grant
+record-aware, which requires the query scope binding for lists. Global
+settings (the Settings page and its signing-key rotation) are checked with a
+`null` record and stay denied under a record-aware grant; in the `strict` mode
+the Settings page needs the class-wide Gate
+`filament-agentic-chatbot.manage-settings`.
+`getAuthorizationCallback()` returns the callback. Without a callback, Gates
+with the ability names grant. `authorization.mode` selects `abilities` or the
+per-surface `strict` Gates; `filament-agentic-chatbot:authorization-preview`
+previews a switch read-only. See `docs/SECURITY_AND_PRIVACY.md`
+(Administration Abilities).
 
 Global ports are normal Laravel bindings in a host service provider:
 
@@ -70,6 +114,17 @@ $this->app->singleton(
     \App\Chatbot\ContentExtractor::class,
 );
 ```
+
+The built-in image action uses only the host-configured
+`workflow.image_generation.http.endpoint` and `workflow.image_generation.http.headers`
+for its destination and credentials. Its `allowed_hosts` list requires exact
+hosts without wildcards. `max_response_bytes` bounds encoded and decoded image
+responses (default 10 MiB, maximum 20 MiB); `workflow.image_generation.timeout`
+is capped at 300 seconds for HTTP, with a connection timeout of at most 10 seconds.
+Private or reserved destinations and redirects are refused, and validated DNS
+addresses are pinned. No private-network grant applies to this action. See
+[the action configuration](AGENTIC_WORKFLOWS.md#image-generation-action) and
+[the version 2 upgrade](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#image-action-destination-c6-adr-0058).
 
 Connector access to a private network is a separate, high-risk host authority.
 It is denied by default and cannot be enabled by connector, workflow, or model
@@ -194,12 +249,20 @@ public function register(): void
 }
 ```
 
-The Filament **Capability Bridge** page is a read-only diagnostic view over
+The Filament **Developer tool providers** page (class `CapabilityBridge`, a tab of
+Settings that only administrators see) is a read-only diagnostic view over
 this same extension seam. It materializes declarations through the canonical
 contract validator so an operator can review effect, confirmation,
 idempotency, schema shape, and hash before routing an action. It does not scan
 or expose arbitrary Filament Resources, model methods, controllers, or UI
 Actions, and it does not create execution authority.
+
+The authoring-only **Import from Filament Resource** action separately reads
+static Resource metadata and the model field proposal into the existing App data
+tool Draft form. Discovery grants no access. The operator must review fields and
+visitor/tenant scope and explicitly Save. Runtime never scans or calls Resources,
+including `getEloquentQuery()`, `table()` and `form()`. The stored `source_resource`
+class name is for display only; it supplies neither a runtime scope nor authority.
 
 Providers return `CapabilityActionDefinition` objects from `actions()`. Write
 actions must declare `runtime_grant` confirmation and a gateway idempotency
@@ -227,6 +290,17 @@ capability execution. They must be deterministic and side-effect-free; any
 external lookup remains a deployed workflow capability executed through the
 package gateway.
 
+## Data Resource model opt-in
+
+`filament-agentic-chatbot.data_resources.package_model_allowlist` is a supported
+host configuration key. It defaults to
+`[Heiner\FilamentAgenticChatbot\Models\BotSubmission::class]`. Classes in
+`Heiner\FilamentAgenticChatbot\` or `Heiner\AgentGraph\`, and subclasses in any
+namespace, require an exact class entry, including those supplied through
+`data_resources.resources`. An entry does not allow subclasses or bypass
+field/scope policy. The current setting governs discovery, saves and runtime
+execution of historical pins. See [allowed models](DATA_RESOURCES.md#allowed-models).
+
 ## Isolated Data Resource write tests
 
 The supported host staging interface consists of
@@ -245,36 +319,37 @@ change an Eloquent connection. The normal Agent test path cannot use these
 permits. See [Data Resource staging evidence](DATA_RESOURCES.md) for the export,
 confirmed test, evidence import and publication sequence.
 
-## Solution Kit providers
+## Agent template providers
 
-`SolutionKitProvider` is the host extension seam for versioned, app-aware Agent
-starting points. Register a singleton and tag it with the interface class:
+`AgentTemplateProvider` is the host extension seam for starting points of the
+Create Agent page and the empty Agents list (see [Agent
+templates](AGENT_TEMPLATES.md)). Register a singleton and tag it with the
+interface class:
 
 ```php
-use App\Chatbot\SalesQualificationKitProvider;
-use Heiner\FilamentAgenticChatbot\SolutionKits\Contracts\SolutionKitProvider;
+use App\Chatbot\ShopTemplateProvider;
+use Heiner\FilamentAgenticChatbot\Templates\Contracts\AgentTemplateProvider;
 
 public function register(): void
 {
-    $this->app->singleton(SalesQualificationKitProvider::class);
-    $this->app->tag(SalesQualificationKitProvider::class, SolutionKitProvider::class);
+    $this->app->singleton(ShopTemplateProvider::class);
+    $this->app->tag(ShopTemplateProvider::class, AgentTemplateProvider::class);
 }
 ```
 
-The provider's `solutionKits()` method returns `SolutionKitDefinition`
-instances. Definitions are closed and credential-free. They require semantic
-versioning, at least one complete schema-v2 Playbook, and at least one
-measurable outcome. The optional `tests` list holds Agent tests in the Agent
-test turn format; a test names a Kit Playbook tool as `playbook:<playbook key>`.
-Tests warn and never block publishing. Write-capable definitions must require
-explicit installation approval. Duplicate Kit keys fail catalog resolution.
+The provider's `templates()` method returns `AgentTemplate` objects. An
+`AgentTemplate` is a final readonly value object with a unique lowercase slug
+`key`, `title`, `description`, a Heroicon `icon`, prefilled `instructions`,
+`builtInTools`, `requiredToolKinds` (a list of `AgentTemplateRequirement`),
+optional `workflows` and an optional `afterCreate` step. It validates on
+construction. A template that is invalid or whose key is already taken is left
+out and a warning in the log names the provider, so a faulty provider never
+breaks the Agents pages.
 
-The extension seam is authoring-only. Installation creates an inactive Agent,
-unpublished drafts, Agent tests, and immutable installation evidence in one
-transaction. It never publishes, activates, or executes a capability. Host
-actions referenced by a Kit remain separate `CapabilityProvider` contracts and
-execute only through the package capability gateway. See [Solution
-Kits](SOLUTION_KITS.md) for the complete schema and lifecycle.
+A template cannot grant itself authority. Creating from a template needs the
+same ability as creating any Agent, the Agent is always a Draft, and Tools are
+assigned through the usual rules. Host actions stay separate `CapabilityProvider`
+contracts and execute only through the package capability gateway.
 
 ## Evidence-backed business outcomes
 
@@ -342,7 +417,8 @@ Webhooks](OUTBOUND_WEBHOOKS.md) for the payload, signature, retry, and operation
 contract.
 
 Events cover conversations (started, ended), submissions, feedback, outcomes,
-handoffs, Playbook runs (completed, failed), action reviews and monthly budget
+handoffs, Playbook runs (completed, failed), approvals, external writes
+(succeeded, failed, unknown, reconciled) and monthly budget
 thresholds. Payloads carry public ids only; per-endpoint opt-in content
 (submission fields, last messages) is redacted and size-capped.
 
@@ -451,6 +527,61 @@ reasoning text. A missing event never proves non-dispatch. Admission failures
 on the chat routes expose a separate request ID header without inventing a
 turn ID.
 
+## Signed widget context
+
+`Support\WidgetContextToken::issueForBot($bot, $origin, $area, $actor, $tenant,
+$attributes)` is the supported server-side issuer of the signed customer context
+(ADR 0057). It returns a `Support\WidgetContextTokenIssuance` (`token`,
+`issuedAt`, `refreshAfter`, `expiresAt`, `toArray()`) or `null` when signed
+context is disabled, the area is not allowed, or no key exists. A user model
+actor is signed as its class and key only; a `label` is signed only when passed
+explicitly. The token format and the header `X-Filament-Agentic-Chatbot-Context`
+are unchanged. A context endpoint answers `204 No Content` for a guest. See
+[Chat Widget](CHAT_WIDGET.md#signed-customer-and-tenant-context).
+
+## Host actor resolution
+
+`Contracts\HostActorResolver` resolves the customer a personal App data tool
+or a host model policy acts for (ADR 0057). Bind your own implementation in a
+service provider, or use the default `Support\HostActors\ConfiguredHostActorResolver`:
+
+- `resolve(HostActorReference $reference): ?Authenticatable` returns the
+  attested account, or `null` when it no longer exists, is disabled, is not a
+  member of the attested tenant, or the host refuses it. It must never return
+  another identity; the package rejects an actor whose class or key differs
+  from the reference. Throw `Support\HostActors\UnsupportedHostActorSetup` when
+  the host setup cannot answer. A thrown exception does not establish
+  revocation: delayed continuations and completion wakeups defer with bounded
+  retries and expose exhaustion operationally. A new personal tool execution
+  still refuses while the resolver cannot answer.
+- `within(HostActorReference $reference, Authenticatable $actor, Closure $callback): mixed`
+  runs one policy evaluation. Establish tenant or global scope state only from
+  the reference and restore it before returning, also when the callback throws.
+
+`Support\HostActors\HostActorReference` carries the attested `type`, `id`, the
+allowed `modelClass`, the attested `tenant` snapshot (`tenantId()`,
+`tenantType()`), `agentPublicId` and `area`. The package calls a resolver only
+for a type allowed in `context.host_actors.types` (attested type => Eloquent
+`Authenticatable` class; a list entry allows the class name itself). Alias maps
+require exact `[a-z][a-z0-9_-]{0,63}` keys; class-name lists must not mix alias
+entries. Every class must be distinct, concrete and outside package models and
+their subclasses. An invalid entry refuses the entire map before resolution.
+The host may explicitly list its shared `User` model when it is the intended
+customer identity and the host ability restricts it; panel membership provides
+no implicit mapping. Requests combining signed context and a session require
+exactly one valid mapping for the session class and a matching signed type and
+ID, with no raw class-name fallback. The default
+resolver requires the Gate ability `context.host_actors.ability` (default
+`filament-agentic-chatbot.serve-customer`), called as
+`Gate::forUser($actor)->allows($ability, [$reference])`. Typed outcomes are
+`sign_in_required`, `host_actor_unsupported` and `host_actor_denied`.
+
+`widget.sign_in_route` is the sign-in link a personal tool's
+`sign_in_required` shows in the widget: a route name, an absolute `http(s)` URL
+or a path starting with `/`. The public message payload carries it as
+`sign_in.url` (`null` without a valid route). The server resolves `/path`
+with the Laravel host URL; absolute URLs remain unchanged.
+
 ## Configuration
 
 Only the keys in `config_keys` below are supported host configuration. Empty
@@ -461,7 +592,12 @@ upgrade instruction; internal runtime defaults are not host configuration.
 ## Non-PHP contracts
 
 - The public widget Blade component is
-  `filament-agentic-chatbot::chat-widget`.
+  `filament-agentic-chatbot::chat-widget`. It shows the Agent whose public ID
+  is given as `agent="..."`, or else the Agent marked as the app default
+  (`widget.public_selector.enabled`); with neither it renders nothing and logs
+  one warning. The attributes `area` and `expandable` are unchanged. The
+  1.0 release removed the attribute `bot-public-id` and the configuration
+  key `widget.bot_public_id` (`AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID`).
 - The widget script route name is
   `filament-agentic-chatbot.widget.script`. Its URI follows the canonical
   `widget.script_route` host setting; the removed `/widget.js` alias is not
@@ -482,6 +618,15 @@ upgrade instruction; internal runtime defaults are not host configuration.
 - Filament resource/page/widget classes, render-hook implementation, generated
   workflow-editor chunks, package views other than the widget component, and
   migration filenames are internal.
+- `filament-agentic-chatbot:upgrade` (ADR 0055) is the supported upgrade of an
+  existing installation. `--dry-run` writes nothing and exits non-zero when a
+  check is `blocked`; `--json` prints the report (`version`, `blocked`, and per
+  check `key`, `status`, `summary`, `details`). Apply needs `--operator`,
+  `--backup-confirmed` and `--workers-stopped`, runs only package and
+  AgentGraph migrations and continues an interrupted run. The check keys
+  (`storage`, `schema`, `settings`, `authorization`, `contracts`, `runs`,
+  `confirmations`, `workers`) and the exit codes are supported; their texts
+  are not.
 
 ## Executable allowlist
 
@@ -492,6 +637,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
   "php_types": [
     "Heiner\\FilamentAgenticChatbot\\FilamentAgenticChatbotPlugin",
     "Heiner\\FilamentAgenticChatbot\\Support\\NavigationSection",
+    "Heiner\\FilamentAgenticChatbot\\Support\\Authorization\\AdminAbility",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\AdminAuthorizationQueryScope",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ChunksText",
     "Heiner\\FilamentAgenticChatbot\\Contracts\\ConnectorEgressPolicyResolver",
@@ -517,8 +663,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Services\\Connectors\\Webhooks\\ConnectorCompletionWebhookVerifierRegistry",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\CapabilityInventoryContext",
     "Heiner\\FilamentAgenticChatbot\\Services\\Capabilities\\BotCapabilityView",
-    "Heiner\\FilamentAgenticChatbot\\SolutionKits\\Contracts\\SolutionKitProvider",
-    "Heiner\\FilamentAgenticChatbot\\SolutionKits\\SolutionKitDefinition",
+    "Heiner\\FilamentAgenticChatbot\\Templates\\Contracts\\AgentTemplateProvider",
+    "Heiner\\FilamentAgenticChatbot\\Templates\\AgentTemplate",
+    "Heiner\\FilamentAgenticChatbot\\Templates\\AgentTemplateRequirement",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelActivityIndicator",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelDriver",
     "Heiner\\FilamentAgenticChatbot\\Channels\\Contracts\\ChannelMessageRenderer",
@@ -548,16 +695,26 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeKey",
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\ConversationOutcomeSignal",
     "Heiner\\FilamentAgenticChatbot\\Outcomes\\RecordedConversationOutcome",
-    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetEmbedToken"
+    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetEmbedToken",
+    "Heiner\\FilamentAgenticChatbot\\Contracts\\HostActorResolver",
+    "Heiner\\FilamentAgenticChatbot\\Support\\HostActors\\ConfiguredHostActorResolver",
+    "Heiner\\FilamentAgenticChatbot\\Support\\HostActors\\HostActorReference",
+    "Heiner\\FilamentAgenticChatbot\\Support\\HostActors\\UnsupportedHostActorSetup",
+    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetContextToken",
+    "Heiner\\FilamentAgenticChatbot\\Support\\WidgetContextTokenIssuance"
   ],
   "plugin_methods": [
+    "authorizeUsing",
     "boot",
+    "dashboardWidgets",
+    "getAuthorizationCallback",
     "getId",
     "getNavigationGroup",
     "getNavigationIcon",
     "getNavigationLabel",
     "getNavigationSections",
     "getNavigationSort",
+    "hasDashboardWidgets",
     "hasNavigationSection",
     "isWidgetEnabled",
     "make",
@@ -566,6 +723,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "navigationLabel",
     "navigationSections",
     "navigationSort",
+    "overviewWidgets",
     "register",
     "widgetEnabled"
   ],
@@ -576,8 +734,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "label",
     "summary"
   ],
-  "solution_kit_provider_methods": [
-    "solutionKits"
+  "agent_template_provider_methods": [
+    "templates"
   ],
   "config_keys": [
     "action_review.actions",
@@ -627,6 +785,9 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "api_connectors.require_explicit_allowlists",
     "api_connectors.require_ssl_verification",
     "api_connectors.strategies.classes",
+    "api_connectors.test_account_staging.evidence_ttl_minutes",
+    "api_connectors.test_account_staging.review_ttl_days",
+    "api_connectors.test_account_staging.unverified_separation_origins",
     "attachments.allowed_mime_types",
     "attachments.channel_ingress_retention_hours",
     "attachments.disk",
@@ -640,6 +801,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "attachments.max_total_bytes",
     "attachments.path",
     "attachments.retention_days",
+    "authorization.mode",
     "bot_access_tokens.accept_authorization_bearer",
     "bot_access_tokens.authorization.enabled",
     "bot_access_tokens.authorization.manage_ability",
@@ -667,13 +829,6 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bot_handoff_requests.authorization.manage_ability",
     "bot_handoff_requests.authorization.require_gates",
     "bot_handoff_requests.authorization.view_ability",
-    "bot_handoff_requests.desk.business_hours.friday",
-    "bot_handoff_requests.desk.business_hours.monday",
-    "bot_handoff_requests.desk.business_hours.saturday",
-    "bot_handoff_requests.desk.business_hours.sunday",
-    "bot_handoff_requests.desk.business_hours.thursday",
-    "bot_handoff_requests.desk.business_hours.tuesday",
-    "bot_handoff_requests.desk.business_hours.wednesday",
     "bot_handoff_requests.desk.default_assignee.id",
     "bot_handoff_requests.desk.default_assignee.label",
     "bot_handoff_requests.desk.default_assignee.type",
@@ -688,7 +843,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bot_handoff_requests.desk.sla.urgent.first_response_minutes",
     "bot_handoff_requests.desk.sla.urgent.resolution_minutes",
     "bot_handoff_requests.desk.teams",
-    "bot_handoff_requests.desk.timezone",
+    "bot_handoff_requests.notifications.queue.connection",
+    "bot_handoff_requests.notifications.queue.queue",
     "bot_submissions.authorization.enabled",
     "bot_submissions.authorization.manage_ability",
     "bot_submissions.authorization.require_gates",
@@ -701,7 +857,6 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bots.authorization.manage_ability",
     "bots.authorization.require_gates",
     "bots.authorization.view_ability",
-    "capabilities.default_mode",
     "channels.activity.indicators",
     "channels.authorization.enabled",
     "channels.authorization.manage_ability",
@@ -721,8 +876,6 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "channels.slack.enabled",
     "channels.store_raw_webhook_payloads",
     "channels.webhook_base_url",
-    "channels.whatsapp.enabled",
-    "channels.whatsapp.graph_api_version",
     "chunking.overlap_tokens",
     "chunking.size_tokens",
     "chunking.tokenizer_encoding",
@@ -747,10 +900,14 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "context.authorization.public_areas",
     "context.authorization.require_auth_for_non_public",
     "context.default_area",
+    "context.host_actors.ability",
+    "context.host_actors.types",
     "data_resources.authorization.enabled",
     "data_resources.authorization.manage_ability",
     "data_resources.authorization.require_gates",
     "data_resources.authorization.view_ability",
+    "data_resources.package_model_allowlist",
+    "data_resources.policy_candidate_limit",
     "data_resources.resources",
     "data_resources.scope_sources",
     "data_resources.scope_values",
@@ -784,7 +941,6 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "google_docs.oauth.refresh_token",
     "google_docs.oauth.scope",
     "google_docs.oauth.token_url",
-    "ingestion.allow_private_network_urls",
     "ingestion.allow_sync_actions",
     "ingestion.connection",
     "ingestion.max_extracted_bytes",
@@ -798,6 +954,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "knowledge_sources.authorization.manage_ability",
     "knowledge_sources.authorization.require_gates",
     "knowledge_sources.authorization.view_ability",
+    "knowledge_sources.generation_retention.days",
+    "knowledge_sources.generation_retention.schedule_enabled",
     "knowledge_sources.sync.schedule_enabled",
     "knowledge_sources.uploads.directory",
     "knowledge_sources.uploads.disk",
@@ -812,6 +970,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "openai_compatible.api_key",
     "openai_compatible.base_url",
     "openai_compatible.driver",
+    "operations.heartbeat.cache_store",
+    "operations.heartbeat.stale_after_seconds",
     "outbound_webhooks.authorization.enabled",
     "outbound_webhooks.authorization.manage_ability",
     "outbound_webhooks.authorization.require_gates",
@@ -861,9 +1021,10 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "vector.chroma.timeout",
     "vector.chroma.token",
     "vector.chroma.url",
+    "vector.database.max_chunks",
+    "vector.database.warning_chunks",
     "vector_dimensions",
     "widget.allow_all_domains",
-    "widget.bot_public_id",
     "widget.context.authorizes_non_public_areas",
     "widget.context.enabled",
     "widget.context.max_payload_bytes",
@@ -893,6 +1054,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "widget.public_selector.url",
     "widget.render_hook",
     "widget.script_route",
+    "widget.sign_in_route",
     "widget.signing.allow_body_tokens",
     "widget.signing.allow_query_tokens",
     "widget.signing.enabled",
@@ -909,6 +1071,23 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "workflow.generation.poll_interval_ms",
     "workflow.generation.provider",
     "workflow.generation.queue",
+    "workflow.image_generation.disk",
+    "workflow.image_generation.height",
+    "workflow.image_generation.http.allowed_hosts",
+    "workflow.image_generation.http.endpoint",
+    "workflow.image_generation.http.headers",
+    "workflow.image_generation.http.max_response_bytes",
+    "workflow.image_generation.http.provider",
+    "workflow.image_generation.model",
+    "workflow.image_generation.path",
+    "workflow.image_generation.provider",
+    "workflow.image_generation.public_base_url",
+    "workflow.image_generation.quality",
+    "workflow.image_generation.size",
+    "workflow.image_generation.steps",
+    "workflow.image_generation.timeout",
+    "workflow.image_generation.transport",
+    "workflow.image_generation.width",
     "workflow.max_steps",
     "workflow.resume_delivery.automatic_attempt_limit",
     "workflow.resume_delivery.lease_seconds",
@@ -954,13 +1133,16 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "POST filament-agentic-chatbot/diagnostics/conversations/{conversation}/access"
   ],
   "commands": [
+    "filament-agentic-chatbot:authorization-preview",
     "filament-agentic-chatbot:collect-knowledge-gaps",
     "filament-agentic-chatbot:doctor",
+    "filament-agentic-chatbot:embedding-billing-preflight",
     "filament-agentic-chatbot:maintain-connector-completions",
     "filament-agentic-chatbot:maintain-outbound-webhooks",
     "filament-agentic-chatbot:prune-channel-inbound-attachments",
     "filament-agentic-chatbot:prune-chat-attachments",
     "filament-agentic-chatbot:prune-conversation-diagnostics",
+    "filament-agentic-chatbot:prune-knowledge-generations",
     "filament-agentic-chatbot:prune-pending-interaction-drafts",
     "filament-agentic-chatbot:qa-enterprise-smoke",
     "filament-agentic-chatbot:reconcile-ai-usage",
@@ -969,7 +1151,10 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "filament-agentic-chatbot:reconcile-workflow-resume-deliveries",
     "filament-agentic-chatbot:setup-google-calendar-connector",
     "filament-agentic-chatbot:setup-google-docs-connector",
-    "filament-agentic-chatbot:sync-knowledge-sources"
+    "filament-agentic-chatbot:storage-preflight",
+    "filament-agentic-chatbot:switch-knowledge-backend",
+    "filament-agentic-chatbot:sync-knowledge-sources",
+    "filament-agentic-chatbot:upgrade"
   ]
 }
 PUBLIC_API_ALLOWLIST -->

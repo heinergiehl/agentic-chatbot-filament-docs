@@ -5,6 +5,23 @@ calculates token costs using the tariff frozen when each call starts. These
 amounts are not imported provider invoices. A shared provider API key does not
 identify which application caused an account-level charge.
 
+Open **Conversations > Usage** for this month's visitor costs. **All calls**
+and **Model prices** are tabs on the Usage pages. Currency on the chart axis,
+cost tiles and table totals follows the operator's locale. The report tables
+render immediately instead of leaving loading cards below the Agent totals.
+
+When a cost tile says **calls without usage data**, select it to open **All
+calls** filtered to those visitor calls in the current month, through the
+current instant and within your record scope. Inspect each call's status,
+failure information and reconciliation evidence. Awaiting receipts need
+provider evidence; failed calls are not known zero-cost calls. Use the
+reconciliation procedures in [Operations](OPERATIONS.md#ai-usage-reconciliation)
+when evidence is available. The link performs no reconciliation or retry.
+Settled calls also need attention when any input, output, reasoning, cache-read
+or cache-write token bucket is missing. An explicit zero is complete evidence
+for that bucket. The count and linked filter use the same predicate; neither
+changes a call's recorded cost or tariff.
+
 ## Receipt and budget lifecycle
 
 Both synchronous chat and supported native streams use the same model-step
@@ -17,9 +34,53 @@ Provider-specific adapters preserve terminal usage metadata for Gemini, OpenAI,
 Azure, Anthropic, Xai, OpenRouter, DeepSeek, Groq, Mistral, OpenAI-compatible and
 Ollama. Local protocol tests cover these adapters; this is not a live provider
 certification. An unsupported protocol, lost terminal event or contradictory
-counter remains unknown. Zero-token embeddings whose SDK response loses counter
-presence remain unknown. Raw SDK aggregate token totals are not the reporting
+counter remains unknown. Except for the successful Gemini embedding case below,
+zero-token embeddings whose SDK response loses counter presence remain unknown.
+Raw SDK aggregate token totals are not the reporting
 authority.
+
+### Gemini embedding estimates
+
+The installed Gemini embedding gateway reads `usageMetadata.promptTokenCount`.
+`batchEmbedContents` responses can omit it; the SDK then supplies zero without
+preserving whether a counter existed. A successful, nonempty embedding response
+for the reserved Gemini model with no positive count settles the reserved input
+token estimate instead. The request estimator uses a conservative UTF-8 byte
+upper bound. Output is zero because this operation returns vectors. Positive
+provider counts are recorded as provider-reported usage.
+
+The call and usage event carry `usage_measurement.type: estimated`, method
+`reserved_input_tokens` and reason `gemini_embedding_usage_not_reported`.
+The All calls list and detail label it **Estimated**; overview totals explicitly
+include these estimates, and accounting exports count `estimated_calls`. The
+original monthly budget atomically moves the estimate from reserved to settled
+tokens and catalog cost, so there is no permanent reservation or Setup usage
+reconciliation warning. This is an accounting estimate, not a provider receipt.
+Configure an embedding tariff in `usage.pricing` when the model has no price;
+missing pricing still prevents hard cost-budget admission.
+
+Retrieval and editor embedding calls use this settlement path. Shared Source
+ingestion uses the global embedding profile and creates no per-Agent reservation.
+Failed, interrupted or ambiguous provider requests still retain their reservation
+for reconciliation. Other providers' missing counters remain unknown. A database
+failure retries the saved estimate idempotently. Old calls already awaiting
+evidence are not automatically reclassified: a missing receipt alone cannot
+prove that they succeeded. An operator may replace a labelled estimate with a
+complete verified receipt through the existing reconciliation command; the audit
+records the estimate and corrected amounts, adjusts the original budget by the
+delta and updates the usage event once. Estimates are never accepted as receipt
+evidence.
+
+Laravel AI 1.x reports inclusive totals: its input count contains cache reads
+and cache writes, and its output count contains reasoning tokens. Settlement
+subtracts each category once and stores five disjoint buckets (input, output,
+reasoning, cache read, cache write), so the same provider response stores the
+same numbers as before the SDK change. The exception is xAI: Laravel AI 1.x adds
+xAI reasoning tokens, which xAI reports outside its output count, so stored
+xAI output no longer omits them. Gemini tool-use prompt tokens, which the
+SDK leaves out, are added to input. A host model profile may set
+`usage_prompt_includes_cache` or `usage_completion_includes_reasoning` to
+`false` for a private endpoint that reports otherwise.
 
 `reserved` calls with a saved receipt can be retried by the settlement worker.
 A provider or database failure is `reconciliation_required`. Expiry without a
@@ -37,7 +98,7 @@ receipt for another call is rejected. The ledger stores no API keys or prompts.
 
 ## Usage overview
 
-**Insights > Usage** opens on this month: cost, tokens, conversations and cost
+**Conversations > Usage** opens on this month: cost, tokens, conversations and cost
 per conversation of visitor traffic, a cost-per-day chart (all Agents or one),
 Agents ranked by cost with their monthly token and cost budget use, the most
 expensive conversations and a per-model table. Agent tests, the chat playground
@@ -225,13 +286,15 @@ operator evidence, including after a partial native receipt.
 A `pricing_snapshot` may supply a reviewed historical missing tariff or add
 previously unpriced dimensions. A valid tariff that already prices the receipt
 cannot be replaced. Supplements preserve all previously bound rates and
-dimensions. A known settled amount is never overwritten through this action.
+dimensions. A provider-reported settled amount is never overwritten through
+this action. A labelled Gemini embedding estimate may be corrected once by a
+complete verified receipt, with the original estimate retained in the audit.
 An unresolved additional fee still prevents a complete token-cost settlement.
 
 The audit stores encrypted evidence and verification reason, operator identity,
 hashes, and before/after accounting values in one transaction with settlement.
 A stale preview, conflicting receipt or failed audit write commits no partial
-budget correction. No model request, tool, Playbook or external write is retried.
+budget correction. No model request, tool, Workflow or external write is retried.
 
 ## Verification
 
@@ -241,3 +304,17 @@ provider check. It requires explicit credential-source authorization and records
 only sanitized usage evidence. It does not retrieve a provider invoice. Missing
 credentials, denied network approval and unknown responses are not passed live
 validation.
+
+### Claude Haiku 5.5 default tariff
+
+The cached Anthropic specification checked 2026-10-06 prices exact model
+`claude-haiku-5-5` in USD per million tokens: input 0.10 and output 0.50
+through 100,000 total prompt tokens; above that boundary the entire call uses
+input 0.50 and output 2.50. Prompt size includes cache reads and writes.
+Cache rates use Anthropic standard multipliers: reads 0.1 times input,
+five-minute writes 1.25 times input, one-hour writes 2 times input.
+Unknown cache lifetime stays unpriced. Sonnet 5.5 uses 2/10 and Opus 5.5 uses
+4/20 for input/output. Existing explicit host and panel prices retain precedence.
+Native synchronous and terminal streaming receipts settle disjoint input,
+output and cache buckets with provider response IDs. Partial or interrupted
+receipts retain reconciliation status; the SDK zero defaults are not evidence.

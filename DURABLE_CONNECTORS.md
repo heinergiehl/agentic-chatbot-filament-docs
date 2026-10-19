@@ -1,22 +1,25 @@
-# Durable Connector jobs
+# Durable API tool jobs
 
-Use a normal Connector call when an HTTP response contains the final result.
+Use a normal API connection call when an HTTP response contains the final result.
 Use durable completion when the provider accepts a job and exposes an
 authoritative endpoint for reading its status and final result. A webhook is
 optional: it accelerates a status check but never supplies the trusted result.
 
-Durable operations run inside a deployment-pinned Playbook. Direct Agent tools
-remain bounded reads. The same Agent may answer independent read requests while
-one Playbook is open; it cannot open a second Playbook or bypass the first one's
+Durable operations run inside a deployment-pinned Workflow. Direct
+Agent tools support bounded reads and synchronous writes through the Gateway,
+with confirmation of the exact values. An Agent may explicitly disable confirmation
+for HTTP writes; direct MCP writes always require it. Durable background jobs
+still require a Workflow. The same Agent may answer independent read requests while
+one Workflow is open; it cannot open a second Workflow or bypass the first one's
 approval, wait, or cancellation rules.
 
 ## Publish the provider protocol
 
-In a Connector operation's **Advanced** tab, expand **Protocol contract**,
+In an API tool's **Advanced** tab, expand **Protocol contract**,
 enable **Wait for an external job** and choose **Background job with durable
-Playbook resume**. Configure
+Workflow resume**. Configure
 the provider's actual completion protocol, test the draft, publish the
-operation, and release a Playbook/Agent with the new immutable dependency pins.
+operation, and release a Workflow/Agent with the new immutable dependency pins.
 Editing the draft never changes an in-flight job.
 
 For example, a provider returning a job ID, a `Location` status URL, and JSON
@@ -87,7 +90,7 @@ a callback URL through a request header:
 }
 ```
 
-Store the secret value in the Connector's encrypted **Completion webhook
+Store the secret value in the API connection's encrypted **Completion webhook
 signing secret** credential. The published contract contains only its key. A
 blank secret field keeps the saved value. Set a stable, externally reachable
 HTTPS `APP_URL`; only local/testing environments permit HTTP. The callback URL
@@ -128,16 +131,16 @@ accepting a write does not prove that no external change occurred. Such writes
 become `unknown` and require operator reconciliation. The runtime does not
 silently resubmit them. Reads may safely terminate as failed.
 
-Cancelling a Playbook stops local continuation. It does not assert that the
+Cancelling a Workflow stops local continuation. It does not assert that the
 provider cancelled the remote job. Terminal graph projection and closing the
 local job/side-effect records commit atomically. Recovery after an SDK-terminal
 checkpoint repairs those projections without another external call.
 
 Independent read results are saved in encrypted, bounded presentation receipts
-before Playbook dispatch and after each read. Their exact turn, conversation,
+before Workflow dispatch and after each read. Their exact turn, conversation,
 deployment and evidence bindings are checked on recovery. Replaying an already
 committed client turn uses the same canonical answer through JSON or SSE.
-When a Playbook write is uncertain, independently verified reads remain
+When a Workflow write is uncertain, independently verified reads remain
 available in `read_answer`; they do not clear the uncertainty or unlock retry.
 
 ## Workbench testing and supported limits
@@ -156,8 +159,8 @@ a diagnostic can start, callback URLs supplied through arbitrary body templates,
 and jobs without an authoritative status-read endpoint need a reviewed provider
 adapter. They are not automatically supported. Durable completion and automatic
 result pagination cannot be enabled on the same operation; model any subsequent
-result retrieval as a separate declared Playbook step.
+result retrieval as a separate declared Workflow step.
 
-See [Operations](OPERATIONS.md#durable-connector-completion) for workers,
+See [Operations](OPERATIONS.md#durable-api-connection-completion) for workers,
 scheduling and diagnostics, [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) for migrations, and
 [ADR 0009](adr/0009-durable-external-operations.md) for authority boundaries.

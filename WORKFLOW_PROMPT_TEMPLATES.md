@@ -2,7 +2,7 @@
 
 Ready-to-use prompts you can paste into the workflow editor's **AI Draft** panel. Each prompt produces a complete, production-quality workflow draft. Copy any prompt below and paste it into the generation prompt - the generator will produce a valid, runnable workflow draft.
 
-> **Tip:** After generation, review the visual graph, adjust system prompts to match your tone, and wire up any API connectors / actions.
+> **Tip:** After generation, review the visual graph, adjust system prompts to match your tone, and wire up any API connections / actions.
 
 ---
 

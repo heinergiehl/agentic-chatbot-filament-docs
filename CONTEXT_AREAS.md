@@ -1,10 +1,10 @@
-# Context Areas
+# Audiences (context areas)
 
-Context areas control who a bot is meant for and which runtime scope applies to a conversation.
+An audience controls who an Agent is meant for and which runtime scope applies to a conversation. The Filament panel calls it **Audience**. In code, widget attributes, API payloads and configuration it is still called the `area` (`data-area`, `area`, `AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS`). Both names mean the same thing.
 
-## Built-In Areas
+## Built-in audiences
 
-Filament Agentic Chatbot supports area-based access such as:
+Filament Agentic Chatbot supports audience-based access such as:
 
 - `public`
 - `member`
@@ -12,17 +12,17 @@ Filament Agentic Chatbot supports area-based access such as:
 
 You can use these to separate public-facing and authenticated assistant behavior.
 
-## Why Context Areas Matter
+## Why audiences matter
 
 They let you keep one app with multiple assistant experiences:
 
-- a public website bot
-- a signed-in member help bot
-- an internal admin bot
+- a public website Agent
+- a signed-in member help Agent
+- an internal admin Agent
 
-Each bot can define its own allowed areas and default area.
+Each Agent can define its own allowed audiences and default audience.
 
-## Typical Patterns
+## Typical patterns
 
 ### Public
 
@@ -45,22 +45,22 @@ Use for:
 Use for:
 
 - internal support
-- operations workflows
+- operations Workflows
 - staff-only docs
 
-## Access Control
+## Access control
 
-Area rules work together with:
+Audience rules work together with:
 
 - domain allowlists
 - auth guards
-- optional area abilities
+- optional audience abilities
 - widget signing
 
-That lets you keep a public bot open while protecting internal assistant experiences.
+That lets you keep a public Agent open while protecting internal assistant experiences.
 
-## Related Docs
+## Related docs
 
-- [Bots](BOTS.md)
+- [Agents](BOTS.md)
 - [Chat Widget](CHAT_WIDGET.md)
 - [Security and Privacy](SECURITY_AND_PRIVACY.md)

@@ -6,7 +6,7 @@ release checklist and does not authorize publishing or changing the SDK.
 ## Dependency
 
 - Composer package: `heiner/agent-graph`
-- Current plugin constraint: `0.18.1` (exact stable release)
+- Current plugin constraint: `0.19.0` (exact stable release)
 - The consuming host and isolated `apps/sandbox` harness declare the same exact
   stable release. A declaration alone does not update an installed lock or
   certify a host: complete the coordinated store migration and deployment
@@ -16,8 +16,15 @@ release checklist and does not authorize publishing or changing the SDK.
   plugin's duplicate `assertRecoveryBindings` and `matchesAcceptedNodeResume`.
   The original consumer recovery/projection tests pass before and after their
   removal; direct-child admission, ancestry and cancellation remain local.
-  This patch adds no consumer migration or ABI change. The exact SDK pin still
-  requires newly published Playbook artifacts and Agent deployments.
+  This patch adds no consumer migration or ABI change.
+- Version 0.19.0 requires Laravel AI `^1.2.1`, installs on MySQL 8.4 and
+  MariaDB 11.4, enforces memory identity limits (`MemoryIdentity`: scope id
+  191, tenant id and namespace 128, key 255 characters) and adds the unique
+  memory `identity_hash` migration. Runs, checkpoints, interrupts, tasks and
+  the graph API are unchanged, so Playbook artifacts pinned to 0.18.1 keep
+  executing through the reviewed pin table of
+  `DeploymentRuntimeCompatibility` (ADR 0056). Any other SDK version change
+  still needs a review and table entry, or newly published artifacts.
 - The required public surface is enforced by
   `AgentGraphPublicApiCompatibilityTest`.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
