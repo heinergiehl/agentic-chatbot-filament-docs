@@ -6,11 +6,13 @@ For a shop, one Agent answers a public delivery FAQ from a Source, checks **Orde
 
 [Demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy](https://checkout.anystack.sh/agentic-chatbot) · [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 
-**Release status:** Approved, conditional on required gates and publication.
+**Release status:** Approved (release authorization); GitHub publication completed.
 
-> Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. See the [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) and [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
+> Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact). See the [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) and [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md).
 
 Commercial proprietary software. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI provider and hosting costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
+
+Try the [live shop demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo): fictional Alex/Sam accounts, cited shop policy, scoped orders and a confirmed address change. No real purchases, shipments or refunds occur. These online documentation updates follow publication; the tagged source and released ZIP retain their original documentation.
 
 ## Three use cases
 
@@ -44,7 +46,7 @@ Continue an unresolved conversation in the team's Inbox.
 
 Requirements: PHP 8.3+ with Composer-required extensions, Composer 2.2+, Laravel 12.61.1+ or 13.12.0+, Filament 5.10.2+ within 5.x, a supported database, a persistent queue worker, the scheduler and a cache shared by web and workers. Package storage supports MySQL 8.4+, MariaDB 11.4+, PostgreSQL 15+ and SQLite 3.39+. Production App data tools require a supported server database. [Compatibility and measured scope](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md).
 
-1. Buy access and configure your private Anystack Composer repository. After publication, install with `composer require heiner/filament-agentic-chatbot:^1.0`. Until then, evaluate only the owner's exact candidate artifact; the constraint may have no available version.
+1. Buy access and configure your private Anystack Composer repository. Install with `composer require heiner/filament-agentic-chatbot:^1.0`.
 2. Register `FilamentAgenticChatbotPlugin::make()`, grant administrator access explicitly and configure your provider key.
 3. Run `php artisan filament-agentic-chatbot:install`, supervise the worker and run the scheduler every minute.
 4. Create an Agent, add a Source, **Test**, then **Publish**. Configure **Allowed hosts** and copy the embed. **Restore** selects an earlier Version while preserving Live/Paused availability.

@@ -1,19 +1,13 @@
 # Known Limitations
 
-> **Version**: 1.0.0 (selected release; verify published identity below)<br>
+> **Version**: 1.0.0 (published)<br>
 > **Last updated**: 2026-10-19
 
-These constraints apply to the **1.0 candidate**, selected as `v1.0.0` subject
-to the required gates and publisher finalization. The canonical
-[GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0)
-identifies published status and the exact source/archive. Approval alone does
-not certify acceptance or publication. The upgrade baseline remains `0.20.5`.
-The release contract conditionally authorizes `1.0.0` for intended publication
-on `2026-10-19`; it does not certify a final source or archive.
-The 0.20.5-to-1.0 procedure and development rehearsal are recorded in
-`UPGRADING.md` and `docs/release/UPGRADE_REHEARSAL_1.0.md`. That evidence does
-not certify an exact commercial archive, live provider behavior or remote
-storage backups. Data conversions require backup restoration for rollback.
+These constraints apply to the published **v1.0.0** package. The canonical
+[GitHub Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) identifies publication and the exact source/archive.
+Approval metadata alone is not publication. The upgrade baseline remains
+`0.20.5`; follow [Upgrading](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10).
+Data conversions require paired backup restoration for rollback.
 
 Check [Compatibility](COMPATIBILITY.md) for supported requirements and the
 scope of recorded evidence. AI answers and Tool selection depend on the
@@ -22,13 +16,22 @@ record scopes, business policies and production validation.
 
 This page documents known constraints, upstream limitations, and workarounds.
 
-## Candidate verification limits
+## Verification limits
 
-Final golden-path acceptance and exact-source/archive certification remain
-pending. No measured setup-time promise or completed end-to-end shop acceptance
-is made. The FAQ screenshot is historical and predates the citation-width fix;
-it awaits a current live-flow capture. Other retained screenshots document only
-their recorded UI states, not a new execution of the pictured conversation.
+The exact release passed its required local gates before GitHub publication.
+The later [live shop acceptance](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#verified-live-shop-demo) verified a
+cited FAQ, own-order reads, one confirmed address update, completed Graph work
+and native Inbox storage with customer isolation. It did not exhaustively rerun
+duplicate/stale/cancel cases or a broad dialogue/database matrix. The model's
+post-write prose was unnecessarily doubtful despite canonical success.
+The staff reply was verified in authorized owner history; no live-widget reply
+screenshot or successful automatic foreground polling is claimed. SMTP and a
+measured setup-time result remain unverified.
+
+The FAQ PNG is the actual 2026-10-19 local C1 capture, SHA-256
+`8544582e04b4048c40f14a5ada33e7f81f291a826afacfdde091c13d6a12d31f`.
+Other retained screenshots keep their original dated provenance and are not
+new public-demo captures. Unknown and unmeasured provider costs remain unknown.
 
 **No long-duration soak occurred**. Release policy
 `release-1.0-risk-focused.v1` makes it optional and retains targeted risky-path
@@ -255,9 +258,9 @@ and generation retention for large Websites.
 
 ---
 
-## 17. MySQL and MariaDB specifics (1.0 candidate)
+## 17. MySQL and MariaDB specifics (1.0)
 
-The 1.0 candidate matrix passed on MySQL 8.4.11 and MariaDB
+The dated 1.0 development matrix passed on MySQL 8.4.11 and MariaDB
 11.4.13-MariaDB-ubu2404 on 2026-10-16, including both Laravel `mariadb` and
 `mysql` drivers against MariaDB, for the cases and exclusions recorded in
 `docs/COMPATIBILITY.md`. Known differences:

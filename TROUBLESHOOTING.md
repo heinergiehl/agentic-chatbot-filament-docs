@@ -1,7 +1,7 @@
 # Troubleshooting
 
 Use this guide with the version of the package you installed. These instructions
-describe the **1.0 candidate**. Start with [Quickstart](QUICKSTART.md) and check
+describe **1.0.0**. Start with [Quickstart](QUICKSTART.md) and check
 [Compatibility](COMPATIBILITY.md) before changing configuration. For an existing
 installation, follow the [upgrade procedure](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10)
 and take backups before migrations or a vector-backend change.

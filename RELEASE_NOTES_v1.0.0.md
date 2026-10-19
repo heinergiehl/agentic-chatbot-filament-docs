@@ -1,12 +1,31 @@
 # Filament Agentic Chatbot 1.0.0
 
-**Release status:** Approved, conditional release authorization<br>
-**Selected release:** `v1.0.0`<br>
-**Release date:** `2026-10-19` (intended publication)<br>
+**Release status:** Approved (release authorization); GitHub publication completed<br>
+**Published release:** `v1.0.0`<br>
+**Published at:** `2026-10-19T17:40:33Z`<br>
 **Upgrade baseline:** `0.20.5`<br>
-**Previous-line security/critical EOL:** `2027-01-17` (conditional on the intended publication date)
+**Previous-line security/critical EOL:** `2027-01-17`
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Local C1 core reports are dated evidence for their named artifact; final exact-candidate acceptance requires the fixed gates. Full dialogue evaluation is optional qualification. If the stable criteria fail, revise the selection before any tag. If publication moves, revise metadata and mirror D before freezing a new source. No gate result is asserted by approval metadata.
+The immutable [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is published, with three
+verified release assets. Approval metadata alone does not establish publication.
+These online notes were updated after publication and the reviewed Live demo;
+the tagged source and published ZIP retain their original documentation bytes.
+
+## Published artifact
+
+| Identity | Published value |
+| --- | --- |
+| Source commit | `10768454d746f1b6e8ed21f3c3322ec2f6999e5b` |
+| Composer lock SHA-256 | `7f4732634c423a18be34b3b93d164b594183352020b1d442fc42b999c5a7f062` |
+| ZIP | [filament-agentic-chatbot-1.0.0.zip](https://github.com/heinergiehl/filament-agentic-chatbot/releases/download/v1.0.0/filament-agentic-chatbot-1.0.0.zip), 5,960,921 bytes |
+| ZIP SHA-256 | `eb49ac9af315251ab3ca477f96e8f13d3ac9b98f81af7894bad5c0ffa8b2fb57` |
+| Public docs pinned by the released source | `269f35c1d53c01c546198aa95a396b303b9d67a7` |
+
+The [file manifest](https://github.com/heinergiehl/filament-agentic-chatbot/releases/download/v1.0.0/filament-agentic-chatbot-1.0.0.manifest.json)
+and [checksum file](https://github.com/heinergiehl/filament-agentic-chatbot/releases/download/v1.0.0/filament-agentic-chatbot-1.0.0.sha256)
+remain attached to that Release. The downloaded ZIP's 1,964 files were verified.
+The public docs main branch can advance after publication; a later docs pin is
+not a replacement release identity and does not change the tag, lock or ZIP.
 
 ## What changes from 0.20.5
 
@@ -16,7 +35,7 @@ Sources, use approved App data, API and MCP tools, and hand a conversation to an
 operator. Ordinary conversation needs no Workflow. The shop examples in the
 guides are host integration recipes; they do not install a commerce integration.
 
-The 1.0 candidate brings these changes to that existing product:
+The 1.0 release brings these changes to that existing product:
 
 - **Setup in the host database.** Fresh installations use the host connection
   and the bounded `database` vector backend. Settings manages app-wide provider
@@ -118,9 +137,9 @@ Local evidence below was recorded on 2026-10-19 against C1 source
 `07a31f21d88ef869c3cbf6883be1e90065db2476`, Composer lock SHA-256
 `7f4732634c423a18be34b3b93d164b594183352020b1d442fc42b999c5a7f062` and ZIP SHA-256
 `b9d947c796e5955c2066e7b44f970a23087954a5e17bc0a204d800a3ba04451a`.
-C1 is a local acceptance artifact. Documentation and release-policy changes
-require a new source/archive identity and final gates; neither approval metadata
-nor this evidence table certifies that later artifact.
+C1 is a local acceptance artifact. This historical table does not certify the later released artifact. The final
+required gates passed separately on the published identity listed above; the
+postpublication online documentation does not replace that immutable artifact.
 
 | Evidence | Current boundary |
 | --- | --- |
@@ -130,50 +149,84 @@ nor this evidence table certifies that later artifact.
 | C1 Inbox and Playbook continuation | `fast-haiku-remainder` records one operator reply visible after normal visitor history refresh; automatic polling did not show it within 45 seconds. Its later `PHASE3_REPORT.md` records native confirmation 4 completing the existing Graph/WorkflowRun once, ledger attempt 1 and order version 1 to 2. The final model answer retained conservative result wording; no completion screenshot or extra answer-polishing turn is claimed. Earlier caller failures remain recorded. |
 | C1 accounting | Historical unknown outcomes and unmeasured embedding costs retain their full holds; no unknown cost is declared zero. |
 | Merged corrections | Host configuration preserves required widget areas; Anthropic replay omits historical thinking blocks; App data staging binds the original principal and actor map through dispatch. Reviewed deterministic regressions do not replace rerunning the live scenarios. |
-| Final gates | The eight required gates must pass on final C/L/Z with pinned D before publication. C1 local reports require review for valid reuse and do not establish final artifact installation or host validation. Full dialogue evaluation is optional qualification. Verify publication against the canonical GitHub Release. |
+| Final gates | The retained final recorder reports all eight required gates passed on the exact published source, lock and ZIP with its original docs pin: source quality, marketplace readiness, reference-host core acceptance, targeted runtime/security, keyless Laravel 12 and 13 installs, upgrade/restore and docs drift. Full dialogue evaluation remained optional and was not run. |
 | Long-duration soak | `long_duration_soak=not_run`; optional under `release-1.0-risk-focused.v1`. |
 
-The recorded five-target database matrix and 0.20.5 upgrade/restore rehearsal
-support their named sources and environments. They do not certify this future
-release ZIP. Current static UI evidence also does not replace live acceptance.
-The FAQ image is the actual 2026-10-19 C1 anonymous answer/citation capture;
-no 375 px recapture is claimed. The other images retain their dated provenance.
-FAQ PNG SHA-256: `8544582e04b4048c40f14a5ada33e7f81f291a826afacfdde091c13d6a12d31f`.
-Full provenance is in source file `docs/release/W10.2_SCREENSHOT_EVIDENCE.md`. The local reports
-are retained under `.claude/worktrees/w111b/.tmp/w111b-prep/fast-haiku-faq-run`,
-`fast-haiku-stage-core` and `fast-haiku-remainder`; they are operator evidence,
-not files in the purchased archive. No setup-time or final-host claim is made.
+The recorded five-target database matrix and earlier development upgrade/restore
+rehearsal retain their named source/environment boundaries. No full matrix rerun
+on the released ZIP is claimed. The FAQ image is the actual 2026-10-19 local C1
+anonymous answer/citation capture; no 375 px recapture is claimed. The other
+images retain their dated provenance. FAQ PNG SHA-256:
+`8544582e04b4048c40f14a5ada33e7f81f291a826afacfdde091c13d6a12d31f`.
+Full screenshot provenance is in source file
+`docs/release/W10.2_SCREENSHOT_EVIDENCE.md`. The C1 reports remain under
+`.claude/worktrees/w111b/.tmp/w111b-prep/fast-haiku-faq-run`,
+`fast-haiku-stage-core` and `fast-haiku-remainder`; they are retained operator
+evidence, not purchased archive files.
 
-Release policy `release-1.0-risk-focused.v1` makes a multi-hour soak optional.
-**No long-duration soak occurred**. Bounded fault/recovery tests and simulated
-scheduler checks do not establish production concurrency, automatic crash
-recovery or long-duration resource stability. Final acceptance still requires
-the exact-candidate targeted risky-path evidence, real local core acceptance
-with zero safety violations, keyless Laravel 12/13 artifact install/boot and
-upgrade/restore checks, and all other required artifact gates. No gate is
-reported passed by these notes.
+**No long-duration soak occurred**. The final evidence records broad pgvector
+qualification, full package suite, full database matrix, full dialogue evaluation,
+SMTP exhaustion and long soak as `not_run`. Bounded fault/recovery tests and
+simulated scheduler checks do not establish production concurrency, automatic
+crash recovery or long-duration resource stability. No setup-time guarantee or
+blanket production/security qualification follows from publication.
 
-Release order is local verification, GitHub tag and published Release, then
-direct Live update. There is no separate VPS staging prerequisite. Product
-App data write-test staging and its permits remain required. The intended demo
-chat model is `claude-haiku-5-5`, effort `low`; this is configuration intent,
-not evidence that the public demo has been updated. There is no daily demo
-spend cap. Ordinary authorization, usage accounting, token/rate limits and the
-kill switch remain required.
+## Verified live shop demo
+
+After GitHub publication, the exact released ZIP was deployed to the
+[HTTPS Example Shop](https://filament-agentic-chatbot.heinerdevelops.tech/shop).
+The reviewed host commit was `c9f2efdf5ade79606c06a44255ea98e90ac6dc93`.
+The public demo now shows the fictional shop, with session-specific Alex/Sam
+customers and orders. Follow the [demo walkthrough](QUICKSTART.md#try-the-live-shop-demo).
+
+An independent deployment review verified all 100 canonical host files and all 1,964
+published package files in the active deployment. The queue worker, scheduler,
+PHP-FPM and nginx were active. Doctor reported zero required failures, with
+workflow-trace privacy and commercial-profile warnings still recorded. The
+demo uses three physical stores: host, shop and package, with AgentGraph
+sharing the package connection. Retained legacy backups are preserved.
+
+The Source completed genuine `gemini-embedding-001` ingestion at 1,536
+dimensions before activation. Normal HTTPS Chrome acceptance with
+`claude-haiku-5-5`, effort `low`, verified a policy citation, own-order reads,
+foreign-order refusal, native Confirm, one delivery-address write and a
+completed Graph run. The order advanced to version 2 with one succeeded ledger
+attempt. The native Inbox request, database notification and staff reply were
+stored; authorized owner history contained the reply and foreign history was
+denied. Alex/Sam isolation and revocation of old browser leases were verified.
+
+The model produced unnecessarily cautious follow-up prose despite the native
+lookup and successful write. Canonical execution evidence and the order record
+establish success; this is not an unqualified answer-quality claim. A live-widget
+staff-reply screenshot was not captured, and automatic foreground polling was
+not validated. Live duplicate/stale/cancel paths were not exhaustively rerun;
+prior deterministic checks retain their scope. No SMTP or broad dialogue matrix
+acceptance is claimed.
+
+The host's targeted checks passed 22 tests / 877 assertions. An encrypted
+off-host paired snapshot and exact-identity recovery passed full Doctor with
+admission closed and provider keys empty. Recovery is point-in-time evidence,
+not a guarantee covering later public traffic. The snapshot was taken at
+`2026-10-19T18:51:41.687110Z`.
+
+At the recorded usage observation, 15 Anthropic native receipts had known
+price-snapshot cost **USD 0.0071658**. One Gemini retrieval receipt was unpriced;
+Source ingestion had no separate native usage receipt or measured token/cost
+total. Those costs remain unknown. This is native accounting, not a provider
+invoice or an all-in total; subsequent public traffic can advance usage.
+There is no daily demo spend cap. Ordinary authorization, accounting,
+token/rate limits, kill switch and write-test safeguards remain required.
 
 ## Installation and support
 
 Follow [Quickstart](QUICKSTART.md) for a fresh host and the ordered upgrade guide
-for an existing installation. Purchased downloads and the demo may run a
-different version from this candidate. After verified publication through your purchased channel, use
-`composer require heiner/filament-agentic-chatbot:^1.0`. Until then, evaluate
-only the exact candidate artifact supplied by the owner.
+for an existing installation. Use
+`composer require heiner/filament-agentic-chatbot:^1.0` with your purchased
+Composer channel. Match your installed version to these notes.
 
-The [Support policy](SUPPORT_POLICY.md) retains the shipped `0.20` line until
-stable publication. On publication, `1.0` becomes the supported stable line;
-`0.20` receives security/critical fixes for 90 days, through `2027-01-17` if
-publication occurs on `2026-10-19`.
-License and support entitlements are unchanged by this preparation. Contact
-`webdevislife2021@gmail.com` with versions, sanitized steps and logs, never keys
-or customer data. [License and refund terms](REFUND_AND_LICENSE.md) describe the
-commercial boundary; provider usage and infrastructure remain separate costs.
+The supported stable line is now `1.0`. Under the [Support policy](SUPPORT_POLICY.md),
+`0.20` receives security/critical fixes through `2027-01-17`, 90 days after
+actual publication on `2026-10-19`. License and support entitlements are unchanged.
+Contact `webdevislife2021@gmail.com` with versions, sanitized steps and logs,
+never keys or customer data. [License and refund terms](REFUND_AND_LICENSE.md)
+describe the commercial boundary; provider usage and infrastructure are separate.

@@ -8,7 +8,9 @@ below for hosts that skip releases.
 
 **Release status:** Approved, conditional on required gates and publication.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. The intended `0.20` security/critical EOL is `2027-01-17`, 90 days after the intended publication date. If publication moves, revise the date, EOL and mirror pin before freezing a new source candidate.
+This marker records the release authorization policy, not pending publication. Approval is conditional release authorization, not completed acceptance. Actual publication is recorded below.
+
+Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact). The `0.20` security/critical EOL is `2027-01-17`, 90 days after actual publication.
 
 This is a migration from `0.20.5`, not a drop-in patch. Begin with the
 [ordered procedure](#ordered-0205-to-10-procedure), then use the breaking-change
@@ -562,14 +564,14 @@ the host application root, under its deployment account. Bash examples use
 
    Before starting workers, run `php artisan migrate:status` on the restored
    old release and compare the **ran** names to step 1. No 1.0 migration may be
-   recorded in the restored host default database. For this candidate an exact
+   recorded in the restored host default database. For this release an exact
    additional check on that connection is:
 
    ```sql
    SELECT migration FROM migrations WHERE migration LIKE '2026_10_14_%';
    ```
 
-   Expected: zero rows (all candidate 1.0 migrations use the 2026_10_14 prefix).
+   Expected: zero rows (all 1.0 migrations use the 2026_10_14 prefix).
    Re-check that set against the selected release before use. On the restored
    package database `to_regclass('public.agentic_upgrade_runs')` and
    `to_regclass('public.agent_publication_batches')` must both be null. Compare
@@ -1222,7 +1224,7 @@ including today; **All Agents you may view** stays within the current tenant
 and host visibility scope. Old `observe.bot_stats_overview.*` translation keys
 are removed; the new keys are `dashboard.*`. Specialized usage, feedback,
 recorded-outcome, knowledge and traffic tabs retain their stated periods.
-See [metric definitions](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md#operational-analytics-10-candidate).
+See [metric definitions](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/BOTS.md#operational-analytics-10).
 No migration or runtime accounting change is required.
 
 ### OAuth refresh journal and connection health (W6.5)
@@ -3717,9 +3719,9 @@ Native Laravel AI tool approvals now fail explicitly with `AgentApprovalRequired
 
 ## Current release status
 
-The current Commercial Early Access release is **`v0.20.5`**. **Release status:** Approved. The GitHub release and its attached archive are authoritative.
+Historical release context for this procedure: the Commercial Early Access release was **`v0.20.5`**. Its GitHub release and attached archive remain authoritative for that version. Current installations should follow [Upgrading to 1.0](#upgrading-to-10).
 
-The public line still starts at `v0.9.0-beta.1`. No stable `v1.0` release exists yet. Read [CHANGELOG.md](CHANGELOG.md) and this `UPGRADING.md` before upgrading.
+The public release history starts at `v0.9.0-beta.1`; stable `v1.0.0` was published on `2026-10-19`. Read [CHANGELOG.md](CHANGELOG.md) and [Upgrading to 1.0](#upgrading-to-10) before upgrading.
 
 > The git tag `v0.12.0` points to an early preview commit. The `v0.17.0`, `v0.17.1`, and `v0.17.3` source tags were not promoted to buyer-visible releases.
 

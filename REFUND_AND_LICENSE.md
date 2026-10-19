@@ -1,13 +1,11 @@
 # Refund and License Terms
 
-A purchase licenses the self-hosted plugin for your application. AI provider usage and hosting are separate costs. This summary clarifies the default commercial boundary and does not announce a stable release of the 1.0 candidate. The checkout, invoice, order confirmation, marketplace terms, and any signed agreement control when they expressly differ. Have the terms reviewed for the jurisdictions in which the plugin is sold.
+A purchase licenses the self-hosted plugin for your application. AI provider usage and hosting are separate costs. This summary clarifies the default commercial boundary for the [published 1.0 release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). The checkout, invoice, order confirmation, marketplace terms, and any signed agreement control when they expressly differ. Have the terms reviewed for the jurisdictions in which the plugin is sold.
 
-The selected `v1.0.0` release has conditional authorization for intended
-publication on `2026-10-19`; required gates and publisher finalization remain pending.
-Candidate documentation does not make that version available through checkout,
-extend an update/support entitlement or change the license already granted by
-your order. Check the delivered version before following its setup or upgrade
-instructions.
+`v1.0.0` was published on `2026-10-19`. Publication does not extend an
+update/support entitlement or change the license already granted by your order.
+Use your purchased distribution channel and check the delivered version before
+following its setup or upgrade instructions.
 
 ## Licensed use
 

@@ -1,6 +1,6 @@
 # Public API
 
-This file is the supported pre-1.0 host integration allowlist. Package classes,
+This file is the supported 1.0 host integration allowlist. Package classes,
 methods, routes, commands, views, configuration keys, tags, or assets not listed
 here are internal implementation details and may change without compatibility
 aliases.

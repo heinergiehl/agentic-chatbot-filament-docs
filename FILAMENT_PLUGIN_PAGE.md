@@ -2,11 +2,13 @@
 
 Answer support questions, help customers check their orders and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
 
-Picture a shop's support conversation: a visitor asks a public delivery FAQ and receives an answer from your Sources. After signing in through your host app, the customer checks **Order status**, reviews a proposed **delivery address** change and presses **Confirm**. An unresolved question goes through **Handoff** to your team's Inbox. You supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
+Try the live fictional shop: a visitor asks a public delivery FAQ and receives an answer from your Sources. After signing in through your host app, the customer checks **Order status**, reviews a proposed **delivery address** change and presses **Confirm**. An unresolved question goes through **Handoff** to your team's Inbox. You supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
 
 [Try the demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Read the setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 
 Commercial proprietary software for your application. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI usage and infrastructure costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
+
+The [demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo) shows how to use the fictional Alex/Sam accounts, view scoped orders and review a delivery-address change before Confirm. Use fictional details only. Handoff uses a private staff Inbox and internal notifications; no email or response time is promised.
 
 ## Three concrete uses
 
@@ -32,7 +34,7 @@ A Workflow is never required for ordinary or knowledge-grounded chat. Add one wh
 
 Answer a public delivery question from your approved Sources.
 
-Historical FAQ capture: the citation card predates the current layout fix.
+Actual anonymous FAQ answer and Source citation captured locally on 2026-10-19 with Haiku 5.5 at low effort and Gemini embedding-001 at 1,536 dimensions. The other screenshots retain their dated capture scope; these are not new captures of the public demo.
 
 ![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
 

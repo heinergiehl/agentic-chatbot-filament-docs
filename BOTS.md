@@ -122,7 +122,7 @@ After saving an Agent, use the edit page as your rollout checklist before you pu
 - **Technical checks** show provider, vector-backend, queue, and deployment readiness. Use the doctor command for the fuller release blocker. **Test knowledge search** inside it searches the Sources assigned to the saved draft, so an Agent that was never published can run it. It uses the retrieval of the live Agent (ADR 0046): only this Agent's assigned Sources, only their active completed generation, the draft's retrieval settings. A Source that is still processing, failed, revoked or built with another embedding profile stops the test with the reason Publish would give.
 - **Analytics** shows operational metrics, feedback, recorded outcomes, traffic and knowledge gaps.
 
-### Operational analytics (1.0 candidate)
+### Operational analytics (1.0)
 
 The existing Analytics **Overview** offers **This Agent** and **All Agents you may
 view**, without another navigation item. The aggregate uses the current tenant

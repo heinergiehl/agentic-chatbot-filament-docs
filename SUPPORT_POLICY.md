@@ -1,6 +1,6 @@
 # Support and Version Policy
 
-Commercial support helps you install, configure and operate the plugin in your Laravel/Filament application within your purchase entitlement. Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Existing entitlements are unchanged.
+Commercial support helps you install, configure and operate the plugin in your Laravel/Filament application within your purchase entitlement. Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact). Existing entitlements are unchanged.
 
 ## Contact and hours
 
@@ -31,8 +31,8 @@ Priority depends on a reproducible report containing plugin version, Laravel/Fil
 
 Breaking runtime, configuration, schema and public API changes are documented
 in the changelog, upgrade guide and versioned release notes. Read
-[Upgrading to 1.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10) before evaluating the candidate
-with existing data. Back up and rehearse the procedure in staging first.
+[Upgrading to 1.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10) before upgrading
+existing data. Back up and rehearse the procedure in staging first.
 
 Historical policy for the shipped `0.20` line: patch releases are intended as
 compatible defect/security fixes; a new minor line may contain documented
@@ -42,21 +42,20 @@ bridge is promised unless the applicable release notes explicitly name it.
 
 ## Supported lines and EOL
 
-- Current shipped support line before publication: `0.20`. On stable `1.0.0` publication, `1.0` becomes the current supported line.
-- Conditional successor transition: `0.20` security/critical EOL: `2027-01-17`, based on intended stable publication on `2026-10-19`. This date takes effect only with that publication.
+- Current supported stable line: `1.0`, published as `v1.0.0` on `2026-10-19`.
+- Previous line: `0.20` security/critical EOL: `2027-01-17`, 90 days after actual stable publication.
 - Previous line: `0.19` security/critical EOL: `2027-01-02`.
 - The previously announced `0.18` security/critical EOL remains `2026-12-04` and the `0.17` EOL remains `2026-12-03`.
 - The current minor receives supported defect and security fixes. The immediately previous minor receives critical/security fixes for 90 days after its successor is released; other fixes require upgrading.
 - Older minors and prereleases are EOL. They may continue to run, but no fix, compatibility, or security claim is made.
 - A future successor's release notes must publish the resulting EOL date. Material EOL changes require at least 60 days' notice unless an urgent security or upstream compatibility issue makes continued support unsafe.
 
-The `0.20` line's 90-day security/critical transition starts on actual stable
-publication. If publication moves from `2026-10-19`, recalculate its EOL and
-refresh the canonical mirror and pin before freezing the replacement source.
-Candidate evaluation and conditional approval do not start the support clock.
+The `0.20` line's 90-day security/critical transition began on actual stable
+publication, `2026-10-19`. Candidate evaluation and conditional approval alone
+did not start the support clock.
 
 Support lifetime does not extend marketplace access, downloads, or updates beyond the entitlement in the purchase record. Customers may keep using versions already licensed under the applicable order and commercial license.
 
 ## Supported runtime
 
-The authoritative install and certification ranges are in [Compatibility and Certification Matrix](COMPATIBILITY.md). The candidate requires PHP 8.3+, Laravel 12.61.1+ or 13.12.0+, Filament 5.10.2+ within 5.x, a supported database, persistent queue, scheduler and shared cache. Production App data tools require a supported server database; SQLite queries are limited to local/testing. Third-party providers, models, SDKs, browsers, Telegram, Slack, Mailtrap, Mailgun, ChromaDB, and host infrastructure remain subject to their own behavior and must be staged with the buyer's exact configuration.
+The authoritative install and certification ranges are in [Compatibility and Certification Matrix](COMPATIBILITY.md). The 1.0 release requires PHP 8.3+, Laravel 12.61.1+ or 13.12.0+, Filament 5.10.2+ within 5.x, a supported database, persistent queue, scheduler and shared cache. Production App data tools require a supported server database; SQLite queries are limited to local/testing. Third-party providers, models, SDKs, browsers, Telegram, Slack, Mailtrap, Mailgun, ChromaDB, and host infrastructure remain subject to their own behavior and must be staged with the buyer's exact configuration.

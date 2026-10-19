@@ -2,7 +2,7 @@
 
 Filament Agentic Chatbot helps customers answer support questions, check their orders and confirm permitted changes. Configure it in Laravel and Filament, host it yourself and use your own AI provider keys.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Start with the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment). Match these instructions to your download using [Compatibility](COMPATIBILITY.md).
+Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact). Start with the [Quick Start golden path](QUICKSTART.md#7-golden-path-agent-to-live-deployment). Match these instructions to your download using [Compatibility](COMPATIBILITY.md).
 
 ## A shop conversation
 
@@ -11,7 +11,7 @@ Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is condit
 3. The customer asks to change a delivery address, checks the proposed values and presses **Confirm**. The host's field rules, ownership and model policy govern the update.
 4. An unresolved issue goes through **Handoff** to the Inbox, where an operator can reply.
 
-This is a configuration recipe, not an included commerce integration or a recorded end-to-end shop demonstration. You provide the order model, identity, scopes, policies and production validation.
+The [live shop walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo) demonstrates this flow with fictional data on the released package. The native acceptance and its limits are recorded in the [release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#verified-live-shop-demo). Your installation still needs its own order model, identity, scopes, policies and production validation; the package does not install a commerce integration.
 
 ![Shop chat showing a delivery answer and its Source citation](images/agentic-chatbot/w10-2-faq.png)
 

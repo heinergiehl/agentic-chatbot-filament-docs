@@ -1,11 +1,34 @@
 # Quick Start
 
-Create an anonymous FAQ Agent first, then add authenticated customer data in a separate recipe. Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication. Check [Compatibility](COMPATIBILITY.md) against your download. Existing installations must follow [Upgrading to 1.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10) before migrations.
+Create an anonymous FAQ Agent first, then add authenticated customer data in a separate recipe. Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact). Check [Compatibility](COMPATIBILITY.md) against your download. Existing installations must follow [Upgrading to 1.0](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md#upgrading-to-10) before migrations.
 
 Prepare the framework, database, provider account, worker, scheduler and shared
 cache before starting the FAQ recipe. Provisioning is separate from Agent setup.
-No measured setup-time result is claimed for this candidate; record your own
+No measured setup-time result is claimed for this release; record your own
 elapsed time and blockers rather than treating the recipe as a timing guarantee.
+
+## Try the live shop demo
+
+The [Example Shop](https://filament-agentic-chatbot.heinerdevelops.tech/shop)
+runs the published v1.0.0 package. It is a fictional shop with isolated sample
+orders, not an included commerce integration for your installation.
+
+1. Open the shop chat and ask “How do delivery and returns work?” Compare the answer and its Source citation with the [shop policy](https://filament-agentic-chatbot.heinerdevelops.tech/shop/policy).
+2. Select **Sign in**, choose **Alex** and continue without a password. Each browser session receives separate fictional customers and orders. Ask “Show my order status.” The account page also lists your sample orders.
+3. Ask to change the delivery address on processing order **A-1002**, using fictional street, city and postal code values. The address-change Playbook reads the current order and presents native **Confirm** and **Cancel** controls. Review the order and proposed values before Confirm. Then reload **Account** to inspect the address and version; Cancel leaves the address unchanged. Shipped orders cannot use this address change.
+4. Ask for a person about a fictional damaged parcel. Handoff creates a private staff Inbox request and internal database notification. A staff reply requires an authorized operator; no email or response time is promised. The completed acceptance verified a stored reply in authorized owner history, but did not capture it in the live widget or establish automatic foreground polling.
+5. Use **Switch fictional identity** and select **Sam**. Sam has separate orders and cannot read or change Alex's orders. A fresh browser session uses separate data again.
+
+Use fictional details only; chat messages can reach the configured providers.
+The accepted demo used `claude-haiku-5-5` at effort `low` and
+`gemini-embedding-001` at 1,536 dimensions. Native evidence confirmed a cited
+FAQ, own-order reads, one confirmed address write and a completed Graph run.
+The model's follow-up was unnecessarily doubtful despite that successful
+write; use the account record and execution evidence to verify outcomes.
+This bounded acceptance does not establish every dialogue, SMTP delivery,
+automatic reply polling or long-duration stability. See the
+[release evidence and limits](RELEASE_NOTES_v1.0.0.md#verified-live-shop-demo)
+and the demo's [privacy notice](https://filament-agentic-chatbot.heinerdevelops.tech/shop/privacy).
 
 ## 1. Prepare your Laravel and Filament app
 
@@ -33,7 +56,7 @@ composer config repositories.filament-agentic-chatbot composer https://YOUR-ANYS
 composer require heiner/filament-agentic-chatbot:^1.0
 ```
 
-The `^1.0` command selects the release after publication through your purchased channel. Until then, candidate evaluation requires the owner's exact candidate artifact; the constraint may have no available version. Authenticate with the buyer email and license key shown by Anystack. If activation is enabled, use its displayed `<license-key>:<fingerprint>` password. See [Troubleshooting](TROUBLESHOOTING.md) for authentication and first-run errors. Follow [Anystack's Composer instructions](https://anystack.sh/docs/integrations/php) for authentication.
+The `^1.0` command selects the published 1.0 line through your purchased channel. Authenticate with the buyer email and license key shown by Anystack. If activation is enabled, use its displayed `<license-key>:<fingerprint>` password. See [Troubleshooting](TROUBLESHOOTING.md) for authentication and first-run errors. Follow [Anystack's Composer instructions](https://anystack.sh/docs/integrations/php) for authentication.
 
 Register the plugin in your existing panel provider's `plugins()` list, retaining other plugins:
 

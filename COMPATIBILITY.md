@@ -1,48 +1,48 @@
 # Compatibility and Certification Matrix
 
-Target release: `1.0.0`.<br>
-**Release status:** Approved, conditional on required gates and publication.
+Target release: `1.0.0` (published).<br>
+**Release status:** Approved (release authorization); GitHub publication completed.
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Published status and exact source/archive identity come from the canonical [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0). Approval metadata alone does not establish publication.
+Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.0 Release](https://github.com/heinergiehl/filament-agentic-chatbot/releases/tag/v1.0.0) is the publication authority; approval metadata alone does not establish publication. See the [published source and archive identity](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#published-artifact).
 
-This guide describes the **1.0 candidate** requirements. Verify published status
+This guide describes the **1.0.0** requirements. Verify published status
 and artifact identity against the canonical GitHub Release linked above.
-Use the supported ranges below when preparing a candidate host, and read the
+Use the supported ranges below when preparing your host, and read the
 limits beside each item. A supported range is not a certification of every
 version, provider or deployment.
 
 Historical artifact evidence for `0.20.5` applies to that shipped artifact only.
-Its ZIP, host and Golden Path evidence does not certify the candidate dependency
-upgrades. The recorded Track C matrix below covers
-the stated database versions in one PHP/Laravel environment, without a new
-candidate release-artifact or Laravel 12 host certification.
+Its ZIP, host and Golden Path evidence does not certify the 1.0 dependency
+upgrades. The dated Track C matrix below covers the stated database versions
+in one PHP/Laravel environment; it is separate from the later exact-release
+Laravel 12/13 installation gates.
 
 The later development upgrade rehearsal exercised a fresh SQLite install and
 a Laravel 12/PostgreSQL upgrade and paired restore with retained 0.20.5 data.
 It is recorded in `docs/release/UPGRADE_REHEARSAL_1.0.md`, with its own source,
-lock and environment. It does not replace final Laravel 12/13 host acceptance
-or certify a new ZIP. Current static UI checks likewise establish their named
-screens and layouts, not a completed live FAQ/customer-support golden path.
+lock and environment. It does not replace the later exact-release gates.
+Static UI checks establish only their named screens and layouts; the separate
+Live acceptance and its limits are recorded in the release notes.
 
 ## Framework and runtime
 
 | Surface | Supported range | Release evidence |
 | --- | --- | --- |
 | PHP | `8.3+` | The local artifact assurance path uses PHP 8.4; PHP 8.3 remains within the supported Composer range. |
-| Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | Historical artifact assurance installs the same byte-verified ZIP in separate Laravel 12 and 13 hosts; candidate host certification is pending. |
-| Filament | `5.10.2+` within Composer's resolved 5.x line | Install constraint checked by the release-contract tests; candidate host/UI certification is separate. |
+| Laravel | Laravel `12.61.1+` or Laravel `13.12.0+` | The required keyless Laravel 12 and 13 install/boot gates passed on the exact released ZIP. This does not certify every version in the supported range. |
+| Filament | `5.10.2+` within Composer's resolved 5.x line | Install constraint checked by the release-contract tests; Live UI evidence is limited to the recorded demo configuration. |
 | Laravel AI | `^1.2.1` | Install constraint and declared provider/model profiles. Live provider/model acceptance is separate. |
 | AgentGraph | `0.19.0` | Exact dependency installed transitively. Retained published Workflow fixtures are checked by ContractFormatStabilityTest; an ADR alone is not execution evidence. |
 | HTTP stack | Guzzle `^7.15.2` / PSR-7 `^2.13` or Guzzle `^8.0.2` / PSR-7 `^3.0` | Composer dependency constraints, not certification of every resolved combination. |
-| Database | MySQL 8.4+, MariaDB 11.4+, PostgreSQL 15+ or SQLite 3.39+ | See the recorded candidate matrix below. The earlier PostgreSQL 16 + pgvector Golden Path belongs to the historical artifact. |
+| Database | MySQL 8.4+, MariaDB 11.4+, PostgreSQL 15+ or SQLite 3.39+ | See the dated development matrix below; it was not rerun on the released ZIP. The earlier PostgreSQL 16 + pgvector Golden Path belongs to the historical artifact. |
 | Alternative vector store | ChromaDB | Supported adapter; not part of the exact-artifact PostgreSQL certification and must be staged by the buyer. |
 | Queue | Laravel database, Redis, or SQS-style asynchronous worker | A supervised asynchronous worker is required for production delays, ingestion, and background work. `sync` is not a production Golden Path. |
 
 The Docker/PostgreSQL setup is a reproducible release-validation host, not a requirement that customers deploy with Docker. Buyers may install the package into any host that satisfies the supported Composer, Laravel, Filament, database/vector-store, queue, and extension contracts.
 
-## 1.0 candidate: package databases
+## 1.0: package databases
 
-Fresh candidate installs use the application's default connection and the
+Fresh 1.0 installs use the application's default connection and the
 `database` vector backend (W1.3, ADR 0047). Existing installations preserve their
 recorded storage through the preflight; `pgvector` and `chroma` remain supported.
 
@@ -103,13 +103,14 @@ An available adapter is not a certified provider/model pair. Releases do not cer
 
 ## What “certified” means
 
-For a release to be called certified, all required local gates must pass for the exact source commit and the exact ZIP hash: source quality and dependency audits, calibrated retrieval with real pgvector, Laravel 12/13 PostgreSQL installs, supported upgrade, migration rollback/re-apply, and the reference-host Golden Path. A skipped or unavailable external credential is reported as untested, never as passed.
+The fixed eight local gates under `release-1.0-risk-focused.v1` passed for the released source, lock and ZIP: source quality, marketplace readiness, reference-host core acceptance, targeted runtime/security, keyless Laravel 12 and 13 artifact installs, artifact upgrade/restore and pinned public-docs drift. Broad pgvector qualification, the full package suite, full database matrix, full dialogue evaluation, SMTP exhaustion and long soak were recorded as `not_run`. A skipped check is not a pass.
 
 The 1.0 policy `release-1.0-risk-focused.v1` also requires targeted authority,
 duplicate delivery, worker interruption/recovery and unknown-write evidence,
-plus the reviewed dialogue evaluation. A long-duration soak is optional.
+plus real local core acceptance. Full dialogue evaluation and a long-duration soak are optional.
 **No long-duration soak occurred**. Simulated scheduler or bounded recovery
 checks do not certify production concurrency or sustained resource stability.
-Final certification requires the fixed eight gates on exact source C, lock L,
-archive Z and pinned public docs D. Local C1 evidence does not certify a later
-artifact; use the canonical GitHub Release for published identity.
+The released source/archive identity and the later bounded Live acceptance
+are recorded in the [release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md). Local C1 evidence and the dated
+database matrix retain their original scope; no full matrix rerun is claimed.
+Postpublication online docs can advance without changing the released ZIP.
