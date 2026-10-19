@@ -28,6 +28,17 @@ explicit dependent publication, restart checks and restoration.
 The reference below keeps the exact old and new names. It does not authorize
 production installation of the unreleased candidate.
 
+### Fixed local release evidence inventory
+
+The required recorder/publisher gate `knowledge_retrieval_pgvector` is replaced
+by `targeted_runtime_security`. Broad pgvector qualification is optional and
+recorded as `optional_qualification.knowledge_retrieval_pgvector: not_run`
+when omitted. Keyless Laravel 12/13 exact-artifact install gates no longer run
+`--run-ingestion-probe` or require `GEMINI_API_KEY`; actual RAG and native Confirm
+remain required real local-host acceptance. Existing evidence missing the new
+targeted gate cannot publish. Follow `docs/release/RELEASE_POLICY_1.0.md` for the
+fixed inventory; retain historical reports unchanged.
+
 ### Isolated staging write identity reviews (W111b-STAGING-ACTOR)
 
 `DataResourceWriteTestRunner` no longer stores the original operator in the

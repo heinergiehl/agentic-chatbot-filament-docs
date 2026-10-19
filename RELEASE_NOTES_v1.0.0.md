@@ -6,7 +6,7 @@
 **Upgrade baseline:** `0.20.5`<br>
 **Previous-line security/critical EOL:** `2027-01-17` (conditional on the intended publication date)
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Final golden-path acceptance and dialogue evaluation are incomplete. If the stable criteria fail, revise the selection before any tag. If publication moves, revise metadata and mirror D before freezing a new source. No gate result is asserted by approval metadata.
+Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. Final local core acceptance is incomplete; full dialogue evaluation is optional qualification. If the stable criteria fail, revise the selection before any tag. If publication moves, revise metadata and mirror D before freezing a new source. No gate result is asserted by approval metadata.
 
 ## What changes from 0.20.5
 
@@ -124,7 +124,7 @@ this baseline nor the private mirror commit is final exact-source certification.
 | Preliminary golden path | W11.1 records two of six complete criteria on its named historical candidate. It is not final 1.0 acceptance. |
 | W111b continuation | The latest phase-one record at `9e1180d030f4e1a95c63b5d3e9d3cc48ca5e6628` is preparation only, on source `91f1d405676124718220d875cc74691540636aff`; criteria 3, 4 and 5 remain incomplete. Earlier unknown costs remain unknown. |
 | Merged corrections | Host configuration preserves required widget areas; Anthropic replay omits historical thinking blocks; App data staging binds the original principal and actor map through dispatch. Reviewed deterministic regressions do not replace rerunning the live scenarios. |
-| Final gates | Exact-source/archive certification, reviewed dialogue evaluation and complete current golden-path acceptance are pending. Public GitHub/Filament delivery and rendering are pending. |
+| Final gates | Exact-source/archive certification and current local core acceptance are pending. Full dialogue evaluation is optional qualification. Public GitHub/Filament delivery and rendering are pending. |
 | Long-duration soak | `long_duration_soak=not_run`; optional under `release-1.0-risk-focused.v1`. |
 
 The recorded five-target database matrix and 0.20.5 upgrade/restore rehearsal
@@ -138,8 +138,8 @@ Release policy `release-1.0-risk-focused.v1` makes a multi-hour soak optional.
 **No long-duration soak occurred**. Bounded fault/recovery tests and simulated
 scheduler checks do not establish production concurrency, automatic crash
 recovery or long-duration resource stability. Final acceptance still requires
-the exact-candidate targeted risky-path evidence, reviewed dialogue evaluation
-with at least 95% task success and zero safety violations, database/host and
+the exact-candidate targeted risky-path evidence, real local core acceptance
+with zero safety violations, keyless Laravel 12/13 artifact install/boot and
 upgrade/restore checks, and all other required artifact gates. No gate is
 reported passed by these notes.
 
