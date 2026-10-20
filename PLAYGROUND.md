@@ -23,6 +23,11 @@ You can also edit the first greeting. Applying changes starts a new test chat;
 the message allowance belongs to the whole playground and does not reset.
 AI answers can be mistaken; the visible workshop notes are the reference.
 
+![Hosted Agent Playground with editable instructions, workshop notes and a private test chat](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-workbench.png)
+
+Hosted demo interface, captured live on 2026-10-20. The Laravel host provides
+this simplified page; your installation retains the plugin's normal editor.
+
 ## What is fixed in this demo?
 
 - Chat: **Claude Haiku 5.5** through Anthropic.
@@ -48,7 +53,8 @@ usage limits and expiry. No second AI chat engine is used.
 
 Playground drafts and conversations expire after two hours. Cleanup runs every
 ten minutes and waits for active turns before deletion. Unfinished or uncertain
-turns can be retained until they are reconciled. Use fictional information only.
+turns and unsettled AI usage receipts can be retained until they are reconciled.
+Use fictional information only.
 Provider processing and operational usage records remain
 subject to the host's [privacy policy](https://filament-agentic-chatbot.heinerdevelops.tech/privacy).
 

@@ -16,6 +16,10 @@ The [Agent Playground](https://filament-agentic-chatbot.heinerdevelops.tech/play
 
 You can edit instructions and the welcome message and test them with Claude Haiku 5.5 and Google embeddings. No account or API key is needed. The public playground allows 20 messages over two hours, subject to shared availability limits; publishing, model changes, credentials and live data are unavailable. These are restrictions of this demo host, not of the plugin in your own application. [Playground guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
 
+![Hosted Agent Playground with editable instructions and a private test chat](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-workbench.png)
+
+Hosted demo interface, captured live on 2026-10-20. This simplified host page uses the plugin's existing test-chat runtime; your installation retains the normal editor.
+
 ## Three concrete uses
 
 ### Answer shipping and returns questions
