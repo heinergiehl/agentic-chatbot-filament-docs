@@ -10,6 +10,12 @@ Commercial proprietary software for your application. The default license covers
 
 The [demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo) shows how to use the fictional Alex/Sam accounts, view scoped orders and review a delivery-address change before Confirm. Use fictional details only. Handoff uses a private staff Inbox and internal notifications; no email or response time is promised.
 
+## Try your own small Agent
+
+The [Agent Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground) gives you a private, temporary draft with a fictional paper-rocket workshop already set up. Ask about a ticket, change the instructions from a friendly guide to a cheerful space captain, then ask again and compare the answers.
+
+You can edit instructions and the welcome message and test them with Claude Haiku 5.5 and Google embeddings. No account or API key is needed. The public playground allows 20 messages over two hours, subject to shared availability limits; publishing, model changes, credentials and live data are unavailable. These are restrictions of this demo host, not of the plugin in your own application. [Playground guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
+
 ## Three concrete uses
 
 ### Answer shipping and returns questions

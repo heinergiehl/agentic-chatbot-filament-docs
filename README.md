@@ -4,7 +4,7 @@ Answer support questions, help customers check their orders and let them confirm
 
 For a shop, one Agent answers a public delivery FAQ from a Source, checks **Order status** after the customer's host login, asks them to **Confirm** a **delivery address** change, and offers **Handoff** to the team's Inbox. You configure the order model, fields, record scopes and policy first; the plugin does not automatically access customer data.
 
-[Demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy](https://checkout.anystack.sh/agentic-chatbot) · [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
+[Demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground) · [Buy](https://checkout.anystack.sh/agentic-chatbot) · [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
 
 **Release status:** Approved (release authorization); GitHub publication completed.
 
@@ -13,6 +13,10 @@ For a shop, one Agent answers a public delivery FAQ from a Source, checks **Orde
 Commercial proprietary software. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI provider and hosting costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
 Try the [live shop demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo): fictional Alex/Sam accounts, cited shop policy, scoped orders and a confirmed address change. No real purchases, shipments or refunds occur. These online documentation updates follow publication; the tagged source and released ZIP retain their original documentation.
+
+## Try changing an Agent
+
+Want to try changing an Agent yourself? Open the [Agent Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground): a small fictional workshop, three instruction presets and your own temporary draft. Change its personality, ask the same question and compare the answers. No account or API key needed. [How to play and demo limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
 
 ## Three use cases
 
