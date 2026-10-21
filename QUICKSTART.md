@@ -7,28 +7,13 @@ cache before starting the FAQ recipe. Provisioning is separate from Agent setup.
 No measured setup-time result is claimed for this release; record your own
 elapsed time and blockers rather than treating the recipe as a timing guarantee.
 
-## Try the live shop demo
+## Try the live demos
 
-The [Example Shop](https://filament-agentic-chatbot.heinerdevelops.tech/shop)
-runs the published v1.0.0 package. It is a fictional shop with isolated sample
-orders, not an included commerce integration for your installation.
+Open the [product assistant](https://filament-agentic-chatbot.heinerdevelops.tech/) to ask about the plugin and inspect its [read-only admin](https://filament-agentic-chatbot.heinerdevelops.tech/demo-admin). No Store login is required.
 
-1. Open the shop, select **Sign in**, choose **Alex** and continue without a password. Each browser session receives separate fictional customers and orders. The live shop requires sign-in before opening chat.
-2. Open the shop chat and ask “How do delivery and returns work?” Compare the answer and its Source citation with the [shop policy](https://filament-agentic-chatbot.heinerdevelops.tech/shop/policy). Then ask “Show my order status.” The account page also lists your sample orders.
-3. Ask to change the delivery address on processing order **A-1002**, using fictional street, city and postal code values. The address-change Playbook reads the current order and presents native **Confirm** and **Cancel** controls. Review the order and proposed values before Confirm. Then reload **Account** to inspect the address and version; Cancel leaves the address unchanged. Shipped orders cannot use this address change.
-4. Ask for a person about a fictional damaged parcel. Handoff creates a private staff Inbox request and internal database notification. A staff reply requires an authorized operator; no email or response time is promised. The completed acceptance verified a stored reply in authorized owner history, but did not capture it in the live widget or establish automatic foreground polling.
-5. Use **Switch fictional identity** and select **Sam**. Sam has separate orders and cannot read or change Alex's orders. A fresh browser session uses separate data again.
+For hands-on editing, open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/) and start your private Filament backend. Change the Agent, add knowledge, test the fleet and APIs, edit a Playbook, publish and chat through the widget. Use the [guided exercises and coverage table](PLAYGROUND.md) to try confirmation, handoff, tests and versions.
 
-Use fictional details only; chat messages can reach the configured providers.
-The accepted demo used `claude-haiku-5-5` at effort `low` and
-`gemini-embedding-001` at 1,536 dimensions. Native evidence confirmed a cited
-FAQ, own-order reads, one confirmed address write and a completed Graph run.
-The model's follow-up was unnecessarily doubtful despite that successful
-write; use the account record and execution evidence to verify outcomes.
-This bounded acceptance does not establish every dialogue, SMTP delivery,
-automatic reply polling or long-duration stability. See the
-[release evidence and limits](RELEASE_NOTES_v1.0.0.md#verified-live-shop-demo)
-and the demo's [privacy notice](https://filament-agentic-chatbot.heinerdevelops.tech/shop/privacy).
+The former Store account and Alex/Sam sign-in are retired. Authenticated customer data remains a supported integration recipe for your own host below. Public demo sandboxes are temporary and restricted; use fictional information only. See [demo limits](PLAYGROUND.md#limits-and-data) and the [privacy notice](https://filament-agentic-chatbot.heinerdevelops.tech/privacy).
 
 ## 1. Prepare your Laravel and Filament app
 
@@ -85,7 +70,7 @@ FilamentAgenticChatbotPlugin::make()
     ->authorizeUsing(fn (User $user, string $ability): bool => $user->is_owner === true),
 ```
 
-Adapt that host-specific condition to your permission system. The four abilities are `filament-agentic-chatbot.operate`, `.configure`, `.publish` and `.admin`. Admin includes the other three. Record-scoped grants also need scoped lists; see [administration abilities](SECURITY_AND_PRIVACY.md#administration-abilities). Upgraded installations retain their existing strict Gates until deliberately switched.
+Adapt that host-specific condition to your permission system. The five abilities are `filament-agentic-chatbot.view`, `.operate`, `.configure`, `.publish` and `.admin`. Admin includes the other four. Record-scoped grants also need scoped lists; see [administration abilities](SECURITY_AND_PRIVACY.md#administration-abilities). Upgraded installations retain their existing strict Gates until deliberately switched.
 
 ## 3. Configure keys and background services
 

@@ -12,11 +12,11 @@ For a shop, one Agent answers a public delivery FAQ from a Source, checks **Orde
 
 Commercial proprietary software. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI provider and hosting costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
-Try the [live shop demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo): fictional Alex/Sam accounts, cited shop policy, scoped orders and a confirmed address change. No real purchases, shipments or refunds occur. These online documentation updates follow publication; the tagged source and released ZIP retain their original documentation.
+Explore the [product assistant and read-only admin](https://filament-agentic-chatbot.heinerdevelops.tech/) or edit and publish in the separate [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/). The old Store account and Alex/Sam login are retired. Tagged releases retain their historical documentation.
 
 ## Try changing an Agent
 
-Want to try changing an Agent yourself? Open the [Agent Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground): a small fictional workshop, three instruction presets and your own temporary draft. Change its personality, ask the same question and compare the answers. No account or API key needed. [How to play and demo limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
+Open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/): your own temporary Filament backend with an e-bike rental Agent, knowledge, fleet data, API connections and Playbooks. Edit, test, publish and use the live widget. No account or API key needed. [Exercises, feature coverage and limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
 
 ## Three use cases
 
@@ -24,27 +24,9 @@ Want to try changing an Agent yourself? Open the [Agent Playground](https://fila
 - **Customer order support:** look up only the signed-in customer's orders and confirm an allowed address change.
 - **Team support:** send an unresolved question to the Inbox so an operator can continue the conversation.
 
-![Shop chat showing a delivery answer and its Source citation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-faq.png)
+![Native Glide Playground with the booking Playbook and widget](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-native.webp)
 
-Answer a public delivery question from your approved Sources.
-
-Actual anonymous FAQ answer and Source citation, captured on 2026-10-19 with
-`claude-haiku-5-5` at effort `low` and `gemini-embedding-001` at 1,536 dimensions.
-This is local C1 evidence, not final source/archive certification. The other
-images retain their dated capture scope; see the
-[screenshot provenance](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#evidence-and-release-readiness).
-
-![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
-
-Read Order status after the customer's normal host login.
-
-![Delivery address confirmation showing the target order, proposed values and Confirm and Cancel controls](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-address-confirm.png)
-
-Review a permitted delivery address change before confirming.
-
-![Authorized operator replying to the customer's handed-off conversation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-handoff.png)
-
-Continue an unresolved conversation in the team's Inbox.
+The Playground demonstrates the native editor and sandbox tools. Customer identity and personal writes require your own host integration; they are not current public demo exercises.
 
 ## Setup overview
 

@@ -1,28 +1,24 @@
 # AI Support Agent & Chatbot for Filament
 
-Answer support questions, help customers check their orders and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
+Answer support questions, read approved business data and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
 
-Try the live fictional shop: first sign in as fictional **Alex** or **Sam** without a password to open chat. Ask a delivery or returns FAQ grounded in the shop's policy Sources, check your own **Order status**, then review a proposed **delivery address** change and press **Confirm**. An unresolved question goes through **Handoff** to the staff Inbox. For your installation, you supply the scoped order Tool and update policy; the plugin does not discover or authorize customer data on its own.
+[Open the Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/) · [Ask the product assistant](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
 
-[Try the demo](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Read the setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) · [Support](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/SUPPORT_POLICY.md)
+## Try the real Filament backend
+
+The **Glide Playground** gives each browser a temporary sandbox for a fictional e-bike rental. Edit Agent instructions, add text or file knowledge, inspect the bike fleet, try weather and calendar APIs, change a Playbook in the native step list or canvas, then **test and publish**. The Playground page also has the chat widget so you can try the result as a visitor.
+
+No sign-up or API key is needed. The separate [read-only admin](https://filament-agentic-chatbot.heinerdevelops.tech/demo-admin) shows the product assistant's configuration without changing it. There is no Store account or Alex/Sam login in the current demos.
+
+![The native Glide Playground with its booking Playbook and chat widget](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-native.webp)
+
+The hosted Playground runs Claude Haiku 5.5 with Google embeddings, with 60 provider calls over two hours and shared availability limits. Publishing is enabled; provider credentials, global settings and arbitrary network access remain restricted. [Guided exercises, feature coverage and limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
 
 Commercial proprietary software for your application. The default license covers one legal entity and one Licensed Application, including development, staging and production. AI usage and infrastructure costs are separate. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
-The [demo walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo) shows how to use the fictional Alex/Sam accounts, view scoped orders and review a delivery-address change before Confirm. Use fictional details only. Handoff uses a private staff Inbox and internal notifications; no email or response time is promised.
-
-## Try your own small Agent
-
-The [Agent Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground) gives you a private, temporary draft with a fictional paper-rocket workshop already set up. Ask about a ticket, change the instructions from a friendly guide to a cheerful space captain, then ask again and compare the answers.
-
-You can edit instructions and the welcome message and test them with Claude Haiku 5.5 and Google embeddings. No account or API key is needed. The public playground allows 20 messages over two hours, subject to shared availability limits; publishing, model changes, credentials and live data are unavailable. These are restrictions of this demo host, not of the plugin in your own application. [Playground guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
-
-![Hosted Agent Playground with editable instructions and a private test chat](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-workbench.png)
-
-Hosted demo interface, captured live on 2026-10-20. This simplified host page uses the plugin's existing test-chat runtime; your installation retains the normal editor.
-
 ## Three concrete uses
 
-### Answer shipping and returns questions
+### Answer questions from your knowledge
 
 Attach selected text, Files, Website or JSON API Sources. The Agent searches that content and can include citations in its answer. Review answers with your own content and provider before serving visitors.
 
@@ -40,27 +36,7 @@ Give each Agent its instructions, provider, model, Sources and Tools. **Test** r
 
 A Workflow is never required for ordinary or knowledge-grounded chat. Add one when a task needs a defined sequence, input collection, a decision or team approval. The Workflow Builder provides a step list and canvas for that bounded process.
 
-![Shop chat showing a delivery answer and its Source citation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-faq.png)
-
-Answer a public delivery question from your approved Sources.
-
-Actual anonymous FAQ answer and Source citation captured locally on 2026-10-19 with Haiku 5.5 at low effort and Gemini embedding-001 at 1,536 dimensions. The other screenshots retain their dated capture scope; these are not new captures of the public demo.
-
-![Signed-in shop customer viewing the status of their own order](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-order-status.png)
-
-Read Order status after the customer's normal host login.
-
-![Delivery address confirmation showing the target order, proposed values and Confirm and Cancel controls](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-address-confirm.png)
-
-Review a permitted delivery address change before confirming.
-
-![Authorized operator replying to the customer's handed-off conversation](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-handoff.png)
-
-Continue an unresolved conversation in the team's Inbox.
-
-![Workflow step list for collecting an issue and handing it to the team](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/w10-2-workflow.png)
-
-Add a Workflow when support needs a defined sequence.
+In the Playground, the booking Playbook checks availability, asks for confirmation and stores a demo submission. The bike-problem Playbook demonstrates handoff. Customer-specific order access is an example for your own host integration, not a current public Store demo.
 
 ## Connect only the data and operations you choose
 

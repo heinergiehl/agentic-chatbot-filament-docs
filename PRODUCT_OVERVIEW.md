@@ -11,7 +11,7 @@ Published `v1.0.0` on `2026-10-19` at `17:40:33 UTC`. The verified [GitHub v1.0.
 3. The customer asks to change a delivery address, checks the proposed values and presses **Confirm**. The host's field rules, ownership and model policy govern the update.
 4. An unresolved issue goes through **Handoff** to the Inbox, where an operator can reply.
 
-The [live shop walkthrough](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md#try-the-live-shop-demo) demonstrates this flow with fictional data on the released package. The native acceptance and its limits are recorded in the [release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md#verified-live-shop-demo). Your installation still needs its own order model, identity, scopes, policies and production validation; the package does not install a commerce integration.
+This is an integration example for your own application: supply the order model, identity, scopes, policies and production validation. The package does not install a commerce integration. The current public demos are the [product assistant with a read-only admin](https://filament-agentic-chatbot.heinerdevelops.tech/) and the [editable Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/). See the [demo exercises and coverage](PLAYGROUND.md). The former Store account and Alex/Sam login are retired.
 
 ![Shop chat showing a delivery answer and its Source citation](images/agentic-chatbot/w10-2-faq.png)
 
