@@ -1,6 +1,6 @@
 # AI Support Agent & Chatbot for Filament
 
-Answer support questions, read approved business data and let them confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
+Answer support questions, read approved business data and let visitors confirm permitted changes in chat. Configure the Agent in your **Laravel and Filament** application, **self-host** it, and use **your own AI provider keys**.
 
 [Open the Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/) · [Ask the product assistant](https://filament-agentic-chatbot.heinerdevelops.tech/) · [Buy a license](https://checkout.anystack.sh/agentic-chatbot) · [Setup guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md)
 
