@@ -13,7 +13,7 @@ The old Store account and Alex/Sam sign-in have been retired. Old Store and Shop
 
 Glide is a fictional e-bike rental in Amsterdam, Barcelona, Berlin and Lisbon. Your sandbox starts with an Agent, three knowledge sources, a fleet of 16 bikes, selected API connections, booking and bike-problem Playbooks, and three Agent tests.
 
-1. Open the Playground and choose **Open my back office**. Your browser receives a private sandbox. Use the public page's **Chat with Glide** button to try the website widget too.
+1. Open the Playground and choose **Start my playground** (or **Continue my playground** for an existing sandbox). Your browser receives a private sandbox. Use the public page's **Chat with Glide** button to try the website widget too.
 2. Ask which bike suits a city ride and what the rental policy says. Inspect the fleet App data tool, retrieved knowledge and conversation trace. Ask about weather to try an API read.
 3. Open **Agents**, change the instructions or welcome message, save and use the editor's test chat. Publish when ready, then try the widget again. Draft changes do not replace the published version until you publish.
 4. Open **Knowledge**, add a short text or sample file, wait for ingestion and attach it to the Agent. Publish the changed Agent and check whether the answer uses your new source.
