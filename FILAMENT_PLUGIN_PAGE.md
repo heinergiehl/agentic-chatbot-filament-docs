@@ -11,7 +11,7 @@ Answer support questions, help customers check their orders and hand the convers
 - **Handoff to your team.** An unresolved conversation moves to the Inbox in Filament, where an operator replies in the same chat and hands it back to the Agent.
 - **Runs on your database.** Knowledge search works in MySQL, MariaDB, PostgreSQL or SQLite without a separate vector service. Per-Agent limits apply; larger collections can use pgvector.
 
-One license covers one legal entity and one Licensed Application, including development, staging and production. AI provider usage and hosting are paid separately. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
+One license covers one legal entity and one Licensed Application, including development, staging and production. AI provider usage and hosting are paid separately. Every purchase has a 14-day money-back guarantee, no reason needed. [License and refund terms](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/REFUND_AND_LICENSE.md).
 
 ## Try the live demo
 

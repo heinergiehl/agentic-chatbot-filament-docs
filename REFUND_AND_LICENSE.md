@@ -24,11 +24,11 @@ The purchased entitlement determines access to downloads, updates, and support. 
 
 ## Refund policy
 
-Refund requests must be received within 14 calendar days of purchase. A refund is normally eligible for a duplicate purchase, a reproducible technical incompatibility with the published supported matrix, or a material mismatch between the buyer-visible listing and the delivered version that cannot be corrected reasonably.
+Every purchase comes with a **14-day money-back guarantee**. Request a refund within 14 calendar days of the payment and you receive the full price paid back. You do not need to give a reason, and the amount of use does not matter. The guarantee applies to the first purchase and to each renewal payment.
 
-A refund is normally not eligible for change of mind after substantial use, unsupported host modifications, missing third-party credentials or services, custom-development expectations, failure to follow documented installation requirements, or a problem caused solely by an upstream provider outside the published compatibility claim. Mandatory consumer rights still apply and are not limited by this policy.
+A refund can be declined only for abuse, such as repeated purchase and refund cycles for the same Licensed Application or evidence that the plugin source was published, shared or resold. Mandatory consumer rights still apply and are not limited by this policy.
 
-Send the purchase ID, purchase date, plugin version, supported-stack details, sanitized reproduction, and requested remedy to `webdevislife2021@gmail.com`. Approved refunds are returned to the original payment method; the processing target is five business days after approval. After a full refund, the license ends and all plugin copies must be removed unless law requires otherwise.
+Email `webdevislife2021@gmail.com` with the purchase ID or the order email address. A reason is optional, and a reproducible problem helps us fix it. If you would rather try to resolve a problem first, the [support policy](SUPPORT_POLICY.md) describes what we help with; asking for support never ends your refund window. Refunds are returned to the original payment method, with a processing target of five business days after the request. After a full refund, the license ends and all plugin copies must be removed unless law requires otherwise.
 
 ## Warranty and responsibility
 
