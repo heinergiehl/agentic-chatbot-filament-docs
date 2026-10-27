@@ -7,10 +7,11 @@ recovery commands. Upgrade steps are in [UPGRADING](https://github.com/heinergie
 ## Admin Navigation And Access
 
 The plugin adds one navigation group, "Agentic Chatbot" by default, with five
-top-level items:
+top-level items, in this default order: Agents, Inbox, Conversations,
+Connect, Settings.
 
-- **Build**: Agents, Workflows, Sources. Safety settings and tests are part
-  of the Agent editor.
+- **Agents** (`NavigationSection::Build`): Agents, Workflows, Sources; it opens
+  the Agents list. Safety settings and tests are part of the Agent editor.
 - **Connect**: **Channels**, **Tools & data** (API connections, MCP servers and
   App data tools as three tabs of one entry) and **Developers** (Access tokens
   and Webhooks as two tabs). Opening Connect opens the first entry you may use;
@@ -675,16 +676,17 @@ exists once, in a class that implements the internal `SetupCheck` interface
 for the same environment. The Doctor keeps its table and exit codes: any `FAIL`
 exits with 1, warnings exit with 0. After the table it prints one fix line per
 warning or failure and, where one exists, a command to copy. The Health page
-shows problems first: a **Needs attention** section with one section per
-warning or failure, each with a status badge, the fix line, one **Fix in …**
+shows blockers first: a **Fix these first** section with one section per
+failing Required check, each with a status badge, the fix line, one **Fix in …**
 button to the page that owns the setting (when you may open it), the command in
-a copy field and, for admins, the details. All passing checks sit together in
-one collapsed **n checks passed** section.
+a copy field and, for admins, the details. Every other check (warnings, failures
+outside the Required group and passing checks) sits in one collapsed **All
+checks** section, whose title counts the checks to review.
 
 | Group | Meaning | Checks |
 | --- | --- | --- |
-| Required to answer customers (`required`) | Without these the package cannot answer, or cannot show that it can | `configuration_cutover` (Configuration cutover), `vector_backend` (Vector backend), `package_storage` (Package storage), `chat_provider` (Chat provider/model), `capability_providers` (Capability provider contracts), `heartbeat` (Scheduler and chat queue heartbeat), `package_schema_placement` (Package schema placement), `agent_graph_sdk_surface` (AgentGraph SDK surface), `agent_graph_runtime_schema` (AgentGraph runtime schema), `workflow_runtime_schema` (Playbook runtime schema), `active_deployment_contract_freshness` (Active deployment contract freshness) |
-| Recommended (`recommended`) | Operations, reconciliation and knowledge | `model_capabilities` (Model capabilities), `embedding_provider` (Embedding provider/model), `agent_credential_decryption` (Agent credential decryption), `vector_dimensions` (Vector dimensions), `vector_index_strategy` (Vector index strategy), `queue_connection` (Queue connection), `queue_worker` (Queue worker), `knowledge_gaps` (Knowledge gaps), `outbound_webhooks` (Outbound webhooks), `connector_completions` (Durable Connector completion), `workflow_generation_queue` (Workflow generation queue), `legacy_rag_schema_names` (Legacy RAG schema names), `agent_deployment_readiness` (Agent deployment readiness), `chat_turn_reconciliation` (Chat turn reconciliation), `ai_usage_reconciliation` (AI usage reconciliation), `side_effect_reconciliation` (Side-effect reconciliation), `agent_graph_interrupt_consistency` (AgentGraph interrupt consistency), `stale_workflow_runs` (Stale Playbook runs), `active_agents` (Active Agents), `completed_sources` (Completed sources), `knowledge_source_uploads` (Knowledge source uploads) |
+| Required to answer customers (`required`) | Without these the package cannot answer, or cannot show that it can | `configuration_cutover` (Configuration cutover), `vector_backend` (Vector backend), `package_storage` (Package storage), `chat_provider` (Chat provider/model), `capability_providers` (Capability provider contracts), `chat_queue` (Chat queue: fails until the chat queue connection is persistent and its `retry_after` exceeds the chat execution time, and names the exact setting), `heartbeat` (Scheduler and chat queue heartbeat), `package_schema_placement` (Package schema placement), `agent_graph_sdk_surface` (AgentGraph SDK surface), `agent_graph_runtime_schema` (AgentGraph runtime schema), `workflow_runtime_schema` (Playbook runtime schema), `active_deployment_contract_freshness` (Active deployment contract freshness) |
+| Recommended (`recommended`) | Operations, reconciliation and knowledge | `model_capabilities` (Model capabilities), `embedding_provider` (Embedding provider/model), `agent_credential_decryption` (Agent credential decryption), `vector_dimensions` (Vector dimensions), `vector_index_strategy` (Vector index strategy), `queue_connection` (Queue connection), `queue_worker` (Queue worker), `knowledge_gaps` (Knowledge gaps), `lexical_retrieval` (Keyword search: warns when a Live Agent uses Hybrid or Lexical only where keyword search cannot run), `outbound_webhooks` (Outbound webhooks), `connector_completions` (Durable Connector completion), `workflow_generation_queue` (Workflow generation queue), `legacy_rag_schema_names` (Legacy RAG schema names), `agent_deployment_readiness` (Agent deployment readiness), `chat_turn_reconciliation` (Chat turn reconciliation), `ai_usage_reconciliation` (AI usage reconciliation), `side_effect_reconciliation` (Side-effect reconciliation), `agent_graph_interrupt_consistency` (AgentGraph interrupt consistency), `stale_workflow_runs` (Stale Playbook runs), `handoff_recipient_provider` (Handoff recipient provider), `active_agents` (Active Agents), `completed_sources` (Completed sources), `knowledge_source_uploads` (Knowledge source uploads) |
 | Production readiness (`production`) | Hardening of a live installation | `admin_authorization` (Sensitive admin authorization), `data_resource_query_budgets` (Data Resource query budgets), `workflow_trace_privacy` (Workflow trace privacy), `request_runtime_safety` (Request runtime safety), `domain_allowlists` (Domain allowlists), `widget_signing` (Widget signing), `commercial_profile` (Commercial profile) |
 
 The Agents list, when it has no Agent, points to the Health page while a
@@ -843,8 +845,10 @@ Agent stream failures are mapped to safe `error` events and closed with `[DONE]`
 ## Knowledge Storage And Vector Backends
 
 The package tables use the host's default connection unless
-`AGENTIC_CHATBOT_DB_CONNECTION` names another one. Vectors are stored by the
-configured backend:
+`AGENTIC_CHATBOT_DB_CONNECTION` names another one. That connection must not
+use a table `prefix`: the installer, the storage preflight and the Health check
+"Package storage" refuse it, because part of the migrations name tables
+without a prefix. Vectors are stored by the configured backend:
 
 - `database` (default): float32 vectors in `bot_knowledge_vectors` on the
   package connection. Each search reads only the pinned source generations of
@@ -1182,9 +1186,16 @@ stored or logged by this job; only the exception class is exposed, so message
 content, addresses and credentials cannot leak through error messages.
 
 User recipients require one unambiguous auth provider across panels hosting the
-plugin. With different panel user providers, Notify user lookup fails closed
-because a stored user ID alone cannot distinguish the accounts. Use approved
-email recipients or one shared panel user provider.
+plugin. With different panel user providers, or a panel whose guard has no user
+provider, Notify user lookup fails closed because a stored user ID alone cannot
+distinguish the accounts: the Handoff
+settings label such users as not identifiable and disable the user choice, a new
+Agent does not prefill its creator, delivery records `recipient_provider_ambiguous`,
+and the Health check `handoff_recipient_provider` warns. Set
+`bot_handoff_requests.desk.recipient_user_provider` (env
+`AGENTIC_CHATBOT_BOT_HANDOFF_RECIPIENT_USER_PROVIDER`) to the `auth.providers`
+entry, used by one of those panels, whose users receive notifications, or use
+approved email recipients.
 
 ## Connection health notifications
 

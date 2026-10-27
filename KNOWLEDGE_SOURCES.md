@@ -22,9 +22,10 @@ tool, including sources beyond the first eight; the complete offer is budgeted.
 any number of Agents, or by none yet. The list shows which Agents use each
 source (**Used by**, filterable by Agent), its state and its re-sync schedule;
 **Agents** in the row actions changes the assignment, **Re-sync now** fetches a
-Website or API source again. In the Agent editor, **Add from library** assigns
-existing sources and **Remove** takes one off the Agent; the source stays in the
-library.
+Website or API source again. In the Agent editor, **Add knowledge** adds a Text or Website
+source to the Agent, assigns sources you already have, and sends Files and API
+sources to the full form, which returns to the Agent; **Remove** takes one off the
+Agent and the source stays in the library.
 
 An assignment is part of the Agent's draft. A live Agent searches only the
 sources pinned in its published version, so adding or removing a source takes

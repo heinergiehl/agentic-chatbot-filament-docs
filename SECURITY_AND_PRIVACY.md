@@ -109,7 +109,7 @@ AGENTIC_CHATBOT_WIDGET_CONTEXT_REQUIRED_AREAS=
 
 Browser snippets contain no token. The loader obtains short-lived, exact-origin-bound access from `POST /api/filament-agentic-chatbot/chat/{botPublicId}/bootstrap`, keeps it in memory, and sends it through `X-filament-agentic-chatbot-Token`. Configure explicit per-bot production domain allowlists and run `php artisan filament-agentic-chatbot:doctor` before launch; production bootstrap rejects an empty allowlist. Anonymous conversation credentials are always enforced in production even if a stale published config omits or relaxes the setting.
 
-A successful bootstrap from an allowed website host also records that host and the path of the page (never a query string or fragment) in `agentic_widget_installations`, so the Agent's **Channels** tab can show where the widget was seen. The record holds no visitor, session or IP data, is limited to 50 hosts per Agent and is deleted with the Agent. See [Chat Widget](CHAT_WIDGET.md#installation-status).
+A successful bootstrap from an allowed website host also records that host and the path of the page (never a query string or fragment) in `agentic_widget_installations`, so the Agent's **Channels & handoff** tab can show where the widget was seen. The record holds no visitor, session or IP data, is limited to 50 hosts per Agent and is deleted with the Agent. See [Chat Widget](CHAT_WIDGET.md#installation-status).
 
 Personalized embeds may additionally send `X-Filament-Agentic-Chatbot-Context`. The host must issue it behind its own authenticated authorization boundary. It is signed but browser-readable, rejects secret-like fields and oversized payloads, and is bound to actor/tenant ownership before tool scopes are created. The issuer signs a user model as its class and key only and never copies its name, email address or other attributes into the token. Its optional key falls back to the existing widget-signing key. A signed context is not a permanent grant: a queued turn keeps its expiry and the Agent's context token version, and personal tools refuse an expired or rotated identity. See [Chat Widget](CHAT_WIDGET.md#signed-customer-and-tenant-context).
 
@@ -256,7 +256,7 @@ Panel membership is necessary but not sufficient for Agentic Chatbot
 administration (ADR 0053). `authorization.mode`
 (`AGENTIC_CHATBOT_AUTHORIZATION_MODE`) selects one of two models:
 
-- `abilities`, the default for new installations: the host grants four
+- `abilities`, the default for new installations: the host grants five
   abilities. `filament-agentic-chatbot.operate` covers the Inbox (handoffs and
   action approvals), conversations, submissions, Workflow runs and operational
   metrics. `filament-agentic-chatbot.configure` covers Agent, knowledge,
@@ -268,9 +268,12 @@ administration (ADR 0053). `authorization.mode`
   and write policy, connection destinations, MCP tool access review and
   publication overrides, reconciliation of unverified writes, diagnostic
   payloads, conversation deletion, adding approved handoff email recipients
-  (`agents.handoff_email_recipients`) and webhook secrets and retries. Admin
-  implies the other three for the same record; no other ability implies
-  another one.
+  (`agents.handoff_email_recipients`) and webhook secrets and retries.
+  `filament-agentic-chatbot.view` opens the Agent, knowledge, Workflow, tool,
+  Inbox, conversation, run, usage and Health pages read-only: no saving,
+  testing, publishing, credentials, diagnostics, access tokens, webhooks or
+  global settings (ADR 0060). Admin implies the other four for the same
+  record; no other ability implies another one.
 - `strict`: the per-surface view and manage Gates described below. Upgraded
   installations keep it until they switch deliberately.
 
@@ -308,7 +311,7 @@ and local, testing and staging environments receive no grant.
 A callback that declares the `$record` parameter is record-aware, like a
 record-aware Gate: lists then need the `AdminAuthorizationQueryScope` binding
 described below and stay empty without it. Panel users without any grant see
-an **Access** page that names the four abilities and nothing else: no users,
+an **Access** page that names the five abilities and nothing else: no users,
 configuration values, records or secrets. Doctor reports the mode, a missing
 grant and a record-aware grant without a query scope.
 

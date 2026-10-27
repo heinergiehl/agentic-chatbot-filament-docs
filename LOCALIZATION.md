@@ -39,7 +39,7 @@ in several places live in `common.*`.
 array uses the English source copy as keys and is passed to the editor. The
 English file lists the texts the editor's `t()` calls use plus labels the
 server sends for translation, and the German file translates all of them;
-`WorkflowEditorTranslationsTest` checks both.
+`TranslationParityTest` checks both.
 
 English is the plugin's default and source language: the `en` files define
 every key. German (`de`), French (`fr`) and Spanish (`es`) are shipped with
@@ -120,27 +120,17 @@ Placeholders such as `:count` and plural forms such as
 
 ## QA Guards
 
-- `tests/Unit/AdminTranslationFilesTest.php` fails when code uses a key that
-  English does not define, when English has a key no source uses, when German,
-  French or Spanish miss or add a key compared with English, when a translation drops or adds placeholders or plural
-  forms, when the key of a short negated text drops the negation, and when
-  a translation leaves the product glossary above (App data tool, Handoff,
-  Workflow, Knowledge). French and Spanish are held to the same completeness
-  rules as German: every English key, no extra keys, the same placeholders.
-  It also checks that `activity.php` and `runtime.php` exist in every shipped
-  language with the same keys and placeholders.
-- `tests/Unit/TranslationOverrideTest.php` proves that files in
-  `lang/vendor/filament-agentic-chatbot/` override the package per key, that
-  the publish tag delivers the files, and that placeholders and plural forms
-  work.
-- `tests/Unit/LocalizationCoverageTest.php` fails when a Filament UI call or
-  the workflow editor uses a hard-coded English literal.
-
-`WorkflowEditorTranslationsTest` and `WidgetScriptTest` apply the same
-completeness rules to the editor catalog and the widget texts for all three
-translations.
+- `tests/Unit/TranslationParityTest.php` fails when German, French or Spanish
+  miss or add a key compared with English in any language file (including
+  `activity.php`, `runtime.php`, `widget.php` and `workflow-editor.php`), when a
+  translation is empty or drops or adds placeholders or plural forms, when the
+  package code, a Blade view, the widget or the Workflow editor uses a literal
+  key that English does not define, and when a language file is not valid UTF-8
+  or contains double-encoded characters.
+- Wording, the product glossary and the copy register are review rules, not
+  tests.
 
 Run the panel in another language with `APP_LOCALE={locale}`. Agent prompts and
 the widget texts an admin writes are stored per Agent in its configuration;
 the widget's built-in texts come from `widget.php` in the Agent's widget
-language (`WidgetScriptTest` checks that every language has the English keys).
+language (`TranslationParityTest` checks that every language has the English keys).

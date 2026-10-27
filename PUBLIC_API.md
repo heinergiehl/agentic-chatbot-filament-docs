@@ -43,13 +43,14 @@ $panel->plugin(
 );
 ```
 
-The admin navigation has five top-level items, `Heiner\FilamentAgenticChatbot\Support\NavigationSection`:
-**Build** (Agents, Workflows, Sources), **Connect** (Channels, Tools & data with
-API connections, MCP servers and App data tools as tabs, and Developers with
-Access tokens and Webhooks as tabs), **Inbox** (handoffs, approvals and unverified actions that wait for a person,
-with a count badge), **Conversations** (Conversations, Submissions and Usage as
-tabs) and **Settings** (General, Health and, for administrators, Developer tool
-providers as tabs). Each panel's plugin instance configures them:
+The admin navigation has five top-level items, `Heiner\FilamentAgenticChatbot\Support\NavigationSection`,
+in this default order: **Agents** (`NavigationSection::Build`: Agents, Workflows,
+Sources; it opens the Agents list), **Inbox** (handoffs, approvals and unverified
+actions that wait for a person, with a count badge), **Conversations**
+(Conversations, Submissions and Usage as tabs), **Connect** (Channels, Tools &
+data with API connections, MCP servers and App data tools as tabs, and
+Developers with Access tokens and Webhooks as tabs) and **Settings** (General,
+Health and, for administrators, Developer tool providers as tabs). Each panel's plugin instance configures them:
 
 ```php
 use Heiner\FilamentAgenticChatbot\Support\NavigationSection;
@@ -89,10 +90,11 @@ FilamentAgenticChatbotPlugin::make()
 ```
 
 The callback receives the panel user, one of `AdminAbility::OPERATE`,
-`CONFIGURE`, `PUBLISH` or `ADMIN` (`filament-agentic-chatbot.operate`,
-`.configure`, `.publish`, `.admin`) and the record acted on, or `null` for
-class-level checks. Only `true` grants; admin implies the other three for the
-same record. It runs after the panel access check and never widens the panel,
+`CONFIGURE`, `PUBLISH`, `ADMIN` or `VIEW` (`filament-agentic-chatbot.operate`,
+`.configure`, `.publish`, `.admin`, `.view`) and the record acted on, or `null`
+for class-level checks. Only `true` grants; admin implies the other four for
+the same record. `VIEW` is read-only access to the Agent, knowledge, Workflow,
+tool and operations pages (ADR 0060). It runs after the panel access check and never widens the panel,
 the host SQL scope (`AdminAuthorizationQueryScope`) or the Capability
 Execution Gateway. Declaring the `$record` parameter makes the grant
 record-aware, which requires the query scope binding for lists. Global
@@ -101,7 +103,10 @@ settings (the Settings page and its signing-key rotation) are checked with a
 the Settings page needs the class-wide Gate
 `filament-agentic-chatbot.manage-settings`.
 `getAuthorizationCallback()` returns the callback. Without a callback, Gates
-with the ability names grant. `authorization.mode` selects `abilities` or the
+with the ability names grant. In the `abilities` mode,
+`authorization.admin_emails` (`AGENTIC_CHATBOT_ADMIN_EMAILS`, comma separated)
+additionally grants every ability to panel users with a listed, verified email
+(ADR 0062). `authorization.mode` selects `abilities` or the
 per-surface `strict` Gates; `filament-agentic-chatbot:authorization-preview`
 previews a switch read-only. See `docs/SECURITY_AND_PRIVACY.md`
 (Administration Abilities).
@@ -258,8 +263,9 @@ or expose arbitrary Filament Resources, model methods, controllers, or UI
 Actions, and it does not create execution authority.
 
 The authoring-only **Import from Filament Resource** action separately reads
-static Resource metadata and the model field proposal into the existing App data
-tool Draft form. Discovery grants no access. The operator must review fields and
+static Resource metadata, the Resource's table columns and a read-only summary of
+its `getEloquentQuery()` (ADR 0061), and the model field proposal into the existing
+App data tool Draft form. Discovery grants no access. The operator must review fields and
 visitor/tenant scope and explicitly Save. Runtime never scans or calls Resources,
 including `getEloquentQuery()`, `table()` and `form()`. The stored `source_resource`
 class name is for display only; it supplies neither a runtime scope nor authority.
@@ -772,6 +778,8 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "api.widget_bootstrap_max_requests_per_minute",
     "api.widget_bootstrap_max_requests_per_minute_per_ip",
     "api.widget_bootstrap_rate_limiter",
+    "api.widget_config_max_requests_per_minute_per_ip",
+    "api.widget_config_rate_limiter",
     "api_connectors.artifacts.disk",
     "api_connectors.artifacts.prefix",
     "api_connectors.authorization.enabled",
@@ -801,6 +809,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "attachments.max_total_bytes",
     "attachments.path",
     "attachments.retention_days",
+    "authorization.admin_emails",
     "authorization.mode",
     "bot_access_tokens.accept_authorization_bearer",
     "bot_access_tokens.authorization.enabled",
@@ -834,6 +843,7 @@ The test suite reads this JSON block directly. Keep it valid JSON.
     "bot_handoff_requests.desk.default_assignee.type",
     "bot_handoff_requests.desk.default_team",
     "bot_handoff_requests.desk.poll_after_ms",
+    "bot_handoff_requests.desk.recipient_user_provider",
     "bot_handoff_requests.desk.sla.high.first_response_minutes",
     "bot_handoff_requests.desk.sla.high.resolution_minutes",
     "bot_handoff_requests.desk.sla.low.first_response_minutes",

@@ -35,7 +35,7 @@ Requirements: PHP 8.3+ with Composer-required extensions, Composer 2.2+, Laravel
 1. Buy access and configure your private Anystack Composer repository. Install with `composer require heiner/filament-agentic-chatbot:^1.0`.
 2. Register `FilamentAgenticChatbotPlugin::make()`, grant administrator access explicitly and configure your provider key.
 3. Run `php artisan filament-agentic-chatbot:install`, supervise the worker and run the scheduler every minute.
-4. Create an Agent, add a Source, **Test**, then **Publish**. Configure **Allowed hosts** and copy the embed. **Restore** selects an earlier Version while preserving Live/Paused availability.
+4. Create an Agent from the **FAQ** template. The Overview shows a setup guide with the next step. In **Knowledge & tools**, choose **Add knowledge** for your content and **Add tool** for App data, API or MCP tools. **Test** the saved Draft, allow your website in **Channels & handoff**, **Publish** and copy the embed. **Restore** selects an earlier Version while preserving Live/Paused availability.
 
 Follow the [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) for the anonymous FAQ path and the separate authenticated-data recipe. The latter covers the host identity endpoint, record scopes and authorization in queue workers. Installation does not include an AI provider account.
 

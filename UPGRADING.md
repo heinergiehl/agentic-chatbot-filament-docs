@@ -4,6 +4,107 @@ This document covers required steps when upgrading between public releases.
 Start with the section for the release you are moving to; older sections stay
 below for hosts that skip releases.
 
+## Upgrading to 1.2
+
+### Public source fields
+
+If you read chat responses from your own frontend: each item of `sources`
+(also in `message.sources`, `messages[*].sources`, the stream and the history
+endpoint) now carries only `label`, `locator`, `source_name`, `source_type`,
+`source_url`, `source_host`, `heading_path`, `section`, `page_number`,
+`preview` and `group`. `group` is an opaque key that is equal for passages of
+the same document. `id`, `document_id`, `content` (it repeated `preview`),
+`distance`, `score` and the other retrieval scores are no longer sent. Stored
+messages, the `ChatMessageSent` event and the admin views keep them. In the
+same responses `image_artifact` now carries only `mime`, `filename` and
+`public_url`; its storage `disk` and `path` stay on the server.
+
+### Lexical only on databases without keyword search
+
+Publish now refuses an Agent whose search method is "Lexical only" when the
+configured keyword search cannot run on the knowledge database (the default
+engine `postgres_fts` needs PostgreSQL and its index). Such an Agent found
+nothing before. Choose Vector or Hybrid, or configure keyword search, then
+publish. Agents that are already Live keep their version; Health lists them.
+
+### Widget script cache
+
+The widget script is now cached for a year only when its `?v=` matches the
+script you serve; any other version is revalidated on every page view.
+Browsers that already cached an old versioned URL keep that copy, so copy the
+embed snippet again from **Channels & handoff** once after upgrading and replace it on
+your website.
+
+### Chat queue check in Doctor
+
+`filament-agentic-chatbot:doctor` now exits with an error while the chat queue
+connection keeps Laravel's stock `retry_after` of 90 seconds, because every
+website chat is refused with it. Set it above the worker timeout, for example
+`DB_QUEUE_RETRY_AFTER=360` with the default timeouts, and restart the worker.
+Deployment scripts that run Doctor fail until this is fixed.
+
+### Table prefixes refused
+
+The installer and Health now refuse a package database connection with a
+table prefix before any migration runs. Such installations did not migrate
+before; use a connection without a prefix for the package tables.
+
+### Optional new settings
+
+- `AGENTIC_CHATBOT_ADMIN_EMAILS`: a comma separated list of panel login emails
+  that get every Agentic Chatbot permission. Empty by default; your
+  `authorizeUsing()` rule keeps working alongside it.
+- `bot_handoff_requests.desk.recipient_user_provider`: the user list that
+  handoff notification recipients come from when your app has several. Set it
+  if Health warns that recipients cannot be identified.
+
+### Host configuration lists
+
+Lists and maps you set in `config/filament-agentic-chatbot.php` are now used as
+written. In 1.1 the package merged them with its internal defaults entry by
+entry, and Doctor reported additions as unsupported keys. Check these paths if
+your published config changes them:
+
+| Path | 1.1 merged value | 1.2 value |
+|---|---|---|
+| `api.middleware` | Your list, plus internal entries beyond its length; `[]` kept `['api']` | Your list |
+| `api.session_middleware` | Your list, plus the internal entries beyond its length (for example `StartSession` and `ShareErrorsFromSession` after a two entry list) | Your list |
+| `read_api.middleware` | Entries beyond the first removed and reported by Doctor | Your list |
+| `connector_completion_webhooks.middleware` | Entries beyond the first removed and reported by Doctor | Your list |
+| `attachments.allowed_mime_types` | Entries beyond the eighth removed and reported by Doctor | Your list |
+| `outbound_webhooks.retry_delays_seconds` | Entries beyond the eighth removed and reported by Doctor | Your list |
+| `api_connectors.default_allowed_methods` | Your list, plus internal entries beyond its length; `[]` kept `['GET']` | Your list, `[]` allows no default method |
+| `api_connectors.default_allowed_path_patterns` | Your list, plus internal entries beyond its length; `[]` kept `['/*']` | Your list |
+| `context.authorization.guards` | Your list, plus internal entries beyond its length (`['web']` became `['web', 'sanctum', 'api']`) | Your list |
+| `context.authorization.public_areas` | Your list, plus internal entries beyond its length | Your list |
+| `context.allowed_areas` | Your list | Your list |
+| `mcp.provider_presets` | Every entry removed and reported by Doctor | Your map |
+| `data_resources.write_testing.production_targets` | Every entry removed and reported by Doctor | Your map |
+| `bot_handoff_requests.desk.teams` | Every entry removed and reported by Doctor | Your map |
+| `data_resources.package_model_allowlist` | Your list (unchanged) | Your list (unchanged) |
+
+Trace redaction lists are a security floor instead:
+`workflow.traces.redacted_keys` and `workflow.traces.redacted_value_patterns`
+always contain the package defaults plus your entries. In 1.1 the published
+list replaced the defaults entry by entry, so `passphrase`, `access_token` and
+`refresh_token` were missing, and `[]` for the value patterns is now ignored in
+favor of the email pattern default.
+
+## Upgrading to 1.1
+
+No migration or configuration change is required.
+
+**New read-only ability.** `AdminAbility::VIEW`
+(`filament-agentic-chatbot.view`) opens the Agent, knowledge, Workflow, tool,
+Inbox, conversation, run, usage and Health pages without saving, testing,
+publishing, credentials, diagnostics or global settings (ADR 0060). Admin
+implies it. Review `authorizeUsing()` callbacks and Gates that return `true`
+for abilities they do not name, for example a `default => true` match arm or
+`$ability !== AdminAbility::ADMIN`: they now also grant `.view`, which reads
+conversations, the Inbox and usage. Run
+`php artisan filament-agentic-chatbot:authorization-preview` for the affected
+users before deploying.
+
 ## Upgrading to 1.0
 
 **Release status:** Approved, conditional on required gates and publication.
@@ -485,9 +586,8 @@ the host application root, under its deployment account. Bash examples use
    original authority and execution-time checks. Unknown outcomes still require
    reconciliation. Ordinary expiry and execution-time identity checks
    still apply. Unknown writes remain unknown and require reconciliation, never
-   automatic retry (ADR 0009). Automated evidence: `UpgradeCommandTest`,
-   `UpgradeInFlightCharacterizationTest`, `UpgradeBackupRestoreTest` and
-   `UpgradeDataPreservationTest` under `tests/Feature/V1`.
+   automatic retry (ADR 0009). Automated evidence: `UpgradeCommandTest` under
+   `tests/Feature/V1`.
 
 6. **Workers and assets.** Run `php artisan optimize:clear`,
    `php artisan filament:assets`, then rebuild the host's config/route caches

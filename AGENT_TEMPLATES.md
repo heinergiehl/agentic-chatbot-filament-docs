@@ -16,9 +16,9 @@ A template never grants authority. Creating from one needs the same ability as c
 | **FAQ from your website** (`faq`) | none | Opens the form to add a Source |
 | **Customer support with handoff** (`customer-support`) | Handoff | Opens the Agent Overview |
 | **Lead capture** (`lead-capture`) | Lead capture | Opens the Agent Overview |
-| **Order status** (`order-status`) | none | Opens the form to set up an app data tool |
+| **Order status** (`order-status`) | Handoff | Opens the form to set up an app data tool |
 
-The first three answer from Sources you add. **Order status** needs an app data tool for your orders. The Agent starts as a Draft with that requirement stored in `runtime_config.template` (`key` and `required_tool_kinds`), and the Agent's readiness shows a blocking check, `template_requirement_missing`, until an app data tool is assigned to the draft and compiles to at least one tool (an assigned tool with App data reads off and every write withheld does not count). **Publish** stays disabled until then. A stored requirement that cannot be read blocks Publish too (`template_requirement_invalid`, see below). The template does not create the app data tool and never claims the Agent is ready before your app mapping exists. Other templates store only their `key`.
+Each template suggests its own Agent name (for example "FAQ assistant") and sets the purpose, so the wizard asks for the purpose only with **Start from scratch**. The first three answer from Sources you add. **Order status** needs an app data tool for your orders. The Agent starts as a Draft with that requirement stored in `runtime_config.template` (`key` and `required_tool_kinds`), and the Agent's readiness shows a blocking check, `template_requirement_missing`, until an app data tool is assigned to the draft and compiles to at least one tool (an assigned tool with App data reads off and every write withheld does not count). **Publish** stays disabled until then. A stored requirement that cannot be read blocks Publish too (`template_requirement_invalid`, see below). The template does not create the app data tool and never claims the Agent is ready before your app mapping exists. Other templates store only their `key`.
 
 No template ships a Workflow, and there is no appointment template.
 

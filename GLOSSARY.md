@@ -136,7 +136,7 @@ Spanish UI copy addresses the admin as "tú". Quoted visitor messages may use "u
 
 ## Where developer terms stay
 
-The replaced terms are UI and buyer vocabulary. They stay valid in the places below, and `tests/Unit/AgentFirstTerminologyTest.php` allows them there explicitly.
+The replaced terms are UI and buyer vocabulary. They stay valid in the places below.
 
 1. **Identifiers.** Translation keys, configuration keys, class, table, route and command names, environment variables, JSON and API field names. A Workflow is stored by the `playbooks.*` translation keys and runtime classes such as `AgentPlaybookTurn`; an App data tool is a Data Resource in code, in `filament-agentic-chatbot.data_resources` and in `query_data_resource`; an API connection is an API connector in `filament-agentic-chatbot.api_connectors`; an audience is the `area` field.
 2. **Developer documentation.** `docs/PUBLIC_API.md`, `docs/AGENT_RUNTIME_ARCHITECTURE.md`, `docs/AGENTGRAPH_SDK_USAGE.md`, `docs/AI_CONTEXT.md`, `docs/WORKFLOW_JSON_SCHEMA.md`, `docs/RELEASE_ASSURANCE.md`, ADRs, plans and the Markdown files of released versions (release notes, `CHANGELOG.md` entries and `UPGRADING.md` sections of released versions). Data Resource, capability, deployment, generation, chunk and area are the accurate terms there.
@@ -147,4 +147,4 @@ The replaced terms are UI and buyer vocabulary. They stay valid in the places be
 
 ## Checking
 
-`tests/Unit/AgentFirstTerminologyTest.php` fails when a replaced English UI term appears in `resources/lang/en` values, and runs equivalent checks for the German, French and Spanish decisions above. Add a new allowance only for one of the exception classes above, with a comment.
+Terminology is a review rule, not a test: a change that adds or edits UI text in `resources/lang` is reviewed against the replaced terms and the German, French and Spanish decisions above. Use a replaced term only in one of the exception classes above.

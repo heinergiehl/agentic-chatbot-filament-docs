@@ -103,7 +103,7 @@ An available adapter is not a certified provider/model pair. Releases do not cer
 
 ## What “certified” means
 
-The fixed eight local gates under `release-1.0-risk-focused.v1` passed for the released source, lock and ZIP: source quality, marketplace readiness, reference-host core acceptance, targeted runtime/security, keyless Laravel 12 and 13 artifact installs, artifact upgrade/restore and pinned public-docs drift. Broad pgvector qualification, the full package suite, full database matrix, full dialogue evaluation, SMTP exhaustion and long soak were recorded as `not_run`. A skipped check is not a pass.
+The fixed eight local gates under `release-1.0-risk-focused.v1` passed for the released source, lock and ZIP: source quality, marketplace readiness, reference-host core acceptance, targeted runtime/security, keyless Laravel 12 and 13 artifact installs, artifact upgrade/restore and pinned public-docs drift. The checks outside these gates are listed in [Release assurance](RELEASE_ASSURANCE.md#assurance-boundaries).
 
 The 1.0 policy `release-1.0-risk-focused.v1` also requires targeted authority,
 duplicate delivery, worker interruption/recovery and unknown-write evidence,

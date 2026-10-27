@@ -64,9 +64,9 @@ A conversation starter has four fields:
 - `icon`: an optional semantic key from the safe icon list
 - `group`: an optional short heading such as "Explore" or "Feedback" (up to 24 characters)
 
-An Agent has up to eight starters. The label and icon are visible; the prompt is the starter's tooltip and accessible description. Display order puts ungrouped starters first, then groups in the order they first appear. The empty state lays them out by its own width (container queries), not by the viewport:
+An Agent has up to eight starters. In the empty state each tile shows its icon, its label and, below the label, the first two lines of the prompt it sends; a tile is as tall as its text, so a starter without icon or group stays compact. When the prompt matches the label, the tile shows the label only. After the first message the starters become one-line chips whose prompt is the tooltip and accessible description. Display order puts ungrouped starters first, then groups in the order they first appear. The empty state lays them out by its own width (container queries), not by the viewport:
 
-- **Narrow** (below 480 px, the default panel sizes and phones): two-column tiles of equal height with the icon on top, a label of up to two lines and, for grouped starters, the group name as a small caption instead of group headings. The first four show at once; **More suggestions** reveals the rest and becomes **Show fewer**, which collapses back to the first four. It is one toggle button with `aria-expanded` and a rotating chevron, and it keeps focus.
+- **Narrow** (below 480 px, the default panel sizes and phones): two-column tiles, equal in height within a row, with the icon on top, a label of up to two lines, the prompt below it and, for grouped starters, the group name as a small caption instead of group headings. The first four show at once; **More suggestions** reveals the rest and becomes **Show fewer**, which collapses back to the first four. It is one toggle button with `aria-expanded` and a rotating chevron, and it keeps focus.
 - **Wide** (480 px and more, for example the expanded panel): every starter at once, one card per group in two columns, with a row per starter and an arrow on hover. **More suggestions** is not needed there. Without groups the starters form one two-column list.
 
 Browsers without container queries show the compact chips. Motion follows one curve: starters fade in one after another when the panel opens; **More suggestions** glides the content to its new place and fades the revealed starters in, **Show fewer** fades the extra starters out first; while the panel changes size the starters wait and then play in again in the new layout. With reduced motion everything changes at once. Labels are inserted as text.
@@ -75,7 +75,7 @@ After the first message the starters leave the conversation. A **Suggestions** b
 
 The Filament form lets an administrator select an icon without writing HTML or knowing an icon component name. Chips are native buttons and send the prompt through the normal chat turn path. An area override may inherit the global list, replace it, or intentionally clear it.
 
-The **Channels** tab keeps access, the embed code, the installation status and the three placements together; **Customize widget** opens the appearance with a live preview in a slide-over. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; audience overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
+The **Channels & handoff** tab shows the allowed websites first, then the website status and the embed code, with the Blade component and the admin panel placement under **Advanced**; **Customize widget** opens the appearance with a live preview in a slide-over. Subtitle choices are **Standard**, **Custom text**, and **Hide**. A custom subtitle requires text; audience overrides can also **Inherit** the base subtitle. Older configurations without a mode retain their existing default or custom subtitle. The appearance preview uses the same subtitle resolution as the delivered widget and runs no Agent conversation.
 
 Keep the welcome message and starter labels short so visitors can scan the choices; a long label ends with an ellipsis on a narrow chip. The message input also grows for a wrapped placeholder, recalculates its height when the available width changes, and scrolls once it reaches the size preset's height limit. The Glass template keeps the default avatar in the header and uses a quieter, left-aligned welcome; a configured avatar image remains visible in the welcome state.
 
@@ -261,11 +261,11 @@ The widget ships with twelve visual themes:
 
 ## Embedding The Widget
 
-The Agent's **Channels** tab shows three placement cards. Each answers "where does my Agent appear":
+The Agent's **Channels & handoff** tab shows the script tag after the allowed websites and the website status; **Copy code** is available once an allowed website is saved and the Agent is Live, and says what is missing until then. The script tag carries the same appearance as the widget settings (`/config`) of the embedded audience, including that audience's override. The Blade component and the admin panel placement are under **Advanced**. Each placement answers "where does my Agent appear":
 
 | Card | Use it when |
 | --- | --- |
-| **Any website (script tag)** | The page is on any website, with or without Laravel. The tab always shows the script tag, also for a Draft or a Paused Agent. |
+| **Any website (script tag)** | The page is on any website, with or without Laravel. The tab always shows the script tag, also for a Draft or a Paused Agent; Copy waits for an allowed website and a Live version. |
 | **This Laravel app (Blade component)** | The page is part of the Laravel app that runs this package. |
 | **Inside this admin panel** | The chat bubble should appear on the pages of this Filament panel. |
 
@@ -295,7 +295,7 @@ The component shows exactly one Agent:
 
 There is no other fallback: not the first runnable Agent and not an environment value (`AGENTIC_CHATBOT_WIDGET_BOT_PUBLIC_ID` and `widget.bot_public_id` were removed in 1.0). A component with neither an attribute nor an app default renders nothing and writes one warning to the log. The same holds when the named Agent does not exist, is not **Live**, or its live version fails verification: the component fails closed and never shows a different Agent. Two marked Agents are ambiguous and also render nothing. The former attribute `bot-public-id` is ignored with a warning; rename it to `agent`.
 
-To use the app default, open the Agent's **Channels** tab and choose **Use as app default** on the Blade component card. This is one setting for the whole installation, so it needs the administration ability; the previous app default loses its mark. The button exists only on that card. Turning off `widget.public_selector.enabled` removes the app default; components then need the `agent` attribute.
+To use the app default, open the Agent's **Channels & handoff** tab and choose **Use as app default** on the Blade component card. This is one setting for the whole installation, so it needs the administration ability; the previous app default loses its mark. The button exists only on that card. Turning off `widget.public_selector.enabled` removes the app default; components then need the `agent` attribute.
 
 Pass `:expandable="false"` to hide the button that expands the panel on wider screens.
 
@@ -523,7 +523,7 @@ $token = WidgetEmbedToken::make(
 | `AGENTIC_CHATBOT_WIDGET_SIGNING_ALLOW_BODY_TOKENS`  | Accept `token` in JSON/form bodies | production: `false`; otherwise: `true` |
 | `AGENTIC_CHATBOT_WIDGET_CONVERSATION_CREDENTIAL_REQUIRED` | Require the server-issued credential outside production too | production is always enforced |
 
-The loader sends access through the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens default to disabled in production. The bootstrap endpoint has independent per-bot/origin/IP and global-IP rate limits through `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE_PER_IP`.
+The loader sends access through the `X-filament-agentic-chatbot-Token` header. Query-string and body tokens default to disabled in production. The bootstrap endpoint has independent per-bot/origin/IP and global-IP rate limits through `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE` and `AGENTIC_CHATBOT_WIDGET_BOOTSTRAP_MAX_REQUESTS_PER_MINUTE_PER_IP`. The config endpoint, requested once per page view, has its own per-IP limit of 60 requests a minute (`AGENTIC_CHATBOT_WIDGET_CONFIG_MAX_REQUESTS_PER_MINUTE_PER_IP`), so browsing does not use up the chat turn limits.
 
 ### Signed Customer And Tenant Context
 
@@ -745,7 +745,7 @@ If you embed the widget on pages served by the same Laravel monolith, CORS is us
 
 ## Config Payload
 
-`GET /api/filament-agentic-chatbot/chat/{botPublicId}/config` keeps its existing shape and adds `bot.knowledge_health`:
+`GET /api/filament-agentic-chatbot/chat/{botPublicId}/config` keeps its existing shape and adds `bot.knowledge_health`, reused for up to 60 seconds per Agent:
 
 - `has_sources`
 - `ready_sources`
@@ -802,7 +802,7 @@ See [API Integrations](API_INTEGRATIONS.md) for the server-side request contract
 
 ## Testing The Widget
 
-**Customize widget** on the Agent's **Channels** tab includes an appearance preview with sample messages.
+**Customize widget** on the Agent's **Channels & handoff** tab includes an appearance preview with sample messages.
 It does not send a message or provide release-test evidence. Use the Agent's
 **Test** area to check a selected version or candidate.
 
@@ -829,13 +829,14 @@ Rows are removed with the Agent. Seeing the widget proves that the page loaded t
 
 ## Widget Script Source
 
-The served script is the committed build `resources/dist/widget.js`; installing
-the package needs no Node. `WidgetScriptController` fills in the package
-defaults and the widget texts of every language and serves it at the
-configured script route with an ETag (immutable caching for `?v=` URLs).
+The served script is the committed build `resources/dist/widget.min.js` (with
+`app.debug` on, the readable `resources/dist/widget.js`); installing the
+package needs no Node. `WidgetScriptController` fills in the package defaults
+and the widget texts of every language and serves it at the configured script
+route with an ETag (immutable caching only for the current `?v=` version).
 The sources are `resources/js/widget/src/*.js`; they share one closure and are
 concatenated in a fixed order. After a change run
-`node resources/js/widget/build.mjs` and commit the build;
+`node resources/js/widget/build.mjs` and commit both built files;
 `tests/widget/build.test.mjs` and `WidgetScriptTest` (when Node is installed)
 fail when the build is out of date.
 

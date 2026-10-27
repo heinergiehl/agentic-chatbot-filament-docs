@@ -2,11 +2,188 @@
 
 All notable changes to this package will be documented in this file.
 
+## [1.2.0] - 2026-10-27
+
+### Changed
+
+- Widget conversation starters: each empty-state tile shows the first two
+  lines of the message it sends below its title and is only as tall as its
+  text. Before, a starter without icon or group showed its title in a large
+  empty tile. The admin form explains where title, message and group appear.
+- Quickstart: a short fast path from install to a first FAQ answer on your
+  website comes first. Signed-in order support moved to its own Customer Data
+  Guide.
+- Admin wording: plainer labels and messages for unknown results, visible
+  fields, customer login, pending tool changes and setup checks, in all four
+  languages. Configuration keys no longer appear in the model notice.
+- Knowledge & tools: an App data tool defined in your config (a Data
+  Resource without a stored definition) is marked "Defined in code" and no
+  longer links to a library screen where it cannot be edited.
+- Agent editor: **Add tool** is the one add button for tools. Its types
+  include a new App data tool and an import from a Filament Resource, which
+  open the App data form as before, next to API, MCP and Workflow tools you
+  already have. Knowledge & tools now has two add buttons instead of five.
+- Agent editor: one **Add knowledge** button replaces Add from library and
+  Add source. It adds a text or a website (one page or the whole site) right
+  there, assigns Sources you already have, and opens the full form for files
+  and API sources.
+- Import from Filament Resource now reads the Resource's admin table: the
+  columns it shows, their labels, which are searchable and sortable, the
+  default sort, relation columns and the tenant column. It also says which
+  records the Resource hides, which the Agent does not inherit; you still
+  choose whose records it may read. Email and phone columns stay off.
+- Adding a Source from an Agent now returns to that Agent's Knowledge & tools
+  tab, where the new Source shows its status. The Source page has one "Back
+  to Agent" link instead of three.
+- Channels & handoff: the allowed websites come first, then the website status
+  and the embed code. **Copy code** waits until an allowed website is saved
+  and the Agent is Live, and says what is missing. The Blade component and
+  the admin panel placement are under Advanced. The script tag now carries the
+  same appearance as the widget settings of its audience, so the widget no
+  longer changes its look when the settings arrive.
+- Agent Overview: one setup guide replaces the checklist and the next-step
+  box. It lists six steps in order (instructions, knowledge and tools,
+  allowed website, test, publish, embed code), each done, to do or blocked,
+  with one button to where you fix it. What blocks Publish is unchanged.
+- Agent editor header: status, Pause or Resume, Test, Publish and Manage
+  (Analytics, Delete). The provider, embedding and knowledge search checks
+  and Rebuild Agent Sources moved into the Advanced section of the tab they
+  test; Health is linked from the Overview and the embed code is on Channels &
+  handoff.
+- Agent editor: five tabs instead of seven (Overview, Instructions, Knowledge &
+  tools, Channels & handoff, Test & versions), each with one collapsed
+  Advanced section for what is rarely changed. About half the fields are
+  visible by default (15 instead of 35); every setting stays available and
+  stored values are unchanged. Pause and Resume are in the page header only.
+  Links to the old tabs still open the right place.
+- Create Agent: a template now sets the purpose itself, so "Purpose" is
+  asked only for "Start from scratch", and the name starts as the template's
+  name (for example "FAQ assistant"). New "Order status" Agents start with
+  human handoff on, like "Customer support" and "Start from scratch"; "FAQ"
+  and "Lead capture" start with it off. Existing Agents are unchanged.
+- Health: required checks that block answers come first, each with its fix;
+  warnings and every other check are in one collapsed "All checks" section.
+  Doctor output and exit codes are unchanged.
+- Navigation: "Build" is now called "Agents" and opens the Agents list, and
+  the default order is Agents, Inbox, Conversations, Connect, Settings.
+  Labels and orders you set with `navigationLabel()` and
+  `navigationSections()` are kept.
+
+### Added
+
+- First administrators without PHP: list panel login emails in
+  `AGENTIC_CHATBOT_ADMIN_EMAILS` (comma separated) and those users get every
+  Agentic Chatbot permission. The installer asks for one email and prints the
+  line to add; it never writes `.env`. Works alongside `authorizeUsing()`;
+  empty by default, and upgraded installations in the strict mode are
+  unchanged.
+
+### Security
+
+- Chat responses to website visitors no longer contain the storage disk and
+  path of generated images, only their public URL, file name and type.
+- Workflow trace redaction again hides `passphrase`, `access_token` and
+  `refresh_token` values. The package defaults now always apply in addition
+  to the keys and value patterns in your published config.
+- App data tools: the server now refuses to save a tool that does not say
+  whose records it reads, and "All records" without its confirmation, from
+  every admin screen. Before, only the form fields checked this.
+
+### Fixed
+
+- Agent editor: an Agent created in code without an assistant profile can
+  now be saved, and saving any tab without changes no longer stores default
+  safety, lead capture, data query, handoff or widget settings into Agents
+  that did not have them. Before, an unedited save could switch off data
+  queries and changed what the next Publish compiled.
+- The installer and Health linked `docs/QUICKSTART.md`, a file the package
+  download does not contain. They now link the public Quickstart section
+  "Grant access".
+- Database connections with a table prefix: the installer and Health now
+  refuse them with a clear message before any migration runs. Before, the
+  migrations stopped part way with a database error.
+- Agent editor for users with the Configure permission: the Channels tab no
+  longer shows a Save button that always failed with an error page, and adding
+  a handoff email recipient (an administrator task) is now a message on the
+  field instead of an error page. Removing recipients still works.
+- Knowledge search method: where keyword search cannot run (for example on
+  MySQL or SQLite with the default PostgreSQL engine), "Lexical only" can no
+  longer be chosen for an Agent and Publish refuses it with the reason,
+  because it would never find anything. "Hybrid" stays selectable and stored
+  as it is; the Agent overview and Health warn that it uses meaning-based
+  search only.
+- Website widget: the served script is about 18 percent smaller (623 KB
+  instead of 761 KB, 124 KB instead of 141 KB compressed). With `APP_DEBUG`
+  on, the readable script is served as before.
+- Admin panel chat widget: on pages of other resources (for example order 5)
+  the panel showed Agent 5 instead of your app default Agent. Only Agent pages
+  now choose the Agent, within the records the panel lets you see.
+- Website widget: visitors browsing several pages behind one address no
+  longer use up the chat limit. Loading the widget settings has its own limit
+  of 60 page views a minute per address
+  (`AGENTIC_CHATBOT_WIDGET_CONFIG_MAX_REQUESTS_PER_MINUTE_PER_IP`), a page
+  reopened with the chat open loads the settings once instead of twice, and
+  the knowledge status in the settings response is reused for 60 seconds.
+- Widget script: an embed snippet copied before an upgrade no longer keeps
+  the old script in browsers and shared caches for a year. Only the current
+  script version is cached long term; copy the snippet once after upgrading.
+- Fresh installs: the installer publishes the panel styles, so the admin
+  pages and the Playbook editor no longer load unstyled until the next
+  `composer update`. `filament:assets` now publishes them even when it runs
+  before a panel registers the plugin.
+- Installer and Health: a stock Laravel queue (`retry_after` 90 seconds)
+  refuses every website chat. The installer now prints the exact line to add,
+  for example `DB_QUEUE_RETRY_AFTER=360`, and the new required Health check
+  "Chat queue" fails until it is fixed, so `doctor` exits with an error
+  instead of reporting a finished installation.
+- Agent editor: for Agents created outside the wizard, "Remember recent
+  turns", "Show sources", "Allow attachments" and "Show tool activity" now
+  show what the Agent does, and saving without changes no longer switches
+  them off. The Channels tab offers your app's own website (from `APP_URL`)
+  with an Allow button instead of a default that was never saved.
+- Handoff notifications with several panel user lists, or a panel whose login
+  has no user list (for example a read-only viewer panel): users who cannot be
+  identified are labelled as such instead of "No longer has Inbox access", a
+  new Agent no longer stores its creator as a recipient who is never reached,
+  the notification log says why, and Health warns. The new optional setting
+  `bot_handoff_requests.desk.recipient_user_provider` names the user list to
+  use.
+- Widget tool activity shows one row per tool call that ends with its result,
+  instead of a row stuck on "Proposed" next to the result. The knowledge search
+  and generic steps are named in the visitor's language. When an Agent hides
+  tool activity, the server no longer sends the tool rows at all.
+- Widget source cards no longer show a match percentage. Chat responses,
+  the stream and the history send each source with its title, link, section
+  and preview only; internal chunk and document ids and retrieval scores stay
+  on the server and in the admin conversation views.
+- Lists and maps in your published config (middleware, attachment types,
+  webhook retry delays, MCP provider presets, Handoff teams, staging write
+  targets and others) are used as written. Doctor no longer reports your
+  additions as unsupported settings. See
+  [UPGRADING.md](UPGRADING.md#upgrading-to-12) for the affected paths.
+
+## [1.1.0] - 2026-10-20
+
+### Added
+
+- Read-only administration ability `filament-agentic-chatbot.view`
+  (`AdminAbility::VIEW`, ADR 0060): opens the Agent, knowledge, Workflow,
+  tool, Inbox, conversation, run, usage and Health pages without saving,
+  testing, publishing, credentials, diagnostics or global settings. Admin
+  implies it. See [UPGRADING.md](UPGRADING.md#upgrading-to-11) for callbacks
+  that grant unknown abilities.
+
+### Fixed
+
+- Widget: when a queued chat turn that requested a Handoff finished through
+  the turn projection (the response stream had already ended), Handoff
+  polling did not start, so operator replies appeared only after a reload.
+  Polling now starts when such a turn ends.
+
 ## [1.0.0] - 2026-10-19
 
-Selected release `v1.0.0`; intended publication `2026-10-19`. Approval is conditional release authorization, not completed acceptance. The source remains a release candidate until required local gates and publisher finalization pass. Final source and archive certification are pending. The last shipped release remains `0.20.5` until publication. The dated heading records the intended publication date.
-Prepared, unpublished [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) describe the candidate
-changes and evidence limits. Upgrade baseline: 0.20.5. Follow the ordered procedure
+The [1.0.0 release notes](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/RELEASE_NOTES_v1.0.0.md) describe the
+changes. Upgrade baseline: 0.20.5. Follow the ordered procedure
 in [UPGRADING.md](UPGRADING.md#ordered-0205-to-10-procedure); rollback requires
 paired database and storage backups.
 

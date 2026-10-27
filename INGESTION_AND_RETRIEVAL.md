@@ -399,7 +399,7 @@ deployment pins at least one completed source with chunks. Completed sources
 without chunks, pending sources, failed sources, and mutable authoring-only
 attachments do not make retrieval ready.
 
-The public config endpoint includes additive `bot.knowledge_health`:
+The public config endpoint includes additive `bot.knowledge_health` (reused for up to 60 seconds per Agent):
 
 ```json
 {

@@ -25,8 +25,8 @@ release checklist and does not authorize publishing or changing the SDK.
   executing through the reviewed pin table of
   `DeploymentRuntimeCompatibility` (ADR 0056). Any other SDK version change
   still needs a review and table entry, or newly published artifacts.
-- The required public surface is enforced by
-  `AgentGraphPublicApiCompatibilityTest`.
+- The required public surface is a review item for every AgentGraph upgrade;
+  `DeploymentRuntimeCompatibilityTest` covers persisted deployment compatibility.
 - Recovery behavior is characterized by the interrupted-resume, delayed-resume,
   cancellation, projection-authority, and side-effect fault-injection tests.
 - The bounded 0.16 integration evidence is kept in the package repository's

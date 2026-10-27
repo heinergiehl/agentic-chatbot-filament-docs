@@ -142,7 +142,7 @@ temporarily unavailable, not that the policy needs checking. Tools with this opt
 
 ## Recommended Setup
 
-There are two ways in, and both open the same form. In the Agent editor, open **Tools** and choose **Add app data tool**: the form opens in a slide-over, and saving creates the tool and adds it to the Agent's draft only. **Save draft** keeps the assignment and **Publish** makes it live; the live Agent does not change before that. It needs the ability to create app data tools and to edit that Agent. **Connect > Data** stays the library of all app data tools (**New app data tool** there creates one without assigning it).
+There are two ways in, and both open the same form. In the Agent editor, open **Knowledge & tools**, choose **Add tool** and the type **Add app data tool**: the form opens in a slide-over, and saving creates the tool and adds it to the Agent's draft only. **Save draft** keeps the assignment and **Publish** makes it live; the live Agent does not change before that. It needs the ability to create app data tools and to edit that Agent. **Connect > Data** stays the library of all app data tools (**New app data tool** there creates one without assigning it).
 
 1. **Simple** is always visible:
    - Pick the **Model**. The form proposes a **Name** and one field per column; the key is generated from the name.
@@ -638,7 +638,7 @@ reads anonymously. This conservative check fails closed across all allowed bindi
 
 ## Import from a Filament Resource
 
-Choose **Import from Filament Resource** beside **Add app data tool** in the
+Choose **Import from Filament Resource** as the type of **Add tool** in the
 Agent editor, or on the app data tools list. Discovery is limited to the Resources of the
 current panel and its current tenant. Another panel's guard, tenancy and tenant
 cannot be authorized from the current request, so its Resources are never listed. To
@@ -652,9 +652,13 @@ same model is indicated within the operator's scope; a second tool needs its own
 unique key under the normal rules.
 
 Import reads static model, singular/plural label, record-title and global-search
-metadata plus the existing model field proposal. It never calls the Resource's
-query, table or form. Relation search paths and unavailable or sensitive search
-attributes are named as skipped. Secret fields remain excluded; email, phone and
+metadata plus the existing model field proposal. At authoring time only
+([ADR 0061](adr/0061-authoring-time-filament-resource-introspection.md)) it also
+builds the Resource's table to read its columns, labels, searchable and sortable
+columns, relation columns and default sort, and builds `getEloquentQuery()`
+without running it to show which records the Resource hides; that summary is not
+applied to the Agent. It never calls the Resource's form. Relation search paths
+and unavailable or sensitive search attributes are named as skipped. Secret fields remain excluded; email, phone and
 other sensitive fields start with all access switches off.
 
 The existing Simple form opens as an unsaved Draft. Review the fields, choose
@@ -666,7 +670,8 @@ model invalidates the proposal. Cancel saves nothing. Save uses the existing for
 writer and only changes the Agent draft; Publish is separate.
 
 The stored `source_resource` class name is display-only metadata. Runtime never
-scans or calls Filament Resources and uses only the tool's explicit record scope.
+scans or calls Filament Resources, their tables, forms or queries, and uses only
+the tool's explicit record scope.
 
 ## Related Docs
 

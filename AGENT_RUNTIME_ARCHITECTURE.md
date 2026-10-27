@@ -683,6 +683,18 @@ and server-authorized operator diagnostics (expiring conversation grants and an
 allowlisted read-only export). Events never own execution or recovery, and
 neither recording nor diagnosis changes productive decisions.
 
+The public projection is gated on the server. When the Agent does not show tool
+activity in the conversation's area (`widget.show_tool_activity` with its area
+override, else `widget.default_show_tool_activity`), JSON and SSE carry only the
+model, review and gateway phases as `kind`, `status` and `phase`, which the
+widget needs for its status line; admin test conversations always get the
+detailed projection. Detailed, a tool call is one row: the SDK result event is
+linked to its proposal through the provider call id the handler received, gateway
+events inside a tool call carry no row identity, a proposal that never ran is
+projected as `not_started` once the turn is over, and generic labels are sent as
+`null` (the built-in knowledge search as `display_key: knowledge_search`) for
+the widget to name in its own language.
+
 - One durable `ChatTurn` owns client-turn idempotency and the selected Agent
   deployment.
 - A completed turn replays from its canonical persisted outcome across JSON and

@@ -50,7 +50,7 @@ Add a Workflow when support needs a defined sequence.
 
 ## How you set it up in Filament
 
-Each Agent keeps its instructions, AI provider, model, Sources and Tools in one Filament editor. Start from a template such as FAQ, customer support with Handoff or order status. **Test** runs the saved Draft and simulates writes. **Publish** creates an immutable Version, and **Restore** brings back an earlier one.
+Each Agent keeps its instructions, AI provider, model, knowledge and tools in one Filament editor with five tabs. Start from a template such as FAQ, customer support with Handoff or order status. The Overview shows a setup guide with the one next step, and **Knowledge & tools** has two buttons: **Add knowledge** and **Add tool**. **Test** runs the saved Draft and simulates writes. **Publish** creates an immutable Version, and **Restore** brings back an earlier one.
 
 - **App data tools** expose only the Eloquent records and fields you choose. You can start one from an existing Filament Resource, then review its scopes, fields and permissions.
 - **API and MCP tools** use operations you import from OpenAPI, Postman or cURL, or tools from supported remote MCP servers. Read the [MCP guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/MCP_CONNECTIONS.md) before connecting a server.
@@ -59,13 +59,13 @@ Each Agent keeps its instructions, AI provider, model, Sources and Tools in one 
 
 Confirmation is on by default. Personal App data tool writes, MCP writes, lead capture and updates with **Allow updating any record** require it. Administrators may disable **Ask visitor to confirm** only for eligible operations, such as a reviewed non-personal write. Team approval is separate, and authorization still applies. AI answers can be wrong, so test representative questions with your own content. [Known limitations](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/KNOWN_LIMITATIONS.md).
 
-**Embed on your website.** Allow your domains, then copy the script from **Channels**. The widget uses **tokenless bootstrap**: the loader calls the origin-checked `/bootstrap` endpoint and keeps short-lived access tokens in memory. [Widget guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
+**Embed on your website.** Allow your domains, then copy the script from **Channels & handoff**. The widget uses **tokenless bootstrap**: the loader calls the origin-checked `/bootstrap` endpoint and keeps short-lived access tokens in memory. [Widget guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/CHAT_WIDGET.md).
 
 **Setup in four steps:**
 
 1. Check the [requirements](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/COMPATIBILITY.md): a supported Laravel and Filament app and database, your own AI provider account, a persistent queue worker, the scheduler and a shared cache.
 2. After purchase, install through the private Composer repository from Anystack. The [Quickstart](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/QUICKSTART.md) shows how to register the plugin, grant access and run the installer.
-3. Create an Agent from a template, add a Source and test representative questions.
+3. Create an Agent from the FAQ template, follow the setup guide, choose **Add knowledge** and test representative questions.
 4. Publish the Agent, allow your website and paste the embed script.
 
 Upgrading an existing installation? Follow the [upgrade guide](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/UPGRADING.md) first.
