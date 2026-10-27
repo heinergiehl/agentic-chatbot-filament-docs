@@ -1,12 +1,12 @@
 # Solution Kits
 
 Solution Kits are versioned, app-aware starting points for common Agent jobs. A
-Kit installs a coherent Agent profile, one or more Playbook drafts, optional
+Kit installs a coherent Agent profile, one or more Workflow drafts, optional
 Agent tests, widget copy, optional mappings to existing app reads, and
 measurable outcome goals.
 
 They are deliberately not live runtime templates. Installation creates
-authoring state only; the normal immutable Playbook and Agent publishing stay
+authoring state only; the normal immutable Workflow and Agent publishing stay
 authoritative.
 
 ## Built-in Customer Support Kit
@@ -17,10 +17,10 @@ The first built-in Kit is **Customer Support & Human Handoff**. It creates:
   least-data boundaries;
 - optional mappings to customer/account and order/subscription Data Resources;
 - optional mappings to published, global, unowned read-only API operations;
-- a Human handoff Playbook that collects a validated reason and contact email,
+- a Human handoff Workflow that collects a validated reason and contact email,
   asks for explicit visitor approval, then creates one operator handoff;
 - two Agent tests: "I need help from a person." must call the Human handoff
-  Playbook tool, and "What can you help me with?" must not call it; each turn
+  Workflow tool, and "What can you help me with?" must not call it; each turn
   also has a short rubric; and
 - `resolved` and `handoff` outcome goals for later Analytics evidence.
 
@@ -43,20 +43,20 @@ The installation is one database transaction. A retry by the same authenticated
 operator with the same hidden idempotency identity returns the original
 installation. Reusing that identity for different input or across operator
 boundaries fails closed. A late persistence failure rolls back every Agent,
-Playbook, Agent test, and audit record created by the attempt.
+Workflow, Agent test, and audit record created by the attempt.
 
 ## What Installation Does Not Do
 
 Installation does not:
 
 - activate the Agent;
-- publish a Playbook or Agent deployment;
-- assign an unpublished Playbook to Agent authority;
+- publish a Workflow or Agent deployment;
+- assign an unpublished Workflow to Agent authority;
 - call an external API;
 - execute a write; or
 - bypass host Filament authorization.
 
-The operator must be authorized to create Agents and Playbooks. Agent tests are
+The operator must be authorized to create Agents and Workflows. Agent tests are
 part of editing the Agent (the Tests tab of the Agent editor), so the installer
 also requires the right to edit the new Agent before it creates the Kit's
 tests; a denial rolls back the whole installation. Production Gate mode
@@ -68,10 +68,10 @@ the individual resources.
 After installation, the Agent Overview shows a Kit-specific release path:
 
 1. verify the immutable installation ledger still points to all installed
-   Playbooks;
-2. publish the Playbook as a verified immutable deployment;
-3. assign that published Playbook under the Agent's tools;
-4. publish the Agent so its live version contains every installed Playbook;
+   Workflows;
+2. publish the Workflow as a verified immutable deployment;
+3. assign that published Workflow under the Agent's tools;
+4. publish the Agent so its live version contains every installed Workflow;
    and
 5. enable public Agent traffic only after the normal channel/embed checks pass.
 
@@ -83,7 +83,7 @@ result counts only for the draft and test it ran with; changing either shows
 the test as outdated. The Kit's tests are ordinary Agent tests: operators may
 edit or delete them without breaking the installation.
 
-Publishing a Playbook does not update an already live Agent version. These are
+Publishing a Workflow does not update an already live Agent version. These are
 intentional release boundaries, not extra wizard steps that can be automated
 away.
 
@@ -123,8 +123,8 @@ fail during catalog resolution rather than winning by load order.
 Implement the public `SolutionKitProvider` contract, return strict
 `SolutionKitDefinition` objects, then tag the provider with the interface class:
 
-The excerpt shows the registration shape. Replace the Playbook placeholder with
-a complete schema-v2 authoring Playbook before registering a real Kit.
+The excerpt shows the registration shape. Replace the Workflow placeholder with
+a complete schema-v2 authoring Workflow before registering a real Kit.
 
 ```php
 <?php
@@ -142,7 +142,7 @@ final class SalesQualificationKitProvider implements SolutionKitProvider
             'key' => 'sales-qualification',
             'version' => '1.0.0',
             'name' => 'Sales Qualification',
-            'summary' => 'Qualifies a prospect through a bounded, tested Playbook.',
+            'summary' => 'Qualifies a prospect through a bounded, tested Workflow.',
             'description' => 'A host-owned sales starting point.',
             'agent' => [
                 'assistant_profile' => [
@@ -160,7 +160,7 @@ final class SalesQualificationKitProvider implements SolutionKitProvider
             'resource_slots' => [],
             'connector_slots' => [],
             'playbooks' => [
-                // At least one complete schema-v2 authoring Playbook, for
+                // At least one complete schema-v2 authoring Workflow, for
                 // example with the key 'qualify_lead'.
             ],
             'tests' => [[
@@ -197,7 +197,7 @@ public function register(): void
 Definitions are closed contracts. Unknown fields, duplicate keys, embedded
 credential-like keys, invalid semantic versions, unsupported capability modes,
 write-capable Kits without explicit installation approval, unpublishable
-Playbooks, blocking workflow findings, invalid test turns, and conflicting
+Workflows, blocking workflow findings, invalid test turns, and conflicting
 known outcome classifications are rejected before any database mutation.
 
 ### Kit tests
@@ -211,21 +211,21 @@ Tool checks compare exact tool names, such as `search_knowledge` or a
 capability `tool_name`. Text checks ignore case. A rubric is graded by a model
 when the test runs.
 
-A Kit cannot know the id of a Playbook before installation, so a test names a
-Kit Playbook tool as `playbook:<playbook key>`. The key must belong to a
-Playbook of the same Kit, and a literal `playbook_<id>` is rejected. The
-installer replaces each reference with the tool name of the created Playbook
+A Kit cannot know the id of a Workflow before installation, so a test names a
+Kit Workflow tool as `playbook:<playbook key>`. The key must belong to a
+Workflow of the same Kit, and a literal `playbook_<id>` is rejected. The
+installer replaces each reference with the tool name of the created Workflow
 (`playbook_<workflow id>`). Tests are created with the Agent, warn when they do
 not pass, and never block publishing.
 
 Use a separately registered `CapabilityProvider` for host actions referenced by
-a Kit Playbook. Productive execution still goes exclusively through the
+a Kit Workflow. Productive execution still goes exclusively through the
 `CapabilityExecutionGateway`; a Kit is never an execution boundary.
 
 ## Upgrade And Recovery
 
 Run `php artisan migrate` before opening the wizard. If the installation table,
-Playbook draft columns, or Agent test tables are missing, installation stops
+Workflow draft columns, or Agent test tables are missing, installation stops
 with a migration instruction and creates nothing.
 
 There is no automatic Kit upgrade or destructive uninstall. After installation,
