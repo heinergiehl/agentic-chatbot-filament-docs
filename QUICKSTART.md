@@ -33,7 +33,7 @@ The sections below explain each step and the production settings.
 
 Open the [product assistant](https://filament-agentic-chatbot.heinerdevelops.tech/) to ask about the plugin and inspect its [read-only admin](https://filament-agentic-chatbot.heinerdevelops.tech/demo-admin). No Store login is required.
 
-For hands-on editing, open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/) and start your private Filament backend. Change the Agent, add knowledge, test the fleet and APIs, edit a Playbook, publish and chat through the widget. Use the [guided exercises and coverage table](PLAYGROUND.md) to try confirmation, handoff, tests and versions.
+For hands-on editing, open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/) and start your private Filament backend. Change the Agent, add knowledge, test the fleet and APIs, edit a Workflow, publish and chat through the widget. Use the [guided exercises and coverage table](PLAYGROUND.md) to try confirmation, handoff, tests and versions.
 
 The former Store account and Alex/Sam sign-in are retired. Authenticated customer data remains a supported integration recipe for your own host below. Public demo sandboxes are temporary and restricted; use fictional information only. See [demo limits](PLAYGROUND.md#limits-and-data) and the [privacy notice](https://filament-agentic-chatbot.heinerdevelops.tech/privacy).
 

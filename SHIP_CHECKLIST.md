@@ -32,7 +32,7 @@ GEMINI_API_KEY= ANTHROPIC_API_KEY= OPENAI_API_KEY= php scripts/release/release-c
 
 Keep C/L/Z and the pinned D fixed through acceptance and publication. Any source or metadata change after freeze invalidates certification: refresh D for canonical changes, commit a new C and repeat the exact-identity gates on the new C/L/Z. Retain final evaluation, targeted-check, optional soak, gate and host reports outside tracked source; a result-docs commit after freeze creates a different candidate. Stable `1.0.0` requires real local core acceptance, zero safety violations, targeted recovery evidence and the fixed local gates under the 1.0 policy (package reference `docs/release/RELEASE_POLICY_1.0.md`). An alpha or RC never waives safety or core-path defects. See `docs/RELEASE_CHECKLIST.md` for the gate inventory and isolated database runs.
 
-5. Install that ZIP from package HEAD into the local Docker/PostgreSQL reference host. Capture fresh screenshots and run the Golden Path, public widget smoke, real Agent chat, Agent/Playbook execution, queue processing, and trace inspection. Run `npm --prefix tests/e2e run test:playbook-editor` when the changed boundary requires it. Retain its machine-readable `reference_host_candidate` report.
+5. Install that ZIP from package HEAD into the local Docker/PostgreSQL reference host. Capture fresh screenshots and run the Golden Path, public widget smoke, real Agent chat, Agent/Workflow execution, queue processing, and trace inspection. Run `npm --prefix tests/e2e run test:playbook-editor` when the changed boundary requires it. Retain its machine-readable `reference_host_candidate` report.
 6. Run the recorder once on clean C:
 
 ```bash
@@ -68,12 +68,12 @@ composer release:publish-local -- \
 
 12. Confirm final JSON reports `status: "published"`, the exact source commit and ZIP digest, three verified API asset digests when GitHub exposes them, and `github_immutable: true` when the API exposes immutability.
 13. If preparation fails before remote tag creation, confirm the script removed its local tag. If remote state is uncertain, run the printed `git ls-remote` probe and preserve the local tag until resolved. Once the remote tag exists, never move, delete, or force-push it. Resume finalization or deliberately supersede the version.
-14. After verified GitHub publication, deploy the exact published package version, source C and ZIP Z directly to Live. Retain the chosen host commit and lock, take a backup, run migrations and Doctor, verify queue processing, Widget and Agent/Playbook health, and retain rollback by backup restore under `UPGRADING.md`. Record deployment results separately.
+14. After verified GitHub publication, deploy the exact published package version, source C and ZIP Z directly to Live. Retain the chosen host commit and lock, take a backup, run migrations and Doctor, verify queue processing, Widget and Agent/Workflow health, and retain rollback by backup restore under `UPGRADING.md`. Record deployment results separately.
 15. Publish the marketplace listing, reviewed public docs commit D, checksum, and support/EOL dates as one coordinated operation. Verify the delivered GitHub and Filament pages, images and links; refresh marketplace documentation from the canonical public source and retain rendered evidence. Report any pending delivery explicitly.
 
 ## Conditional integration evidence
 
-Widget or chat-runtime changes require public-widget browser smoke on the local reference-host candidate. Playbook-editor changes require its E2E test against the Docker/PostgreSQL host in `docs/LOCAL_HOST_APP.md`. Product App data tool write-test staging and permits remain required. Record an untouched boundary as `not applicable`, never as passed.
+Widget or chat-runtime changes require public-widget browser smoke on the local reference-host candidate. Workflow-editor changes require its E2E test against the Docker/PostgreSQL host in `docs/LOCAL_HOST_APP.md`. Product App data tool write-test staging and permits remain required. Record an untouched boundary as `not applicable`, never as passed.
 
 ## After publication
 

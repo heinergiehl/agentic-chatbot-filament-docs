@@ -71,7 +71,8 @@ exist only mid-process and for approvals. While a run waits for input, the same
 tool takes that value; it resumes only when it validates against the current
 interrupt contract. An Approval is decided on a confirmation card with Confirm
 or Cancel, never by text. A side question remains an Agent turn and does not
-consume the waitpoint. `cancel_playbook` stops an open run at any time.
+consume the waitpoint. The `cancel_playbook` tool (its name is unchanged)
+stops an open run at any time.
 ## Tools
 
 A Tool step selects one backend contract. Common forms are:

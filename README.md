@@ -16,7 +16,7 @@ Explore the [product assistant and read-only admin](https://filament-agentic-cha
 
 ## Try changing an Agent
 
-Open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/): your own temporary Filament backend with an e-bike rental Agent, knowledge, fleet data, API connections and Playbooks. Edit, test, publish and use the live widget. No account or API key needed. [Exercises, feature coverage and limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
+Open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech/playground/): your own temporary Filament backend with an e-bike rental Agent, knowledge, fleet data, API connections and Workflows. Edit, test, publish and use the live widget. No account or API key needed. [Exercises, feature coverage and limits](https://github.com/heinergiehl/agentic-chatbot-filament-docs/blob/main/PLAYGROUND.md).
 
 ## Three use cases
 
@@ -24,7 +24,7 @@ Open the [Glide Playground](https://filament-agentic-chatbot.heinerdevelops.tech
 - **Customer order support:** look up only the signed-in customer's orders and confirm an allowed address change.
 - **Team support:** send an unresolved question to the Inbox so an operator can continue the conversation.
 
-![Native Glide Playground with the booking Playbook and widget](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-native.webp)
+![Native Glide Playground with the booking Workflow and widget](https://raw.githubusercontent.com/heinergiehl/agentic-chatbot-filament-docs/main/images/agentic-chatbot/playground-native.webp)
 
 The Playground demonstrates the native editor and sandbox tools. Customer identity and personal writes require your own host integration; they are not current public demo exercises.
 

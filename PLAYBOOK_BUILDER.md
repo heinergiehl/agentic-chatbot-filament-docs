@@ -1,6 +1,6 @@
 # Workflow Builder
 
-The panel calls a fixed multi-step process a **Workflow**. In translation keys (`playbooks.*`), runtime classes (`AgentPlaybookTurn`), tool names and the public API it is still called a Playbook. Both names mean the same thing.
+A fixed multi-step process is a **Workflow**. Identifiers keep an earlier name and are unchanged: translation keys (`playbooks.*`), runtime classes (`AgentPlaybookTurn`), tool names such as `playbook_<id>` and the public API field names. Whenever one of them appears in these docs, it refers to a Workflow.
 
 The Workflows list reports total inventory only. Each row retains its verified
 release status and repair warnings; the Updated column is hidden by default and

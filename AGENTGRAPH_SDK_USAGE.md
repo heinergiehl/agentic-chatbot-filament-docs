@@ -21,7 +21,7 @@ release checklist and does not authorize publishing or changing the SDK.
   MariaDB 11.4, enforces memory identity limits (`MemoryIdentity`: scope id
   191, tenant id and namespace 128, key 255 characters) and adds the unique
   memory `identity_hash` migration. Runs, checkpoints, interrupts, tasks and
-  the graph API are unchanged, so Playbook artifacts pinned to 0.18.1 keep
+  the graph API are unchanged, so Workflow artifacts pinned to 0.18.1 keep
   executing through the reviewed pin table of
   `DeploymentRuntimeCompatibility` (ADR 0056). Any other SDK version change
   still needs a review and table entry, or newly published artifacts.
@@ -41,34 +41,34 @@ Agent deployment first:
 ChatTurnApplicationService
 -> DurableChatTurnService
 -> AgentTurnLoop
--> direct Agent answer, knowledge tool, or exact Playbook tool
--> WorkflowExecutionService / WorkflowRunner only for a Playbook
+-> direct Agent answer, knowledge tool, or exact Workflow tool
+-> WorkflowExecutionService / WorkflowRunner only for a Workflow
 -> AgentGraph checkpoint, interrupt, resume, delay, task, and cancellation
 ```
 
-The Agent model may propose a Playbook tool call and its arguments. The closed
-Agent deployment, exact Playbook pin, workflow contract, and deterministic
+The Agent model may propose a Workflow tool call and its arguments. The closed
+Agent deployment, exact Workflow pin, workflow contract, and deterministic
 policy decide whether that call is executable. A mutable draft, latest-version
 lookup, global tool registry, or unpinned child graph cannot enter production.
 
-When a Playbook is open, the Agent receives its tool (to supply the pending
-value or read the status) plus `cancel_playbook` (ADR 0040); it keeps its other
-read tools so a side question does not mutate the Playbook checkpoint. A
-different Playbook cannot start until the current run is terminal.
+When a Workflow is open, the Agent receives its tool (to supply the pending
+value or read the status) plus the `cancel_playbook` tool (ADR 0040, name unchanged); it keeps its other
+read tools so a side question does not mutate the Workflow checkpoint. A
+different Workflow cannot start until the current run is terminal.
 
 ## SDK surfaces used
 
 - `AgentGraphManager` defines, validates, starts, resumes, inspects, cancels,
-  and recovers Playbook graphs.
+  and recovers Workflow graphs.
 - `StateGraph` compiles the internal Runtime-v1 projection generated from the
-  semantic Playbook document. Retry, channels, interrupt capability, node
+  semantic Workflow document. Retry, channels, interrupt capability, node
   metadata, and coarse side-effect annotations are declared on this graph.
-- `AgentNode` executes bounded Playbook AI Tasks. It does not own general chat
+- `AgentNode` executes bounded Workflow AI Tasks. It does not own general chat
   or choose capabilities.
 - Native Laravel AI tool approvals raise `AgentApprovalRequiredException`.
   The plugin adapter preserves that failure without a synchronous fallback or
   another model attempt. Productive approvals use the existing graph interrupts.
-- `SubgraphNode` executes deployment-pinned Sub-Playbooks with isolated state,
+- `SubgraphNode` executes deployment-pinned Sub-Workflows with isolated state,
   bounded depth, parent identity, interrupt bubbling, and declared output
   mapping.
 - `StructuredConcurrencySubgraphNode` admits each child through an explicit,
@@ -96,7 +96,7 @@ evidence but cannot silently become an authorized write or arbitrary graph
 state.
 
 Before dispatch, the package atomically correlates the new durable Chat Turn,
-current user message, Playbook run, and immutable deployment references without
+current user message, Workflow run, and immutable deployment references without
 changing the projected run status. AgentGraph's accepted resume payload carries
 the exact active-turn identity in `runtime.recovery.pending_resume`; the next
 checkpoint carries the same identity in state metadata and runtime variables.
@@ -139,7 +139,7 @@ authority.
   from current authoring data.
 - Unknown dispatch outcomes remain blocked until reconciled. Recovery cannot
   convert uncertainty into an automatic retry of a write.
-- Parent cancellation and timeout cascade through supported Sub-Playbook
+- Parent cancellation and timeout cascade through supported Sub-Workflow
   ancestry; a child cannot productively outlive its parent.
 - Cancellation revokes the parent through the SDK's revision-fenced public
   transition before cancelling descendants. It does not hold a root cache lock
@@ -168,8 +168,8 @@ configured AgentGraph database while all old workers and requests are stopped.
 The earlier claim-token migration must also be present. Synchronous execution
 now requires the node-execution table and its receipt retention policy. 0.18
 adds no migration beyond 0.17. Restart all PHP execution processes on the same
-dependency set. Existing immutable Playbook artifacts are not widened or
-rewritten: publish new Playbooks and then publish the Agents that use them.
+dependency set. Existing immutable Workflow artifacts are not widened or
+rewritten: publish new Workflows and then publish the Agents that use them.
 
 Diagnostic event listeners cannot abort confirmed execution in 0.18. Recovery
 fault tests therefore suspend and abandon an execution Fiber at a durable

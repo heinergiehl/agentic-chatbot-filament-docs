@@ -1,7 +1,7 @@
-# Playbook JSON Schema
+# Workflow JSON Schema
 
-The Playbook Builder persists a semantic `schemaVersion: 2` document. This is
-the only editable Playbook source of truth. The package compiles it to an
+The Workflow Builder persists a semantic `schemaVersion: 2` document. This is
+the only editable Workflow source of truth. The package compiles it to an
 internal `schemaVersion: 1` AgentGraph payload at preview and publication
 boundaries; callers should not author that runtime projection directly.
 
@@ -72,6 +72,8 @@ result
 note
 ```
 
+The kind `subPlaybook` is the Sub-Workflow step; its identifier is unchanged.
+
 ## Transition shape
 
 ```json
@@ -92,8 +94,8 @@ and `invalid`. For Each uses `each` and `done`.
 
 ### Entry
 
-Entry carries no capability authority. A publishable Playbook has exactly one
-entry point. Its optional `data.inputs` is the Playbook's input schema (ADR
+Entry carries no capability authority. A publishable Workflow has exactly one
+entry point. Its optional `data.inputs` is the Workflow's input schema (ADR
 0040): the Agent tool's arguments, set as run variables when the run starts.
 
 ```json
@@ -120,7 +122,7 @@ empty string.
 Common fields are `prompt`, `variableName`, `inputType`, `required`, and typed
 validation settings. It creates a visitor waitpoint for a value that exists only
 mid-process; values known up front belong in the Entry inputs. It does not make
-the Playbook the general conversation owner.
+the Workflow the general conversation owner.
 
 ### Capability
 
@@ -172,7 +174,7 @@ output variable.
 Declare `collectionVariable`, item/index variables, and finite `maxItems`. Use
 the `each` and `done` paths.
 
-### Sub-Playbook
+### Sub-Workflow
 
 Declare the allowed child workflow id, mappings or templates, result variable,
 and bounded depth. Publication replaces mutable references with a pinned child
@@ -249,9 +251,9 @@ paths, resolved immutable dependencies, and all security/policy checks.
 
 Public presentation copy is not a second authoring chore. Unless explicitly
 overridden, the compiler derives the public title and description from the
-Playbook name and description and derives capability labels from visible step
+Workflow name and description and derives capability labels from visible step
 labels. Obsolete `turnUnderstanding` policy input is discarded; Agent-owned
-behavior remains outside the Playbook document and its release, so a change of
+behavior remains outside the Workflow document and its release, so a change of
 the Agent's role, tone or languages never requires republishing. Every productive write must be
 reachable only from an Approval's Approved path, while the capability gateway
 continues to enforce its independent runtime safeguards.

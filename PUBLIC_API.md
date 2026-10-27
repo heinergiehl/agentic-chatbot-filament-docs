@@ -5,7 +5,7 @@ methods, routes, commands, views, configuration keys, tags, or assets not listed
 here are internal implementation details and may change without compatibility
 aliases.
 
-Agent deployments and Playbook deployments are immutable and hash-verified.
+Agent deployments and Workflow deployments are immutable and hash-verified.
 When an upgrade changes what the runtime accepts, affected Agents show
 **Publish needed**; publish them again. No artifact is rewritten. `import_basis` is MCP authoring data only, never an
 execution contract. Capability Bridge's `definition_valid` means definition
@@ -283,7 +283,7 @@ not grant execution authority. Duplicate or incomplete action contracts fail
 package boot/resolution and are reported by the Doctor command before chat traffic.
 The directly reflected handler implementation source is also hashed into the
 contract. A deployed action therefore fails closed after its handler code
-changes until the owning Playbook and Agent are reviewed and republished.
+changes until the owning Workflow and Agent are reviewed and republished.
 
 Providers that need locale aliases, canonical external IDs, or tenant-specific
 entity lookup may additionally register a `CapabilityEntityResolver` singleton
@@ -313,7 +313,7 @@ The supported host staging interface consists of
 `DataResourceWriteTestRunner::exportCandidate()`, `review()` and
 `executeConfirmed()`, `DataResourceWriteTestReview::summary()` and `reviewHash()`,
 and `DataResourceWriteEvidence::import()`. Resolve the services through Laravel
-and pass the saved Playbook from an authorized administration context. Inspect
+and pass the saved Workflow from an authorized administration context. Inspect
 the complete summary before confirming its exact hash. The permit object and
 other service methods remain internal; they are not a transport or queue API.
 
@@ -392,7 +392,7 @@ accepted. `idempotencyKey` must identify the same source event on every retry.
 An exact retry returns the existing result with `wasCreated === false`; reusing
 the same identity for different content fails closed.
 
-Optional chat-turn, Playbook-run, and handoff IDs are accepted only when they
+Optional chat-turn, Workflow-run, and handoff IDs are accepted only when they
 belong to the target conversation. Deployment attribution is derived and
 verified by the recorder rather than supplied by the caller. Evidence references
 are encrypted at rest and are intentionally omitted from
@@ -423,7 +423,7 @@ Webhooks](OUTBOUND_WEBHOOKS.md) for the payload, signature, retry, and operation
 contract.
 
 Events cover conversations (started, ended), submissions, feedback, outcomes,
-handoffs, Playbook runs (completed, failed), approvals, external writes
+handoffs, Workflow runs (completed, failed), approvals, external writes
 (succeeded, failed, unknown, reconciled) and monthly budget
 thresholds. Payloads carry public ids only; per-endpoint opt-in content
 (submission fields, last messages) is redacted and size-capped.
@@ -450,7 +450,7 @@ stable ID through the singleton `ConnectorCompletionWebhookVerifierRegistry`
 in their composition root. The operation contract selects that ID. Neither
 provider payloads nor visitor inputs can select or replace a verifier.
 
-## Mixed read and Playbook answers
+## Mixed read and Workflow answers
 
 A terminal chat error may include the optional `read_answer` object:
 `{content, content_html, content_format, sources}`. It contains the separately
@@ -458,7 +458,7 @@ verified independent-read answer after the normal safety and presentation
 boundary. JSON and SSE expose the same persisted object, including replay.
 Clients should render it as a distinct answer while preserving the canonical
 error, confirmation/wait state and retry restriction. Its presence never means
-that an uncertain Playbook write succeeded. Apply the normal HTML sanitization
+that an uncertain Workflow write succeeded. Apply the normal HTML sanitization
 and source-link rules; never reinterpret error text as an instruction to retry.
 
 ## Write confirmation cards
@@ -475,8 +475,8 @@ with `resolution`). The answer to that request carries `confirmation_result:
 {id, status}`; history returns each card with its current status in every
 message that shows it. Free text never confirms a write.
 
-A Playbook waiting for an approval shows the same card (ADR 0040) with no
-`fields` and the Playbook's question as `notice`. Confirm resumes its approved
+A Workflow waiting for an approval shows the same card (ADR 0040) with no
+`fields` and the Workflow's question as `notice`. Confirm resumes its approved
 path and Cancel its declined path; the decided status reflects the run's
 outcome. A `resolution` of type `approve` or `reject` no longer decides an
 approval in a visitor conversation; `resolution` remains for bound widget form

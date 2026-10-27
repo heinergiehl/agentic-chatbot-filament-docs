@@ -51,7 +51,7 @@ Supported subscriptions are:
 - `handoff.resolved`: an operator resolved the case.
 - `handoff.returned_to_agent`: an operator returned the conversation to the Agent.
 - `playbook.completed` and `playbook.failed`: a live Workflow run reached a
-  final state. A terminal staged outcome emits `playbook.completed` with
+  final state (the event and payload names are unchanged). A terminal staged outcome emits `playbook.completed` with
   `data.playbook_run.status: needs_review`; this does not claim the write
   succeeded. A resumable approval or API connection delay emits neither until settled.
 - `action_review.requested`: a Workflow action waits for operator approval

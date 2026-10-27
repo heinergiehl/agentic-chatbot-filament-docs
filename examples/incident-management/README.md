@@ -4,11 +4,11 @@ This example shows how to model a large operational incident system with:
 
 - indexed knowledge sources for procedures and historical narrative reports
 - live database retrieval through `query_data_resource`
-- a bounded Playbook that combines active incidents, rescue stations, staff, and earthquake records
+- a bounded Workflow that combines active incidents, rescue stations, staff, and earthquake records
 - Agent Access Tokens for Telegram, dispatch tools, and other server-side integrations
 - per-token rate limits and budgets
 
-The files in this directory are app-side examples. Put them in a host Laravel app, run the migration and seeder, sync the data resources into the Filament **Data Resources** page, then import the semantic Playbook JSON into Filament Agentic Chatbot.
+The files in this directory are app-side examples. Put them in a host Laravel app, run the migration and seeder, sync the data resources into the Filament **Data Resources** page, then import the semantic Workflow JSON into Filament Agentic Chatbot.
 
 ## Files
 
@@ -18,7 +18,7 @@ The files in this directory are app-side examples. Put them in a host Laravel ap
 | `database/seeders/IncidentDemoSeeder.php` | Seeds realistic demo rows. |
 | `app/Models/*.php` | Eloquent models for the demo tables. |
 | `app/Support/IncidentManagementDataResources.php` | Safe read-only `query_data_resource` definitions. |
-| `workflows/incident-manager-live-status.json` | Playbook that retrieves live records and returns a bounded result to the Agent. |
+| `workflows/incident-manager-live-status.json` | Workflow that retrieves live records and returns a bounded result to the Agent. |
 
 ## 1. Register Data Resources
 
@@ -99,11 +99,11 @@ Use live data resources for fast-changing operational data:
 - rescue station status
 - recent earthquake records
 
-## 4. Import Playbook
+## 4. Import Workflow
 
-Import `workflows/incident-manager-live-status.json` into a Playbook assigned to the `incident-manager` Agent.
+Import `workflows/incident-manager-live-status.json` into a Workflow assigned to the `incident-manager` Agent.
 
-The Playbook:
+The Workflow:
 
 1. receives the manager question
 2. retrieves open incidents
